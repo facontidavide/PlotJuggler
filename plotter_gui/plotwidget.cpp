@@ -43,7 +43,6 @@ PlotWidget::PlotWidget(PlotDataMap *datamap, QWidget *parent):
     //QwtPlotGLCanvas *canvas = new QwtPlotGLCanvas(this);
     QwtPlotCanvas *canvas = new QwtPlotCanvas(this);
 
-
     canvas->setFrameStyle( QFrame::NoFrame );
     canvas->setPaintAttribute( QwtPlotCanvas::BackingStore, true );
 
@@ -55,6 +54,15 @@ PlotWidget::PlotWidget(PlotDataMap *datamap, QWidget *parent):
     this->plotLayout()->setAlignCanvasToScales( true );
 
     this->canvas()->installEventFilter( this );
+
+    // Enable grid
+    QwtPlotGrid *grid = new QwtPlotGrid();
+    grid->setPen(QPen(Qt::gray, 0.0, Qt::DotLine));
+    grid->enableX(true);
+    grid->enableXMin(true);
+    grid->enableY(true);
+    grid->enableYMin(true);
+    grid->attach(this);
 
     //--------------------------
     _zoomer = ( new QwtPlotZoomer( this->canvas() ) );
@@ -154,12 +162,12 @@ void PlotWidget::buildLegend()
     _legend->setBackgroundMode( QwtPlotLegendItem::BackgroundMode::LegendBackground   );
 
     _legend->setBorderRadius( 6 );
-    _legend->setMargin( 1 );
-    _legend->setSpacing( 0.8 );
+    _legend->setMargin( 5 );
+    _legend->setSpacing( 0 );
     _legend->setItemMargin( 0 );
 
     QFont font = _legend->font();
-    font.setPointSize( 7 );
+    font.setPointSize( 8 );
     _legend->setFont( font );
 
     _legend->setVisible( true );
