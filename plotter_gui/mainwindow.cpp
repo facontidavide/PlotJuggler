@@ -163,15 +163,13 @@ void MainWindow::getMaximumRangeX(double* minX, double* maxX)
     *minX = std::numeric_limits<double>::max();
     *maxX = std::numeric_limits<double>::min();
 
-    auto plots = getAllPlots();
-
-    for ( unsigned i = 0; i< plots.size(); i++ )
+    forEachWidget( [&](PlotWidget* plot)
     {
-        auto rangeX = plots[i]->maximumRangeX();
-
+        auto rangeX = plot->maximumRangeX();
         if( *minX > rangeX.min )   *minX = rangeX.min ;
         if( *maxX < rangeX.max )   *maxX = rangeX.max;
     }
+    );
 }
 
 
@@ -617,39 +615,6 @@ void MainWindow::deleteLoadedData(const QString& curve_name)
     }
 }
 
-std::vector<PlotWidget*> MainWindow::getAllPlots()
-{
-    std::vector<PlotWidget*> output;
-
-    std::vector<TabbedPlotWidget*> tabbed_plotarea;
-    tabbed_plotarea.reserve( 1+ _floating_window.size());
-
-    tabbed_plotarea.push_back( _main_tabbed_widget );
-    for (SubWindow* subwin: _floating_window){
-        tabbed_plotarea.push_back( subwin->tabbedWidget() );
-    }
-
-    for (size_t i = 0; i < tabbed_plotarea.size(); i++)
-    {
-        QTabWidget* tab_widget = tabbed_plotarea[i]->tabWidget();
-        for (int t = 0; t < tab_widget->count(); t++)
-        {
-            PlotMatrix* matrix = static_cast<PlotMatrix*>( tab_widget->widget(t) );
-            if (matrix)
-            {
-                for ( unsigned w = 0; w< matrix->plotCount(); w++ )
-                {
-                    PlotWidget *plot =  matrix->plotAt(w);
-                    if( plot )
-                    {
-                        output.push_back( plot );
-                    }
-                }
-            }
-        }
-    }
-    return output;
-}
 
 void MainWindow::onDeleteLoadedData()
 {
@@ -667,12 +632,8 @@ void MainWindow::onDeleteLoadedData()
 
     _curvelist_widget->clear();
 
-    auto plots = getAllPlots();
+    forEachWidget( [](PlotWidget* plot) { plot->detachAllCurves(); } );
 
-    for (size_t i = 0; i < plots.size(); i++)
-    {
-        plots[i]->detachAllCurves();
-    }
     ui->actionReloadData->setEnabled( false );
     ui->actionDeleteAllData->setEnabled( false );
 }
@@ -734,12 +695,12 @@ void MainWindow::onActionLoadDataFile(bool reload_from_settings)
     onActionLoadDataFileImpl(filename, false );
 }
 
-void MainWindow::importPlotDataMap(const PlotDataMap& mapped_data)
+void MainWindow::importPlotDataMap(const PlotDataMap& new_data)
 {
     // overwrite the old user_defined map
-    _mapped_plot_data.user_defined = mapped_data.user_defined;
+    _mapped_plot_data.user_defined = new_data.user_defined;
 
-    for (auto& it: mapped_data.numeric)
+    for (auto& it: new_data.numeric)
     {
         const std::string& name  = it.first;
         PlotDataPtr plot  = it.second;
@@ -753,12 +714,12 @@ void MainWindow::importPlotDataMap(const PlotDataMap& mapped_data)
             _curvelist_widget->addItem( new QListWidgetItem( qname ) );
             _mapped_plot_data.numeric.insert( std::make_pair(name, plot) );
         }
-        else{ // a plot with the same name existed already
+        else{ // a plot with the same name existed already, overwrite it
             plot_with_same_name->second = plot;
         }
     }
 
-    if( _mapped_plot_data.numeric.size() > mapped_data.numeric.size() )
+    if( _mapped_plot_data.numeric.size() > new_data.numeric.size() )
     {
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(0, tr("Warning"),
@@ -775,7 +736,7 @@ void MainWindow::importPlotDataMap(const PlotDataMap& mapped_data)
                 for (auto& it: _mapped_plot_data.numeric )
                 {
                     auto& name = it.first;
-                    if( mapped_data.numeric.find( name ) == mapped_data.numeric.end() )
+                    if( new_data.numeric.find( name ) == new_data.numeric.end() )
                     {
                         this->deleteLoadedData( QString( name.c_str() ) );
                         repeat = true;
@@ -785,9 +746,8 @@ void MainWindow::importPlotDataMap(const PlotDataMap& mapped_data)
             }
         }
     }
-    _undo_states.clear();
-    _redo_states.clear();
-    _undo_states.push_back(  xmlSaveState() );
+
+    forEachWidget( [](PlotWidget* plot) { plot->reloadPlotData(); } );
 
     updateInternalState();
 }
@@ -1141,20 +1101,8 @@ void MainWindow::updateInternalState()
         emit activateTracker( false );
 }
 
-void MainWindow::on_pushButtonAddSubwindow_pressed()
+void MainWindow::forEachWidget(std::function<void (PlotWidget*, PlotMatrix*, int,int )> operation)
 {
-    createTabbedDialog( NULL, true );
-}
-
-void MainWindow::onSwapPlots(PlotWidget *source, PlotWidget *destination)
-{
-    if( !source || !destination ) return;
-
-    PlotMatrix* src_matrix = NULL;
-    PlotMatrix* dst_matrix = NULL;
-    QPoint src_pos;
-    QPoint dst_pos;
-
     std::vector<TabbedPlotWidget*> tabbed_plotarea;
     tabbed_plotarea.reserve( 1+ _floating_window.size());
 
@@ -1176,22 +1124,47 @@ void MainWindow::onSwapPlots(PlotWidget *source, PlotWidget *destination)
                 for(unsigned col=0; col< matrix->colsCount(); col++)
                 {
                     PlotWidget* plot = matrix->plotAt(row, col);
-
-                    if( plot == source ) {
-                        src_matrix = matrix;
-                        src_pos.setX( row );
-                        src_pos.setY( col );
-                    }
-                    else if( plot == destination )
-                    {
-                        dst_matrix = matrix;
-                        dst_pos.setX( row );
-                        dst_pos.setY( col );
-                    }
+                    operation(plot, matrix, row, col);
                 }
             }
         }
     }
+}
+
+void MainWindow::forEachWidget(std::function<void (PlotWidget *)> op)
+{
+    forEachWidget( [&](PlotWidget*plot, PlotMatrix*, int,int) { op(plot); } );
+}
+
+void MainWindow::on_pushButtonAddSubwindow_pressed()
+{
+    createTabbedDialog( NULL, true );
+}
+
+void MainWindow::onSwapPlots(PlotWidget *source, PlotWidget *destination)
+{
+    if( !source || !destination ) return;
+
+    PlotMatrix* src_matrix = NULL;
+    PlotMatrix* dst_matrix = NULL;
+    QPoint src_pos;
+    QPoint dst_pos;
+
+    forEachWidget( [&](PlotWidget* plot, PlotMatrix* matrix, int row,int col)
+    {
+        if( plot == source ) {
+            src_matrix = matrix;
+            src_pos.setX( row );
+            src_pos.setY( col );
+        }
+        else if( plot == destination )
+        {
+            dst_matrix = matrix;
+            dst_pos.setX( row );
+            dst_pos.setY( col );
+        }
+    });
+
     if(src_matrix && dst_matrix)
     {
         src_matrix->gridLayout()->removeWidget( source );

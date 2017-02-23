@@ -25,7 +25,7 @@
 //#include <qwt_plot_glcanvas.h>
 
 
-PlotWidget::PlotWidget(PlotDataMap *datamap, QWidget *parent):
+PlotWidget::PlotWidget(const PlotDataMap *datamap, QWidget *parent):
     QwtPlot(parent),
     _zoomer( 0 ),
     _magnifier(0 ),
@@ -521,6 +521,26 @@ void PlotWidget::setScale(QRectF rect, bool emit_signal)
     }
 }
 
+void PlotWidget::reloadPlotData()
+{
+    for (auto& curve_it: _curve_list)
+    {
+        std::shared_ptr<QwtPlotCurve>& curve_data = curve_it.second;
+        const std::string curve_name = curve_it.first.toStdString();
+
+       // PlotDataQwt* old_plotqwt = static_cast<PlotDataQwt*>( curve_data->data() );
+
+        auto it = _mapped_data->numeric.find( curve_name );
+        if( it!= _mapped_data->numeric.end())
+        {
+            PlotDataQwt* new_plotqwt = new PlotDataQwt( it->second );
+            new_plotqwt->setTransform( _current_transform );
+            new_plotqwt->updateData(true);
+            curve_data->setData( new_plotqwt );
+        }
+    }
+}
+
 void PlotWidget::activateLegent(bool activate)
 {
     if( activate ) _legend->attach(this);
@@ -910,6 +930,7 @@ bool PlotWidget::eventFilter(QObject *obj, QEvent *event)
     }
     else if ( event->type() == QEvent::MouseButtonRelease)
     {
+        QApplication::restoreOverrideCursor();
         QMouseEvent *mouse_event = static_cast<QMouseEvent*>(event);
 
         if( mouse_event->button() == Qt::LeftButton )

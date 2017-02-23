@@ -63,6 +63,8 @@ public:
 
   Point at(size_t index) const;
 
+  void clear();
+
   void pushBack(Point p);
 
   void pushBackAsynchronously(Point p);
@@ -197,7 +199,14 @@ PlotDataGeneric<Time, Value>::at(size_t index) const
   catch(...)
   {
     return { _x_points.back(),  _y_points.back() };
-  }
+    }
+}
+
+template<typename Time, typename Value>
+void PlotDataGeneric<Time, Value>::clear()
+{
+    _x_points.clear();
+    _y_points.clear();
 }
 
 

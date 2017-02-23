@@ -8,6 +8,7 @@
 #include <QSignalMapper>
 #include <set>
 #include <deque>
+#include <functional>
 #include "plotwidget.h"
 #include "plotmatrix.h"
 #include "filterablelistwidget.h"
@@ -112,13 +113,15 @@ private:
 
     void createActions();
 
-    std::vector<PlotWidget *> getAllPlots();
-
     FilterableListWidget* _curvelist_widget;
 
    // std::vector<PlotMatrix*> _plot_matrix_list;
 
     void updateInternalState();
+
+    void forEachWidget(std::function<void(PlotWidget*, PlotMatrix*, int, int)> op);
+
+    void forEachWidget(std::function<void(PlotWidget*)> op);
 
     void getMaximumRangeX(double* minX, double* maxX);
 
@@ -154,7 +157,7 @@ private:
 
     void createTabbedDialog(PlotMatrix *first_tab, bool undoable);
 
-    void importPlotDataMap(const PlotDataMap &mapped_data);
+    void importPlotDataMap(const PlotDataMap &new_data);
 
 protected:
     void mousePressEvent(QMouseEvent *event) ;

@@ -25,7 +25,7 @@ class PlotWidget : public QwtPlot
     Q_OBJECT
 
 public:
-    PlotWidget(PlotDataMap* datamap, QWidget *parent=0);
+    PlotWidget(const PlotDataMap* datamap, QWidget *parent=0);
     virtual ~PlotWidget();
 
     bool addCurve(const QString&  name, bool do_replot );
@@ -48,6 +48,7 @@ public:
 
     void setScale( QRectF rect, bool emit_signal );
 
+    void reloadPlotData( );
 
 protected:
     virtual void dragEnterEvent(QDragEnterEvent *event) ;
@@ -116,7 +117,7 @@ private:
     QwtPlotLegendItem* _legend;
     QwtPlotGrid* _grid;
 
-    PlotDataMap* _mapped_data;
+    const PlotDataMap* _mapped_data;
     PlotDataQwt::Transform _current_transform;
 
     void buildActions();
