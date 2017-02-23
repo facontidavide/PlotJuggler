@@ -732,7 +732,6 @@ void MainWindow::importPlotDataMap(const PlotDataMap& new_data)
             while( repeat )
             {
                 repeat = false;
-
                 for (auto& it: _mapped_plot_data.numeric )
                 {
                     auto& name = it.first;
@@ -747,7 +746,11 @@ void MainWindow::importPlotDataMap(const PlotDataMap& new_data)
         }
     }
 
-    forEachWidget( [](PlotWidget* plot) { plot->reloadPlotData(); } );
+    forEachWidget( [](PlotWidget* plot) {
+        plot->reloadPlotData();
+    } );
+
+    onReplotRequested();
 
     updateInternalState();
 }

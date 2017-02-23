@@ -46,7 +46,7 @@ DialogSelectRosTopics::DialogSelectRosTopics(const std::vector<std::pair<QString
         QTableWidgetItem *type_item = new QTableWidgetItem( topic_list[row].second );
         ui->listRosTopics->setItem(row, 1, type_item);
 
-        if(default_selected_topics.contains(topic_name))
+        if(default_selected_topics.contains(topic_name) || topic_list.size() == 1)
         {
             ui->listRosTopics->selectRow(row);
         }
@@ -56,11 +56,6 @@ DialogSelectRosTopics::DialogSelectRosTopics(const std::vector<std::pair<QString
     ui->listRosTopics->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
 
     ui->listRosTopics->sortByColumn(0, Qt::AscendingOrder);
-
-    //  if there is only one item in the list, select it by default
-    if( topic_list.size() == 1){
-        ui->listRosTopics->selectRow(0);
-    }
 
     ui->checkBoxEnableRules->setChecked(     settings.value("DialogSelectRosTopics.enableRules", true ).toBool());
     ui->checkBoxNormalizeTime->setChecked(   settings.value("DialogSelectRosTopics.normalizeTime", true ).toBool());
