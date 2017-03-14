@@ -28,7 +28,7 @@ SET( PLOTTER_SRC
     busytaskdialog.cpp
     customtracker.cpp
     curvecolorpick.cpp
-    plotdata_qwt.cpp
+    timeseries_qwt.cpp
     filterablelistwidget.cpp
     tabbedplotwidget.cpp
     subwindow.cpp

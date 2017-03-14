@@ -50,6 +50,8 @@ public:
 
   PlotDataGeneric();
 
+  PlotDataGeneric(const char* name);
+
   virtual ~PlotDataGeneric() {}
 
   void setName(const std::string& name) { _name = name; }
@@ -112,11 +114,20 @@ typedef struct{
 
 
 template < typename Time, typename Value>
-inline PlotDataGeneric <Time, Value>::PlotDataGeneric():
+inline PlotDataGeneric<Time, Value>::PlotDataGeneric():
   _max_range_X( std::numeric_limits<Time>::max() )
   , _color_hint(Qt::black)
 {
-  static_assert( std::is_arithmetic<Time>::value ,"Only numbers can be used as time");
+    static_assert( std::is_arithmetic<Time>::value ,"Only numbers can be used as time");
+}
+
+template<typename Time, typename Value>
+inline PlotDataGeneric<Time, Value>::PlotDataGeneric(const char *name):
+    _max_range_X( std::numeric_limits<Time>::max() )
+    , _color_hint(Qt::black)
+    , _name(name)
+{
+    static_assert( std::is_arithmetic<Time>::value ,"Only numbers can be used as time");
 }
 
 template < typename Time, typename Value>

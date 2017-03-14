@@ -13,7 +13,7 @@
 #include "plotzoomer.h"
 #include <qwt_plot_panner.h>
 #include <QDomDocument>
-#include "plotdata_qwt.h"
+#include "timeseries_qwt.h"
 #include "customtracker.h"
 #include <qwt_plot_legenditem.h>
 #include <deque>
@@ -25,7 +25,7 @@ class PlotWidget : public QwtPlot
     Q_OBJECT
 
 public:
-    PlotWidget(const PlotDataMap* datamap, QWidget *parent=0);
+    PlotWidget(PlotDataMap* datamap, QWidget *parent=0);
     virtual ~PlotWidget();
 
     bool addCurve(const QString&  name, bool do_replot );
@@ -44,17 +44,20 @@ public:
 
     PlotData::RangeValue maximumRangeY( PlotData::RangeTime range_X ) const;
 
-    CurveTracker* tracker();
-
     void setScale( QRectF rect, bool emit_signal );
 
     void reloadPlotData( );
+
+    void changeAxisX(QString curve_name);
+
+    bool isXYPlot() const;
 
 protected:
     virtual void dragEnterEvent(QDragEnterEvent *event) ;
     virtual void dragMoveEvent(QDragMoveEvent *event) ;
     virtual void dropEvent(QDropEvent *event) ;
     virtual bool eventFilter(QObject *obj, QEvent *event);
+
 
 signals:
     void swapWidgetsRequested(PlotWidget* source, PlotWidget* destination);
@@ -75,8 +78,12 @@ public slots:
     void on_zoomOutVertical_triggered(bool emit_signal = true);
 
     void on_noTransform_triggered(bool checked );
+
     void on_1stDerivativeTransform_triggered(bool checked);
+
     void on_2ndDerivativeTransform_triggered(bool checked);
+
+    void on_convertToXY_triggered(bool checked);
 
     void on_savePlotToFile();
 
@@ -85,6 +92,10 @@ public slots:
     void activateLegent(bool activate);
 
     void activateGrid(bool activate);
+
+    void activateTracker(bool activate);
+
+    void setTrackerPosition(QPointF point);
 
 private slots:
     void launchRemoveCurveDialog();
@@ -96,6 +107,7 @@ private slots:
 
 private:
     std::map<QString, std::shared_ptr<QwtPlotCurve> > _curve_list;
+    std::map<QString, QwtPlotMarker*> _point_marker;
 
     QAction *_action_removeCurve;
     QAction *_action_removeAllCurves;
@@ -106,6 +118,7 @@ private:
     QAction *_action_noTransform;
     QAction *_action_1stDerivativeTransform;
     QAction *_action_2ndDerivativeTransform;
+    QAction *_action_phaseXY;
     QAction *_action_saveToFile;
 
     PlotZoomer* _zoomer;
@@ -116,8 +129,8 @@ private:
     QwtPlotLegendItem* _legend;
     QwtPlotGrid* _grid;
 
-    const PlotDataMap* _mapped_data;
-    PlotDataQwt::Transform _current_transform;
+    PlotDataMap* _mapped_data;
+    TimeseriesQwt::Transform _current_transform;
 
     void buildActions();
     void buildLegend();
@@ -127,6 +140,8 @@ private:
     bool _show_line_and_points;
 
     void setDefaultRangeX();
+
+    PlotDataPtr _axisX;
 };
 
 #endif

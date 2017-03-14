@@ -19,6 +19,7 @@
 #include <qwt_text.h>
 #include <QActionGroup>
 #include <QFileDialog>
+#include <QtXml/QDomElement>
 #include "qwt_plot_renderer.h"
 #include <PlotJuggler/random_color.h>
 
@@ -43,7 +44,7 @@ void PlotWidget::setDefaultRangeX()
     }
 }
 
-PlotWidget::PlotWidget(const PlotDataMap *datamap, QWidget *parent):
+PlotWidget::PlotWidget(PlotDataMap *datamap, QWidget *parent):
     QwtPlot(parent),
     _zoomer( 0 ),
     _magnifier(0 ),
@@ -95,21 +96,21 @@ PlotWidget::PlotWidget(const PlotDataMap *datamap, QWidget *parent):
 
     // disable right button. keep mouse wheel
     _magnifier->setMouseButton( Qt::NoButton );
-    _magnifier->setZoomInKey( Qt::Key::Key_Plus);
-    _magnifier->setZoomOutKey( Qt::Key::Key_Minus);
-
     connect(_magnifier, SIGNAL(rescaled(const QRectF&)), this, SLOT(on_externallyResized(const QRectF&)) );
     connect(_magnifier, SIGNAL(rescaled(const QRectF&)), this, SLOT(replot()) );
 
-    _panner->setMouseButton(  Qt::LeftButton, Qt::ControlModifier);
+    _panner->setMouseButton(  Qt::MiddleButton, Qt::NoModifier);
 
+    this->canvas()->setContextMenuPolicy( Qt::ContextMenuPolicy::CustomContextMenu );
+    connect( canvas, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(canvasContextMenuTriggered(QPoint)) );
     //-------------------------
 
     buildActions();
     buildLegend();
 
-    this->canvas()->setMouseTracking(false);
+    this->canvas()->setMouseTracking(true);
     this->canvas()->installEventFilter(this);
+
 
     setDefaultRangeX();
 }
@@ -878,17 +879,13 @@ void PlotWidget::on_2ndDerivativeTransform_triggered(bool checked)
 
 void PlotWidget::on_savePlotToFile()
 {
-    QFileDialog saveDialog;
-    saveDialog.setAcceptMode(QFileDialog::AcceptSave);
-    saveDialog.setDefaultSuffix("png");
+    QString fileName;
 
 #ifndef QWT_NO_SVG
-    saveDialog.setNameFilter("Compatible formats (*.jpg *.jpeg *.svg *.png)");
+    fileName = QFileDialog::getSaveFileName(this, tr("File to export"), QString(),"Compatible formats (*.jpg *.jpeg *.svg *.png)");
 #else
-    saveDialog.setNameFilter("Compatible formats (*.jpg *.jpeg *.png)");
+    fileName = QFileDialog::getSaveFileName(this, tr("File to export"), QString(),"Compatible formats (*.jpg *.jpeg *.png)");
 #endif
-    saveDialog.exec();
-    QString fileName = saveDialog.selectedFiles().first();
 
     if ( !fileName.isEmpty() )
     {

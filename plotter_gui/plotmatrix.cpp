@@ -28,7 +28,8 @@ PlotWidget* PlotMatrix::addPlotWidget(unsigned row, unsigned col)
 
     plot->setWindowTitle(QString("PlotWidget ") + QString::number(widget_uid++));
 
-    connect( plot, SIGNAL(rectChanged(PlotWidget*,QRectF)), this, SLOT(on_singlePlotScaleChanged(PlotWidget*,QRectF)));
+    connect( plot, SIGNAL(rectChanged(PlotWidget*,QRectF)),
+             this, SLOT(on_singlePlotScaleChanged(PlotWidget*,QRectF)));
 
     plot->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -387,7 +388,9 @@ void PlotMatrix::on_singlePlotScaleChanged(PlotWidget *modified_plot, QRectF new
         for ( unsigned i = 0; i< plotCount(); i++ )
         {
             PlotWidget *plot = plotAt(i);
-            if( plot->isEmpty() == false && modified_plot != plot)
+            if( plot->isEmpty() == false &&
+                    modified_plot != plot &&
+                    plot->isXYPlot() == false)
             {
                 QRectF bound_act = plot->currentBoundingRect();
                 bound_act.setLeft( new_range.left() );

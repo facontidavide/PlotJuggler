@@ -179,9 +179,12 @@ void MainWindow::getMaximumRangeX(double* minX, double* maxX)
 
     forEachWidget( [&](PlotWidget* plot)
     {
-        auto rangeX = plot->maximumRangeX();
-        if( *minX > rangeX.min )   *minX = rangeX.min ;
-        if( *maxX < rangeX.max )   *maxX = rangeX.max;
+        if( plot->isXYPlot() == false)
+        {
+            auto rangeX = plot->maximumRangeX();
+            if( *minX > rangeX.min )   *minX = rangeX.min ;
+            if( *maxX < rangeX.max )   *maxX = rangeX.max;
+        }
     }
     );
 }
@@ -220,10 +223,10 @@ void MainWindow::updateLeftTableValues()
                     }
                 }
                 else{
-                   if( data->size() > 0) {
-                       valid = true;
-                       num = (data->at( data->size()-1 )).y;
-                   }
+                    if( data->size() > 0) {
+                        valid = true;
+                        num = (data->at( data->size()-1 )).y;
+                    }
                 }
                 if( valid)
                 {
@@ -471,8 +474,9 @@ void MainWindow::buildData()
     words_list << "siam" << "tre" << "piccoli" << "porcellin"
                << "mai" << "nessun" << "ci" << "dividera";
 
-    for(auto& word: words_list)
+    for(auto& word: words_list){
         _curvelist_widget->addItem( new QTableWidgetItem(word) );
+    }
 
     foreach( const QString& name, words_list)
     {
@@ -481,8 +485,7 @@ void MainWindow::buildData()
         double C =  3* ((double)qrand()/(double)RAND_MAX)  ;
         double D =  20* ((double)qrand()/(double)RAND_MAX)  ;
 
-        PlotDataPtr plot ( new PlotData(  ) );
-        plot->setName(  name.toStdString() );
+        PlotDataPtr plot ( new PlotData( name.toStdString().c_str() ) );
 
         double t = 0;
         for (unsigned indx=0; indx<SIZE; indx++)
@@ -492,6 +495,26 @@ void MainWindow::buildData()
         }
         _mapped_plot_data.numeric.insert( std::make_pair( name.toStdString(), plot) );
     }
+
+    //---------------------------------------
+    PlotDataPtr sin_plot ( new PlotData( "_sin" ) );
+    PlotDataPtr cos_plot ( new PlotData( "_cos" ) );
+
+    double t = 0;
+    for (unsigned indx=0; indx<SIZE; indx++)
+    {
+        t += 0.001;
+        sin_plot->pushBack( PlotData::Point( t,  1.0*sin(t*0.4) ) ) ;
+        cos_plot->pushBack( PlotData::Point( t,  2.0*cos(t*0.4) ) ) ;
+    }
+
+    _mapped_plot_data.numeric.insert( std::make_pair( sin_plot->name(), sin_plot) );
+    _mapped_plot_data.numeric.insert( std::make_pair( cos_plot->name(), cos_plot) );
+
+    _curvelist_widget->addItem( new QTableWidgetItem(sin_plot->name().c_str()) );
+    _curvelist_widget->addItem( new QTableWidgetItem(cos_plot->name().c_str()) );
+    //--------------------------------------
+
     ui->horizontalSlider->setRange(0, SIZE  );
 
     _curvelist_widget->updateFilter();
@@ -529,13 +552,13 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
 
     connect( this, SIGNAL(requestRemoveCurveByName(const QString&)), plot, SLOT(removeCurve(const QString&))) ;
 
-    connect( this, SIGNAL(trackerTimeUpdated(QPointF)), plot->tracker(), SLOT(setPosition(QPointF)));
+    connect( this, SIGNAL(trackerTimeUpdated(QPointF)), plot, SLOT(setTrackerPosition(QPointF)));
     connect( this, SIGNAL(trackerTimeUpdated(QPointF)), plot, SLOT( replot() ));
 
-    connect( this, SIGNAL(activateTracker(bool)),  plot->tracker(), SLOT(setEnabled(bool)) );
+    connect( this, SIGNAL(activateTracker(bool)),  plot, SLOT(activateTracker(bool)) );
     connect( this, SIGNAL(activateTracker(bool)),  plot, SLOT( replot() ));
 
-    plot->tracker()->setEnabled(  ui->pushButtonActivateTracker->isChecked() );
+    plot->activateTracker( ui->pushButtonActivateTracker->isChecked() );
 }
 
 void MainWindow::onPlotMatrixAdded(PlotMatrix* matrix)

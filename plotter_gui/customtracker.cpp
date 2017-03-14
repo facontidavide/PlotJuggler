@@ -167,7 +167,6 @@ QLineF CurveTracker::curveLineAt(
             line.setP2( curve->sample( index ) );
         }
     }
-
     return line;
 }
 

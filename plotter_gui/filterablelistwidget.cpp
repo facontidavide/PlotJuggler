@@ -9,6 +9,7 @@
 #include <QHeaderView>
 #include <QFontDatabase>
 #include <QMessageBox>
+#include <QApplication>
 
 FilterableListWidget::FilterableListWidget(QWidget *parent) :
     QWidget(parent),
@@ -17,9 +18,9 @@ FilterableListWidget::FilterableListWidget(QWidget *parent) :
     ui->setupUi(this);
     ui->tableWidget->viewport()->installEventFilter( this );
 
-    table()->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-    table()->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    table()->horizontalHeader()->resizeSection(1, 120);
+   table()->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+   table()->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+   table()->horizontalHeader()->resizeSection(1, 120);
 
     for( int i=0; i< ui->gridLayoutSettings->count(); i++)
     {
@@ -33,10 +34,6 @@ FilterableListWidget::FilterableListWidget(QWidget *parent) :
             }
         }
     }
-
-//    this->setContextMenuPolicy(Qt::CustomContextMenu);
-//    connect(this, SIGNAL(customContextMenuRequested(const QPoint &)),
-//            this, SLOT(on_ShowContextMenu(const QPoint &)));
 }
 
 FilterableListWidget::~FilterableListWidget()
@@ -108,19 +105,18 @@ void FilterableListWidget::keyPressEvent(QKeyEvent *event)
 
 bool FilterableListWidget::eventFilter(QObject *object, QEvent *event)
 {
-    // qDebug() <<event->type();
     if(event->type() == QEvent::MouseButtonPress)
     {
         QMouseEvent *mouse_event = static_cast<QMouseEvent*>(event);
         if(mouse_event->button() == Qt::LeftButton )
         {
-            if(mouse_event->modifiers() == Qt::ControlModifier)
-            {
-                //TODO
-            }
-            else{
-                _drag_start_pos = mouse_event->pos();
-            }
+            _newX_modifier = false;
+            _drag_start_pos = mouse_event->pos();
+        }
+        else if(mouse_event->button() == Qt::RightButton )
+        {
+            _newX_modifier = true;
+            _drag_start_pos = mouse_event->pos();
         }
     }
     else if(event->type() == QEvent::MouseMove)
@@ -128,20 +124,35 @@ bool FilterableListWidget::eventFilter(QObject *object, QEvent *event)
         QMouseEvent *mouse_event = static_cast<QMouseEvent*>(event);
         double distance_from_click = (mouse_event->pos() - _drag_start_pos).manhattanLength();
 
-        if ((mouse_event->buttons() == Qt::LeftButton) &&
-                distance_from_click >= QApplication::startDragDistance())
+        if ((mouse_event->buttons() == Qt::LeftButton || mouse_event->buttons() == Qt::RightButton) &&
+             distance_from_click >= QApplication::startDragDistance())
         {
             QDrag *drag = new QDrag(this);
             QMimeData *mimeData = new QMimeData;
-            const QString mimeType("curveslist/copy");
+
             QByteArray mdata;
             QDataStream stream(&mdata, QIODevice::WriteOnly);
 
             for(QTableWidgetItem* item: table()->selectedItems()) {
                 stream << item->text();
             }
+            if( _newX_modifier )
+            {
+                if( table()->selectedItems().size() == 1)
+                {
+                    mimeData->setData("curveslist/new_X_axis", mdata);
+                    QPixmap icon(":/icons/resources/resize_vertical.png");
+                    drag->setDragCursor(icon, Qt::MoveAction);
+                }
+                else{
+                    //abort
+                    QWidget::eventFilter(object,event);
+                }
+            }
+            else{
+                mimeData->setData("curveslist/add_curve", mdata);
+            }
 
-            mimeData->setData(mimeType, mdata);
             drag->setMimeData(mimeData);
             drag->exec(Qt::CopyAction | Qt::MoveAction);
         }
@@ -248,11 +259,6 @@ void FilterableListWidget::on_checkBoxHideSecondColumn_toggled(bool checked)
         table()->showColumn(1);
         emit hiddenItemsChanged();
     }
-}
-
-void FilterableListWidget::on_ShowContextMenu(const QPoint &pos)
-{
-
 }
 
 void FilterableListWidget::removeSelectedCurves()

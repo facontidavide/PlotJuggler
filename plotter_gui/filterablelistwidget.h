@@ -40,7 +40,6 @@ public:
 
 private slots:
 
-
     void on_radioContains_toggled(bool checked);
 
     void on_radioRegExp_toggled(bool checked);
@@ -53,8 +52,6 @@ private slots:
 
     void on_checkBoxHideSecondColumn_toggled(bool checked);
 
-    void on_ShowContextMenu(const QPoint &pos);
-
     void removeSelectedCurves();
 
 private:
@@ -62,6 +59,7 @@ private:
     Ui::FilterableListWidget *ui;
 
     QPoint _drag_start_pos;
+    bool _newX_modifier;
 
     bool eventFilter(QObject *object, QEvent *event);
 

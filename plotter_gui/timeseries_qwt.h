@@ -3,17 +3,18 @@
 
 #include <QColor>
 #include <qwt_series_data.h>
+#include <qwt_plot_marker.h>
 #include "PlotJuggler/plotdata.h"
 
 
 
-class PlotDataQwt: public QwtSeriesData<QPointF>
+class TimeseriesQwt: public QwtSeriesData<QPointF>
 {
 public:
 
-    PlotDataQwt(PlotDataPtr base);
+    TimeseriesQwt(PlotDataPtr base);
 
-    virtual ~PlotDataQwt() {}
+    virtual ~TimeseriesQwt() {}
 
     virtual QPointF sample( size_t i ) const override;
 
@@ -33,22 +34,31 @@ public:
 
     PlotData::RangeValueOpt getRangeY(int first_index, int last_index );
 
+    void setAlternativeAxisX( PlotDataPtr new_x_data);
+
+    nonstd::optional<QPointF> sampleFromTime(double t);
+
     typedef enum{
       noTransform,
       firstDerivative,
-      secondDerivative
+      secondDerivative,
+      XYPlot
     } Transform;
 
-    void setTransform(Transform trans) { _transform = trans; }
+    void setTransform(Transform trans);
+
     Transform transform() const { return _transform; }
 
 private:
     PlotDataPtr _plot_data;
+
     std::vector<QPointF> _cached_transformed_curve;
-    int      _preferedColor;
+
     unsigned _subsample;
+
     Transform _transform;
 
+    PlotDataPtr _alternative_X_axis;
 };
 
 

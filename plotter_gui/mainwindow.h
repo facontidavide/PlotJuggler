@@ -138,19 +138,25 @@ private:
     void loadPlugins(QString subdir_name);
 
     std::map<QString,DataLoader*>      _data_loader;
+
     std::map<QString,StatePublisher*>  _state_publisher;
+
     std::map<QString,DataStreamer*>    _data_streamer;
 
     DataStreamer* _current_streamer;
 
     QDomDocument xmlSaveState() const;
+
     bool xmlLoadState(QDomDocument state_document);
 
     std::deque<QDomDocument> _undo_states;
+
     std::deque<QDomDocument> _redo_states;
 
     QElapsedTimer _undo_timer;
+
     bool _disable_undo_logging;
+
     bool _test_option;
 
     double _tracker_time;
