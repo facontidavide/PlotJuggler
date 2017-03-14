@@ -519,6 +519,7 @@ bool PlotWidget::xmlLoadState(QDomElement &plot_widget, QMessageBox::StandardBut
             }
         }
     }
+
     //-----------------------------------------
     QDomElement transform = plot_widget.firstChildElement( "transform" );
     if( !transform.isNull()  )
@@ -551,9 +552,9 @@ bool PlotWidget::xmlLoadState(QDomElement &plot_widget, QMessageBox::StandardBut
         rect.setTop( rectangle.attribute("top").toDouble());
         rect.setLeft( rectangle.attribute("left").toDouble());
         rect.setRight( rectangle.attribute("right").toDouble());
-
         this->setScale( rect, false);
     }
+
     this->blockSignals(false);
     return true;
 }
@@ -575,11 +576,11 @@ void PlotWidget::setScale(QRectF rect, bool emit_signal)
 {
     this->setAxisScale( yLeft, rect.bottom(), rect.top());
     this->setAxisScale( xBottom, rect.left(), rect.right());
+    this->updateAxes();
 
     if( emit_signal )
     {
-        if( isXYPlot())
-        {
+        if( isXYPlot()) {
             emit undoableChange();
         }
         else{
@@ -948,13 +949,14 @@ void PlotWidget::changeAxisX(QString curve_name)
 {
     qDebug() << "changeAxisX " << curve_name;
     _axisX = _mapped_data->numeric[ curve_name.toStdString() ];
-    _tracker->setEnabled(false);
     _action_phaseXY->trigger();
 }
 
 
 void PlotWidget::on_convertToXY_triggered(bool)
 {
+    _tracker->setEnabled(false);
+
     qDebug() << "on_convertToXY_triggered ";
     _current_transform = TimeseriesQwt::XYPlot;
 
