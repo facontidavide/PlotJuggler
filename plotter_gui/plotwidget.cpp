@@ -76,6 +76,15 @@ PlotWidget::PlotWidget(const PlotDataMap *datamap, QWidget *parent):
 
     this->canvas()->installEventFilter( this );
 
+    // Enable grid
+    QwtPlotGrid *grid = new QwtPlotGrid();
+    grid->setPen(QPen(Qt::gray, 0.0, Qt::DotLine));
+    grid->enableX(true);
+    grid->enableXMin(true);
+    grid->enableY(true);
+    grid->enableYMin(true);
+    grid->attach(this);
+
     //--------------------------
     _grid = new QwtPlotGrid();
     _zoomer = ( new PlotZoomer( this->canvas() ) );
