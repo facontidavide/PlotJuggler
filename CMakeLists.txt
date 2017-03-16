@@ -35,9 +35,9 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(COMPILING_WITH_CATKIN)
-    message("---------------------------------------------------------------------")
-    message("PlotJuggler is being built using CATKIN. ROS plugins will be compiled")
-    message("---------------------------------------------------------------------")
+    message(STATUS "---------------------------------------------------------------------")
+    message(STATUS "PlotJuggler is being built using CATKIN. ROS plugins will be compiled")
+    message(STATUS "---------------------------------------------------------------------")
 
     find_package(catkin REQUIRED COMPONENTS
         rosbag
