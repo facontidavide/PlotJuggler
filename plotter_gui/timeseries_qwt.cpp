@@ -48,7 +48,7 @@ void TimeseriesQwt::updateData()
         if(_transform == noTransform)
         {
             _cached_transformed_curve.resize(_plot_data->size());
-            for (size_t i=1; i< _plot_data->size(); i++ )
+            for (size_t i=0; i< _plot_data->size(); i++ )
             {
                 const auto& p = _plot_data->at( i );
                 _cached_transformed_curve[i] = QPointF(p.x, p.y) ;
