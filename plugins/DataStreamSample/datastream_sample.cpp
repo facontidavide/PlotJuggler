@@ -9,8 +9,6 @@
 #include <thread>
 #include <math.h>
 
-
-
 DataStreamSample::DataStreamSample():
     _simulated_time(0),
     _enabled(false)
@@ -33,7 +31,7 @@ DataStreamSample::DataStreamSample():
         else if (name == "_cos"){
             param.A =  2;
             param.B =  1;
-            param.C =  M_PI/2;
+            param.C =  1.5708;
             param.D =  0;
         }
         else{
