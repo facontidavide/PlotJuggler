@@ -70,6 +70,7 @@ void DataStreamSample::loop()
         size_t index=0;
         _simulated_time += 0.01;
 
+        PlotData::asyncPushMutex().lock();
         for (auto& it: _plot_data.numeric )
         {
             double A =  vect_A[index];
@@ -87,6 +88,7 @@ void DataStreamSample::loop()
                 plot->pushBackAsynchronously( PlotData::Point( t, y ) );
             }
         }
+        PlotData::asyncPushMutex().unlock();
         prev_time += std::chrono::milliseconds(10);
         std::this_thread::sleep_until ( prev_time );
     }

@@ -1328,6 +1328,30 @@ void MainWindow::on_pushButtonStreaming_toggled(bool checked)
 
 void MainWindow::onReplotRequested()
 {
+    bool updated = false;
+
+    _tracker_time = std::numeric_limits<double>::max();
+
+    {
+        PlotData::asyncPushMutex().lock();
+
+        for(auto it : _mapped_plot_data.numeric)
+        {
+            PlotDataPtr data = ( it.second );
+            updated |= data->flushAsyncBuffer();
+        }
+
+        PlotData::asyncPushMutex().unlock();
+    }
+
+    if( updated )
+    {
+        forEachWidget( [](PlotWidget* plot)
+        {
+                plot->updateCurves(true);
+        } );
+    }
+
     _main_tabbed_widget->currentTab()->maximumZoomOut() ;
 
     for(SubWindow* subwin: _floating_window)
@@ -1346,9 +1370,16 @@ void MainWindow::onReplotRequested()
         {
             it.second->flushAsyncBuffer();
         }
-        _tracker_time = std::numeric_limits<double>::max();
+
         updateLeftTableValues();
         updateTimeSlider();
+
+        forEachWidget( [&](PlotWidget* plot)
+        {
+            if( plot->isXYPlot()){
+                plot->setTrackerPosition( QPointF( _max_slider_time, 0.0));
+            }
+        } );
     }
 }
 

@@ -67,6 +67,8 @@ signals:
 
 public slots:
 
+    void updateCurves(bool force);
+
     void replot() ;
 
     void detachAllCurves();

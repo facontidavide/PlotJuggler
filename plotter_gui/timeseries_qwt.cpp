@@ -9,77 +9,58 @@ TimeseriesQwt::TimeseriesQwt(PlotDataPtr base):
     _subsample(1),
     _transform( noTransform )
 {
-
+    updateData();
 }
 
 QPointF TimeseriesQwt::sample(size_t i) const
 {
-    if(_transform == noTransform) {
-        const auto& p = _plot_data->at( i );
-        return QPointF( p.x, p.y) ;
-    }
-    else {
-        return _cached_transformed_curve[i];
-    }
+    return _cached_transformed_curve[i];
 }
 
 QRectF TimeseriesQwt::boundingRect() const
 {
-    qDebug() << "boundingRect not implemented";
-    return QRectF(0,0,1,1);
+    return _bounding_box;
 }
 
 
 size_t TimeseriesQwt::size() const
 {
-    if(_transform == noTransform) {
-        return _plot_data->size();
-    }
-    else {
-        return _cached_transformed_curve.size();
-    }
+    return _cached_transformed_curve.size();
 }
 
-
-QRectF TimeseriesQwt::maximumBoundingRect(double min_X, double max_X)
-{
-    int x1 = _plot_data->getIndexFromX( min_X );
-    int x2 = _plot_data->getIndexFromX( max_X );
-
-    if( x1 <0 || x2 <0){
-        return QRectF();
-    }
-
-    auto range_X = getRangeX();
-
-    if( !range_X ){
-        return QRectF();
-    }
-
-    auto range_Y = getRangeY( x1, x2  );
-    if( !range_Y){
-        return QRectF();
-    }
-
-    QRectF rect ( range_X->min,
-                  range_Y->min,
-                  range_X->max - range_X->min,
-                  range_Y->max - range_Y->min );
-    return rect;
-}
 
 void TimeseriesQwt::setSubsampleFactor()
 {
     //  _subsample = (_plot_data->size() / 2000) + 1;
 }
 
-void TimeseriesQwt::updateData(bool force_transform)
+void TimeseriesQwt::updateData()
 {
-    bool updated = _plot_data->flushAsyncBuffer();
+    if(_plot_data->size() == 0) return;
 
-    if(updated || force_transform)
+    _bounding_box.setBottom( std::numeric_limits<double>::max() );
+    _bounding_box.setTop( std::numeric_limits<double>::min() );
+    _bounding_box.setLeft( std::numeric_limits<double>::max() );
+    _bounding_box.setRight( std::numeric_limits<double>::min() );
+
+    //if(updated || force_transform)
     {
-        if(_transform == firstDerivative)
+        if(_transform == noTransform)
+        {
+            _cached_transformed_curve.resize(_plot_data->size());
+            for (size_t i=1; i< _plot_data->size(); i++ )
+            {
+                const auto& p = _plot_data->at( i );
+                _cached_transformed_curve[i] = QPointF(p.x, p.y) ;
+
+                if(_bounding_box.bottom() > p.y) _bounding_box.setBottom(p.y);
+                else if(_bounding_box.top()    < p.y) _bounding_box.setTop(p.y);
+
+                if(_bounding_box.left()   > p.x) _bounding_box.setLeft(p.x);
+                else if(_bounding_box.right()  < p.x) _bounding_box.setRight(p.x);
+            }
+        }
+        else if(_transform == firstDerivative)
         {
             if( _plot_data->size() < 1){
                 _cached_transformed_curve.clear();
@@ -94,7 +75,14 @@ void TimeseriesQwt::updateData(bool force_transform)
                 const auto& p1 = _plot_data->at( i+1 );
                 const auto delta = p1.x - p0.x;
                 const auto vel = (p1.y - p0.y) /delta;
-                _cached_transformed_curve[i] = QPointF( (p1.x + p0.x)*0.5, vel) ;
+                const QPointF p( (p1.x + p0.x)*0.5, vel);
+                _cached_transformed_curve[i] = p;
+
+                if(_bounding_box.bottom() > p.y()) _bounding_box.setBottom(p.y());
+                else if(_bounding_box.top()    < p.y()) _bounding_box.setTop(p.y());
+
+                if(_bounding_box.left()   > p.x()) _bounding_box.setLeft(p.x());
+                else if(_bounding_box.right()  < p.x()) _bounding_box.setRight(p.x());
             }
         }
         else if(_transform == secondDerivative)
@@ -113,7 +101,14 @@ void TimeseriesQwt::updateData(bool force_transform)
                 const auto& p2 = _plot_data->at( i+2 );
                 const auto delta = (p2.x - p0.x) *0.5;
                 const auto acc = ( p2.y - 2.0* p1.y + p0.y)/(delta*delta);
-                _cached_transformed_curve[i] =  QPointF( (p2.x + p0.x)*0.5, acc ) ;
+                const QPointF p( (p2.x + p0.x)*0.5, acc );
+                _cached_transformed_curve[i] = p;
+
+                if(_bounding_box.bottom() > p.y()) _bounding_box.setBottom(p.y());
+                else if(_bounding_box.top()    < p.y()) _bounding_box.setTop(p.y());
+
+                if(_bounding_box.left()   > p.x()) _bounding_box.setLeft(p.x());
+                else if(_bounding_box.right()  < p.x()) _bounding_box.setRight(p.x());
             }
         }
         else if( _transform == XYPlot && _alternative_X_axis)
@@ -137,13 +132,20 @@ void TimeseriesQwt::updateData(bool force_transform)
                 QMessageBox::warning(0, QString("Warning"),
                                      QString("The creation of the XY plot failed because at least two "
                                              "timeseries don't share the same time axis.") );
+                throw std::runtime_error("back to no Transform");
             }
             else{
                 _cached_transformed_curve.resize(N);
                 for (size_t i=0; i<N; i++ )
                 {
-                    _cached_transformed_curve[i] = QPointF(_alternative_X_axis->at(i).y,
-                                                           _plot_data->at(i).y );
+                    const QPointF p(_alternative_X_axis->at(i).y, _plot_data->at(i).y );
+                    _cached_transformed_curve[i] = p;
+
+                    if(_bounding_box.bottom() > p.y()) _bounding_box.setBottom(p.y());
+                    else if(_bounding_box.top()    < p.y()) _bounding_box.setTop(p.y());
+
+                    if(_bounding_box.left()   > p.x()) _bounding_box.setLeft(p.x());
+                    else if(_bounding_box.right()  < p.x()) _bounding_box.setRight(p.x());
                 }
             }
         }
@@ -156,23 +158,7 @@ PlotData::RangeTimeOpt TimeseriesQwt::getRangeX()
     if( this->size() < 2 )
         return  PlotData::RangeTimeOpt() ;
     else{
-        if( _transform == XYPlot && _alternative_X_axis )
-        {
-            const double first_Y = _alternative_X_axis->at(0).y;
-            double y_min = first_Y;
-            double y_max = first_Y;
-
-            for (int i = 1; i < _alternative_X_axis->size(); i++)
-            {
-                const double Y = _alternative_X_axis->at(i).y;
-                if( Y < y_min )      y_min = Y;
-                else if( Y > y_max ) y_max = Y;
-            }
-            return  PlotData::RangeTimeOpt( { y_min, y_max } );
-        }
-        else{
-            return  PlotData::RangeTimeOpt( { sample(0).x(), sample( this->size() -1).x() } );
-        }
+        return PlotData::RangeTimeOpt( { _bounding_box.left(), _bounding_box.right() } );
     }
 }
 
@@ -183,11 +169,11 @@ PlotData::RangeValueOpt TimeseriesQwt::getRangeY(int first_index, int last_index
     {
         return PlotData::RangeValueOpt();
     }
-    //std::lock_guard<std::mutex> lock(_mutex);
 
-    if( _transform == XYPlot && _alternative_X_axis ){
-        first_index = 0;
-        last_index = size() -1;
+    if( (_transform == XYPlot && _alternative_X_axis) ||
+        ( first_index==0 && last_index == size() -1) )
+    {
+        return PlotData::RangeValueOpt( { _bounding_box.bottom(), _bounding_box.top() } );
     }
 
     const double first_Y = sample(first_index).y();
@@ -237,6 +223,6 @@ void TimeseriesQwt::setTransform(TimeseriesQwt::Transform trans)
     if(trans != _transform)
     {
         _transform = trans;
-        updateData(true);
+        updateData();
     }
 }

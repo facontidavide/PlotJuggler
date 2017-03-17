@@ -22,13 +22,11 @@ public:
 
     virtual size_t size() const override;
 
-    QRectF maximumBoundingRect(double min_X, double max_X);
-
     PlotDataPtr data() { return _plot_data; }
 
     void setSubsampleFactor();
 
-    void updateData(bool force_transform);
+    void updateData();
 
     PlotData::RangeTimeOpt getRangeX();
 
@@ -59,6 +57,8 @@ private:
     Transform _transform;
 
     PlotDataPtr _alternative_X_axis;
+
+    QRectF _bounding_box;
 };
 
 

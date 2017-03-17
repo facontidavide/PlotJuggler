@@ -686,7 +686,6 @@ PlotData::RangeTime PlotWidget::maximumRangeX() const
     for(auto it = _curve_list.begin(); it != _curve_list.end(); ++it)
     {
         TimeseriesQwt* series = static_cast<TimeseriesQwt*>( it->second->data() );
-        series->updateData(false);
         auto range_X = series->getRangeX();
 
         if( !range_X ) continue;
@@ -721,7 +720,6 @@ PlotData::RangeValue  PlotWidget::maximumRangeY( PlotData::RangeTime range_X) co
     for(auto it = _curve_list.begin(); it != _curve_list.end(); ++it)
     {
         TimeseriesQwt* series = static_cast<TimeseriesQwt*>( it->second->data() );
-        series->updateData(false);
 
         const auto max_range_X = series->getRangeX();
         if( !max_range_X ) continue;
@@ -763,18 +761,20 @@ PlotData::RangeValue  PlotWidget::maximumRangeY( PlotData::RangeTime range_X) co
     return PlotData::RangeValue({ bottom,  top});
 }
 
+void PlotWidget::updateCurves(bool force)
+{
+    for(auto it = _curve_list.begin(); it != _curve_list.end(); ++it)
+    {
+        TimeseriesQwt* series = static_cast<TimeseriesQwt*>( it->second->data() );
+        series->updateData();
+    }
+}
 
 
 void PlotWidget::replot()
 {
     if( _zoomer )
         _zoomer->setZoomBase( false );
-
-    for(auto it = _curve_list.begin(); it != _curve_list.end(); ++it)
-    {
-        TimeseriesQwt* series = static_cast<TimeseriesQwt*>( it->second->data() );
-        series->updateData(false);
-    }
 
     QwtPlot::replot();
 }
