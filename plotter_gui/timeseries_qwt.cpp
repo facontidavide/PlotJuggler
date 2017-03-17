@@ -38,10 +38,10 @@ void TimeseriesQwt::updateData()
 {
     if(_plot_data->size() == 0) return;
 
-    _bounding_box.setBottom( std::numeric_limits<double>::max() );
-    _bounding_box.setTop( std::numeric_limits<double>::min() );
-    _bounding_box.setLeft( std::numeric_limits<double>::max() );
-    _bounding_box.setRight( std::numeric_limits<double>::min() );
+    double min_y =( std::numeric_limits<double>::max() );
+    double max_y =( std::numeric_limits<double>::min() );
+    double min_x =( std::numeric_limits<double>::max() );
+    double max_x =( std::numeric_limits<double>::min() );
 
     //if(updated || force_transform)
     {
@@ -53,11 +53,11 @@ void TimeseriesQwt::updateData()
                 const auto& p = _plot_data->at( i );
                 _cached_transformed_curve[i] = QPointF(p.x, p.y) ;
 
-                if(_bounding_box.bottom() > p.y) _bounding_box.setBottom(p.y);
-                else if(_bounding_box.top()    < p.y) _bounding_box.setTop(p.y);
+                if(min_y > p.y) min_y =(p.y);
+                else if(max_y    < p.y) max_y =(p.y);
 
-                if(_bounding_box.left()   > p.x) _bounding_box.setLeft(p.x);
-                else if(_bounding_box.right()  < p.x) _bounding_box.setRight(p.x);
+                if(min_x   > p.x) min_x =(p.x);
+                else if(max_x  < p.x) max_x =(p.x);
             }
         }
         else if(_transform == firstDerivative)
@@ -78,11 +78,11 @@ void TimeseriesQwt::updateData()
                 const QPointF p( (p1.x + p0.x)*0.5, vel);
                 _cached_transformed_curve[i] = p;
 
-                if(_bounding_box.bottom() > p.y()) _bounding_box.setBottom(p.y());
-                else if(_bounding_box.top()    < p.y()) _bounding_box.setTop(p.y());
+                if(min_y > p.y()) min_y =(p.y());
+                else if(max_y    < p.y()) max_y =(p.y());
 
-                if(_bounding_box.left()   > p.x()) _bounding_box.setLeft(p.x());
-                else if(_bounding_box.right()  < p.x()) _bounding_box.setRight(p.x());
+                if(min_x   > p.x()) min_x =(p.x());
+                else if(max_x  < p.x()) max_x =(p.x());
             }
         }
         else if(_transform == secondDerivative)
@@ -104,11 +104,11 @@ void TimeseriesQwt::updateData()
                 const QPointF p( (p2.x + p0.x)*0.5, acc );
                 _cached_transformed_curve[i] = p;
 
-                if(_bounding_box.bottom() > p.y()) _bounding_box.setBottom(p.y());
-                else if(_bounding_box.top()    < p.y()) _bounding_box.setTop(p.y());
+                if(min_y > p.y()) min_y =(p.y());
+                else if(max_y    < p.y()) max_y =(p.y());
 
-                if(_bounding_box.left()   > p.x()) _bounding_box.setLeft(p.x());
-                else if(_bounding_box.right()  < p.x()) _bounding_box.setRight(p.x());
+                if(min_x   > p.x()) min_x =(p.x());
+                else if(max_x  < p.x()) max_x =(p.x());
             }
         }
         else if( _transform == XYPlot && _alternative_X_axis)
@@ -141,15 +141,19 @@ void TimeseriesQwt::updateData()
                     const QPointF p(_alternative_X_axis->at(i).y, _plot_data->at(i).y );
                     _cached_transformed_curve[i] = p;
 
-                    if(_bounding_box.bottom() > p.y()) _bounding_box.setBottom(p.y());
-                    else if(_bounding_box.top()    < p.y()) _bounding_box.setTop(p.y());
+                    if(min_y > p.y()) min_y =(p.y());
+                    else if(max_y    < p.y()) max_y =(p.y());
 
-                    if(_bounding_box.left()   > p.x()) _bounding_box.setLeft(p.x());
-                    else if(_bounding_box.right()  < p.x()) _bounding_box.setRight(p.x());
+                    if(min_x   > p.x()) min_x =(p.x());
+                    else if(max_x  < p.x()) max_x =(p.x());
                 }
             }
         }
     }
+    _bounding_box.setBottom(min_y);
+    _bounding_box.setTop(max_y);
+    _bounding_box.setLeft(min_x);
+    _bounding_box.setRight(max_x);
 }
 
 PlotData::RangeTimeOpt TimeseriesQwt::getRangeX()

@@ -116,23 +116,16 @@ void DataStreamROS::topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg
         msg_time -= _initial_time;
     }
 
+
+    PlotData::asyncPushMutex().lock();
     for(auto& it: flat_container.renamed_value )
     {
         std::string field_name ( it.first.data(), it.first.size());
-        auto value = it.second;
-
-        auto plot = _plot_data.numeric.find( field_name );
-        if( plot == _plot_data.numeric.end() )
-        {
-            PlotDataPtr temp(new PlotData());
-            temp->setMaximumRangeX( 4.0 );
-            auto res = _plot_data.numeric.insert( std::make_pair(field_name, temp ) );
-            plot = res.first;
-        }
-
-        // IMPORTANT: don't use pushBack(), it may cause a segfault
-        plot->second->pushBackAsynchronously( PlotData::Point(msg_time, value));
+        double value = it.second;
+        auto plot = _plot_data.numeric[field_name];
+        plot->pushBackAsynchronously( PlotData::Point(msg_time, value));
     }
+    PlotData::asyncPushMutex().unlock();
 }
 
 void DataStreamROS::extractInitialSamples()

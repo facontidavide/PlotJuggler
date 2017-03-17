@@ -33,7 +33,7 @@ DataStreamSample::DataStreamSample():
         else if (name == "_cos"){
             param.A =  2;
             param.B =  1;
-            param.C =  0;
+            param.C =  M_PI/2;
             param.D =  0;
         }
         else{
