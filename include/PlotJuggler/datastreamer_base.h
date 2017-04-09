@@ -28,9 +28,9 @@ public:
 
     virtual bool isDebugPlugin() { return false; }
 
-    virtual QObject* getObject() = 0;
+    virtual QObject* getObject() { return nullptr;  }
 
-    virtual void setMenu(QMenu* menu) { _menu = menu; }
+    virtual void setParentMenu(QMenu* menu) { _menu = menu; }
 
 protected:
     QMenu* _menu;

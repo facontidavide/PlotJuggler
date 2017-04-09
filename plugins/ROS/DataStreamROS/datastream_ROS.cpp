@@ -320,7 +320,7 @@ DataStreamROS::~DataStreamROS()
     shutdown();
 }
 
-void DataStreamROS::setMenu(QMenu *menu)
+void DataStreamROS::setParentMenu(QMenu *menu)
 {
     _menu = menu;
 

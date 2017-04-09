@@ -35,7 +35,7 @@ public:
 
     virtual QObject* getObject() override { return this; }
 
-    virtual void setMenu(QMenu* menu) override;
+    virtual void setParentMenu(QMenu* menu) override;
 
 private:
 
