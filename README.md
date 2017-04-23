@@ -25,11 +25,11 @@ The only binary dependency that you need installed in your system is Qt5. On Ubu
 
     sudo apt-get -y install qtbase5-dev libqt5svg5-dev
     
-On Fedora
+On Fedora:
 
     sudo dnf install qt5-qtbase-devel qt5-qtsvg-devel
     
-Then compile using cmake (qmake is NOT supported).
+Then compile using cmake (qmake is NOT supported):
 
      mkdir build; cd build
      cmake ..
