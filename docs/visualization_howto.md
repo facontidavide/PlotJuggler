@@ -66,7 +66,7 @@ Zoom Into a user defined rectangle pressing the __Left Mouse__ button on the plo
 
 ## Zoom In/Out
 Zoom In and Out using the __Middle Wheel__ of the Mouse. Alternatively, you can use the buttons
-__ Plus(+)__ and __Minus(-)__.
+__Plus(+)__ and __Minus(-)__.
 
 ![zoom with wheel](images/pj-wheel-zoom.gif)
 
