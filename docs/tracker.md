@@ -8,7 +8,7 @@ The position of the TimeTracker (A) can be changed either pressing
 __SHIFT + LEFT MOUSE__ on a certain location of a PlotWidget, or moving 
 the time slider at the bottom of the screen (B).
 
-![plotjuggler terms](images/pj-tracker.png)
+![plotjuggler terms](images/PlotJuggler_tracker.png)
 
 The exact time will be diplayed in the box at the left side of the time slider (C).
 
