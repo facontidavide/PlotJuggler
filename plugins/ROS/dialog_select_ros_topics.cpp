@@ -152,7 +152,7 @@ void DialogSelectRosTopics::closeEvent(QCloseEvent *event)
 
 nonstd::optional<double> FlatContainedContainHeaderStamp(const RosIntrospection::ROSTypeFlat &flat_container)
 {
-    const char* ID = ".header.stamp";
+    const char* ID = "/header/stamp";
     const int renamed_count = flat_container.renamed_value.size();
     const int OFF = strlen(ID);
 
