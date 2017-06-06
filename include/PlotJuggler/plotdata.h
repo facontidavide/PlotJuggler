@@ -12,6 +12,7 @@
 #include <QDebug>
 #include <QColor>
 #include <type_traits>
+#include <PlotJuggler/alphanum.hpp>
 
 template <typename Time, typename Value> class PlotDataGeneric
 {
@@ -101,8 +102,8 @@ typedef std::shared_ptr<PlotData>     PlotDataPtr;
 typedef std::shared_ptr<PlotDataAny>  PlotDataAnyPtr;
 
 typedef struct{
-  std::map<std::string, PlotDataPtr>     numeric;
-  std::map<std::string, PlotDataAnyPtr>  user_defined;
+  std::map<std::string, PlotDataPtr, doj::alphanum_less<std::string>>     numeric;
+  std::map<std::string, PlotDataAnyPtr, doj::alphanum_less<std::string>>  user_defined;
 } PlotDataMap;
 
 
