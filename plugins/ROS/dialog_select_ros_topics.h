@@ -56,6 +56,6 @@ private:
 
 };
 
-nonstd::optional<double> FlatContainedContainHeaderStamp(const RosIntrospection::ROSTypeFlat& flat_container);
+nonstd::optional<double> FlatContainedContainHeaderStamp(const RosIntrospection::RenamedValues& flat_container);
 
 #endif // DIALOG_SELECT_ROS_TOPICS_H

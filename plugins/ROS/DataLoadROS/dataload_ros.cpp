@@ -159,13 +159,15 @@ PlotDataMap DataLoadROS::readDataFromFile(const QString &file_name,
         }
         buildRosFlatType( *typelist, rostype[datatype], topicname_SS, buffer.data(), &flat_container);
 
+        static RenamedValues renamed_value;
+ 
         auto rules_it = _rules.find(datatype);
         if(rules_it != _rules.end())
         {
-            applyNameTransform( rules_it->second, &flat_container );
+            applyNameTransform( rules_it->second, flat_container, renamed_value );
         }
         else{
-            applyNameTransform( std::vector<SubstitutionRule>(), &flat_container );
+            applyNameTransform( std::vector<SubstitutionRule>(), flat_container, renamed_value );
         }
 
         // apply time offsets
@@ -176,7 +178,7 @@ PlotDataMap DataLoadROS::readDataFromFile(const QString &file_name,
             msg_time = msg_instance.getTime().toSec();
         }
         else{
-            auto offset = FlatContainedContainHeaderStamp(flat_container);
+            auto offset = FlatContainedContainHeaderStamp(renamed_value);
             if(offset){
                 msg_time = offset.value();
             }
@@ -185,10 +187,9 @@ PlotDataMap DataLoadROS::readDataFromFile(const QString &file_name,
             }
         }
 
-        for(const auto& it: flat_container.renamed_value )
+        for(const auto& it: renamed_value )
         {
-            static std::string field_name; //allocate memory only once
-            field_name.assign( it.first.data(), it.first.size() );
+            const std::string& field_name = it.first;
 
             auto plot_pair = plot_map.numeric.find( field_name );
             if( plot_pair == plot_map.numeric.end() )
@@ -201,7 +202,7 @@ PlotDataMap DataLoadROS::readDataFromFile(const QString &file_name,
             PlotDataPtr& plot_data = plot_pair->second;
             const RosIntrospection::VarNumber& var_value = it.second;
             plot_data->pushBack( PlotData::Point(msg_time, var_value.convertToDouble() ));
-        } //end of for flat_container.renamed_value
+        } //end of for renamed_value
 
         //-----------------------------------------
         // adding raw serialized topic for future uses.
