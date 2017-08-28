@@ -7,7 +7,7 @@
 QString getFunnySubtitle(){
 
     qsrand(time(NULL));
-    int n = qrand() % 22;
+    int n = qrand() % 18;
     switch(n)
     {
     case 0: return "The best excuse to buy a second monitor";
