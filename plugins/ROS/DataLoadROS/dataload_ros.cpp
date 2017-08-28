@@ -199,7 +199,8 @@ PlotDataMap DataLoadROS::readDataFromFile(const QString &file_name,
             }
 
             PlotDataPtr& plot_data = plot_pair->second;
-            plot_data->pushBack( PlotData::Point(msg_time, (double)it.second));
+            const RosIntrospection::VarNumber& var_value = it.second;
+            plot_data->pushBack( PlotData::Point(msg_time, var_value.convertToDouble() ));
         } //end of for flat_container.renamed_value
 
         //-----------------------------------------

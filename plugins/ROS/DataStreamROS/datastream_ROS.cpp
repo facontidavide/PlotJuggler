@@ -112,7 +112,8 @@ void DataStreamROS::topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg
     for(auto& it: flat_container.renamed_value )
     {
         const std::string& field_name ( it.first.data() );
-        double value(it.second);
+        const RosIntrospection::VarNumber& var_value = it.second;
+        const double value = var_value.convertToDouble();
         auto plot_it = _plot_data.numeric.find(field_name);
         if( plot_it == _plot_data.numeric.end())
         {
