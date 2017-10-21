@@ -12,7 +12,7 @@ SET( SRC
     )
 
 add_library(DataLoadCSV SHARED ${SRC} ${UI_SRC}  )
-target_link_libraries(DataLoadCSV  ${Qt5Widgets_LIBRARIES} )
+target_link_libraries(DataLoadCSV  ${Qt5Widgets_LIBRARIES} ${Qt5Xml_LIBRARIES})
 
 
 if(COMPILING_WITH_CATKIN)
