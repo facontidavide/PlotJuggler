@@ -169,7 +169,7 @@ PlotDataMap DataLoadCSV::readDataFromFile(const QString &file_name, bool use_pre
             {
                 if( _default_time_axis == qname )
                 {
-                    time_index = valid_field_names.size() ;
+                    time_index = i;
                 }
             }
         }
