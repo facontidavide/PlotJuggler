@@ -107,6 +107,7 @@ add_subdirectory( plotter_gui )
 
 add_subdirectory( plugins/DataLoadCSV )
 add_subdirectory( plugins/DataStreamSample )
+add_subdirectory( plugins/DataStreamServer )
 
 if(COMPILING_WITH_CATKIN)
     add_subdirectory( plugins/ROS )
