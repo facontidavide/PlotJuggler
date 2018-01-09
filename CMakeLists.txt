@@ -107,7 +107,14 @@ add_subdirectory( plotter_gui )
 
 add_subdirectory( plugins/DataLoadCSV )
 add_subdirectory( plugins/DataStreamSample )
-add_subdirectory( plugins/DataStreamServer )
+
+if (Qt5Widgets_VERSION VERSION_LESS 5.3.0)
+    message(STATUS "Minimum Qt5 version for DataStreamServer plugin is 5.3 : skipping")
+else()    
+	message(STATUS "Minimum Qt5 version for DataStreamServer plugin is 5.3!")
+	add_subdirectory( plugins/DataStreamServer )  
+endif()
+
 
 if(COMPILING_WITH_CATKIN)
     add_subdirectory( plugins/ROS )
