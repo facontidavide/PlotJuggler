@@ -19,6 +19,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 DataStreamServer::DataStreamServer() :
 	_enabled(false),
+	_running(false),
 	_server("plotJuggler", QWebSocketServer::NonSecureMode)	
 {
 
@@ -28,40 +29,49 @@ DataStreamServer::DataStreamServer() :
 DataStreamServer::~DataStreamServer()
 {
 	shutdown();
-	_server.close();
 }
 
 bool DataStreamServer::start()
-{	
-	bool ok;
-	_port = QInputDialog::getInt(nullptr, tr(""),
-		tr("On whish port should the server listen to:"), 6666, 1111, 65535, 1, &ok);
-	if (ok && _server.listen(QHostAddress::Any, _port))
-	{
-		qDebug() << "Websocket listening on port" << _port;
-		connect(&_server, &QWebSocketServer::newConnection,
-			this, &DataStreamServer::onNewConnection);
-		_running = true;
+{		
+	if (!_running) {
+		bool ok;
+		_port = QInputDialog::getInt(nullptr, tr(""),
+			tr("On whish port should the server listen to:"), 6666, 1111, 65535, 1, &ok);
+		if (ok && _server.listen(QHostAddress::Any, _port))
+		{
+			qDebug() << "Websocket listening on port" << _port;
+			connect(&_server, &QWebSocketServer::newConnection,
+				this, &DataStreamServer::onNewConnection);
+			_running = true;
+		}
+		else {
+			qDebug() << "Couldn't open websocket on port " << _port;
+			_running = false;
+		}
 	}
-	else
-		qDebug() << "Couldn't open websocket on port " << _port;
+	else {
+		qDebug() << "Server already running on port " << _port;
+		QMessageBox::information(nullptr,"Info",QString("Server already running on port: %1").arg(_port));		
+	}
 	return _running;
 }
 
 void DataStreamServer::shutdown()
 {
-	socketDisconnected();
-	_server.close();
-	_running = false;
+	if (_running) {
+		socketDisconnected();
+		_server.close();
+		_running = false;
+	}
+	else
+		qDebug() << "Nothing to shutdown";
 }
 
 void DataStreamServer::onNewConnection()
 {
 	qDebug() << "DataStreamServer: onNewConnection";
 	QWebSocket *pSocket = _server.nextPendingConnection();
-
-	connect(pSocket, &QWebSocket::textMessageReceived, this, &DataStreamServer::processMessage);
-	
+	connect(pSocket, &QWebSocket::textMessageReceived, this, &DataStreamServer::processMessage);	
 	connect(pSocket, &QWebSocket::disconnected, this, &DataStreamServer::socketDisconnected);
 
 	_clients << pSocket;
@@ -99,8 +109,10 @@ void DataStreamServer::socketDisconnected()
 {
 	qDebug() << "DataStreamServer: socketDisconnected";
 	QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
-	if (pClient)
-	{
+	if (pClient){
+		disconnect(pClient, &QWebSocket::textMessageReceived, this, &DataStreamServer::processMessage);
+		disconnect(pClient, &QWebSocket::disconnected, this, &DataStreamServer::socketDisconnected);
+
 		_clients.removeAll(pClient);
 		pClient->deleteLater();
 	}

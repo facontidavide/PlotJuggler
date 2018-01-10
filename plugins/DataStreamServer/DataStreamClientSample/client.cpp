@@ -98,11 +98,9 @@ void Client::onConnected()
 void Client::sendMsg(const QString &key){
     using namespace std::chrono;
     static std::chrono::high_resolution_clock::time_point initial_time = high_resolution_clock::now();
-    const double offset = duration_cast< duration<double>>( initial_time.time_since_epoch() ).count() ;
 
     double steps = 1000.0;
-    i_ +=M_PI/steps;
-    
+    i_ +=M_PI/steps;    
 
      double value = qSin(i_);
      if(key=="cos")
