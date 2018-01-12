@@ -5,13 +5,13 @@ add_definitions(${QT_DEFINITIONS})
 add_definitions(-DQT_PLUGIN)
 add_definitions(-DQT_WEBSOCKETS)
 
-find_package(Qt5 REQUIRED COMPONENTS websockets )
+find_package(Qt5 REQUIRED COMPONENTS WebSockets )
 
 #QT5_WRAP_UI ( UI_SRC  ../common/selectlistdialog.ui  )
 
 
 SET( SRC
-    DataStreamServer.cpp
+    datastreamserver.cpp
     ../../include/PlotJuggler/datastreamer_base.h
     )
 
