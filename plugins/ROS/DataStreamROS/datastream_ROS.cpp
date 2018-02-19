@@ -79,7 +79,7 @@ void DataStreamROS::topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg
     _parser->deserializeIntoFlatContainer( topic_name, absl::Span<uint8_t>(buffer), &flat_container, _max_array_size);
     _parser->applyNameTransform( topic_name, flat_container, &renamed_value );
 
-    double msg_time = msg_time = ros::Time::now().toSec();
+    double msg_time = ros::Time::now().toSec();
 
     // detrmine the time offset
     if(_use_header_timestamp)
