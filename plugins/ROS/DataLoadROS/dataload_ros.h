@@ -1,11 +1,12 @@
 #ifndef DATALOAD_ROS_H
 #define DATALOAD_ROS_H
 
+#include <QObject>
+#include <QtPlugin>
+
 #include <ros/ros.h>
 #include <rosbag/bag.h>
 
-#include <QObject>
-#include <QtPlugin>
 #include "PlotJuggler/dataloader_base.h"
 #include <ros_type_introspection/ros_introspection.hpp>
 
