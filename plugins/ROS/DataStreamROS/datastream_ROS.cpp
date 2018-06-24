@@ -185,11 +185,10 @@ void DataStreamROS::timerCallback()
     {
         auto ret = QMessageBox::warning(nullptr,
                                         tr("Disconnected!"),
-                                        tr("The roscore master is not running and"
-                                           " all the publisher have been disconnected.\n\n"
-                                           "Do you want to try reconnect? \n\n"
+                                        tr("The roscore master cannot be detected.\n\n"
+                                           "Do you want to try reconnecting to it? \n\n"
                                            "NOTE: if you select CONTINUE, you might need"
-                                           " to stop and restart the plugin."),
+                                           " to stop and restart this plugin."),
                                         tr("Stop Plugin"),
                                         tr("Try reconnect"),
                                         tr("Continue"),
