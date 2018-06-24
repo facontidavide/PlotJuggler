@@ -64,7 +64,7 @@ void DataStreamSample::shutdown()
 
 void DataStreamSample::enableStreaming(bool enable) { _enabled = enable; }
 
-bool DataStreamSample::isStreamingEnabled() const { return _enabled; }
+bool DataStreamSample::isStreamingRunning() const { return _running; }
 
 DataStreamSample::~DataStreamSample()
 {

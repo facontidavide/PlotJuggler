@@ -30,6 +30,10 @@ DataStreamROS::DataStreamROS():
     _running = false;
     _initial_time = std::numeric_limits<double>::max();
     _use_header_timestamp = true;
+
+    _periodic_timer = new QTimer();
+    connect( _periodic_timer, &QTimer::timeout,
+             this, &DataStreamROS::timerCallback);
 }
 
 PlotDataMap& DataStreamROS::getDataMap()
@@ -37,7 +41,8 @@ PlotDataMap& DataStreamROS::getDataMap()
     return _plot_data;
 }
 
-void DataStreamROS::topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg, const std::string &topic_name)
+void DataStreamROS::topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
+                                  const std::string &topic_name)
 {
     if( !_running ||  !_enabled){
         return;
@@ -173,6 +178,47 @@ void DataStreamROS::extractInitialSamples()
     }
 }
 
+void DataStreamROS::timerCallback()
+{
+    if( _running && _enabled && ros::master::check() == false
+            && !_roscore_disconnection_already_notified)
+    {
+        auto ret = QMessageBox::warning(nullptr,
+                                        tr("Disconnected!"),
+                                        tr("The roscore master is not running and"
+                                           " all the publisher have been disconnected.\n\n"
+                                           "Do you want to try reconnect? \n\n"
+                                           "NOTE: if you select CONTINUE, you might need"
+                                           " to stop and restart the plugin."),
+                                        tr("Stop Plugin"),
+                                        tr("Try reconnect"),
+                                        tr("Continue"),
+                                        0);
+        _roscore_disconnection_already_notified = ( ret == 2);
+        if( ret == 1)
+        {
+            this->shutdown();
+            _node =  RosManager::getNode();
+
+            if( !_node ){
+                emit connectionClosed();
+                return;
+            }
+            subscribe();
+
+            _running = true;
+            _enabled = true;
+            _spinner->start();
+            _periodic_timer->start();
+        }
+        else if( ret == 0)
+        {
+          this->shutdown();
+          emit connectionClosed();
+        }
+    }
+}
+
 void DataStreamROS::saveIntoRosbag()
 {
     if( _plot_data.user_defined.empty()){
@@ -237,6 +283,22 @@ void DataStreamROS::saveIntoRosbag()
     }
 }
 
+
+void DataStreamROS::subscribe()
+{
+    _subscribers.clear();
+
+    for (int i=0; i< _default_topic_names.size(); i++ )
+    {
+        boost::function<void(const topic_tools::ShapeShifter::ConstPtr&) > callback;
+        const std::string topic_name = _default_topic_names[i].toStdString();
+        callback = [this, topic_name](const topic_tools::ShapeShifter::ConstPtr& msg) -> void
+        {
+            this->topicCallback(msg, topic_name) ;
+        };
+        _subscribers.insert( {topic_name, _node->subscribe( topic_name, 0,  callback)}  );
+    }
+}
 
 bool DataStreamROS::start()
 {
@@ -303,22 +365,15 @@ bool DataStreamROS::start()
 
     timer.stop();
 
-    QStringList topic_selected = dialog.getSelectedItems();
     _using_renaming_rules = dialog.checkBoxUseRenamingRules()->isChecked();
 
-    std::vector<std::string> std_topic_selected;
-
-    if( res != QDialog::Accepted || topic_selected.empty() )
+    if( res != QDialog::Accepted || dialog.getSelectedItems().empty() )
     {
         return false;
     }
 
-     _default_topic_names.clear();
-    for (const QString& topic :topic_selected )
-    {
-        _default_topic_names.push_back(topic);
-        std_topic_selected.push_back( topic.toStdString() );
-    }
+     _default_topic_names = dialog.getSelectedItems();
+
     settings.setValue("DataStreamROS/default_topics", _default_topic_names);
 
     // load the rules
@@ -332,18 +387,7 @@ bool DataStreamROS::start()
     _max_array_size = dialog.maxArraySize();
     //-------------------------
 
-    _subscribers.clear();
-
-    for (int i=0; i<topic_selected.size(); i++ )
-    {
-        boost::function<void(const topic_tools::ShapeShifter::ConstPtr&) > callback;
-        const std::string& topic_name = std_topic_selected[i];
-        callback = [this, topic_name](const topic_tools::ShapeShifter::ConstPtr& msg) -> void
-        {
-            this->topicCallback(msg, topic_name) ;
-        };
-        _subscribers.push_back( _node->subscribe( topic_name, 0,  callback)  );
-    }
+    subscribe();
 
     _running = true;
 
@@ -352,26 +396,29 @@ bool DataStreamROS::start()
     _spinner = std::make_shared<ros::AsyncSpinner>(1);
     _spinner->start();
 
+    _periodic_timer->setInterval(500);
+    _roscore_disconnection_already_notified = false;
+    _periodic_timer->start();
     return true;
 }
 
 void DataStreamROS::enableStreaming(bool enable) { _enabled = enable; }
 
-bool DataStreamROS::isStreamingEnabled() const { return _enabled; }
+bool DataStreamROS::isStreamingRunning() const { return _running; }
 
 
 void DataStreamROS::shutdown()
 {
-    if( _running ){
-        _running = false;
-        _spinner->stop();
-    }
-
-    for(ros::Subscriber& sub: _subscribers)
+    _periodic_timer->stop();
+    _spinner->stop();
+    for(auto& it: _subscribers)
     {
-        sub.shutdown();
+        it.second.shutdown();
     }
     _subscribers.clear();
+    _running = false;
+    _enabled = false;
+    _node.reset();
 }
 
 DataStreamROS::~DataStreamROS()

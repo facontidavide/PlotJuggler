@@ -480,6 +480,7 @@ void MainWindow::loadPlugins(QString directory_name)
 
                     connect(activatePublisher, &QAction::toggled,
                             [=](bool enable) { publisher->setEnabled( enable ); } );
+
                 }
             }
             else if (streamer)
@@ -501,6 +502,9 @@ void MainWindow::loadPlugins(QString directory_name)
 
                     connect(startStreamer, SIGNAL(triggered()), _streamer_signal_mapper, SLOT(map()) );
                     _streamer_signal_mapper->setMapping(startStreamer, plugin_name );
+
+                    connect(streamer, &DataStreamer::connectionClosed,
+                            ui->actionStopStreaming, &QAction::trigger );
                 }
             }
         }
@@ -1568,7 +1572,6 @@ void MainWindow::on_ToggleStreaming()
 
 void MainWindow::updateDataAndReplot()
 {
-
     // STEP 1: sync the data (usefull for streaming
     bool data_updated = false;
     {

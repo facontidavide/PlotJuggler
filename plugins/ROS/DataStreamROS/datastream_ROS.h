@@ -3,13 +3,14 @@
 
 #include <QtPlugin>
 #include <QAction>
+#include <QTimer>
 #include <thread>
 #include <topic_tools/shape_shifter.h>
 #include "PlotJuggler/datastreamer_base.h"
 #include <ros_type_introspection/ros_introspection.hpp>
 
 
-class  DataStreamROS: public QObject, DataStreamer
+class  DataStreamROS: public DataStreamer
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "com.icarustechnology.PlotJuggler.DataStreamer" "../datastreamer.json")
@@ -27,7 +28,7 @@ public:
 
     virtual void enableStreaming(bool enable) override;
 
-    virtual bool isStreamingEnabled() const override;
+    virtual bool isStreamingRunning() const override;
 
     virtual ~DataStreamROS() override;
 
@@ -58,7 +59,7 @@ private:
     std::string _prefix;
 
     ros::NodeHandlePtr _node;
-    std::vector<ros::Subscriber> _subscribers;
+    std::map<std::string, ros::Subscriber> _subscribers;
     RosIntrospection::SubstitutionRuleMap _rules;
 
     int _received_msg_count;
@@ -71,6 +72,14 @@ private:
 
     std::unique_ptr<RosIntrospection::Parser> _parser;
     bool _using_renaming_rules;
+
+    QTimer* _periodic_timer;
+
+    bool _roscore_disconnection_already_notified;
+
+    void timerCallback();
+
+    void subscribe();
 
 private slots:
 

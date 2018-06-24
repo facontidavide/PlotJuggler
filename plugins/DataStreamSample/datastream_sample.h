@@ -6,7 +6,7 @@
 #include "PlotJuggler/datastreamer_base.h"
 
 
-class  DataStreamSample: public QObject, DataStreamer
+class  DataStreamSample: public DataStreamer
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "com.icarustechnology.PlotJuggler.DataStreamer" "../datastreamer.json")
@@ -24,7 +24,7 @@ public:
 
     virtual void enableStreaming(bool enable) override;
 
-    virtual bool isStreamingEnabled() const override;
+    virtual bool isStreamingRunning() const override;
 
     virtual ~DataStreamSample();
 
@@ -51,9 +51,7 @@ private:
 
     bool _running;
 
-
     std::map<std::string,Parameters> _parameters;
-
 
     void pushSingleCycle();
 };
