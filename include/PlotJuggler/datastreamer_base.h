@@ -8,8 +8,9 @@
 #include "PlotJuggler/plotdata.h"
 
 
-class DataStreamer{
+class DataStreamer: public QObject{
 
+    Q_OBJECT
 public:
     DataStreamer(): _menu(NULL){}
 
@@ -21,7 +22,7 @@ public:
 
     virtual void enableStreaming(bool enable) = 0;
 
-    virtual bool isStreamingEnabled() const = 0;
+    virtual bool isStreamingRunning() const = 0;
 
     virtual ~DataStreamer() {}
 
@@ -36,6 +37,12 @@ public:
     virtual QDomElement xmlSaveState(QDomDocument &doc) const { return QDomElement(); }
 
     virtual bool xmlLoadState(QDomElement &parent_element ) { return false; }
+
+signals:
+
+    void dataUpdated();
+
+    void connectionClosed();
 
 protected:
     QMenu* _menu;

@@ -39,6 +39,7 @@ SET( PLOTTER_SRC
     utils.h
     ../common/selectlistdialog.h
     ../include/PlotJuggler/plotdata.h
+    ../include/PlotJuggler/datastreamer_base.h
     )
 
 add_executable(PlotJuggler ${PLOTTER_SRC} ${RES_SRC} ${UI_SRC} ${BACKWARD_SRC})
