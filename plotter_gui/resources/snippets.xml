@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<snippets>
+    <snippet name="A + B">
+        <global></global>
+        <equation>$$PLOT_A$$ + $$PLOT_B$$</equation>
+    </snippet>
+    
+    <snippet name="1st derivative">
+        <global>
+var prevX = 0
+var prevY = 0
+        </global>
+        <equation>
+dx = x - prevX
+dy = y - prevY
+prevX = x
+prevY = y
+
+return dy/dx
+        </equation>
+    </snippet>
+    
+    <snippet name="1st order low pass">
+        <global>
+var prevY = 0
+var alpha = 0.1
+        </global>
+        <equation>
+prevY = alpha * y + (1.-alpha) * prevY
+
+return prevY
+        </equation>
+    </snippet>
+    
+    <snippet name="Quaternion to euler angle">
+        <global>
+// source: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+
+function quaternionToEulerAngle(x, y, z, w) {
+
+  DEG_TO_RAD = (Math.PI / 180)
+
+  // roll (x-axis rotation)
+  t0 = 2.0 * (w * x + y * z);
+  t1 = 1.0 - 2.0 * (x * x + y * y);
+  X = Math.atan2(t0, t1);
+
+  // pitch (y-axis rotation)
+  t2 = 2.0 * (w * y - z * x);
+  if(t2 &gt; 1.0) {
+    t2 = 1.0;
+  } else if(t2 &lt; -1.0){
+    t2 = -1.0;
+  }
+  Y = Math.asin(t2);
+
+  // yaw (z-axis rotation)
+  t3 = 2.0 * (w * z + x * y);
+  t4 = 1.0 - 2.0 * (y * y + z * z);
+  Z = Math.atan2(t3, t4);
+
+  Xdeg = X / DEG_TO_RAD
+  Ydeg = Y / DEG_TO_RAD
+  Zdeg = Z / DEG_TO_RAD
+  
+  return [Xdeg, Ydeg, Zdeg]
+}
+        </global>
+        <equation>
+return quaternionToEulerAngle($$x$$, $$y$$, $$z$$, $$w$$)[2]; // yaw in degrees
+        </equation>
+    </snippet>
+    
+    <snippet name="Distance between geographic coordinates">
+        <global>
+// see https://geographiclib.sourceforge.io/1.49/js
+var geod = GeographicLib.Geodesic.WGS84;
+        </global>
+        <equation>
+r = geod.Inverse(-41.32, 174.81, $$lat$$, $$lon$$);
+return r.s12 // distance in meters
+        </equation>
+    </snippet>
+
+</snippets>

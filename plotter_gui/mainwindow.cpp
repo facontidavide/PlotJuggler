@@ -25,6 +25,7 @@
 #include <QWindow>
 #include <QElapsedTimer>
 #include <QHeaderView>
+#include <QJSEngine>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -35,6 +36,7 @@
 #include "selectlistdialog.h"
 #include "aboutdialog.h"
 #include "PlotJuggler/plotdata.h"
+#include "add_math_plot.h"
 
 
 MainWindow::MainWindow(const QCommandLineParser &commandline_parser, QWidget *parent) :
@@ -53,7 +55,7 @@ MainWindow::MainWindow(const QCommandLineParser &commandline_parser, QWidget *pa
 
     _test_option = (commandline_parser.isSet("test"));
 
-    _curvelist_widget = new FilterableListWidget(this);
+    _curvelist_widget = new FilterableListWidget(_mapped_math_plots, this);
     _streamer_signal_mapper = new QSignalMapper(this);
 
     ui->setupUi(this);
@@ -81,6 +83,15 @@ MainWindow::MainWindow(const QCommandLineParser &commandline_parser, QWidget *pa
 
     connect(_curvelist_widget, &FilterableListWidget::deleteCurve,
             this, &MainWindow::deleteDataOfSingleCurve );
+
+    connect(_curvelist_widget, &FilterableListWidget::createMathPlot,
+            this, &MainWindow::addMathPlot);
+
+    connect(_curvelist_widget, &FilterableListWidget::editMathPlot,
+            this, &MainWindow::editMathPlot);
+
+    connect(_curvelist_widget, &FilterableListWidget::refreshMathPlot,
+            this, &MainWindow::refreshMathPlot);
 
     connect(_curvelist_widget->getView()->verticalScrollBar(),
             &QScrollBar::valueChanged,
@@ -873,6 +884,8 @@ void MainWindow::deleteDataOfSingleCurve(const std::string& curve_name)
     {
         ui->actionDeleteAllData->setEnabled( false );
     }
+
+    _mapped_math_plots.erase(curve_name);
 }
 
 void MainWindow::deleteDataMultipleCurves(const std::vector<std::string> &curves_name)
@@ -881,6 +894,7 @@ void MainWindow::deleteDataMultipleCurves(const std::vector<std::string> &curves
     {
         _mapped_plot_data.numeric.erase(name);
         emit requestRemoveCurveByName( name );
+        _mapped_math_plots.erase(name);
     }
     // it is much faster in many case to rebuild everything from scratch
     _curvelist_widget->clear();
@@ -937,6 +951,7 @@ void MainWindow::onDeleteLoadedData()
         } );
         _mapped_plot_data.numeric.clear();
         _mapped_plot_data.user_defined.clear();
+        _mapped_math_plots.clear();
 
         _curvelist_widget->clear();
 
@@ -1438,6 +1453,61 @@ std::tuple<double, double, int> MainWindow::calculateVisibleRangeX()
         max_steps = 1;
     }
     return std::tuple<double,double,int>( min_time, max_time, max_steps );
+}
+
+void MainWindow::addOrEditMathPlot(const std::string &name, bool edit)
+{
+    AddMathPlotDialog dialog(_mapped_plot_data, this);
+    if(!edit)
+    {
+        // add
+        dialog.setLinkedPlotName(QString::fromStdString(name));
+    }
+    else
+    {
+        auto it = _mapped_math_plots.find(name);
+        if(it == _mapped_math_plots.end())
+        {
+            qWarning("failed to find custom equation");
+            return;
+        }
+        dialog.editExistingPlot(it->second);
+    }
+
+    if(dialog.exec() == QDialog::Accepted)
+    {
+        QString qplotName = dialog.getName();
+        std::string plotName = qplotName.toStdString();
+        MathPlotPtr eq = dialog.getMathPlotData();
+        PlotDataPtr newData = dialog.getNewPlotData();
+
+        if(!edit)
+        {
+            _mapped_plot_data.addNumeric(plotName);
+        }
+
+        PlotData *dstPlotData = &_mapped_plot_data.numeric.at(plotName);
+
+        // we have to copy element by element, maybe we should create a copy constructor ?
+        dstPlotData->clear();
+        for(size_t i=0;i<newData->size();++i)
+        {
+            dstPlotData->pushBack(newData->at(i));
+        }
+
+        // keep data for reference
+        _mapped_math_plots[plotName] = eq;
+        if(!edit)
+        {
+            _curvelist_widget->addItem(qplotName);
+        }
+        updateLeftTableValues();
+
+        if(edit)
+        {
+            updateDataAndReplot();
+        }
+    }
 }
 
 void MainWindow::onActionLoadLayoutFromFile(QString filename, bool load_data)
@@ -1980,4 +2050,37 @@ void MainWindow::closeEvent(QCloseEvent *event)
     for(auto& it : _data_loader ) { delete it.second; }
     for(auto& it : _state_publisher ) { delete it.second; }
     for(auto& it : _data_streamer ) { delete it.second; }
+}
+
+void MainWindow::addMathPlot(const std::string& linked_name)
+{
+    addOrEditMathPlot(linked_name, false);
+}
+
+void MainWindow::editMathPlot(const std::string &plot_name)
+{
+    addOrEditMathPlot(plot_name, true);
+}
+
+void MainWindow::refreshMathPlot(const std::string &plot_name)
+{
+    try{
+        auto it = _mapped_math_plots.find(plot_name);
+        if(it == _mapped_math_plots.end())
+        {
+            qWarning("failed to find custom equation");
+            return;
+        }
+        MathPlotPtr ce = it->second;
+        QString qplotName = QString::fromStdString(plot_name);
+
+        PlotData &dstPlotData = _mapped_plot_data.numeric.at(plot_name);
+        ce->calc(_mapped_plot_data, dstPlotData);
+        updateLeftTableValues();
+        updateDataAndReplot();
+    }
+    catch(std::runtime_error e)
+    {
+        QMessageBox::critical(this, "error", "Failed to refresh data : " + QString::fromStdString(e.what()));
+    }
 }
