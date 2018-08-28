@@ -22,6 +22,7 @@
 <build_depend>ros_type_introspection</build_depend>
 <build_depend>qtbase5-dev</build_depend>
 <build_depend>libqt5-svg-dev</build_depend>
+<build_depend>qtdeclarative5-dev</build_depend>
 <build_depend>binutils</build_depend>
 
 <run_depend>rosbag</run_depend>
@@ -33,6 +34,7 @@
 <run_depend>ros_type_introspection</run_depend>
 <run_depend>qtbase5-dev</run_depend>
 <run_depend>libqt5-svg-dev</run_depend>
+<run_depend>qtdeclarative5-dev</run_depend>
 <run_depend>binutils</run_depend>
 
 <!-- The export tag contains other, unspecified, tags -->
