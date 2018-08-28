@@ -423,11 +423,10 @@ void FilterableListWidget::removeSelectedCurves()
 {
     QStringList names;
 
-    auto selected_rows = _table_view->selectionModel()->selectedRows(0);
-    while( selected_rows.size() > 0 )
+    auto selected_rows = getNonHiddenSelectedRows();
+    for (int i = selected_rows.size() - 1; i >= 0; i--)
     {
-        auto item = _model->item( selected_rows.front().row(), 0 );
-        selected_rows = _table_view->selectionModel()->selectedRows(0);
+        auto item = _model->item(selected_rows.at(i).row(), 0);
         names.push_back(item->text());
     }
 
