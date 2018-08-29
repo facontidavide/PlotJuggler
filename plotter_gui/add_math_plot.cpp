@@ -71,7 +71,7 @@ void AddMathPlotDialog::accept()
         _newPlotData = newData;
         QDialog::accept();
     }
-    catch (std::runtime_error e) {
+    catch (const std::runtime_error &e) {
         _mathPlot.reset();
         _newPlotData.reset();
 
