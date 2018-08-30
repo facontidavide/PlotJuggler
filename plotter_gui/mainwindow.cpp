@@ -2079,7 +2079,7 @@ void MainWindow::refreshMathPlot(const std::string &plot_name)
         updateLeftTableValues();
         updateDataAndReplot();
     }
-    catch(std::runtime_error e)
+    catch(const std::runtime_error &e)
     {
         QMessageBox::critical(this, "error", "Failed to refresh data : " + QString::fromStdString(e.what()));
     }
