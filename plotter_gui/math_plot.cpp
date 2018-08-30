@@ -132,7 +132,7 @@ const QString &MathPlot::getEquation()
 
 void MathPlot::addJavascriptDependencies(QJSEngine &engine)
 {
-    static QStringList files{":/js/resources/common.js", ":/js/resources/quaternion.js", "plotter_gui/resources/geographiclib.min.js" };
+    static QStringList files{":/js/resources/common.js", ":/js/resources/geographiclib.min.js" };
     for(QString fileName : files)
     {
         QFile file(fileName);
