@@ -26,7 +26,8 @@ if(APPLE AND EXISTS /usr/local/opt/qt5)
     # /usr/local/qt5, ensure it can be found by CMake since
     # it is not in the default /usr/local prefix.
     # source: https://github.com/Homebrew/homebrew-core/issues/8392#issuecomment-325226494
-	list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt5")
+    list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt5")
+    set(CMAKE_MACOSX_RPATH 1)
 endif()
 
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets PrintSupport Concurrent Xml)
