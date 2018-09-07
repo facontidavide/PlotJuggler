@@ -21,6 +21,16 @@ SET(CMAKE_AUTOUIC ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -fno-omit-frame-pointer")
 
+if(APPLE AND EXISTS /usr/local/opt/qt5)
+    # Homebrew installs Qt5 (up to at least 5.9.1) in
+    # /usr/local/qt5, ensure it can be found by CMake since
+    # it is not in the default /usr/local prefix.
+    # source: https://github.com/Homebrew/homebrew-core/issues/8392#issuecomment-325226494
+    list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt5")
+    set(CMAKE_MACOSX_RPATH 1)
+endif()
+
+
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets PrintSupport Concurrent Xml Qml)
 find_package(Qt5 QUIET COMPONENTS Svg)
 find_package(Qt5 QUIET COMPONENTS WebSockets)
@@ -102,7 +112,7 @@ if(COMPILING_WITH_CATKIN)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_LIB_DESTINATION})
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_BIN_DESTINATION})
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_BIN_DESTINATION})
-    
+
     install(DIRECTORY site/       DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/docs )
     install(DIRECTORY docs/images DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/docs )
     add_definitions( -DPJ_DOCUMENTATION_DIR="${CMAKE_INSTALL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}/docs" )
