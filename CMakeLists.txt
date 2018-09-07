@@ -30,7 +30,8 @@ if(APPLE AND EXISTS /usr/local/opt/qt5)
     set(CMAKE_MACOSX_RPATH 1)
 endif()
 
-find_package(Qt5 REQUIRED COMPONENTS Core Widgets PrintSupport Concurrent Xml)
+
+find_package(Qt5 REQUIRED COMPONENTS Core Widgets PrintSupport Concurrent Xml Qml)
 find_package(Qt5 QUIET COMPONENTS Svg)
 find_package(Qt5 QUIET COMPONENTS WebSockets)
 
@@ -39,7 +40,9 @@ set( QT_LINK_LIBRARIES
     Qt5::Widgets
     Qt5::PrintSupport
     Qt5::Xml
-    Qt5::Concurrent)
+    Qt5::Concurrent
+    Qt5::Qml
+    )
 
 if( NOT Qt5Svg_FOUND)
     message(STATUS "Can't find Qt5Svg in your system. Have you tried [sudo apt-get install libqt5svg5-dev] ?")

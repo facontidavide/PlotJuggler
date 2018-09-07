@@ -62,7 +62,7 @@ public:
 
   virtual ~PlotDataGeneric() {}
 
-  std::string name() const { return _name; }
+  const std::string &name() const { return _name; }
 
   virtual size_t size() const;
 
@@ -105,6 +105,7 @@ private:
 
 typedef PlotDataGeneric<double,double>  PlotData;
 typedef PlotDataGeneric<double, nonstd::any> PlotDataAny;
+typedef std::shared_ptr<PlotData> PlotDataPtr;
 
 
 typedef struct{

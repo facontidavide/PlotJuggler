@@ -12,6 +12,7 @@ QT5_WRAP_UI ( UI_SRC
     filterablelistwidget.ui
     tabbedplotwidget.ui
     axis_limits_dialog.ui
+    add_math_plot.ui
     ../common/selectlistdialog.ui
     )
 
@@ -33,6 +34,8 @@ SET( PLOTTER_SRC
     filterablelistwidget.cpp
     tabbedplotwidget.cpp
     subwindow.cpp
+    add_math_plot.cpp
+    math_plot.cpp
     tree_completer.h
 
     mainwindow.h
@@ -49,7 +52,8 @@ target_link_libraries(PlotJuggler
     ${QT_LINK_LIBRARIES}
     colorwidgets
     qwt_static
-    ${BACKWARD_LIBS} )
+    ${BACKWARD_LIBS}
+    )
 
 if(COMPILING_WITH_CATKIN)
     install(TARGETS PlotJuggler

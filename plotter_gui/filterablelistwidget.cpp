@@ -34,10 +34,11 @@ private:
 
 //-------------------------------------------------
 
-FilterableListWidget::FilterableListWidget(QWidget *parent) :
+FilterableListWidget::FilterableListWidget(const std::unordered_map<std::string, MathPlotPtr>& mapped_math_plots, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::FilterableListWidget),
-    _completer( new TreeModelCompleter(this) )
+    _completer( new TreeModelCompleter(this) ),
+    _mapped_math_plots(mapped_math_plots)
 {
     ui->setupUi(this);
     _table_view = ui->tableView;
@@ -178,7 +179,49 @@ bool FilterableListWidget::eventFilter(QObject *object, QEvent *event)
         }
         else if(mouse_event->button() == Qt::RightButton )
         {
-            _newX_modifier = true;
+            //_newX_modifier = true;
+
+            QPoint mousepos = mouse_event->globalPos();
+            QModelIndex index = ui->tableView->indexAt(ui->tableView->mapFromGlobal(mousepos));
+	        if(index.isValid())
+	        {
+
+                QString plotName = ui->tableView->model()->data(ui->tableView->model()->index(index.row(), 0)).toString();
+                qDebug() << "Editing equation : " << plotName;
+
+	            QMenu menu(this);
+                QAction *createPlotAction = menu.addAction("Create math plot");
+                QAction *editPlotAction = menu.addAction("Edit math plot");
+                QAction *refreshPlotAction = menu.addAction("Refresh math plot");
+                menu.addSeparator();
+                QAction *deleteAction = menu.addAction("Delete");
+
+                if(_mapped_math_plots.count(plotName.toStdString()) == 0)
+                {
+                    editPlotAction->setVisible(false);
+                    refreshPlotAction->setVisible(false);
+                }
+
+                QAction *userAction = menu.exec(mouse_event->globalPos());
+                if(userAction == createPlotAction)
+                {
+                    emit createMathPlot(plotName.toStdString());
+                }
+                else if(userAction == editPlotAction)
+                {
+                    emit editMathPlot(plotName.toStdString());
+                }
+                else if(userAction == refreshPlotAction)
+                {
+                    emit refreshMathPlot(plotName.toStdString());
+                }
+                else if(userAction == deleteAction)
+                {
+                    askToRemoveCurves({plotName});
+                }
+
+	            return false;
+	        }
         }
         else {
             return false;
@@ -378,34 +421,44 @@ void FilterableListWidget::on_checkBoxHideSecondColumn_toggled(bool checked)
 
 void FilterableListWidget::removeSelectedCurves()
 {
+    QStringList names;
+
+    auto selected_rows = getNonHiddenSelectedRows();
+    for (int i = selected_rows.size() - 1; i >= 0; i--)
+    {
+        auto item = _model->item(selected_rows.at(i).row(), 0);
+        names.push_back(item->text());
+    }
+
+    askToRemoveCurves(names);
+}
+
+void FilterableListWidget::askToRemoveCurves(QStringList names)
+{
     QMessageBox::StandardButton reply;
     reply = QMessageBox::question(0, tr("Warning"),
                                   tr("Do you really want to remove these data?\n"),
                                   QMessageBox::Yes | QMessageBox::No,
                                   QMessageBox::No );
 
-    if (reply == QMessageBox::Yes)
-    {
-      auto selected_rows = getNonHiddenSelectedRows();
-      for (int i = selected_rows.size() - 1; i >= 0; i--)
-      {
-        auto item = _model->item(selected_rows.at(i).row(), 0);
-        emit deleteCurve(item->text().toStdString());
-      }
-    }
-
-    // rebuild the tree model
-    if( _completer_need_update )
-    {
-        _completer->clear();
-        for (int row=0; row< rowCount(); row++)
+    if( reply == QMessageBox::Yes ) {
+        for(const QString &name : names)
         {
-            auto item = _model->item(row);
-            _completer->addToCompletionTree(item->text());
+            deleteCurve(name.toStdString());
         }
-    }
 
-    updateFilter();
+        // rebuild the tree model
+        if( _completer_need_update )
+        {
+            _completer->clear();
+            for (int row=0; row< rowCount(); row++)
+            {
+                auto item = _model->item(row);
+                _completer->addToCompletionTree(item->text());
+            }
+        }
+        updateFilter();
+    }
 }
 
 void FilterableListWidget::removeRow(int row)
