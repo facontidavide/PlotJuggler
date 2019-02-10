@@ -222,6 +222,7 @@ void TabbedPlotWidget::on_savePlotsToFile()
     QFileDialog saveDialog;
     saveDialog.setAcceptMode(QFileDialog::AcceptSave);
     saveDialog.setDefaultSuffix("png");
+    saveDialog.selectFile(currentTab()->name());
 
 #ifndef QWT_NO_SVG
     saveDialog.setNameFilter("Compatible formats (*.jpg *.jpeg *.svg *.png)");
