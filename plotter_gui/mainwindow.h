@@ -141,6 +141,8 @@ private slots:
 
     void on_actionSupportPlotJuggler_triggered();
 
+    void on_actionSaveAllPlotTabs_triggered();
+
 private:
 
     Ui::MainWindow *ui;

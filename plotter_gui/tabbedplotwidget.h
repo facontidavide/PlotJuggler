@@ -49,6 +49,8 @@ public slots:
 
     void setStreamingMode(bool streaming_mode);
 
+    static void saveTabImage(QString fileName, PlotMatrix* matrix);
+
 private slots:
 
     void on_renameCurrentTab();

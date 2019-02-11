@@ -235,27 +235,32 @@ void TabbedPlotWidget::on_savePlotsToFile()
     {
         QString fileName = saveDialog.selectedFiles().first();
 
-        QPixmap pixmap (1200,900);
-        QPainter * painter = new QPainter(&pixmap);
+        saveTabImage(fileName, matrix);
+    }
+}
 
-        if ( !fileName.isEmpty() )
+void TabbedPlotWidget::saveTabImage(QString fileName, PlotMatrix* matrix)
+{
+    QPixmap pixmap (1200,900);
+    QPainter * painter = new QPainter(&pixmap);
+
+    if ( !fileName.isEmpty() )
+    {
+        QwtPlotRenderer rend;
+
+        int delta_X = pixmap.width() /  matrix->colsCount();
+        int delta_Y = pixmap.height() /  matrix->rowsCount();
+
+        for (unsigned c=0; c< matrix->colsCount(); c++)
         {
-            QwtPlotRenderer rend;
-
-            int delta_X = pixmap.width() /  matrix->colsCount();
-            int delta_Y = pixmap.height() /  matrix->rowsCount();
-
-            for (unsigned c=0; c< matrix->colsCount(); c++)
+            for (unsigned r=0; r< matrix->rowsCount(); r++)
             {
-                for (unsigned r=0; r< matrix->rowsCount(); r++)
-                {
-                    PlotWidget* widget = matrix->plotAt(r,c);
-                    QRect rect(delta_X*c, delta_Y*r, delta_X, delta_Y);
-                    rend.render(widget,painter, rect);
-                }
+                PlotWidget* widget = matrix->plotAt(r,c);
+                QRect rect(delta_X*c, delta_Y*r, delta_X, delta_Y);
+                rend.render(widget,painter, rect);
             }
-            pixmap.save(fileName);
         }
+        pixmap.save(fileName);
     }
 }
 

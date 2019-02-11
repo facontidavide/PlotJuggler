@@ -660,6 +660,7 @@
     <addaction name="separator"/>
     <addaction name="actionFunction_editor"/>
     <addaction name="actionMaximizePlots"/>
+    <addaction name="actionSaveAllPlotTabs"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuStreaming"/>
@@ -745,6 +746,14 @@
    </property>
    <property name="toolTip">
     <string>Maximize plots [F10]</string>
+   </property>
+  </action>
+  <action name="actionSaveAllPlotTabs">
+   <property name="text">
+    <string>Save all plot tabs as images</string>
+   </property>
+   <property name="toolTip">
+    <string>Save each tab as a separate image.</string>
    </property>
   </action>
   <action name="actionLoadDummyData">
