@@ -47,14 +47,17 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-#include "Client.h"
+#include "client.h"
 #include <QtCore/QDebug>
 #include <QtMath>
 #include <QThread>
 #include <chrono>
 #include <QStringBuilder>
-#include <Windows.h>
 #include <thread>
+
+#ifdef WIN32
+#include <Windows.h>
+#endif
 
 QT_USE_NAMESPACE
 
