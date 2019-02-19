@@ -29,7 +29,7 @@ before_build:
   - mkdir build
   - cd build
   - set PATH=%QTDIR%\bin;%PATH%
-  - cmake "-G%GENERATOR%"
+  - cmake "-G%GENERATOR%" ..
 
 build_script:
   - cmake --build .
