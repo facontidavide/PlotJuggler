@@ -14,8 +14,6 @@ environment:
       QTDIR: C:\Qt\5.9.7\mingw53_32
       PLATFORM: x86
       
-CMAKE_CXX_FLAGS_INIT: -DCATCH_CONFIG_NO_CPP11_TO_STRING
-
 configuration:
   - Release
 
