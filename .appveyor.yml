@@ -6,8 +6,11 @@ environment:
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       QTDIR: C:\Qt\5.9.7\msvc2017_64
       PLATFORM: x64
+    - GENERATOR : "Visual Studio 14 2015 Win64"
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      QTDIR: C:\Qt\5.9.7\msvc2015_64  
     - GENERATOR : "Visual Studio 14 2015"
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
       QTDIR: C:\Qt\5.9.7\msvc2015
       PLATFORM: Win32
     - GENERATOR : "MinGW "
