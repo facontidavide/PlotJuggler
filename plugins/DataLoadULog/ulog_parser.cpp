@@ -371,62 +371,62 @@ bool ULogParser::readFormat(std::ifstream &file, uint16_t msg_size)
     for (auto field_str: fields_split)
     {
         Field field;
-        if( field_str.substr(0, 6) == "int8_t" )
+        if( field_str.substr(0, 6) == StringView("int8_t") )
         {
             field.type = INT8;
             field_str.remove_prefix(6);
         }
-        else if( field_str.substr(0,7) == "int16_t" )
+        else if( field_str.substr(0,7) == StringView("int16_t") )
         {
             field.type = INT16;
             field_str.remove_prefix(7);
         }
-        if( field_str.substr(0, 7) == "int32_t" )
+        if( field_str.substr(0, 7) == StringView("int32_t") )
         {
             field.type = INT32;
             field_str.remove_prefix(7);
         }
-        if( field_str.substr(0, 7) == "int64_t" )
+        if( field_str.substr(0, 7) == StringView("int64_t") )
         {
             field.type = INT64;
             field_str.remove_prefix(7);
         }
-        if( field_str.substr(0, 7) == "uint8_t" )
+        if( field_str.substr(0, 7) == StringView("uint8_t") )
         {
             field.type = UINT8;
             field_str.remove_prefix(7);
         }
-        else if( field_str.substr(0,8) == "uint16_t" )
+        else if( field_str.substr(0,8) == StringView("uint16_t") )
         {
             field.type = UINT16;
             field_str.remove_prefix(8);
         }
-        if( field_str.substr(0, 8) == "uint32_t" )
+        if( field_str.substr(0, 8) == StringView("uint32_t") )
         {
             field.type = UINT32;
             field_str.remove_prefix(8);
         }
-        if( field_str.substr(0, 8) == "uint64_t" )
+        if( field_str.substr(0, 8) == StringView("uint64_t") )
         {
             field.type = UINT64;
            field_str.remove_prefix(8);
         }
-        if( field_str.substr(0, 6) == "double" )
+        if( field_str.substr(0, 6) == StringView("double") )
         {
             field.type = DOUBLE;
             field_str.remove_prefix(6);
         }
-        if( field_str.substr(0, 5) == "float" )
+        if( field_str.substr(0, 5) == StringView("float") )
         {
             field.type = FLOAT;
             field_str.remove_prefix(5);
         }
-        if( field_str.substr(0, 4) == "bool" )
+        if( field_str.substr(0, 4) == StringView("bool") )
         {
             field.type = BOOL;
             field_str.remove_prefix(4);
         }
-        if( field_str.substr(0, 4) == "char" )
+        if( field_str.substr(0, 4) == StringView("char") )
         {
             field.type = CHAR;
             field_str.remove_prefix(4);
@@ -451,11 +451,11 @@ bool ULogParser::readFormat(std::ifstream &file, uint16_t msg_size)
             field_str.remove_prefix(2);
         }
 
-        if( field.type == UINT8 && field_str == "_padding0" )
+        if( field.type == UINT8 && field_str == StringView("_padding0") )
         {
             format.padding = field.array_size;
         }
-        else if( field.type == UINT64 && field_str == "timestamp" ){
+        else if( field.type == UINT64 && field_str == StringView("timestamp") ){
             // skip
         }
         else {
