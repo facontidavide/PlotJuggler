@@ -2,6 +2,9 @@ clone_depth: 5
 
 environment:
   matrix:
+    - GENERATOR : "MinGW Makefiles"
+      QTDIR: C:\Qt\5.9.7\mingw53_32
+      PLATFORM: x86
     - GENERATOR : "Visual Studio 15 2017 Win64"
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       QTDIR: C:\Qt\5.9.7\msvc2017_64
@@ -13,9 +16,7 @@ environment:
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
       QTDIR: C:\Qt\5.9.7\msvc2015
       PLATFORM: Win32
-    - GENERATOR : "MinGW "
-      QTDIR: C:\Qt\5.9.7\mingw53_32
-      PLATFORM: x86
+
       
 configuration:
   - Release
