@@ -2,25 +2,38 @@ clone_depth: 5
 
 environment:
   matrix:
-  - BUILD: 'Release'
+    - GENERATOR : "Visual Studio 15 2017 Win64"
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      QTDIR: C:\Qt\5.9.7\msvc2015_64
+      PLATFORM: x64
+    - GENERATOR : "Visual Studio 15 2017"
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      QTDIR: C:\Qt\5.9.7\msvc2015
+      PLATFORM: Win32
+    - GENERATOR : "MinGW "
+      QTDIR: C:\Qt\5.9.7\mingw53_32
+      PLATFORM: x86
+      
+CMAKE_CXX_FLAGS_INIT: -DCATCH_CONFIG_NO_CPP11_TO_STRING
 
 configuration:
   - Release
 
-#branches:
-  #only:
-    #- master
+install:
+  - set PATH=%QTDIR%\bin;%PATH%
+  - set Qt5_DIR=%QTDIR%\lib\cmake\Qt5
+  - set PATH=C:\MinGW\bin;C:\MinGW\msys\1.0;%PATH%
+  - set PATH=C:\Qt\Tools\mingw530_32;%PATH%
+  - set PATH=%PATH:C:\Program Files\Git\usr\bin=% # trick to remove sh.exe
+
 
 before_build:
-  - call "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
-  - set PATH=C:\Qt\Tools\QtCreator\bin;C:\Qt\5.11\msvc2015\bin;%PATH%
   - mkdir build
   - cd build
   - set PATH=%QTDIR%\bin;%PATH%
-  - cmd: if "%platform%"=="Win32" cmake "-G%GENERATOR32%" -DCMAKE_PREFIX_PATH="%QTDIR32%/lib/cmake/Qt5" ..
-  - cmd: if "%platform%"=="x64"   cmake "-G%GENERATOR64%" -DCMAKE_PREFIX_PATH="%QTDIR64%/lib/cmake/Qt5" ..
+  - cmake "-G%GENERATOR%"
 
-build:
-  parallel: true
-  project: C:\projects\plotjuggler\build\PlotJuggler.sln
+build_script:
+  - cmake --build .
+
 
