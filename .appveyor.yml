@@ -2,13 +2,9 @@ clone_depth: 5
 
 environment:
   matrix:
-    - GENERATOR : "Visual Studio 16 2017 Win64"
+    - GENERATOR : "Visual Studio 15 2017 Win64"
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       QTDIR: C:\Qt\5.9.7\msvc2017_64
-      PLATFORM: x64
-    - GENERATOR : "Visual Studio 14 2015 Win64"
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      QTDIR: C:\Qt\5.9.7\msvc2015_64
       PLATFORM: x64
     - GENERATOR : "Visual Studio 14 2015"
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
