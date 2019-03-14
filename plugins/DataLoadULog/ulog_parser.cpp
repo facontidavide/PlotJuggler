@@ -218,11 +218,12 @@ char* ULogParser::parseSimpleDataMessage(Timeseries& timeseries, const Format *f
             case OTHER:{
                 //recursion!!!
                 auto child_format = _formats.at( field.other_type_ID );
-                message += 8; // skip timestamp
+                message += sizeof(uint64_t); // skip timestamp
                 message = parseSimpleDataMessage(timeseries, &child_format, message, index );
             }break;
 
             } // end switch
+
             if( field.type != OTHER)
             {
                 timeseries.data[(*index)++].second.push_back( value );
@@ -538,7 +539,23 @@ bool ULogParser::readFormat(std::ifstream &file, uint16_t msg_size)
         }
         else{
             field.type = OTHER;
-            field.other_type_ID = field_type.to_string();
+
+            if (field_type.ends_with("]")) {
+                StringView helper = field_type;
+                while (!helper.ends_with("[")) {
+                    helper.remove_suffix(1);
+                }
+
+                helper.remove_suffix(1);
+                field.other_type_ID = helper.to_string();
+
+                while(!field_type.starts_with("[")) {
+                    field_type.remove_prefix(1);
+                }
+
+            } else {
+                field.other_type_ID = field_type.to_string();
+            }
         }
 
         field.array_size = 1;
@@ -568,13 +585,6 @@ bool ULogParser::readFormat(std::ifstream &file, uint16_t msg_size)
             field.field_name = field_name.to_string();
             format.fields.push_back( field );
         }
-       // if( field.type == OTHER)
-//        {
-
-//            printf("[Format %s]:[%s]  %s %d \n", name.c_str(), field_section.to_string().c_str(),
-//                   field.field_name.c_str(), field.array_size);
-//            std::cout << std::flush;
-//        }
     }
 
     format.name = name;
@@ -739,7 +749,7 @@ ULogParser::Timeseries ULogParser::createTimeseries(const ULogParser::Format* fo
             std::string new_prefix = prefix + "/" + field.field_name;
             for(int i=0; i < field.array_size; i++)
             {
-                std::string array_suffix;
+                std::string array_suffix = "";
                 if( field.array_size > 1)
                 {
                     char buff[10];
@@ -751,7 +761,7 @@ ULogParser::Timeseries ULogParser::createTimeseries(const ULogParser::Format* fo
                     timeseries.data.push_back( {new_prefix + array_suffix, std::vector<double>()} );
                 }
                 else{
-                    appendVector( this->_formats.at( field.other_type_ID ), new_prefix);
+                    appendVector( this->_formats.at( field.other_type_ID ), new_prefix + array_suffix);
                 }
             }
         }
