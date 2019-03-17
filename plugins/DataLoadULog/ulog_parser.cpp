@@ -162,8 +162,8 @@ char* ULogParser::parseSimpleDataMessage(Timeseries& timeseries, const Format *f
 {
     for (const auto& field: format->fields)
     {
-        // skip _padding0 messages which are one byte in size
-        if (field.field_name == "_padding0") {
+        // skip _padding messages which are one byte in size
+        if (StringView(field.field_name).starts_with("_padding")) {
                 message += field.array_size;
                 continue;
             }
