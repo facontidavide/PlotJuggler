@@ -2380,13 +2380,15 @@ void MainWindow::on_actionSaveAllPlotTabs_triggered()
 
         QStringList file_names;
         QStringList existing_files;
+        QDateTime current_date_time(QDateTime::currentDateTime());
+        QString current_date_time_name(current_date_time.toString("yyyy-MM-dd_HH-mm-ss"));
         for(const auto& it: TabbedPlotWidget::instances())
         {
             auto tab_widget = it.second->tabWidget();
             for(int i=0; i< tab_widget->count(); i++)
             {
                 PlotMatrix* matrix = static_cast<PlotMatrix*>( tab_widget->widget(i) );
-                QString name = QString("%1/%2_%3.png").arg(folder).arg(image_number, 2, 10, QLatin1Char('0')).arg(matrix->name());
+                QString name = QString("%1/%2_%3_%4.png").arg(folder).arg(current_date_time_name).arg(image_number, 2, 10, QLatin1Char('0')).arg(matrix->name());
                 file_names.push_back( name );
                 image_number++;
 
