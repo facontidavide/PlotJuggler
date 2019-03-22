@@ -23,7 +23,7 @@ before_install:
  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
  - sudo add-apt-repository ppa:ubuntu-sdk-team/ppa -y
  - sudo apt-get update -qq
- - sudo apt-get -y install -f qtbase5-dev libqt5svg5-dev qtdeclarative5-dev
+ - sudo apt-get -y install -f qtbase5-dev qtdeclarative5-dev libqt5svg5-dev libqt5multimedia5 libqt5multimedia5-plugins libqt5multimediawidgets5
 
 install:
   - git clone https://github.com/ros-industrial/industrial_ci.git .industrial_ci

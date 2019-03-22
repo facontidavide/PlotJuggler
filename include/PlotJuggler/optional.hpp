@@ -724,7 +724,6 @@ public:
 
     optional_constexpr value_type const && operator *() const optional_refref_qual
     {
-        assert( has_value() );
         return std::move( contained.value() );
     }
 

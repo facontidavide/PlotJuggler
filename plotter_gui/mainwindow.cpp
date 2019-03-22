@@ -36,8 +36,8 @@
 
 #include "ui_mainwindow.h"
 #include "ui_aboutdialog.h"
-#include "ui_cheatsheet_dialog.h"
 #include "ui_support_dialog.h"
+#include "cheatsheet/video_cheatsheet.h"
 
 MainWindow::MainWindow(const QCommandLineParser &commandline_parser, QWidget *parent) :
     QMainWindow(parent),
@@ -2341,14 +2341,9 @@ void MainWindow::on_actionCheatsheet_triggered()
 {
     QSettings settings;
 
-    QDialog* dialog = new QDialog(this);  
-    auto* ui = new Ui_CheatsheetDialog();
-    ui->setupUi(dialog);
-
+    HelpVideo* dialog = new HelpVideo(this);
     dialog->restoreGeometry(settings.value("Cheatsheet.geometry").toByteArray());
-
     dialog->setAttribute(Qt::WA_DeleteOnClose);
-
     dialog->show();
 
     connect(dialog, &QDialog::finished, this, [this, dialog]()

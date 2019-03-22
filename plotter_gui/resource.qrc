@@ -50,5 +50,15 @@
         <file>style/radio_unchecked_disabled.svg</file>
         <file>style/radio_unchecked_focus.svg</file>
         <file>style/stylesheet.qss</file>
+        <file>cheatsheet/video/cheatsheet-drag-drop.mp4</file>
+        <file>cheatsheet/video/cheatsheet-pan-view.mp4</file>
+        <file>cheatsheet/video/cheatsheet-remove-column.mp4</file>
+        <file>cheatsheet/video/cheatsheet-resize-font.mp4</file>
+        <file>cheatsheet/video/cheatsheet-swap.mp4</file>
+        <file>cheatsheet/video/cheatsheet-tracker.mp4</file>
+        <file>cheatsheet/video/cheatsheet-xy.mp4</file>
+        <file>cheatsheet/video/cheatsheet-zoom-area.mp4</file>
+        <file>cheatsheet/video/cheatsheet-zoom-in-out.mp4</file>
     </qresource>
+    <qresource prefix="/v"/>
 </RCC>
