@@ -23,7 +23,7 @@
 <build_depend>ros_type_introspection</build_depend>
 <build_depend>qtbase5-dev</build_depend>
 <build_depend>qtdeclarative5-dev</build_depend>
-<build_depend>qt5-multimedia</build_depend>
+<build_depend>qtmultimedia5-dev</build_depend>
 <build_depend>binutils</build_depend>
 
 <run_depend>rosbag</run_depend>
@@ -35,7 +35,7 @@
 <run_depend>ros_type_introspection</run_depend>
 <run_depend>qtbase5-dev</run_depend>
 <run_depend>qtdeclarative5-dev</run_depend>
-<run_depend>qt5-multimedia</run_depend>
+<run_depend>qtmultimedia5-dev</run_depend>
 <run_depend>binutils</run_depend>
 <run_depend>tf</run_depend>
 
