@@ -67,11 +67,11 @@ Clone the repository as usual:
 The only binary dependency that you need installed in your system is Qt5. 
 On Ubuntu the debians can be installed with the command:
 
-    sudo apt-get -y install qtbase5-dev libqt5svg5-dev qtdeclarative5-dev libqt5multimedia5 libqt5multimedia5-plugins libqt5multimediawidgets5
+    sudo apt-get -y install qtbase5-dev libqt5svg5-dev qtdeclarative5-dev qtmultimedia5-dev libqt5multimedia5-plugins
     
 On Fedora:
 
-    sudo dnf install qt5-qtbase-devel qt5-qtsvg-devel qt5-qtdeclarative-devel
+    sudo dnf install qt5-qtbase-devel qt5-qtsvg-devel qt5-qtdeclarative-devel qt5-qtmultimedia-devel
     
 Then compile using cmake (qmake is NOT supported):
 
