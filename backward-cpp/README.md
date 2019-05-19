@@ -21,7 +21,7 @@ You can see that for the trace #1 in the example, the function
 `you_shall_not_pass()` was inlined in the function `...read2::do_test()` by the
 compiler.
 
-##Installation
+## Installation
 
 #### Install backward.hpp
 
@@ -39,7 +39,7 @@ errors (segfault, abort, un-handled exception...), simply add a copy of
 The code in `backward.cpp` is trivial anyway, you can simply copy what it's
 doing at your convenience.
 
-##Configuration & Dependencies
+## Configuration & Dependencies
 
 ### Integration with CMake
 
