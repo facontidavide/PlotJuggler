@@ -201,7 +201,9 @@ void CustomFunction::calculate(const PlotDataMapRef &plotData, PlotData* dst_dat
             dst_data->pushBack( calculatePoint(calcFct, src_data, channel_data, chan_values, i ) );
         }
     }
-    _last_updated_timestamp = dst_data->back().x;
+    if (dst_data->size() != 0){
+      _last_updated_timestamp = dst_data->back().x;
+    }
 }
 
 const std::string &CustomFunction::name() const
