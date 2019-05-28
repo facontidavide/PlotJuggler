@@ -1950,6 +1950,18 @@ void MainWindow::updateDataAndReplot(bool replot_hidden_tabs)
 
 void MainWindow::on_streamingSpinBox_valueChanged(int value)
 {
+    double real_value = value;
+    if ( value == ui->streamingSpinBox->maximum())
+    {
+       real_value = std::numeric_limits<double>::max();
+       ui->streamingSpinBox->setStyleSheet("QSpinBox { color: red; }");
+       ui->streamingSpinBox->setSuffix("=inf");
+    }
+    else{
+       ui->streamingSpinBox->setStyleSheet("QSpinBox { color: black; }");
+       ui->streamingSpinBox->setSuffix(" sec");
+    }
+
     if( isStreamingActive() == false)
     {
         return;
@@ -1957,12 +1969,12 @@ void MainWindow::on_streamingSpinBox_valueChanged(int value)
 
     for (auto& it : _mapped_plot_data.numeric )
     {
-        it.second.setMaximumRangeX( value );
+        it.second.setMaximumRangeX( real_value );
     }
 
     for (auto& it: _mapped_plot_data.user_defined)
     {
-        it.second.setMaximumRangeX( value );
+        it.second.setMaximumRangeX( real_value );
     }
 
     if( _current_streamer )
@@ -1971,12 +1983,12 @@ void MainWindow::on_streamingSpinBox_valueChanged(int value)
 
         for (auto& it : _current_streamer->dataMap().numeric )
         {
-            it.second.setMaximumRangeX( value );
+            it.second.setMaximumRangeX( real_value );
         }
 
         for (auto& it: _current_streamer->dataMap().user_defined)
         {
-            it.second.setMaximumRangeX( value );
+            it.second.setMaximumRangeX( real_value );
         }
     }
 }
