@@ -310,6 +310,7 @@ void DataStreamROS::saveIntoRosbag()
         QStringList args;
         args << "reindex" << fileName;
         process.start("rosbag" ,args);
+        process.waitForFinished();
     }
 }
 
