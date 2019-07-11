@@ -1077,8 +1077,12 @@ void PlotWidget::setZoomRectangle(QRectF rect, bool emit_signal)
 
 void PlotWidget::reloadPlotData()
 {
+    int visible = 0;
     for (auto& curve_it: _curve_list)
     {
+        if (curve_it.second->isVisible())
+          visible++;
+
         auto& curve = curve_it.second;
         const auto& curve_name = curve_it.first;
 
@@ -1092,7 +1096,7 @@ void PlotWidget::reloadPlotData()
         }
     }
 
-    if( _curve_list.size() == 0){
+    if( _curve_list.size() == 0 || visible == 0){
         setDefaultRangeX();
     }
 }
@@ -1190,6 +1194,9 @@ PlotData::RangeTime PlotWidget::getMaximumRangeX() const
 
     for(auto& it: _curve_list)
     {
+        if (!it.second->isVisible())
+            continue;
+
         auto series = static_cast<DataSeriesBase*>( it.second->data() );
         const auto max_range_X = series->getVisualizationRangeX();
         if( !max_range_X ) continue;
@@ -1222,6 +1229,9 @@ PlotData::RangeValue  PlotWidget::getMaximumRangeY( PlotData::RangeTime range_X)
 
     for(auto& it: _curve_list)
     {
+        if (!it.second->isVisible())
+            continue;
+
         auto series = static_cast<DataSeriesBase*>( it.second->data() );
 
         const auto max_range_X = series->getVisualizationRangeX();
@@ -1769,6 +1779,7 @@ bool PlotWidget::canvasEventFilter(QEvent *event)
                             auto &curve = _curve_list.at( curve_it.first );
                             curve->setVisible( !curve->isVisible() );
                             _tracker->redraw();
+                            on_zoomOutVertical_triggered();
                             replot();
                             return true;
                         }
