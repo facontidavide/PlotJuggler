@@ -18,6 +18,8 @@ public:
 
     virtual bool start(QStringList*) override;
 
+	  virtual bool start(QStringList*, const bool&) override { };
+
     virtual void shutdown() override;
 
     virtual bool isRunning() const override;

@@ -27,9 +27,11 @@ public:
 
     DataStreamServer();
 
-	virtual bool start(QStringList*) override;
+	  virtual bool start(QStringList*) override;
 
-	virtual void shutdown() override;
+	  virtual bool start(QStringList*, const bool&) override { };
+
+	  virtual void shutdown() override;
 
     virtual bool isRunning() const override { return _running; }
 
@@ -40,14 +42,14 @@ public:
     virtual bool isDebugPlugin() override { return false; }
 
 private:
-	quint16 _port;
-	QList<QWebSocket *> _clients;
-	QWebSocketServer _server;    
+	  quint16 _port;
+	  QList<QWebSocket *> _clients;
+	  QWebSocketServer _server;    
 
     bool _running;
 
 private slots:
-	void onNewConnection();	
+	  void onNewConnection();	
     void processMessage(QString message);
     void socketDisconnected();
 };

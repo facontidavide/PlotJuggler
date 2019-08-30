@@ -122,7 +122,7 @@
               <height>40</height>
              </size>
             </property>
-            <layout class="QHBoxLayout" name="horizontalLayoutZoom" stretch="0,0,0,0,1,0,0,0,0">
+            <layout class="QHBoxLayout" name="horizontalLayoutZoom" stretch="0,0,0,0,0,0,0">
              <property name="leftMargin">
               <number>8</number>
              </property>
@@ -411,56 +411,6 @@
               </spacer>
              </item>
              <item>
-              <widget class="QLabel" name="streamingLabel">
-               <property name="text">
-                <string>   Buffer:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QSpinBox" name="streamingSpinBox">
-               <property name="minimumSize">
-                <size>
-                 <width>0</width>
-                 <height>30</height>
-                </size>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>16777215</width>
-                 <height>30</height>
-                </size>
-               </property>
-               <property name="focusPolicy">
-                <enum>Qt::ClickFocus</enum>
-               </property>
-               <property name="toolTip">
-                <string>Size of the  Buffer (seconds)</string>
-               </property>
-               <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::PlusMinus</enum>
-               </property>
-               <property name="accelerated">
-                <bool>true</bool>
-               </property>
-               <property name="correctionMode">
-                <enum>QAbstractSpinBox::CorrectToPreviousValue</enum>
-               </property>
-               <property name="suffix">
-                <string> sec</string>
-               </property>
-               <property name="minimum">
-                <number>5</number>
-               </property>
-               <property name="maximum">
-                <number>100</number>
-               </property>
-               <property name="value">
-                <number>5</number>
-               </property>
-              </widget>
-             </item>
-             <item>
               <widget class="QPushButton" name="pushButtonStreaming">
                <property name="enabled">
                 <bool>false</bool>
@@ -541,12 +491,6 @@
                 </property>
                 <item>
                  <widget class="QLabel" name="label">
-                  <property name="font">
-                   <font>
-                    <weight>75</weight>
-                    <bold>true</bold>
-                   </font>
-                  </property>
                   <property name="text">
                    <string>Playback speed</string>
                   </property>
@@ -590,6 +534,56 @@
                  </widget>
                 </item>
                </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="streamingLabel">
+               <property name="text">
+                <string>   Buffer:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="streamingSpinBox">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="focusPolicy">
+                <enum>Qt::ClickFocus</enum>
+               </property>
+               <property name="toolTip">
+                <string>Size of the  Buffer (seconds)</string>
+               </property>
+               <property name="buttonSymbols">
+                <enum>QAbstractSpinBox::PlusMinus</enum>
+               </property>
+               <property name="accelerated">
+                <bool>true</bool>
+               </property>
+               <property name="correctionMode">
+                <enum>QAbstractSpinBox::CorrectToPreviousValue</enum>
+               </property>
+               <property name="suffix">
+                <string> sec</string>
+               </property>
+               <property name="minimum">
+                <number>5</number>
+               </property>
+               <property name="maximum">
+                <number>3600</number>
+               </property>
+               <property name="value">
+                <number>3600</number>
+               </property>
               </widget>
              </item>
              <item>
@@ -815,7 +809,7 @@
      <x>0</x>
      <y>0</y>
      <width>1000</width>
-     <height>25</height>
+     <height>28</height>
     </rect>
    </property>
    <property name="minimumSize">

@@ -21,6 +21,7 @@
 #include "timeseries_qwt.h"
 #include "customtracker.h"
 #include "axis_limits_dialog.h"
+#include "edit_labels_dialog.h"
 #include "transforms/transform_selector.h"
 #include "transforms/custom_function.h"
 #include "plotlegend.h"
@@ -96,7 +97,7 @@ public slots:
 
     void replot() override;
 
-    void updateCurves();
+    void updateCurves(PlotDataMapRef& datamap);
 
     void detachAllCurves();
 
@@ -108,7 +109,8 @@ public slots:
 
     void on_zoomOutVertical_triggered(bool emit_signal = true);
 
-    void removeCurve(const std::string &name);
+    // modified to return the iterator returned by erase
+    std::map<std::string, QwtPlotCurve* >::iterator removeCurve(const std::string &name);
 
     void activateLegend(bool activate);
 
@@ -135,6 +137,8 @@ private slots:
     void on_savePlotToFile();
 
     void on_editAxisLimits_triggered();
+
+    void on_editLabels_triggered();
 
 private slots:
     void launchRemoveCurveDialog();
@@ -167,6 +171,7 @@ private:
     QAction *_action_custom_transform;
     QAction *_action_saveToFile;
     QAction *_action_editLimits;
+    QAction *_action_editLabels;
 
     PlotZoomer* _zoomer;
     PlotMagnifier* _magnifier;
@@ -215,6 +220,8 @@ private:
     PlotData::RangeValue _custom_Y_limits;
 
     AxisLimitsDialog* _axis_limits_dialog;
+
+    EditLabelsDialog* _edit_labels_dialog;
 
     TransformSelector* _transform_select_dialog;
 

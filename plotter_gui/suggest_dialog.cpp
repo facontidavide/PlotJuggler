@@ -66,3 +66,13 @@ void SuggestDialog::on_pushButtonSwap_pressed()
     ui->lineEditY->setText( temp );
     updateSuggestion();
 }
+
+void SuggestDialog::on_pushButtonOk_pressed()
+{
+    this->accept();
+}
+
+void SuggestDialog::on_pushButtonCancel_pressed()
+{
+    this->reject();
+}

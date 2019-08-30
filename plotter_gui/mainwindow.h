@@ -34,10 +34,12 @@ public:
 
     ~MainWindow();
 
-    bool loadLayoutFromFile(QString filename);
+    bool loadLayoutFromFile(QString filename, const bool& fromCommandline);
     bool loadDataFromFiles(QStringList filenames );
     bool loadDataFromFile(const FileLoadInfo &info);
     QString styleDirectory() const;
+
+    bool yesNoMsgBox(const QString& label, const QString& msg);
 
 public slots:
 
@@ -115,7 +117,10 @@ private:
 
     bool _autostart_publishers;
 
+    bool _from_commandline;
+
     double _tracker_time;
+    bool _track_realtime;
 
     std::vector<FileLoadInfo> _loaded_datafiles;
     CurveTracker::Parameter _tracker_param;
@@ -209,7 +214,7 @@ public slots:
     void on_pushButtonTimeTracker_pressed();
     void on_pushButtonRemoveTimeOffset_toggled(bool checked);
 
-    void on_actionStartStreaming(QString streamer_name);
+    void on_actionStartStreaming(QString streamer_name, const bool& fromCommandline);
 
 private slots:
     void on_stylesheetChanged(QString style_name);

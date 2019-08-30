@@ -25,6 +25,8 @@ public:
 
 private slots:
     void on_pushButtonSwap_pressed();
+    void on_pushButtonOk_pressed();
+    void on_pushButtonCancel_pressed();
 
 private:
     Ui::SuggestDialog *ui;

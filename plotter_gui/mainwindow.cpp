@@ -13,6 +13,7 @@
 #include <QElapsedTimer>
 #include <QFileDialog>
 #include <QInputDialog>
+#include <QProgressDialog>
 #include <QMenu>
 #include <QGroupBox>
 #include <QMessageBox>
@@ -54,9 +55,10 @@ MainWindow::MainWindow(const QCommandLineParser &commandline_parser, QWidget *pa
     _playback_shotcut(Qt::Key_Space, this),
     _minimized(false),
     _current_streamer(nullptr),
-    _disable_undo_logging(false),
+    _disable_undo_logging(true),
     _tracker_time(0),
     _tracker_param( CurveTracker::VALUE ),
+    _from_commandline(false),
     _style_directory("style_light")
 {
     QLocale::setDefault(QLocale::c()); // set as default
@@ -177,7 +179,8 @@ MainWindow::MainWindow(const QCommandLineParser &commandline_parser, QWidget *pa
     }
     if( commandline_parser.isSet("layout"))
     {
-        loadLayoutFromFile( commandline_parser.value("layout"));
+        _from_commandline = true;
+        loadLayoutFromFile(commandline_parser.value("layout"), _from_commandline);
     }
 
     QSettings settings;
@@ -186,7 +189,7 @@ MainWindow::MainWindow(const QCommandLineParser &commandline_parser, QWidget *pa
     bool activate_grid = settings.value("MainWindow.activateGrid", false).toBool();
     ui->pushButtonActivateGrid->setChecked(activate_grid);
 
-    int streaming_buffer_value = settings.value("MainWindow.streamingBufferValue", 5).toInt();
+    int streaming_buffer_value = settings.value("MainWindow.streamingBufferValue", 1000).toInt();
     ui->streamingSpinBox->setValue(streaming_buffer_value);
 
     bool datetime_display  = settings.value("MainWindow.dateTimeDisplay", false).toBool();
@@ -553,7 +556,7 @@ void MainWindow::initializePlugins(QString directory_name)
 
                     connect(startStreamer, &QAction::triggered, this, [this, plugin_name]()
                     {
-                        on_actionStartStreaming(plugin_name);
+                        on_actionStartStreaming(plugin_name, false);
                     });
 
 
@@ -756,16 +759,7 @@ void MainWindow::checkAllCurvesFromLayout(const QDomElement& root)
     }
     if( missing_curves.size() > 0 )
     {
-        QMessageBox msgBox(this);
-        msgBox.setWindowTitle("Warning");
-        msgBox.setText(tr("One or more timeseries in the layout haven't been loaded yet\n"
-                          "What do you want to do?"));
-
-        QPushButton* buttonRemove = msgBox.addButton(tr("Remove curves from plots"), QMessageBox::RejectRole);
-        QPushButton* buttonPlaceholder = msgBox.addButton(tr("Create empty placeholders"), QMessageBox::YesRole);
-        msgBox.setDefaultButton(buttonPlaceholder);
-        msgBox.exec();
-        if( msgBox.clickedButton() == buttonPlaceholder )
+        if (_from_commandline)
         {
             for(auto& name: missing_curves )
             {
@@ -773,6 +767,27 @@ void MainWindow::checkAllCurvesFromLayout(const QDomElement& root)
                 _mapped_plot_data.addNumeric(name);
             }
             _curvelist_widget->refreshColumns();
+        }
+        else
+        {
+            QMessageBox msgBox(this);
+            msgBox.setWindowTitle("Warning");
+            msgBox.setText(tr("One or more timeseries in the layout haven't been loaded yet\n"
+                  "What do you want to do?"));
+
+            QPushButton* buttonRemove = msgBox.addButton(tr("Remove curves from plots"), QMessageBox::RejectRole);
+            QPushButton* buttonPlaceholder = msgBox.addButton(tr("Create empty placeholders"), QMessageBox::YesRole);
+            msgBox.setDefaultButton(buttonPlaceholder);
+            msgBox.exec();
+            if( msgBox.clickedButton() == buttonPlaceholder )
+            {
+                for(auto& name: missing_curves )
+                {
+                  _curvelist_widget->addItem( QString::fromStdString( name ) );
+                  _mapped_plot_data.addNumeric(name);
+                }
+                _curvelist_widget->refreshColumns();
+            }
         }
     }
 }
@@ -942,7 +957,7 @@ void MainWindow::updateRecentLayoutMenu(QStringList new_filenames)
         QAction* action = new QAction(filename, nullptr);
         connect( action, &QAction::triggered, this, [this, filename]
         {
-            if ( this->loadLayoutFromFile(filename) )
+            if ( this->loadLayoutFromFile(filename, false) )
             {
                 updateRecentLayoutMenu( {filename} );
             }
@@ -1047,18 +1062,22 @@ void MainWindow::importPlotDataMap(PlotDataMapRef& new_data, bool remove_old)
 
         if( !old_plots_to_delete.empty() )
         {
-            QMessageBox::StandardButton reply;
-            reply = QMessageBox::question(this, tr("Warning"),
-                                          tr("Do you want to remove the previously loaded data?\n"),
-                                          QMessageBox::Yes | QMessageBox::No,
-                                          QMessageBox::Yes );
-            if( reply == QMessageBox::Yes )
-            {
-                onDeleteMultipleCurves(old_plots_to_delete);
-            }
+            onDeleteMultipleCurves(old_plots_to_delete);
         }
     }
 
+    // This can take a while. So, especially when launching with
+    // a layout, we want to let the user know not to worry.
+    //QProgressDialog progress_dialog;
+    //progress_dialog.setLabelText("Adding new dataseries");
+    //progress_dialog.setRange(0, new_data.numeric.size());
+    //progress_dialog.setAutoClose(true);
+    //progress_dialog.setAutoReset(true);
+    //progress_dialog.setValue(0);
+    //progress_dialog.show();
+    //QApplication::processEvents();
+
+    //int count = 0;
     bool curvelist_modified = false;
     for (auto& it: new_data.numeric)
     {
@@ -1067,7 +1086,15 @@ void MainWindow::importPlotDataMap(PlotDataMapRef& new_data, bool remove_old)
         {
             _curvelist_widget->addItem( QString::fromStdString( name ) );
             curvelist_modified = true;
+
         }
+        // update bar every 10%. +1 is to prevent undefined behavior with count % 0
+        //if (count % (static_cast<int>(new_data.numeric.size()/10.0)+1) == 0)
+        //{
+            //progress_dialog.setValue(count);
+            //QApplication::processEvents();
+        //}
+        //count++;
     }
 
     importPlotDataMapHelper( new_data.numeric, _mapped_plot_data.numeric, remove_old );
@@ -1077,6 +1104,7 @@ void MainWindow::importPlotDataMap(PlotDataMapRef& new_data, bool remove_old)
     {
         _curvelist_widget->refreshColumns();
     }
+    updateTimeOffset();
 }
 
 bool MainWindow::isStreamingActive() const
@@ -1203,7 +1231,11 @@ bool MainWindow::loadDataFromFile(const FileLoadInfo& info)
             {
                 AddPrefixToPlotData( info.prefix.toStdString(), mapped_data.numeric );
 
-                importPlotDataMap(mapped_data, true);     
+                // I'm making the call that if a bag file is loaded, streaming should
+                // be shut down.
+                on_actionStopStreaming_triggered();
+                auto remove_old = yesNoMsgBox("Warning", "Remove old data?");
+                importPlotDataMap(mapped_data, remove_old);     
 
                 QDomElement plugin_elem = dataloader->xmlSaveState(new_info.plugin_config);
                 new_info.plugin_config.appendChild( plugin_elem );
@@ -1237,7 +1269,7 @@ QString MainWindow::styleDirectory() const
 }
 
 
-void MainWindow::on_actionStartStreaming(QString streamer_name)
+void MainWindow::on_actionStartStreaming(QString streamer_name, const bool& fromCommandline)
 {
     if( _current_streamer )
     {
@@ -1272,7 +1304,7 @@ void MainWindow::on_actionStartStreaming(QString streamer_name)
     bool started = false;
     try{
         // TODO data sources
-        started = _current_streamer && _current_streamer->start( nullptr );
+        started = _current_streamer && _current_streamer->start(nullptr, fromCommandline);
     }
     catch(std::runtime_error& err)
     {
@@ -1283,9 +1315,10 @@ void MainWindow::on_actionStartStreaming(QString streamer_name)
     }
     if( started )
     {
+        bool remove_old = fromCommandline ? false : yesNoMsgBox("Warning", "Remove old data?");
         {
             std::lock_guard<std::mutex> lock( _current_streamer->mutex() );
-            importPlotDataMap( _current_streamer->dataMap(), true );
+            importPlotDataMap(_current_streamer->dataMap(), remove_old);
         }
 
         for(auto& action: ui->menuStreaming->actions()) {
@@ -1472,7 +1505,7 @@ std::tuple<double, double, int> MainWindow::calculateVisibleRangeX()
 
 static const QString LAYOUT_VERSION = "2.3.0";
 
-bool MainWindow::loadLayoutFromFile(QString filename)
+bool MainWindow::loadLayoutFromFile(QString filename, const bool& fromCommandline)
 {
     QSettings settings;
 
@@ -1547,24 +1580,30 @@ bool MainWindow::loadLayoutFromFile(QString filename)
     if( !previousl_streamer.isNull() )
     {
         QString streamer_name = previousl_streamer.attribute("name");
-
-        QMessageBox msgBox(this);
-        msgBox.setWindowTitle("Start Streaming?");
-        msgBox.setText(tr("Start the previously used streaming plugin?\n\n %1 \n\n").arg(streamer_name));
-        QPushButton* yes = msgBox.addButton(tr("Yes"), QMessageBox::YesRole);
-        QPushButton* no  = msgBox.addButton(tr("No"), QMessageBox::RejectRole);
-        msgBox.setDefaultButton(yes);
-        msgBox.exec();
-
-        if( msgBox.clickedButton() == yes )
+        if (fromCommandline)
         {
-            if( _data_streamer.count(streamer_name) != 0 )
+            on_actionStartStreaming(streamer_name, fromCommandline);
+        }
+        else
+        {
+            QMessageBox msgBox(this);
+            msgBox.setWindowTitle("Start Streaming?");
+            msgBox.setText(tr("Start the previously used streaming plugin?\n\n %1 \n\n").arg(streamer_name));
+            QPushButton* yes = msgBox.addButton(tr("Yes"), QMessageBox::YesRole);
+            QPushButton* no  = msgBox.addButton(tr("No"), QMessageBox::RejectRole);
+            msgBox.setDefaultButton(yes);
+            msgBox.exec();
+
+            if( msgBox.clickedButton() == yes )
             {
-                on_actionStartStreaming( streamer_name );
-            }
-            else{
-                QMessageBox::warning(this, tr("Error Loading Streamer"),
-                                     tr("The streamer named %1 can not be loaded.").arg(streamer_name));
+                if( _data_streamer.count(streamer_name) != 0 )
+                {
+                    on_actionStartStreaming(streamer_name, fromCommandline);
+                }
+                else{
+                    QMessageBox::warning(this, tr("Error Loading Streamer"),
+                                         tr("The streamer named %1 can not be loaded.").arg(streamer_name));
+                }
             }
         }
     }
@@ -1639,12 +1678,12 @@ bool MainWindow::loadLayoutFromFile(QString filename)
             }
         }
 
-        if( snippets_are_different )
+        if( snippets_are_different && !fromCommandline )
         {
             QMessageBox msgBox(this);
             msgBox.setWindowTitle("Overwrite custom transforms?");
             msgBox.setText("Your layour file contains a set of custom transforms different from "
-                           "the last one you used.\nant to load these transformations?");
+                           "the last one you used.\nWant to load these transformations?");
             msgBox.addButton(QMessageBox::No);
             msgBox.addButton(QMessageBox::Yes);
             msgBox.setDefaultButton(QMessageBox::Yes);
@@ -1889,9 +1928,10 @@ void MainWindow::updateDataAndReplot(bool replot_hidden_tabs)
 
     const bool is_streaming_active = isStreamingActive();
 
-    forEachWidget( [is_streaming_active](PlotWidget* plot)
+    forEachWidget( [is_streaming_active, this](PlotWidget* plot)
     {
-        plot->updateCurves();
+        // modified
+        plot->updateCurves(this->_mapped_plot_data);
         plot->setZoomEnabled( !is_streaming_active );
     } );
 
@@ -1955,6 +1995,10 @@ void MainWindow::on_streamingSpinBox_valueChanged(int value)
 
 void MainWindow::on_actionStopStreaming_triggered()
 {
+    if (!_current_streamer)
+    {
+        return;
+    }
     ui->pushButtonStreaming->setChecked(false);
     ui->pushButtonStreaming->setEnabled(false);
     _replot_timer->stop();
@@ -2455,7 +2499,7 @@ void MainWindow::on_actionLoadLayout_triggered()
         return;
     }
 
-    if( loadLayoutFromFile(filename) )
+    if( loadLayoutFromFile(filename, false) )
     {
         updateRecentLayoutMenu( {filename} );
     }
@@ -2713,5 +2757,21 @@ void MainWindow::on_actionPreferences_triggered()
     {
         _style_directory = theme;
         emit stylesheetChanged(_style_directory);
+    }
+}
+
+bool MainWindow::yesNoMsgBox(const QString& label, const QString& msg)
+{
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, label, msg,
+                                  QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::Yes );
+    if( reply == QMessageBox::Yes )
+    {
+        return true;
+    }
+    else
+    {
+        return false;
     }
 }

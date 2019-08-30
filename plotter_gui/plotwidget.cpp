@@ -49,6 +49,14 @@ class TimeScaleDraw: public QwtScaleDraw
     }
 };
 
+class StandardScaleDraw: public QwtScaleDraw
+{
+    virtual QwtText label(double value) const
+    {
+        return QwtText(QString::number(value, 'g', 9));
+    }
+};
+
 const double MAX_DOUBLE = std::numeric_limits<double>::max() / 2 ;
 
 static const char* noTransform = "noTransform";
@@ -102,6 +110,8 @@ PlotWidget::PlotWidget(PlotDataMapRef &datamap, QWidget *parent):
 
     this->setAxisAutoScale(QwtPlot::yLeft, true);
     this->setAxisAutoScale(QwtPlot::xBottom, true);
+    this->setAxisScaleDraw(QwtPlot::yLeft, new StandardScaleDraw);
+    this->setAxisScaleDraw(QwtPlot::xBottom, new StandardScaleDraw);
 
     this->axisScaleEngine(QwtPlot::xBottom)->setAttribute(QwtScaleEngine::Floating,true);
     this->plotLayout()->setAlignCanvasToScales( true );
@@ -152,6 +162,7 @@ PlotWidget::PlotWidget(PlotDataMapRef &datamap, QWidget *parent):
     setDefaultRangeX();
 
     _axis_limits_dialog = new AxisLimitsDialog(this);
+    _edit_labels_dialog = new EditLabelsDialog(this);
 
     _custom_Y_limits.min = (-MAX_DOUBLE );
     _custom_Y_limits.max = ( MAX_DOUBLE );
@@ -185,6 +196,9 @@ void PlotWidget::buildActions()
 
     _action_editLimits = new  QAction(tr("&Edit Axis Limits"), this);
     connect(_action_editLimits, &QAction::triggered, this, &PlotWidget::on_editAxisLimits_triggered);
+
+    _action_editLabels = new  QAction(tr("&Edit Labels"), this);
+    connect(_action_editLabels, &QAction::triggered, this, &PlotWidget::on_editLabels_triggered);
 
     _action_zoomOutMaximum = new QAction("&Zoom Out", this);
     connect(_action_zoomOutMaximum, &QAction::triggered, this, [this]()
@@ -294,6 +308,7 @@ void PlotWidget::canvasContextMenuTriggered(const QPoint &pos)
     menu.addAction(_action_showPoints);
     menu.addSeparator();
     menu.addAction(_action_editLimits);
+    menu.addAction(_action_editLabels);
     menu.addAction(_action_zoomOutMaximum);
     menu.addAction(_action_zoomOutHorizontally);
     menu.addAction(_action_zoomOutVertically);
@@ -395,15 +410,20 @@ bool PlotWidget::addCurveXY(std::string name_x, std::string name_y,
 
     while( !isValid(name) )
     {
+
         SuggestDialog dialog( name_x, name_y, this );
 
-        bool ok = (dialog.exec() ==  QDialog::Accepted);
+        auto resp = dialog.exec();
         QString text =  dialog.suggestedName();
         name = text.toStdString();
         name_x = dialog.nameX().toStdString();
         name_y = dialog.nameY().toStdString();
-
-        if ( !ok || !isValid(name) )
+  
+        if (resp == QDialog::Rejected)
+        {
+            return false;
+        }
+        if (resp == QDialog::Accepted && !isValid(name) )
         {
             int ret = QMessageBox::warning(this, "Missing name",
                                            "The name is missing or invalid. Try again or abort.",
@@ -482,14 +502,15 @@ bool PlotWidget::addCurveXY(std::string name_x, std::string name_y,
     return true;
 }
 
-void PlotWidget::removeCurve(const std::string &curve_name)
+std::map<std::string, QwtPlotCurve* >::iterator PlotWidget::removeCurve(const std::string &curve_name)
 {
+    std::map<std::string, QwtPlotCurve* >::iterator ret = _curve_list.end();
     auto it = _curve_list.find(curve_name);
     if( it != _curve_list.end() )
     {
         auto& curve = it->second;
         curve->detach();
-        _curve_list.erase( it );
+        ret = _curve_list.erase( it );
 
         auto marker_it = _point_marker.find(curve_name);
         if( marker_it != _point_marker.end() )
@@ -504,6 +525,7 @@ void PlotWidget::removeCurve(const std::string &curve_name)
         emit curveListChanged();
     }
     _curves_transform.erase( curve_name );
+    return ret;
 }
 
 bool PlotWidget::isEmpty() const
@@ -682,6 +704,12 @@ QDomElement PlotWidget::xmlSaveState( QDomDocument &doc) const
 {
     QDomElement plot_el = doc.createElement("plot");
 
+    QDomElement label_el = doc.createElement("labels");
+    label_el.setAttribute("ylabel", this->axisTitle(QwtPlot::yLeft).text());
+    label_el.setAttribute("xlabel", this->axisTitle(QwtPlot::xBottom).text());
+    label_el.setAttribute("title", this->title().text());
+    plot_el.appendChild(label_el);
+
     QDomElement range_el = doc.createElement("range");
     QRectF rect = this->canvasBoundingRect();
     range_el.setAttribute("bottom", QString::number(rect.bottom(), 'f', 6) );
@@ -737,9 +765,13 @@ QDomElement PlotWidget::xmlSaveState( QDomDocument &doc) const
 
 bool PlotWidget::xmlLoadState(QDomElement &plot_widget)
 {
+    QDomElement label_el = plot_widget.firstChildElement("labels");
+    this->setTitle(label_el.attribute("title"));
+    this->setAxisTitle(QwtPlot::xBottom, label_el.attribute("xlabel"));
+    this->setAxisTitle(QwtPlot::yLeft, label_el.attribute("ylabel"));
     std::set<std::string> added_curve_names;
 
-    QDomElement transform = plot_widget.firstChildElement( "transform" );
+    QDomElement transform = plot_widget.firstChildElement("transform");
     QString trans_value = transform.attribute("value");
 
     if( trans_value == "XYPlot" )
@@ -1160,7 +1192,8 @@ void PlotWidget::on_changeDateTimeScale(bool enable)
             setAxisScaleDraw(QwtPlot::xBottom, new TimeScaleDraw());
         }
         else{
-            setAxisScaleDraw(QwtPlot::xBottom, new QwtScaleDraw);
+            //setAxisScaleDraw(QwtPlot::xBottom, new QwtScaleDraw);
+            setAxisScaleDraw(QwtPlot::xBottom, new StandardScaleDraw);
         }
     }
 }
@@ -1265,8 +1298,72 @@ PlotData::RangeValue  PlotWidget::getMaximumRangeY( PlotData::RangeTime range_X)
 }
 
 
-void PlotWidget::updateCurves()
+void PlotWidget::updateCurves(PlotDataMapRef& datamap)
 {
+    for (auto it = _curve_list.begin(); it != _curve_list.end();)
+    {
+        auto data_it = datamap.numeric.find(it->first);
+        // If current curve list element is not in the data list 
+        // for the main ui, we'll have problems later. Instead,
+        // remove it
+        if (data_it == datamap.numeric.end())
+        {
+            // Check if it's an XY curve. There's a field for that,
+            // but we'll need to do this anyway. If it's an XY, parse
+            // the topic to make sure that it's not composed of fields
+            // which are actually in our main ui list. This would be 
+            // missed in the first check due to the naming system
+            // (e.g. /blah/blah/pose/[x;y])
+            std::string orig = it->first;
+            std::string str = it->first;
+            std::string delimiter = "[";
+            std::string xtopic, ytopic;
+            size_t pos = 0;
+            while ((pos = str.find(delimiter)) != std::string::npos) 
+            {
+                xtopic = ytopic = str.substr(0, pos);
+                str.erase(0, pos + delimiter.length());
+            }
+            delimiter = ";";
+            while ((pos = str.find(delimiter)) != std::string::npos) 
+            {
+                xtopic += str.substr(0, pos);
+                str.erase(0, pos + delimiter.length());
+                ytopic += str.substr(0, str.length()-1);
+            }
+            // If the string doesn't parse, then it doesn't match and 
+            // should be removed.
+            if (xtopic.empty() || ytopic.empty())
+            {
+                it = removeCurve(orig);
+            }
+            // If it did parse...
+            else
+            {
+                auto xdata_it = datamap.numeric.find(xtopic);
+                auto ydata_it = datamap.numeric.find(ytopic);
+                // ...check the constituent topics again.
+                if (xdata_it == datamap.numeric.end() || ydata_it == datamap.numeric.end())
+                {
+                    it = removeCurve(orig);
+                }
+                else
+                {
+                    it++;
+                }
+            }
+        }
+        else
+        {
+            it++;
+        }
+    }
+
+    // Originally, this chunk (specifically updatCache()) would segfault
+    // whenever a layout a layout containing XY plots was loaded. More 
+    // generally, all this stuff can get twisted up pretty easily and
+    // crash. The above is my attempt at preventing any data which doesn't
+    // currently exist from being accessed. 
     for(auto& it: _curve_list)
     {
         auto series = static_cast<DataSeriesBase*>( it.second->data() );
@@ -1455,12 +1552,12 @@ void PlotWidget::convertToXY()
     enableTracker(false);
     _default_transform = "XYPlot";
 
-    QFont font_footer;
-    font_footer.setPointSize(10);
-    QwtText text( "XY Plot" );
-    text.setFont(font_footer);
+    //QFont font_footer;
+    //font_footer.setPointSize(10);
+    //QwtText text( "XY Plot" );
+    //text.setFont(font_footer);
 
-    this->setFooter( text );
+    //this->setFooter( text );
 
     zoomOut(true);
     replot();
@@ -1520,7 +1617,7 @@ void PlotWidget::transformCustomCurves()
     {
         QMessageBox msgBox(this);
         msgBox.setWindowTitle("Warnings");
-        msgBox.setText(tr("Something went wront while creating the following curves. "
+        msgBox.setText(tr("Something went wrong while creating the following curves. "
                           "Please check that the transform equation is correct.\n\n") +
                        QString::fromStdString(error_message) );
         msgBox.exec();
@@ -1615,6 +1712,14 @@ void PlotWidget::on_editAxisLimits_triggered()
     emit undoableChange();
 }
 
+void PlotWidget::on_editLabels_triggered()
+{
+    _edit_labels_dialog->exec();
+    this->setTitle(_edit_labels_dialog->plotLabel());
+    this->setAxisTitle(QwtPlot::xBottom, _edit_labels_dialog->labelX());
+    this->setAxisTitle(QwtPlot::yLeft, _edit_labels_dialog->labelY());
+    replot(); // needed?
+}
 
 bool PlotWidget::eventFilter(QObject *obj, QEvent *event)
 {

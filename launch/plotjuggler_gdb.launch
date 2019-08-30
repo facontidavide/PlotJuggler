@@ -1,0 +1,11 @@
+<launch>
+
+    <node name = "PlotJuggler" 
+    pkg = "plotjuggler" 
+    type = "PlotJuggler"
+    launch-prefix="gdb -ex run --args"
+    required = "true" output = "screen"
+    args="--layout $(find plotjuggler)/config/formations.xml" />
+
+</launch>
+

@@ -34,6 +34,8 @@ protected:
 
     const PlotData *_x_axis;
     const PlotData *_y_axis;
+    size_t _old_x_size;
+    size_t _old_y_size;
     PlotData _cached_curve;
 };
 

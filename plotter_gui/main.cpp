@@ -114,8 +114,8 @@ int main(int argc, char *argv[])
      * Please don't do it.
      */
 
-    if( !parser.isSet(nosplash_option) && !( parser.isSet(loadfile_option) || parser.isSet(layout_option) ) )
-    // if(false) // if you uncomment this line, a kitten will die somewhere in the world.
+    //if( !parser.isSet(nosplash_option) && !( parser.isSet(loadfile_option) || parser.isSet(layout_option) ) )
+    if(false) // if you uncomment this line, a kitten will die somewhere in the world.
     {
         QPixmap main_pixmap(":/resources/splash_2.2.jpg");
 

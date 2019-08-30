@@ -134,6 +134,7 @@ void DataStreamROS::extractInitialSamples()
     progress_dialog.setRange(0, wait_time_ms.count());
     progress_dialog.setAutoClose(true);
     progress_dialog.setAutoReset(true);
+    progress_dialog.setAttribute(Qt::WA_DeleteOnClose, true);
 
     progress_dialog.show();
 
@@ -293,6 +294,11 @@ void DataStreamROS::subscribe()
 
 bool DataStreamROS::start(QStringList* selected_datasources)
 {
+    return start(selected_datasources, false);
+}
+
+bool DataStreamROS::start(QStringList* selected_datasources, const bool& fromCommandline)
+{
     _ros_parser.clear();
     if( !_node )
     {
@@ -320,37 +326,39 @@ bool DataStreamROS::start(QStringList* selected_datasources)
                     std::make_pair(QString(topic_info.name.c_str()),
                                    QString(topic_info.datatype.c_str()) ) );
     }
-
-    QTimer timer;
-    timer.setSingleShot(false);
-    timer.setInterval( 1000);
-    timer.start();
-
-    DialogSelectRosTopics dialog( all_topics, _config );
-
-    connect( &timer, &QTimer::timeout, [&]()
+    if (!fromCommandline)
     {
-        all_topics.clear();
-        topic_infos.clear();
-        ros::master::getTopics(topic_infos);
-        for (ros::master::TopicInfo topic_info: topic_infos)
-        {
+        QTimer timer;
+        timer.setSingleShot(false);
+        timer.setInterval( 1000);
+        timer.start();
+
+        DialogSelectRosTopics dialog( all_topics, _config );
+
+        connect( &timer, &QTimer::timeout, [&]()
+            {
+            all_topics.clear();
+            topic_infos.clear();
+            ros::master::getTopics(topic_infos);
+            for (ros::master::TopicInfo topic_info: topic_infos)
+            {
             all_topics.push_back(
-                        std::make_pair(QString(topic_info.name.c_str()),
-                                       QString(topic_info.datatype.c_str()) ) );
+                std::make_pair(QString(topic_info.name.c_str()),
+                  QString(topic_info.datatype.c_str()) ) );
+            }
+            dialog.updateTopicList(all_topics);
+            });
+
+        int res = dialog.exec();
+
+        _config = dialog.getResult();
+
+        timer.stop();
+
+        if( res != QDialog::Accepted || _config.selected_topics.empty() )
+        {
+            return false;
         }
-        dialog.updateTopicList(all_topics);
-    });
-
-    int res = dialog.exec();
-
-    _config = dialog.getResult();
-
-    timer.stop();
-
-    if( res != QDialog::Accepted || _config.selected_topics.empty() )
-    {
-        return false;
     }
 
     saveDefaultSettings();
@@ -422,6 +430,13 @@ bool DataStreamROS::xmlSaveState(QDomDocument &doc, QDomElement &plugin_elem) co
     max_elem.setAttribute("value", QString::number(_config.max_array_size));
     plugin_elem.appendChild( max_elem );
 
+    for (auto& it: _config.selected_topics)
+    {
+        QDomElement topic_elem = doc.createElement("topic");
+        topic_elem.setAttribute("name", it);
+        plugin_elem.appendChild(topic_elem);
+    }
+
     return true;
 }
 
@@ -439,6 +454,18 @@ bool DataStreamROS::xmlLoadState(const QDomElement &parent_element)
     QDomElement max_elem = parent_element.firstChildElement( "max_array_size" );
     _config.max_array_size = max_elem.attribute("value").toInt();
 
+    // ignore topics saved in local settings
+    _config.selected_topics.clear();
+    for (QDomElement topic_elem = parent_element.firstChildElement( "topic" );
+         !topic_elem.isNull();
+         topic_elem = topic_elem.nextSiblingElement( "topic" ) )
+    {
+        QString topic_name = topic_elem.attribute("name");
+        if (!_config.selected_topics.contains(topic_name))
+        {
+            _config.selected_topics.append(topic_name);
+        }
+    }
     return true;
 }
 

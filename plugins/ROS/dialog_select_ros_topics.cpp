@@ -88,6 +88,7 @@ void DialogSelectRosTopics::updateTopicList(std::vector<std::pair<QString, QStri
         for(int r=0; r < ui->listRosTopics->rowCount(); r++ )
         {
             const QTableWidgetItem *item = ui->listRosTopics->item(r,0);
+            // (I'm not terribly confident in this, so keep an eye on it.)
             if( item->text() == topic_name){
                 found = true;
                 break;

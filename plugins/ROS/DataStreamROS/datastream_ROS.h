@@ -24,6 +24,8 @@ public:
 
     virtual bool start(QStringList* selected_datasources) override;
 
+    virtual bool start(QStringList* selected_datasources, const bool& fromCommandline) override;
+
     virtual void shutdown() override;
 
     virtual bool isRunning() const override;

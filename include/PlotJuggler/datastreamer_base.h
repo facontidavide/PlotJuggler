@@ -27,6 +27,8 @@ public:
 
     virtual bool start(QStringList*) = 0;
 
+    virtual bool start(QStringList*, const bool&) = 0;
+
     virtual void shutdown() = 0;
 
     virtual bool isRunning() const = 0;
