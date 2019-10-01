@@ -972,7 +972,7 @@
     <string>Report a bug...</string>
    </property>
    <property name="toolTip">
-    <string>Report issue on Github</string>
+    <string>Report issue on GitHub</string>
    </property>
   </action>
   <action name="actionClearBuffer">
