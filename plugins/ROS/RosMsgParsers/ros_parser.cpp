@@ -120,7 +120,7 @@ void RosMessageParser::pushMessageRef(const std::string &topic_name,
 
     bool max_size_ok = _introspection_parser->deserializeIntoFlatContainer(
                 topic_name,
-                {const_cast<uint8_t*>(msg.data()), msg.size()},
+                {const_cast<uint8_t*>(msg.data()), static_cast<long>(msg.size())},
                 &flat_container,
                 _max_array_size );
 
