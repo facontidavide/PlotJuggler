@@ -1,5 +1,6 @@
 #include "plotlegend.h"
 #include <QEvent>
+#include <QDebug>
 #include <QMouseEvent>
 #include <QWheelEvent>
 
@@ -180,4 +181,15 @@ const QwtPlotItem* PlotLegend::processMousePressEvent(QMouseEvent* mouse_event)
         }
     }
     return nullptr;
+}
+
+void PlotLegend::setLegend(bool input)
+{
+    _collapsed = input;
+    _parent_plot->replot(); 
+}
+
+bool PlotLegend::getLegend()
+{
+    return _collapsed;
 }

@@ -712,6 +712,12 @@ QDomDocument MainWindow::xmlSaveState() const
     relative_time.setAttribute("enabled", ui->pushButtonRemoveTimeOffset->isChecked() );
     root.appendChild( relative_time );
 
+    QList<int> sizes = ui->splitter->sizes();
+    QDomElement splitter_el = doc.createElement("splitter_pos");
+    splitter_el.setAttribute("size_0", sizes[0]);
+    splitter_el.setAttribute("size_1", sizes[1]);
+    root.appendChild(splitter_el);
+
     return doc;
 }
 
@@ -849,7 +855,13 @@ bool MainWindow::xmlLoadState(QDomDocument state_document)
     {
         bool remove_offset = (relative_time.attribute("enabled") == QString("1"));
         ui->pushButtonRemoveTimeOffset->setChecked(remove_offset);
+        on_pushButtonRemoveTimeOffset_toggled(remove_offset);
     }
+
+    QDomElement splitter_el = root.firstChildElement("splitter_pos");
+    QList<int> sizes({splitter_el.attribute("size_0").toInt(), splitter_el.attribute("size_1").toInt()});
+    ui->splitter->setSizes(sizes);
+
     return true;
 }
 
@@ -1066,8 +1078,9 @@ void MainWindow::importPlotDataMap(PlotDataMapRef& new_data, bool remove_old)
         }
     }
 
-    // This can take a while. So, especially when launching with
-    // a layout, we want to let the user know not to worry.
+    // while nice for massive message types,
+    // causes ui to hang when streamer mutex is locked
+    // due to blocking in the update/replot function
     //QProgressDialog progress_dialog;
     //progress_dialog.setLabelText("Adding new dataseries");
     //progress_dialog.setRange(0, new_data.numeric.size());
@@ -1104,7 +1117,6 @@ void MainWindow::importPlotDataMap(PlotDataMapRef& new_data, bool remove_old)
     {
         _curvelist_widget->refreshColumns();
     }
-    updateTimeOffset();
 }
 
 bool MainWindow::isStreamingActive() const
@@ -1334,6 +1346,7 @@ void MainWindow::on_actionStartStreaming(QString streamer_name, const bool& from
         ui->pushButtonRemoveTimeOffset->setEnabled( false );
 
         on_streamingSpinBox_valueChanged( ui->streamingSpinBox->value() );
+        updateTimeOffset();
     }
     else{
         qDebug() << "Failed to launch the streamer";
@@ -1946,7 +1959,7 @@ void MainWindow::updateDataAndReplot(bool replot_hidden_tabs)
         onTrackerTimeUpdated(_tracker_time, false);
     }
     else{
-        updateTimeOffset();
+        //updateTimeOffset();
         updateTimeSlider();
     }
     //--------------------------------

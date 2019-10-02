@@ -6,7 +6,7 @@
 class PointSeriesXY: public DataSeriesBase
 {
 public:
-    PointSeriesXY(const PlotData* y_axis, const PlotData* x_axis);
+    PointSeriesXY(const PlotData* x_axis, const PlotData* y_axis);
 
     virtual QPointF sample( size_t i ) const override
     {

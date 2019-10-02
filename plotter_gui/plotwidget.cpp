@@ -32,6 +32,7 @@
 #include "PlotJuggler/random_color.h"
 #include "point_series_xy.h"
 #include "suggest_dialog.h"
+#include "edit_curves_dialog.h"
 #include "transforms/custom_function.h"
 #include "transforms/custom_timeseries.h"
 
@@ -197,8 +198,11 @@ void PlotWidget::buildActions()
     _action_editLimits = new  QAction(tr("&Edit Axis Limits"), this);
     connect(_action_editLimits, &QAction::triggered, this, &PlotWidget::on_editAxisLimits_triggered);
 
-    _action_editLabels = new  QAction(tr("&Edit Labels"), this);
+    _action_editLabels = new  QAction(tr("&Add/Edit Labels"), this);
     connect(_action_editLabels, &QAction::triggered, this, &PlotWidget::on_editLabels_triggered);
+
+    _action_editCurves = new  QAction(tr("&Add/Edit Curves"), this);
+    connect(_action_editCurves, &QAction::triggered, this, &PlotWidget::on_editCurves_triggered);
 
     _action_zoomOutMaximum = new QAction("&Zoom Out", this);
     connect(_action_zoomOutMaximum, &QAction::triggered, this, [this]()
@@ -291,7 +295,6 @@ void PlotWidget::canvasContextMenuTriggered(const QPoint &pos)
         action->setIcon(icon);
     };
 
-    setIcon( _action_removeCurve, "remove_list.png" );
     setIcon( _action_removeAllCurves, "remove.png" );
     setIcon( _action_changeColorsDialog, "colored_charts.png" );
     setIcon( _action_showPoints, "point_chart.png" );
@@ -301,14 +304,14 @@ void PlotWidget::canvasContextMenuTriggered(const QPoint &pos)
     setIcon( _action_saveToFile, "save.png" );
 
     QMenu menu(this);
-    menu.addAction(_action_removeCurve);
     menu.addAction(_action_removeAllCurves);
+    menu.addAction(_action_editCurves);
+    menu.addAction(_action_editLabels);
+    menu.addAction(_action_editLimits);
     menu.addSeparator();
     menu.addAction(_action_changeColorsDialog);
     menu.addAction(_action_showPoints);
     menu.addSeparator();
-    menu.addAction(_action_editLimits);
-    menu.addAction(_action_editLabels);
     menu.addAction(_action_zoomOutMaximum);
     menu.addAction(_action_zoomOutHorizontally);
     menu.addAction(_action_zoomOutVertically);
@@ -338,7 +341,7 @@ PlotWidget::~PlotWidget()
 
 }
 
-bool PlotWidget::addCurve(const std::string &name)
+bool PlotWidget::addCurve(const std::string &name, QColor qc)
 {
     auto it = _mapped_data.numeric.find( name );
     if( it == _mapped_data.numeric.end())
@@ -372,7 +375,12 @@ bool PlotWidget::addCurve(const std::string &name)
     curve->setStyle( _curve_style );
 
     QColor color = data.getColorHint();
-    if( color == Qt::black)
+    if (qc != Qt::black)
+    {
+        color = qc;
+        data.setColorHint(color);
+    }
+    else if( color == Qt::black)
     {
         color = randomColorHint();
         data.setColorHint(color);
@@ -399,7 +407,8 @@ bool PlotWidget::addCurve(const std::string &name)
 }
 
 bool PlotWidget::addCurveXY(std::string name_x, std::string name_y,
-                            QString curve_name)
+                            QString curve_name,
+                            QColor qc)
 {
     std::string name = curve_name.toStdString() ;
 
@@ -476,7 +485,12 @@ bool PlotWidget::addCurveXY(std::string name_x, std::string name_y,
     curve->setStyle( _curve_style );
 
     QColor color = data.getColorHint();
-    if( color == Qt::black)
+    if (qc != Qt::black)
+    {
+        color = qc;
+        data.setColorHint(color);
+    }
+    else if( color == Qt::black)
     {
         color = randomColorHint();
         data.setColorHint(color);
@@ -710,6 +724,10 @@ QDomElement PlotWidget::xmlSaveState( QDomDocument &doc) const
     label_el.setAttribute("title", this->title().text());
     plot_el.appendChild(label_el);
 
+    QDomElement legend_el = doc.createElement("legend");
+    legend_el.setAttribute("visible", _legend->getLegend());
+    plot_el.appendChild(legend_el);
+
     QDomElement range_el = doc.createElement("range");
     QRectF rect = this->canvasBoundingRect();
     range_el.setAttribute("bottom", QString::number(rect.bottom(), 'f', 6) );
@@ -770,6 +788,12 @@ bool PlotWidget::xmlLoadState(QDomElement &plot_widget)
     this->setAxisTitle(QwtPlot::xBottom, label_el.attribute("xlabel"));
     this->setAxisTitle(QwtPlot::yLeft, label_el.attribute("ylabel"));
     std::set<std::string> added_curve_names;
+
+    QDomElement legend_el = plot_widget.firstChildElement("legend");
+    if (!legend_el.isNull())
+    {
+        _legend->setLegend(legend_el.attribute("visible").toInt());
+    }
 
     QDomElement transform = plot_widget.firstChildElement("transform");
     QString trans_value = transform.attribute("value");
@@ -1544,6 +1568,16 @@ bool PlotWidget::isXYPlot() const
     return _xy_mode;
 }
 
+void PlotWidget::convertToTimeseries()
+{
+    _xy_mode = false;
+
+    enableTracker(true);
+    _default_transform = "noTransform";
+
+    zoomOut(true);
+    replot();
+}
 
 void PlotWidget::convertToXY()
 {
@@ -1714,11 +1748,27 @@ void PlotWidget::on_editAxisLimits_triggered()
 
 void PlotWidget::on_editLabels_triggered()
 {
+    _edit_labels_dialog->setLabelX(this->axisTitle(QwtPlot::xBottom).text());
+    _edit_labels_dialog->setLabelY(this->axisTitle(QwtPlot::yLeft).text());
+    _edit_labels_dialog->setPlotLabel(this->title().text());
     _edit_labels_dialog->exec();
     this->setTitle(_edit_labels_dialog->plotLabel());
     this->setAxisTitle(QwtPlot::xBottom, _edit_labels_dialog->labelX());
     this->setAxisTitle(QwtPlot::yLeft, _edit_labels_dialog->labelY());
     replot(); // needed?
+}
+
+void PlotWidget::on_editCurves_triggered()
+{
+    EditCurvesDialog dialog(_mapped_data, isXYPlot(), this);
+
+    for(auto& it: _curve_list)
+    {
+        dialog.addCurveName(QString::fromStdString(it.first), 
+                            it.second->pen().color());
+    }
+
+    dialog.exec();
 }
 
 bool PlotWidget::eventFilter(QObject *obj, QEvent *event)

@@ -76,6 +76,12 @@ public:
 
     void setConstantRatioXY(bool active);
 
+    bool addCurve(const std::string &name, const QColor qc = Qt::black);
+
+    bool addCurveXY(std::string name_x, std::string name_y,
+                    QString curve_name = "",
+                    const QColor qc = Qt::black);
+
 protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
@@ -96,6 +102,10 @@ signals:
 public slots:
 
     void replot() override;
+
+    void convertToXY();
+
+    void convertToTimeseries();
 
     void updateCurves(PlotDataMapRef& datamap);
 
@@ -130,8 +140,6 @@ private slots:
 
     void on_changeToBuiltinTransforms(QString new_transform);
 
-    void convertToXY();
-
     void on_customTransformsDialog();
 
     void on_savePlotToFile();
@@ -139,6 +147,8 @@ private slots:
     void on_editAxisLimits_triggered();
 
     void on_editLabels_triggered();
+
+    void on_editCurves_triggered();
 
 private slots:
     void launchRemoveCurveDialog();
@@ -172,6 +182,7 @@ private:
     QAction *_action_saveToFile;
     QAction *_action_editLimits;
     QAction *_action_editLabels;
+    QAction *_action_editCurves;
 
     PlotZoomer* _zoomer;
     PlotMagnifier* _magnifier;
@@ -195,11 +206,6 @@ private:
     };
 
     DragInfo _dragging;
-
-    bool addCurve(const std::string &name);
-
-    bool addCurveXY(std::string name_x, std::string name_y,
-                    QString curve_name = "");
 
     void buildActions();
 

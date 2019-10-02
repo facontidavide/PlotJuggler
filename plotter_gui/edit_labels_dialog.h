@@ -17,6 +17,9 @@ public:
     QString labelX();
     QString labelY();
     QString plotLabel();
+    void setLabelX(const QString &label);
+    void setLabelY(const QString &label);
+    void setPlotLabel(const QString &label);
 
 private slots:
     void on_pushButtonDone_pressed();

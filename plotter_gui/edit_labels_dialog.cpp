@@ -29,11 +29,6 @@ void EditLabelsDialog::on_pushButtonCancel_pressed()
     this->reject();
 }
 
-QString EditLabelsDialog::plotLabel()
-{
-    return _plot_label;
-}
-
 QString EditLabelsDialog::labelX()
 {
     return _x_label;
@@ -42,4 +37,27 @@ QString EditLabelsDialog::labelX()
 QString EditLabelsDialog::labelY()
 {
     return _y_label;
+}
+
+QString EditLabelsDialog::plotLabel()
+{
+    return _plot_label;
+}
+
+void EditLabelsDialog::setLabelX(const QString &label)
+{
+    _x_label = label;
+    ui->editLabelX->setText(label);
+}
+
+void EditLabelsDialog::setLabelY(const QString &label)
+{
+    _y_label = label;
+    ui->editLabelY->setText(label);
+}
+
+void EditLabelsDialog::setPlotLabel(const QString &label)
+{
+    _plot_label = label;
+    ui->editPlotLabel->setText(label);
 }

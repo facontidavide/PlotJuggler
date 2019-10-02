@@ -8,6 +8,7 @@ QT5_WRAP_UI ( UI_SRC
     aboutdialog.ui
     axis_limits_dialog.ui
     edit_labels_dialog.ui
+    edit_curves_dialog.ui
     mainwindow.ui
     removecurvedialog.ui
     curvecolorpick.ui
@@ -29,6 +30,7 @@ SET( PLOTTER_SRC
     curvecolorpick.cpp
     curvelist_panel.cpp
     edit_labels_dialog.cpp
+    edit_curves_dialog.cpp
     main.cpp
     mainwindow.cpp
     menubar.cpp

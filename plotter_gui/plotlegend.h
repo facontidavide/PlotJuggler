@@ -13,6 +13,10 @@ public:
 
     QRectF hideButtonRect() const;
 
+    void setLegend(bool input);
+
+    bool getLegend();
+
     bool processWheelEvent(QWheelEvent* ev);
 
     const QwtPlotItem *processMousePressEvent(QMouseEvent* mouse_event);
