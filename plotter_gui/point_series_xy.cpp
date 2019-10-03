@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdlib>
 
+
 PointSeriesXY::PointSeriesXY(const PlotData *y_axis, const PlotData *x_axis):
     DataSeriesBase( &_cached_curve ),
     _x_axis(x_axis),
@@ -89,6 +90,7 @@ bool PointSeriesXY::updateCache()
         max_y = std::max( max_y, p.y() );
     }
 
+        
     _bounding_box.setLeft(  min_x );
     _bounding_box.setRight( max_x );
     _bounding_box.setBottom( min_y );

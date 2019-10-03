@@ -161,6 +161,7 @@ private:
     QAction *_action_zoomOutMaximum;
     QAction *_action_zoomOutHorizontally;
     QAction *_action_zoomOutVertically;
+    QAction *_action_keep_aspect_ratio;
     QAction *_action_noTransform;
     QAction *_action_1stDerivativeTransform;
     QAction *_action_2ndDerivativeTransform;

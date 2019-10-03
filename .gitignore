@@ -30,6 +30,7 @@
 
 /build*
 /*.user
+/.vscode
 
 site/images/
 /PlotJugglerInstaller

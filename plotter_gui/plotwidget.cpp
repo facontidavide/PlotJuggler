@@ -210,6 +210,19 @@ void PlotWidget::buildActions()
         emit undoableChange();
     });
 
+    _action_keep_aspect_ratio = new QAction("&Keep XY Proportion", this );
+    _action_keep_aspect_ratio->setCheckable( true );
+    _action_keep_aspect_ratio->setChecked( true );
+    connect(_action_keep_aspect_ratio, &QAction::triggered, this, [this]()
+    {
+        
+        _keep_aspect_ratio = !_keep_aspect_ratio;
+        _action_keep_aspect_ratio->setChecked( _keep_aspect_ratio );
+        on_zoomOutVertical_triggered(true);
+        replot();
+        emit undoableChange();
+    });
+
     QFont font;
     font.setPointSize(10);
 
@@ -297,6 +310,8 @@ void PlotWidget::canvasContextMenuTriggered(const QPoint &pos)
     menu.addAction(_action_zoomOutMaximum);
     menu.addAction(_action_zoomOutHorizontally);
     menu.addAction(_action_zoomOutVertically);
+    menu.addSeparator();
+    menu.addAction(_action_keep_aspect_ratio);
     menu.addSeparator();
     menu.addAction( _action_noTransform );
     menu.addAction( _action_1stDerivativeTransform );
@@ -387,6 +402,8 @@ bool PlotWidget::addCurveXY(std::string name_x, std::string name_y,
                             QString curve_name)
 {
     std::string name = curve_name.toStdString() ;
+    double offsetX = 0;
+    double offsetY = 0;
 
     auto isValid = [&](const std::string& str) -> bool
     {
@@ -395,13 +412,44 @@ bool PlotWidget::addCurveXY(std::string name_x, std::string name_y,
 
     while( !isValid(name) )
     {
-        SuggestDialog dialog( name_x, name_y, this );
+        double start_x= 0;
+        double end_x= 0;
+        double start_y= 0;
+        double end_y= 0;
+        auto it = _mapped_data.numeric.find( name_x );
+        if( it == _mapped_data.numeric.end())
+        {
+            throw std::runtime_error("Creation of XY plot failed");
+        }
+        else
+        {
+            PlotData& data_x = it->second;
+            start_x = data_x.at(0).y;
+            end_x = data_x.at(data_x.size()-1).y;
+        }
+        
+        it = _mapped_data.numeric.find( name_y );
+        if( it == _mapped_data.numeric.end())
+        {
+            throw std::runtime_error("Creation of XY plot failed");
+        }
+        else
+        {
+            PlotData& data_y = it->second;
+            start_y = data_y.at(0).y;
+            end_y = data_y.at(data_y.size()-1).y;
+        }
+        SuggestDialog dialog( name_x, name_y, start_x, end_x, start_y, end_y,this );
+
 
         bool ok = (dialog.exec() ==  QDialog::Accepted);
         QString text =  dialog.suggestedName();
         name = text.toStdString();
         name_x = dialog.nameX().toStdString();
         name_y = dialog.nameY().toStdString();
+
+        offsetX = dialog.offsetX();
+        offsetY = dialog.offsetY();
 
         if ( !ok || !isValid(name) )
         {
@@ -433,6 +481,12 @@ bool PlotWidget::addCurveXY(std::string name_x, std::string name_y,
     if( _curve_list.find(name) != _curve_list.end())
     {
         return false;
+    }
+    const size_t data_size =  std::min(data_x.size(), data_y.size());
+    for (size_t i=0; i<data_size; i++ )
+    {
+        data_x.at(i).y += offsetX;
+        data_y.at(i).y += offsetY;
     }
 
     PlotData& data = it->second;
@@ -1401,10 +1455,16 @@ void PlotWidget::on_zoomOutVertical_triggered(bool emit_signal)
 {
     updateMaximumZoomArea();
     QRectF rect = canvasBoundingRect();
+    
     auto rangeY = getMaximumRangeY( {rect.left(), rect.right()} );
 
     rect.setBottom(  rangeY.min );
     rect.setTop(     rangeY.max );
+
+    //auto rangeY = getMaximumRangeY(getMaximumRangeX());
+
+    rect.setBottom( rangeY.min );
+    rect.setTop( rangeY.max );
     this->setZoomRectangle(rect, emit_signal);
 }
 

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Nex XY Curve</string>
+   <string>New XY Curve</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -54,6 +54,35 @@
        </property>
       </widget>
      </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>offset X</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>offset Y</string>
+       </property>
+      </widget>
+     </item>
+          <item row="3" column="1">
+      <widget class="QLineEdit" name="lineEditOffsetX">
+       <property name="readOnly">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLineEdit" name="lineEditOffsetY">
+       <property name="readOnly">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+
     </layout>
    </item>
    <item>
@@ -73,6 +102,56 @@
    <item>
     <widget class="QLineEdit" name="lineEditName"/>
    </item>
+   
+    <item>
+        <layout class="QFormLayout" name="formLayout">
+        <item row="0" column="0">
+            <widget class="QLabel" name="label">
+            <property name="text">
+            <string>X starts:</string>
+            </property>
+            </widget>
+        </item>
+        <item row="0" column="1">
+            <widget class="QLineEdit" name="lineEditXStart"/>
+        </item>
+        
+        
+        <item row="1" column="0">
+            <widget class="QLabel" name="label">
+            <property name="text">
+            <string>X ends:</string>
+            </property>
+            </widget>
+        </item>
+        <item row="1" column="1">
+            <widget class="QLineEdit" name="lineEditXEnds"/>
+        </item>
+        
+
+        <item row="2" column="0">
+            <widget class="QLabel" name="label">
+            <property name="text">
+            <string>Y starts:</string>
+            </property>
+            </widget>
+        </item>
+        <item row="2" column="1">
+            <widget class="QLineEdit" name="lineEditYStart"/>
+        </item>
+        <item row="3" column="0">
+            <widget class="QLabel" name="label">
+            <property name="text">
+            <string>Y ends:</string>
+            </property>
+            </widget>
+        </item>
+        <item row="3" column="1">
+            <widget class="QLineEdit" name="lineEditYEnds"/>
+        </item>
+        </layout>
+    </item>
+
    <item>
     <spacer name="verticalSpacer">
      <property name="orientation">

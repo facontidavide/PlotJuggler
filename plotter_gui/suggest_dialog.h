@@ -14,11 +14,17 @@ class SuggestDialog : public QDialog
 public:
     explicit SuggestDialog(const std::string &name_x,
                            const std::string &name_y,
+                           double &start_x,
+                           double &end_x,
+                           double &start_y,
+                           double &end_y,
                            QWidget *parent = nullptr);
     ~SuggestDialog();
 
     QString nameX() const;
     QString nameY() const;
+    double offsetX() const;
+    double offsetY() const;
     QString suggestedName() const;
 
     void updateSuggestion();
