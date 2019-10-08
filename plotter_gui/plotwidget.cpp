@@ -482,12 +482,12 @@ bool PlotWidget::addCurveXY(std::string name_x, std::string name_y,
     {
         return false;
     }
-    const size_t data_size =  std::min(data_x.size(), data_y.size());
-    for (size_t i=0; i<data_size; i++ )
-    {
-        data_x.at(i).y += offsetX;
-        data_y.at(i).y += offsetY;
-    }
+    // const size_t data_size =  std::min(data_x.size(), data_y.size());
+    // for (size_t i=0; i<data_size; i++ )
+    // {
+    //     data_x.at(i).y += offsetX;
+    //     data_y.at(i).y += offsetY;
+    // }
 
     PlotData& data = it->second;
     const auto qname = QString::fromStdString( name );
@@ -495,6 +495,8 @@ bool PlotWidget::addCurveXY(std::string name_x, std::string name_y,
     auto curve = new QwtPlotCurve( qname );
     try {
         auto plot_qwt = createCurveXY(&data_x, &data_y );
+        ((PointSeriesXY*)plot_qwt)->setOffset(offsetX, offsetY);
+        ((PointSeriesXY*)plot_qwt)->updateCache();
         _curves_transform.insert( {name, _default_transform} );
 
         curve->setPaintAttribute( QwtPlotCurve::ClipPolygons, true );
@@ -1920,6 +1922,7 @@ DataSeriesBase* PlotWidget::createCurveXY(const PlotData *data_x, const PlotData
     }
 
     output->setTimeOffset( _time_offset );
+    
     return output;
 }
 

@@ -1,6 +1,7 @@
 #include "point_series_xy.h"
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 
 
 PointSeriesXY::PointSeriesXY(const PlotData *y_axis, const PlotData *x_axis):
@@ -79,10 +80,11 @@ bool PointSeriesXY::updateCache()
             throw std::runtime_error("X and Y axis don't share the same time axis");
         }
 
-        const QPointF p(_x_axis->at(i).y,
-                        _y_axis->at(i).y );
+        const QPointF p(_x_axis->at(i).y+_offsetY,
+                        _y_axis->at(i).y+_offsetX );
 
         _cached_curve.at(i) = { p.x(), p.y() };
+        
 
         min_x = std::min( min_x, p.x() );
         max_x = std::max( max_x, p.x() );
@@ -91,10 +93,17 @@ bool PointSeriesXY::updateCache()
     }
 
         
-    _bounding_box.setLeft(  min_x );
-    _bounding_box.setRight( max_x );
+    _bounding_box.setLeft(  min_x  );
+    _bounding_box.setRight( max_x  );
     _bounding_box.setBottom( min_y );
-    _bounding_box.setTop( max_y );
+    _bounding_box.setTop( max_y    );
 
     return true;
+}
+
+
+void PointSeriesXY::setOffset(double offsetX, double offsetY)
+{
+    _offsetY = offsetY;
+    _offsetX = offsetX;
 }

@@ -29,11 +29,14 @@ public:
 
     const PlotData* dataX() const { return _x_axis; }
     const PlotData* dataY() const { return _y_axis; }
+    void setOffset(double offsetX, double offsetY);
 
 protected:
 
     const PlotData *_x_axis;
     const PlotData *_y_axis;
+    double _offsetX;
+    double _offsetY;
     PlotData _cached_curve;
 };
 
