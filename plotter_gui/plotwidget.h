@@ -25,6 +25,7 @@
 #include "transforms/transform_selector.h"
 #include "transforms/custom_function.h"
 #include "plotlegend.h"
+#include "edit_curves_dialog.h"
 
 class PlotWidget : public QwtPlot
 {
@@ -94,6 +95,8 @@ signals:
     void swapWidgetsRequested(PlotWidget* source, PlotWidget* destination);
     void rectChanged(PlotWidget* self, QRectF rect );
     void undoableChange();
+    void undoInvoked();
+    void redoInvoked();
     void trackerMoved(QPointF pos);
     void curveListChanged();
     void curvesDropped();

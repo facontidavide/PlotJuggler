@@ -55,7 +55,7 @@ MainWindow::MainWindow(const QCommandLineParser &commandline_parser, QWidget *pa
     _playback_shotcut(Qt::Key_Space, this),
     _minimized(false),
     _current_streamer(nullptr),
-    _disable_undo_logging(true),
+    _disable_undo_logging(false),
     _tracker_time(0),
     _tracker_param( CurveTracker::VALUE ),
     _from_commandline(false),
@@ -246,7 +246,7 @@ void MainWindow::onUndoableChange()
     while( _undo_states.size() >= 100 ) _undo_states.pop_front();
     _undo_states.push_back( xmlSaveState() );
     _redo_states.clear();
-    //    qDebug() << "undo " << _undo_states.size();
+
 }
 
 
@@ -262,7 +262,6 @@ void MainWindow::onRedoInvoked()
 
         xmlLoadState( state_document );
     }
-    //    qDebug() << "undo " << _undo_states.size();
     _disable_undo_logging = false;
 }
 
@@ -279,7 +278,6 @@ void MainWindow::onUndoInvoked( )
 
         xmlLoadState( state_document );
     }
-    //    qDebug() << "undo " << _undo_states.size();
     _disable_undo_logging = false;
 }
 
@@ -651,6 +649,12 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
 {
     connect( plot, &PlotWidget::undoableChange,
              this, &MainWindow::onUndoableChange );
+    
+    connect( plot, &PlotWidget::undoInvoked,
+             this, &MainWindow::onUndoInvoked );
+
+    connect( plot, &PlotWidget::redoInvoked,
+             this, &MainWindow::onRedoInvoked );
 
     connect( plot, &PlotWidget::trackerMoved,
              this, &MainWindow::onTrackerMovedFromWidget);
@@ -1054,10 +1058,10 @@ void importPlotDataMapHelper(std::unordered_map<std::string,T>& source,
 
 void MainWindow::importPlotDataMap(PlotDataMapRef& new_data, bool remove_old)
 {
-    if( new_data.user_defined.empty() && new_data.numeric.empty() )
-    {
-        return;
-    }
+    //if( new_data.user_defined.empty() && new_data.numeric.empty() )
+    //{
+    //    return;
+    //}
 
     if( remove_old )
     {
@@ -1076,6 +1080,11 @@ void MainWindow::importPlotDataMap(PlotDataMapRef& new_data, bool remove_old)
         {
             onDeleteMultipleCurves(old_plots_to_delete);
         }
+    }
+
+    if( new_data.user_defined.empty() && new_data.numeric.empty() )
+    {
+        return;
     }
 
     // while nice for massive message types,
@@ -1246,7 +1255,11 @@ bool MainWindow::loadDataFromFile(const FileLoadInfo& info)
                 // I'm making the call that if a bag file is loaded, streaming should
                 // be shut down.
                 on_actionStopStreaming_triggered();
-                auto remove_old = yesNoMsgBox("Warning", "Remove old data?");
+                bool remove_old = false;
+                if (_mapped_plot_data.numeric.size() || _mapped_plot_data.user_defined.size())
+                {
+                    remove_old = yesNoMsgBox("Warning", "Remove old data?");
+                }
                 importPlotDataMap(mapped_data, remove_old);     
 
                 QDomElement plugin_elem = dataloader->xmlSaveState(new_info.plugin_config);
@@ -1327,7 +1340,11 @@ void MainWindow::on_actionStartStreaming(QString streamer_name, const bool& from
     }
     if( started )
     {
-        bool remove_old = fromCommandline ? false : yesNoMsgBox("Warning", "Remove old data?");
+        bool remove_old = false;
+        if (_mapped_plot_data.numeric.size() || _mapped_plot_data.user_defined.size())
+        {
+            remove_old = yesNoMsgBox("Warning", "Remove old data?");
+        }
         {
             std::lock_guard<std::mutex> lock( _current_streamer->mutex() );
             importPlotDataMap(_current_streamer->dataMap(), remove_old);

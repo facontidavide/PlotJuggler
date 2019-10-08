@@ -32,7 +32,7 @@
 #include "PlotJuggler/random_color.h"
 #include "point_series_xy.h"
 #include "suggest_dialog.h"
-#include "edit_curves_dialog.h"
+//#include "edit_curves_dialog.h"
 #include "transforms/custom_function.h"
 #include "transforms/custom_timeseries.h"
 
@@ -417,6 +417,14 @@ bool PlotWidget::addCurveXY(std::string name_x, std::string name_y,
         return  !str.empty() && _curve_list.count( str ) == 0;
     };
 
+    // I personally find no value in the below dialog.
+    // I suppose issues could arise if one were loading
+    // lots of bag files with name conflicts. Don't do that.
+    if (!isValid(name))
+    {
+        return false;
+    }
+
     while( !isValid(name) )
     {
 
@@ -537,6 +545,7 @@ std::map<std::string, QwtPlotCurve* >::iterator PlotWidget::removeCurve(const st
         }
         _tracker->redraw();
         emit curveListChanged();
+        //emit undoableChange();
     }
     _curves_transform.erase( curve_name );
     return ret;
@@ -1756,6 +1765,7 @@ void PlotWidget::on_editLabels_triggered()
     this->setAxisTitle(QwtPlot::xBottom, _edit_labels_dialog->labelX());
     this->setAxisTitle(QwtPlot::yLeft, _edit_labels_dialog->labelY());
     replot(); // needed?
+    emit undoableChange();
 }
 
 void PlotWidget::on_editCurves_triggered()
@@ -1767,6 +1777,8 @@ void PlotWidget::on_editCurves_triggered()
         dialog.addCurveName(QString::fromStdString(it.first), 
                             it.second->pen().color());
     }
+    // save initial state
+    dialog.onUndoableChange();
 
     dialog.exec();
 }
