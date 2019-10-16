@@ -20,10 +20,10 @@ SuggestDialog::SuggestDialog(const std::string& name_x,
     ui->lineEditX->setText( QString::fromStdString(name_x) );
     ui->lineEditY->setText( QString::fromStdString(name_y) );
 
-    ui->lineEditXStart->setText( QString::fromStdString(std::to_string(start_x)) );
-    ui->lineEditYStart->setText( QString::fromStdString(std::to_string(start_y)) );
-    ui->lineEditXEnds->setText( QString::fromStdString(std::to_string(end_x)) );
-    ui->lineEditYEnds->setText( QString::fromStdString(std::to_string(end_y)) );
+    ui->lineEditXStart->setText( QString::number(start_x, 'g', 20) );
+    ui->lineEditYStart->setText( QString::number(start_y, 'g', 20) );
+    ui->lineEditXEnds->setText( QString::number(end_x, 'g', 20) );
+    ui->lineEditYEnds->setText( QString::number(end_y, 'g', 20) );
 
     ui->lineEditOffsetX->setText( QString::fromStdString("0") );
     ui->lineEditOffsetY->setText( QString::fromStdString("0") );
@@ -101,4 +101,10 @@ void SuggestDialog::on_pushButtonSwap_pressed()
     ui->lineEditYEnds->setText( ends_x );
 
     updateSuggestion();
+}
+
+void SuggestDialog::on_pushButtonRemoveYStart_pressed()
+{
+    auto start_y = ui->lineEditYStart->text();
+    ui->lineEditOffsetY->setText( "-"+start_y );
 }

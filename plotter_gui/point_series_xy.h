@@ -30,6 +30,8 @@ public:
     const PlotData* dataX() const { return _x_axis; }
     const PlotData* dataY() const { return _y_axis; }
     void setOffset(double offsetX, double offsetY);
+    double getOffsetX() { return _offsetX; }
+    double getOffsetY() { return _offsetY; }
 
 protected:
 

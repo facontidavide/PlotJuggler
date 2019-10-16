@@ -124,6 +124,13 @@ public slots:
 
     void on_changeDateTimeScale(bool enable);
 
+    double GetOffsetXFromCurve(const std::string &curve_name);
+
+    double GetOffsetYFromCurve(const std::string &curve_name);
+
+    void setOffsetFromCurve(const std::string &curve_name, double offsetX, double offsetY);
+    
+
 private slots:
 
     void on_changeToBuiltinTransforms(QString new_transform);
@@ -138,6 +145,8 @@ private slots:
 
 private slots:
     void launchRemoveCurveDialog();
+
+    void launchEditOffsetCurveDialog();
 
     void canvasContextMenuTriggered(const QPoint &pos);
 
@@ -162,6 +171,7 @@ private:
     QAction *_action_zoomOutHorizontally;
     QAction *_action_zoomOutVertically;
     QAction *_action_keep_aspect_ratio;
+    QAction *_action_editOffsets;
     QAction *_action_noTransform;
     QAction *_action_1stDerivativeTransform;
     QAction *_action_2ndDerivativeTransform;

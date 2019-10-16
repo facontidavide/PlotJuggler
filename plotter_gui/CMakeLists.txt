@@ -9,6 +9,7 @@ QT5_WRAP_UI ( UI_SRC
     axis_limits_dialog.ui
     mainwindow.ui
     removecurvedialog.ui
+    editOffset.ui
     curvecolorpick.ui
     tabbedplotwidget.ui
     support_dialog.ui
@@ -38,6 +39,7 @@ SET( PLOTTER_SRC
     point_series_xy.cpp
     plotzoomer.cpp
     removecurvedialog.cpp
+    editOffsetCurveDialog.cpp
     subwindow.cpp
     suggest_dialog.cpp
     timeseries_qwt.cpp

@@ -25,6 +25,7 @@
 #include "qwt_text.h"
 #include "plotwidget.h"
 #include "removecurvedialog.h"
+#include "editOffsetCurveDialog.h"
 #include "curvecolorpick.h"
 #include "qwt_plot_renderer.h"
 #include "qwt_series_data.h"
@@ -223,6 +224,11 @@ void PlotWidget::buildActions()
         emit undoableChange();
     });
 
+    _action_editOffsets = new QAction("&Edit offset curves", this);
+    _action_editOffsets->setStatusTip(tr("Edit one or more curves offsets from this plot"));
+    connect(_action_editOffsets, &QAction::triggered, this, &PlotWidget::launchEditOffsetCurveDialog);
+
+
     QFont font;
     font.setPointSize(10);
 
@@ -312,6 +318,7 @@ void PlotWidget::canvasContextMenuTriggered(const QPoint &pos)
     menu.addAction(_action_zoomOutVertically);
     menu.addSeparator();
     menu.addAction(_action_keep_aspect_ratio);
+    menu.addAction(_action_editOffsets);
     menu.addSeparator();
     menu.addAction( _action_noTransform );
     menu.addAction( _action_1stDerivativeTransform );
@@ -353,6 +360,9 @@ bool PlotWidget::addCurve(const std::string &name)
 
     PlotData& data = it->second;
     const auto qname = QString::fromStdString( name );
+
+
+    std::cerr<<"\n curve length: "<<data.size();
 
     auto curve = new QwtPlotCurve( qname );
     try {
@@ -482,6 +492,8 @@ bool PlotWidget::addCurveXY(std::string name_x, std::string name_y,
     {
         return false;
     }
+    std::cerr<<"\n x length: "<<data_x.size();
+    std::cerr<<"\n y length: "<<data_y.size();
     // const size_t data_size =  std::min(data_x.size(), data_y.size());
     // for (size_t i=0; i<data_size; i++ )
     // {
@@ -536,6 +548,45 @@ bool PlotWidget::addCurveXY(std::string name_x, std::string name_y,
     marker->setSymbol(sym);
 
     return true;
+}
+
+double PlotWidget::GetOffsetXFromCurve(const std::string &curve_name)
+{
+    auto it = _curve_list.find(curve_name);
+    if( it != _curve_list.end() )
+    {
+        auto& curve = it->second;
+        auto plot_qwt = curve->data();
+        return ((PointSeriesXY*)plot_qwt)->getOffsetX();
+
+        
+    }
+    return 0;
+}
+
+double PlotWidget::GetOffsetYFromCurve(const std::string &curve_name)
+{
+    auto it = _curve_list.find(curve_name);
+    if( it != _curve_list.end() )
+    {
+        auto& curve = it->second;
+        auto plot_qwt = curve->data();
+        return ((PointSeriesXY*)plot_qwt)->getOffsetY();       
+    }
+    return 0;
+}
+
+void PlotWidget::setOffsetFromCurve(const std::string &curve_name, double offsetX, double offsetY)
+{
+    auto it = _curve_list.find(curve_name);
+    if( it != _curve_list.end() )
+    {
+        auto& curve = it->second;
+        auto plot_qwt = curve->data();
+        ((PointSeriesXY*)plot_qwt)->setOffset(offsetX, offsetY);
+        ((PointSeriesXY*)plot_qwt)->updateCache();
+    }
+    
 }
 
 void PlotWidget::removeCurve(const std::string &curve_name)
@@ -1334,6 +1385,25 @@ void PlotWidget::updateCurves()
 void PlotWidget::launchRemoveCurveDialog()
 {
     RemoveCurveDialog* dialog = new RemoveCurveDialog(this);
+    auto prev_curve_count = _curve_list.size();
+
+    for(auto& it: _curve_list)
+    {
+        dialog->addCurveName( QString::fromStdString( it.first ),
+                              it.second->pen().color() );
+    }
+
+    dialog->exec();
+
+    if( prev_curve_count != _curve_list.size() )
+    {
+        emit undoableChange();
+    }
+}
+
+void PlotWidget::launchEditOffsetCurveDialog()
+{
+    EditOffsetCurveDialog* dialog = new EditOffsetCurveDialog(this);
     auto prev_curve_count = _curve_list.size();
 
     for(auto& it: _curve_list)

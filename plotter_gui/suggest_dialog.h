@@ -31,6 +31,7 @@ public:
 
 private slots:
     void on_pushButtonSwap_pressed();
+    void on_pushButtonRemoveYStart_pressed();
 
 private:
     Ui::SuggestDialog *ui;
