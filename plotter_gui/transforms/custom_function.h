@@ -75,7 +75,7 @@ private:
     std::vector<std::string> _used_channels;
 
     std::unique_ptr<QJSEngine> _jsEngine;
-    double _last_updated_timestamp;
+    int _last_updated_idx;
 };
 
 

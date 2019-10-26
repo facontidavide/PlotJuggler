@@ -44,7 +44,7 @@ CustomFunction::CustomFunction(const std::string &linkedPlot,
     _plot_name(plotName),
     _global_vars(globalVars),
     _function(function),
-    _last_updated_timestamp( - std::numeric_limits<double>::max() )
+    _last_updated_idx(0)
 {
 
     QString qLinkedPlot = QString::fromStdString(_linked_plot_name);
@@ -168,9 +168,9 @@ void CustomFunction::calculate(const PlotDataMapRef &plotData, PlotData* dst_dat
     }
 
     auto src_data_it = plotData.numeric.find(_linked_plot_name);
-    if(src_data_it == plotData.numeric.end())
+    if(src_data_it == plotData.numeric.end() || _last_updated_idx  == src_data_it->second.size())
     {
-        // failed! keep it empty
+        // failed =>  keep it empty ! or not nothing to do
         return;
     }
     const PlotData& src_data = src_data_it->second;
@@ -194,15 +194,14 @@ void CustomFunction::calculate(const PlotDataMapRef &plotData, PlotData* dst_dat
 
     QJSValue chan_values = _jsEngine->newArray(static_cast<quint32>(_used_channels.size()));
 
-    for(size_t i=0; i < src_data.size(); ++i)
-    {
-        if( src_data.at(i).x > _last_updated_timestamp)
-        {
-            dst_data->pushBack( calculatePoint(calcFct, src_data, channel_data, chan_values, i ) );
-        }
+    if (_last_updated_idx > src_data.size()+1 ){ // src reset detection
+        _last_updated_idx = 0;
+        dst_data->clear();
     }
-    if (dst_data->size() != 0){
-      _last_updated_timestamp = dst_data->back().x;
+
+    while(_last_updated_idx < src_data.size())
+    {
+            dst_data->pushBack( calculatePoint(calcFct, src_data, channel_data, chan_values, _last_updated_idx++ ) );
     }
 }
 
