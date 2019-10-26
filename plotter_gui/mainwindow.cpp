@@ -1904,13 +1904,14 @@ void MainWindow::updateDataAndReplot(bool replot_hidden_tabs)
         {
             _curvelist_widget->refreshColumns();
         }
-
-        for( auto& custom_it: _custom_plots)
-        {
-            auto* dst_plot = &_mapped_plot_data.numeric.at(custom_it.first);
-            custom_it.second->calculate(_mapped_plot_data, dst_plot);
-        }
     }
+
+    for( auto& custom_it: _custom_plots)
+    {
+        auto* dst_plot = &_mapped_plot_data.numeric.at(custom_it.first);
+        custom_it.second->calculate(_mapped_plot_data, dst_plot);
+    }
+    
 
     const bool is_streaming_active = isStreamingActive();
 
