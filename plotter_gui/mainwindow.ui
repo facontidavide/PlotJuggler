@@ -984,7 +984,7 @@
     <string>Ctrl+Shift+C</string>
    </property>
   </action>
-  <action name="actionFullscreen">
+  <!--action name="actionFullscreen">
    <property name="text">
     <string>Fullscreen mode</string>
    </property>
@@ -994,7 +994,7 @@
    <property name="shortcut">
     <string>F10</string>
    </property>
-  </action>
+  </action-->
   <action name="actionSaveAllPlotTabs">
    <property name="text">
     <string>Save all plot tabs as images</string>
