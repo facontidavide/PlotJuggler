@@ -236,17 +236,17 @@ void RosMessageParser::showWarnings()
     }
 }
 
-void RosMessageParser::extractData(PlotDataMapRef &destination, const std::string &prefix)
+void RosMessageParser::extractData(PlotDataMapRef &destination, const std::string &/*prefix*/)
 {
     for (auto& it: _plot_map.numeric)
     {
-        appendData( destination, prefix + it.first, it.second );
+        appendData( destination, this->_prefixer.apply(it.first), it.second );
     }
     _plot_map.numeric.clear();
 
     for (auto& it: _builtin_parsers)
     {
-        it.second->extractData( destination, prefix + it.first );
+        it.second->extractData( destination, this->_prefixer.apply(it.first) );
     }
 }
 

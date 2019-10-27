@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget parent="main_window" name="Main Window">
+  <plotmatrix columns="2" rows="2" tab_name="plot">
+   <plot col="0" row="0">
+    <range right="0.020941" bottom="-0.026825" left="-0.033953" top="0.010179"/>
+    <limitY/>
+    <curve R="0" G="128" custom_transform="XYPlot" name="/imu_data/angular_velocity/x" B="0"/>
+    <transform value="XYPlot" axisX="/imu_data/angular_velocity/y"/>
+   </plot>
+   <plot col="0" row="1">
+    <range right="17.748843" bottom="-0.608179" left="0.000000" top="0.016543"/>
+    <limitY/>
+    <curve R="0" G="0" custom_transform="noTransform" name="/imu_data/orientation/x" B="128"/>
+    <curve R="0" G="128" custom_transform="noTransform" name="/imu_data/orientation/y" B="128"/>
+    <curve R="160" G="160" custom_transform="noTransform" name="/imu_data/orientation/z" B="164"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot col="1" row="0">
+    <range right="0.084508" bottom="9.765777" left="-0.017691" top="9.833351"/>
+    <limitY/>
+    <curve R="255" G="0" custom_transform="XYPlot" name="/imu_data/linear_acceleration/z" B="255"/>
+    <transform value="XYPlot" axisX="/imu_data/linear_acceleration/x"/>
+   </plot>
+   <plot col="1" row="1">
+    <range right="17.748843" bottom="0.804909" left="0.000000" top="0.805870"/>
+    <limitY/>
+    <curve R="128" G="128" custom_transform="noTransform" name="/imu_data/orientation/w" B="0"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <plotmatrix columns="1" rows="2" tab_name="plot">
+   <plot col="0" row="0">
+    <range right="17.713456" bottom="-0.016337" left="0.011302" top="0.014036"/>
+    <limitY/>
+    <curve R="0" G="0" custom_transform="noTransform" name="/gravity_vector/vector/x" B="255"/>
+    <curve R="128" G="0" custom_transform="noTransform" name="/gravity_vector/vector/y" B="0"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot col="0" row="1">
+    <range right="17.713456" bottom="-1.270520" left="0.011302" top="-1.267246"/>
+    <limitY/>
+    <curve R="0" G="0" custom_transform="noTransform" name="yaw" B="255"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <currentPlotMatrix index="1"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <Plugins>
+  <DataLoad_CSV>
+   <default time_axis=""/>
+  </DataLoad_CSV>
+  <DataLoad_ROS_bags>
+   <selected_topics list="/gravity_vector;/imu_data;/magnetic_vector"/>
+  </DataLoad_ROS_bags>
+  <DataLoad_ULog>
+   <no_params/>
+  </DataLoad_ULog>
+  <ROS_Topic_Streamer>
+   <selected_topics list=""/>
+  </ROS_Topic_Streamer>
+  <WebSocket_Server/>
+  <RosoutPublisherROS/>
+  <TopicPublisherROS/>
+ </Plugins>
+ <customMathEquations>
+  <snippet name="yaw">
+   <linkedPlot>/imu_data/header/stamp</linkedPlot>
+   <global>// source: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+
+function quaternionToYaw(x, y, z, w)
+{
+  // yaw (z-axis rotation)
+  t1 = 2.0 * (w * z + x * y);
+  t2 = 1.0 - 2.0 * (y * y + z * z);
+  yaw = Math.atan2(t1, t2);
+
+  return yaw
+}</global>
+   <equation>w = $$/imu_data/orientation/w$$
+x = $$/imu_data/orientation/x$$
+y = $$/imu_data/orientation/y$$
+z = $$/imu_data/orientation/z$$
+
+return quaternionToYaw(x, y, z, w);</equation>
+  </snippet>
+ </customMathEquations>
+ <snippets>
+  <snippet name="1st_derivative">
+   <global>var prevX = 0
+var prevY = 0</global>
+   <equation>dx = time - prevX
+dy = value - prevY
+prevX = time
+prevY = value
+
+return dy/dx</equation>
+  </snippet>
+  <snippet name="1st_order_lowpass">
+   <global>var prevY = 0
+var alpha = 0.1</global>
+   <equation>prevY = alpha * value + (1.-alpha) * prevY
+
+return prevY</equation>
+  </snippet>
+  <snippet name="sum_A_B">
+   <global></global>
+   <equation>return $$PLOT_A$$ + $$PLOT_B$$</equation>
+  </snippet>
+  <snippet name="yaw_from_quaternion">
+   <global>// source: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+
+function quaternionToYaw(x, y, z, w)
+{
+  // yaw (z-axis rotation)
+  t1 = 2.0 * (w * z + x * y);
+  t2 = 1.0 - 2.0 * (y * y + z * z);
+  yaw = Math.atan2(t1, t2);
+
+  return yaw
+}</global>
+   <equation>return quaternionToYaw(x, y, z, w);</equation>
+  </snippet>
+ </snippets>
+</root>
+

@@ -126,6 +126,9 @@ bool DataLoadROS::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_map)
     {
         xmlLoadState( info->plugin_config.firstChildElement() );
     }
+    
+    _config.prefix = info->prefix;
+    info->prefix = "";
 
     if( ! info->selected_datasources.empty() )
     {
@@ -145,7 +148,7 @@ bool DataLoadROS::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_map)
 
     _ros_parser.setUseHeaderStamp( _config.use_header_stamp );
     _ros_parser.setMaxArrayPolicy( _config.max_array_size, _config.discard_large_arrays );
-
+    _ros_parser.setTopicTransform( _config.prefix.toStdString(), _config.getRemovePrefixes());
     if( _config.use_renaming_rules )
     {
         _ros_parser.addRules( RuleEditing::getRenamingRules() );

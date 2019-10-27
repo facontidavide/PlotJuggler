@@ -43,6 +43,11 @@ DialogSelectRosTopics::DialogSelectRosTopics(const std::vector<std::pair<QString
         ui->radioMaxClamp->setChecked(true);
     }
 
+    ui->addPrefix->setText(config.prefix);
+    ui->removePrefix->setText(config.rm_prefixes);
+    ui->checkBoxPrefix->setChecked(config.prefix.isEmpty() || config.rm_prefixes.isEmpty());
+   
+
     QStringList labels;
     labels.push_back("Topic name");
     labels.push_back("Datatype");
@@ -153,6 +158,11 @@ DialogSelectRosTopics::Configuration DialogSelectRosTopics::getResult() const
     config.use_header_stamp     = ui->checkBoxTimestamp->isChecked();
     config.discard_large_arrays = ui->radioMaxDiscard->isChecked();
     config.use_renaming_rules   = ui->checkBoxEnableRules->isChecked();
+    if (ui->checkBoxPrefix->isChecked())
+    {
+      config.prefix   = ui->addPrefix->text();
+      config.rm_prefixes   = ui->removePrefix->text();
+    }
     return config;
 }
 
@@ -206,6 +216,13 @@ nonstd::optional<double> FlatContainerContainHeaderStamp(const RosIntrospection:
         }
     }
     return nonstd::optional<double>();
+}
+
+
+void DialogSelectRosTopics::on_checkBoxPrefix_toggled(bool checked)
+{
+    ui->addPrefix->setEnabled(checked);
+    ui->removePrefix->setEnabled(checked);
 }
 
 void DialogSelectRosTopics::on_maximumSizeHelp_pressed()

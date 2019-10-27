@@ -94,21 +94,22 @@ void DataStreamROS::topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg
     _ros_parser.pushMessageRef( topic_name, buffer_view, msg_time );
 
     std::lock_guard<std::mutex> lock( mutex() );
-    const std::string prefixed_topic_name = _prefix + topic_name;
+    const std::string prefixed_topic_name = _ros_parser.getPrefixedTopic(topic_name);
+   // const std::string prefixed_topic_name = _prefix + topic_name;
 
     // adding raw serialized msg for future uses.
     // do this before msg_time normalization
     {
-        auto plot_pair = dataMap().user_defined.find( prefixed_topic_name );
+        auto plot_pair = dataMap().user_defined.find( topic_name );
         if( plot_pair == dataMap().user_defined.end() )
         {
-            plot_pair = dataMap().addUserDefined( prefixed_topic_name );
+            plot_pair = dataMap().addUserDefined( topic_name );
         }
         PlotDataAny& user_defined_data = plot_pair->second;
         user_defined_data.pushBack( PlotDataAny::Point(msg_time, nonstd::any(std::move(buffer)) ));
     }
 
-    _ros_parser.extractData(dataMap(), _prefix);
+    _ros_parser.extractData(dataMap(),{});
 
     //------------------------------
     {
@@ -363,7 +364,7 @@ bool DataStreamROS::start(QStringList* selected_datasources)
     }
 
     _ros_parser.setMaxArrayPolicy( _config.max_array_size, _config.discard_large_arrays );
-
+    _ros_parser.setTopicTransform(_config.prefix.toStdString(), _config.getRemovePrefixes());
     //-------------------------
     subscribe();
     _running = true;

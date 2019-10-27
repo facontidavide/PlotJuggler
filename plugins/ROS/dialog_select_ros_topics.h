@@ -27,6 +27,17 @@ public:
         bool use_header_stamp;
         bool use_renaming_rules;
         bool discard_large_arrays;
+	QString prefix;
+	QString rm_prefixes;
+
+	std::vector<std::string> getRemovePrefixes()
+	{
+       	   std::vector<std::string> std_rm_prefixes;
+           QStringList rmlist = rm_prefixes.split(';', QString::SkipEmptyParts);
+           for (const QString & rm : rmlist)
+              std_rm_prefixes.emplace_back(rm.toStdString());
+           return std_rm_prefixes;  
+	}
     };
 
     explicit DialogSelectRosTopics(const std::vector<std::pair<QString,QString>>& topic_list,
@@ -56,6 +67,8 @@ private slots:
     void on_lineEditFilter_textChanged(const QString &search_string);
 
     void on_spinBoxArraySize_valueChanged(int value);
+
+    void on_checkBoxPrefix_toggled(bool checked);
 
 private:
 
