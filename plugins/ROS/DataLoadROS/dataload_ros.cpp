@@ -126,9 +126,11 @@ bool DataLoadROS::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_map)
     {
         xmlLoadState( info->plugin_config.firstChildElement() );
     }
-    
-    _config.prefix = info->prefix;
-    info->prefix = "";
+    if (!info->prefix.isEmpty())
+    {
+      _config.prefix = info->prefix;
+      info->prefix = "";
+    }
 
     if( ! info->selected_datasources.empty() )
     {
@@ -253,6 +255,14 @@ bool DataLoadROS::xmlSaveState(QDomDocument &doc, QDomElement &plugin_elem) cons
     max_elem.setAttribute("value", QString::number(_config.max_array_size));
     plugin_elem.appendChild( max_elem );
 
+    QDomElement prefix_elem = doc.createElement("prefix");
+    prefix_elem.setAttribute("value", _config.prefix);
+    plugin_elem.appendChild( prefix_elem );
+
+    QDomElement remove_prefixes_elem = doc.createElement("remove_prefixes");
+    remove_prefixes_elem.setAttribute("value", _config.rm_prefixes);
+    plugin_elem.appendChild( remove_prefixes_elem );
+
     return true;
 }
 
@@ -270,6 +280,12 @@ bool DataLoadROS::xmlLoadState(const QDomElement &parent_element)
     QDomElement max_elem = parent_element.firstChildElement( "max_array_size" );
     _config.max_array_size = max_elem.attribute("value").toInt();
 
+    QDomElement prefix_elem = parent_element.firstChildElement( "prefix" );
+    _config.prefix = prefix_elem.attribute("value");
+
+    QDomElement remove_prefix_elem = parent_element.firstChildElement( "remove_prefixes" );
+    _config.rm_prefixes = remove_prefix_elem.attribute("value");
+
     return true;
 }
 
@@ -282,6 +298,8 @@ void DataLoadROS::saveDefaultSettings()
     settings.setValue("DataLoadROS/use_header_stamp", _config.use_header_stamp);
     settings.setValue("DataLoadROS/max_array_size", (int)_config.max_array_size);
     settings.setValue("DataLoadROS/discard_large_arrays", _config.discard_large_arrays);
+    settings.setValue("DataLoadROS/prefix", _config.prefix);
+    settings.setValue("DataLoadROS/remove_prefixes", _config.rm_prefixes);
 }
 
 
@@ -289,10 +307,12 @@ void DataLoadROS::loadDefaultSettings()
 {
     QSettings settings;
 
-    _config.selected_topics      = settings.value("DataLoadROS/default_topics", false ).toStringList();
+    _config.selected_topics      = settings.value("DataLoadROS/default_topics" ).toStringList();
     _config.use_header_stamp     = settings.value("DataLoadROS/use_header_stamp", false ).toBool();
     _config.use_renaming_rules   = settings.value("DataLoadROS/use_renaming", true ).toBool();
     _config.max_array_size       = settings.value("DataLoadROS/max_array_size", 100 ).toInt();
     _config.discard_large_arrays = settings.value("DataLoadROS/discard_large_arrays", true ).toBool();
+    _config.prefix               = settings.value("DataLoadROS/prefix", "" ).toString();
+    _config.rm_prefixes          = settings.value("DataLoadROS/remove_prefixes", "" ).toString();
 }
 

@@ -45,7 +45,7 @@ DialogSelectRosTopics::DialogSelectRosTopics(const std::vector<std::pair<QString
 
     ui->addPrefix->setText(config.prefix);
     ui->removePrefix->setText(config.rm_prefixes);
-    ui->checkBoxPrefix->setChecked(config.prefix.isEmpty() || config.rm_prefixes.isEmpty());
+    ui->checkBoxPrefix->setChecked(!(config.prefix.isEmpty() && config.rm_prefixes.isEmpty()));
    
 
     QStringList labels;

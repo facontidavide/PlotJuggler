@@ -423,6 +423,14 @@ bool DataStreamROS::xmlSaveState(QDomDocument &doc, QDomElement &plugin_elem) co
     max_elem.setAttribute("value", QString::number(_config.max_array_size));
     plugin_elem.appendChild( max_elem );
 
+    QDomElement prefix_elem = doc.createElement("prefix");
+    prefix_elem.setAttribute("value", _config.prefix);
+    plugin_elem.appendChild( prefix_elem );
+
+    QDomElement remove_prefixes_elem = doc.createElement("remove_prefixes");
+    remove_prefixes_elem.setAttribute("value", _config.rm_prefixes);
+    plugin_elem.appendChild( remove_prefixes_elem );
+
     return true;
 }
 
@@ -439,6 +447,12 @@ bool DataStreamROS::xmlLoadState(const QDomElement &parent_element)
 
     QDomElement max_elem = parent_element.firstChildElement( "max_array_size" );
     _config.max_array_size = max_elem.attribute("value").toInt();
+
+    QDomElement prefix_elem = parent_element.firstChildElement( "prefix" );
+    _config.prefix = prefix_elem.attribute("value");
+
+    QDomElement remove_prefix_elem = parent_element.firstChildElement( "remove_prefixes" );
+    _config.rm_prefixes = remove_prefix_elem.attribute("value");
 
     return true;
 }
@@ -463,17 +477,21 @@ void DataStreamROS::saveDefaultSettings()
     settings.setValue("DataStreamROS/use_header_stamp", _config.use_header_stamp);
     settings.setValue("DataStreamROS/max_array_size", (int)_config.max_array_size);
     settings.setValue("DataStreamROS/discard_large_arrays", _config.discard_large_arrays);
+    settings.setValue("DataStreamROS/prefix", _config.prefix);
+    settings.setValue("DataStreamROS/remove_prefixes", _config.rm_prefixes);
 }
 
 
 void DataStreamROS::loadDefaultSettings()
 {
     QSettings settings;
-    _config.selected_topics      = settings.value("DataStreamROS/default_topics", false ).toStringList();
+    _config.selected_topics      = settings.value("DataStreamROS/default_topics" ).toStringList();
     _config.use_header_stamp     = settings.value("DataStreamROS/use_header_stamp", false ).toBool();
     _config.use_renaming_rules   = settings.value("DataStreamROS/use_renaming", true ).toBool();
     _config.max_array_size       = settings.value("DataStreamROS/max_array_size", 100 ).toInt();
     _config.discard_large_arrays = settings.value("DataStreamROS/discard_large_arrays", true ).toBool();
+    _config.prefix               = settings.value("DataStreamROS/prefix", "" ).toString();
+    _config.rm_prefixes          = settings.value("DataStreamROS/remove_prefixes", "" ).toString();
 }
 
 
