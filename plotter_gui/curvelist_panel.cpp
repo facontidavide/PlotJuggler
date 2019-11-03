@@ -56,7 +56,6 @@ CurveListPanel::CurveListPanel(const CustomPlotMap &mapped_math_plots,
         table_view->horizontalHeader()->setStretchLastSection (true);
         table_view->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
         table_view->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-
     }
 
     ui->widgetOptions->setVisible(false);
@@ -141,6 +140,11 @@ void CurveListPanel::addItem(const QString &item_name)
     {
         _completer->addToCompletionTree(item_name);
     }
+    ui->treeView->setModel( _completer->treeModel() );
+    ui->treeView->expandAll();
+    ui->treeView->setRootIndex(_model->invisibleRootItem()->child(0, 0)->index());
+
+
 }
 
 void CurveListPanel::refreshColumns()

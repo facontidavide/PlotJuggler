@@ -59,7 +59,7 @@
       <number>1</number>
      </property>
      <widget class="QWidget" name="layoutWidget">
-      <layout class="QVBoxLayout" name="verticalLayout">
+      <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,1,1">
        <property name="bottomMargin">
         <number>8</number>
        </property>
@@ -384,6 +384,22 @@
          </attribute>
          <attribute name="verticalHeaderDefaultSectionSize">
           <number>25</number>
+         </attribute>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTreeView" name="treeView">
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+         <property name="selectionMode">
+          <enum>QAbstractItemView::ExtendedSelection</enum>
+         </property>
+         <property name="rootIsDecorated">
+          <bool>true</bool>
+         </property>
+         <attribute name="headerVisible">
+          <bool>false</bool>
          </attribute>
         </widget>
        </item>

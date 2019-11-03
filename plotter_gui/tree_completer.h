@@ -53,6 +53,8 @@ public:
         _root_tree_item = TreeItem(_model->invisibleRootItem());
     }
 
+    QStandardItemModel* treeModel() { return _model; }
+
     void clear()
     {
         _model->clear();
