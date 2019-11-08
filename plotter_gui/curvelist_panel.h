@@ -66,8 +66,6 @@ private slots:
 
     void on_radioRegExp_toggled(bool checked);
 
-    void on_radioPrefix_toggled(bool checked);
-
     void on_checkBoxCaseSensitive_toggled(bool checked);
 
     void on_lineEdit_textChanged(const QString &search_string);
@@ -98,7 +96,6 @@ private:
 
     bool _newX_modifier, _dragging;
 
-    TreeModelCompleter* _completer;
 
     bool eventFilter(QObject *object, QEvent *event) override;
 
@@ -106,9 +103,8 @@ private:
     
     std::vector<std::string> getNonHiddenSelectedRows();
 
-    bool _completer_need_update;
-
     QStandardItemModel* _model;
+    TreeModel* _tree_model;
 
     const CustomPlotMap& _custom_plots;
 

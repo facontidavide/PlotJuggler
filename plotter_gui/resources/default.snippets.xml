@@ -16,9 +16,48 @@ var alpha = 0.1</global>
 
 return prevY</equation>
   </snippet>
-  <snippet name="sum_A_B">
+  <snippet name="2D_velocity">
+    <global>var prev_x = 0
+var prev_y = 0
+var prev_t = 0</global>
+    <equation>X = $$your_odometry/position/x$$
+Y = $$your_odometry/position/y$$
+
+var dist = sqrt( (X-prev_x)*(X-prev_x) + (Y-prev_y)*(Y-prev_y) )
+var dT = time - prev_t
+
+prev_x = X
+prev_y = Y
+prev_t = time
+
+return dist / dT</equation>
+  </snippet>
+  <snippet name="average_two_curves">
     <global></global>
-    <equation>return $$PLOT_A$$ + $$PLOT_B$$</equation>
+    <equation>a = $$PLOT_A$$
+b = $$PLOT_B$$
+
+return (a+b)/2</equation>
+  </snippet>
+  <snippet name="integral">
+    <global>var integral = 0</global>
+    <equation>integral += value
+return integral</equation>
+  </snippet>
+  <snippet name="rad_to_deg">
+    <global></global>
+    <equation>return value*180/3.1417</equation>
+  </snippet>
+  <snippet name="remove_offset">
+    <global>var is_first = true
+var first_value = 0</global>
+    <equation>if (is_first)
+{
+  is_first = false
+  first_value = value
+}
+
+return value - first_value</equation>
   </snippet>
   <snippet name="yaw_from_quaternion">
     <global>// source: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
@@ -32,6 +71,6 @@ function quaternionToYaw(x, y, z, w)
 
   return yaw
 }</global>
-    <equation>return quaternionToYaw(x, y, z, w); </equation>
+    <equation>return quaternionToYaw(x, y, z, w);</equation>
   </snippet>
 </snippets>

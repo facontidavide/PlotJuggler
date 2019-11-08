@@ -1,114 +1,96 @@
 #ifndef TREE_COMPLETER_H
 #define TREE_COMPLETER_H
 
-#include <QString>
-#include <QHash>
-#include <QVariant>
-#include <QList>
 #include <QStandardItem>
 #include <QStandardItemModel>
-#include <QCompleter>
+#include <QString>
+#include <QVariant>
+#include <QFont>
+#include <QFontDatabase>
+#include <map>
+#include "PlotJuggler/alphanum.hpp"
 
-class TreeItem
-{
-public:
-    explicit TreeItem(QStandardItem* item): _item(item)
-    {
+class TreeItem {
+ public:
+  explicit TreeItem(QStandardItem* name_item, QStandardItem* value_item)
+      : _name_item(name_item), _value_item(value_item) {}
 
+  TreeItem* appendChild(const QString& name)
+  {
+    auto child_name = new QStandardItem(name);
+    auto child_value = new QStandardItem("-");
+
+    child_value->setSelectable(false);
+    child_value->setTextAlignment(Qt::AlignRight);
+    child_value->setFlags( Qt::NoItemFlags | Qt::ItemIsEnabled );
+    auto font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    child_value->setFont( font );
+    child_value->setFlags(Qt::NoItemFlags);
+
+    QList<QStandardItem*> columns;
+    columns << child_name << child_value;
+    _name_item->appendRow(columns);
+
+    auto res =
+        _child_items_map.insert(std::make_pair(name, TreeItem(child_name, child_value)));
+    return &(res.first->second);
+  }
+
+  TreeItem* findChild(const QString& name) {
+    auto it = _child_items_map.find(name);
+    if (it == _child_items_map.end()) {
+      return nullptr;
     }
+    return &(it->second);
+  }
 
-    TreeItem* appendChild(const QString& name, QStandardItem* item)
-    {
-        return &(_child_items_map.insert(name, TreeItem(item) ).value());
-    }
+  QStandardItem* nameItem() { return _name_item; }
+  QStandardItem* valueItem() { return _value_item; }
 
-    TreeItem * findChild(const QString& name)
-    {
-        auto it = _child_items_map.find(name);
-        if( it == _child_items_map.end())
-        {
-            return nullptr;
-        }
-        return &(it.value());
-    }
-
-    QStandardItem* standardItem() { return _item; }
-
-private:
-    QHash<QString, TreeItem> _child_items_map;
-    QStandardItem* _item;
+ private:
+  std::map<QString, TreeItem> _child_items_map;
+  QStandardItem* _name_item;
+  QStandardItem* _value_item;
 };
 
-class TreeModelCompleter : public QCompleter
-{
+class TreeModel : public QStandardItemModel {
+ public:
+  TreeModel(QStandardItemModel* parent_model)
+      : QStandardItemModel(0, 2, parent_model),
+        _root_tree_item(invisibleRootItem(), nullptr),
+        _parent_model(parent_model) {}
 
-public:
-    TreeModelCompleter(QObject *parent = 0):
-        QCompleter(parent),
-        _model(new QStandardItemModel()),
-        _root_tree_item(nullptr)
-    {
-        setModelSorting( QCompleter::CaseInsensitivelySortedModel );
-        setModel(_model);
-        _root_tree_item = TreeItem(_model->invisibleRootItem());
+  void clear() {
+    QStandardItemModel::clear();
+    _root_tree_item = TreeItem(invisibleRootItem(), nullptr);
+  }
+
+  void addToTree(const QString& name, int reference_row) {
+    auto parts = name.split('/', QString::SplitBehavior::SkipEmptyParts);
+    if (parts.size() == 0) {
+      return;
     }
 
-    QStandardItemModel* treeModel() { return _model; }
+    TreeItem* tree_parent = &_root_tree_item;
 
-    void clear()
-    {
-        _model->clear();
-        _root_tree_item = TreeItem(_model->invisibleRootItem());
+    for (int i = 0; i < parts.size(); i++) {
+      bool is_leaf = (i == parts.size() - 1);
+      const auto& part = parts[i];
+
+      TreeItem* matching_child = tree_parent->findChild(part);
+      if (matching_child) {
+        tree_parent = matching_child;
+      } else {
+
+        tree_parent = tree_parent->appendChild(part);
+        tree_parent->nameItem()->setSelectable(is_leaf);
+      }
     }
+  }
 
-    QStringList splitPath(const QString &path) const override {
-        return path.split('/');
-    }
-
-    QString pathFromIndex(const QModelIndex &index) const override
-    {
-        QStringList dataList;
-        for (QModelIndex it = index; it.isValid(); it = it.parent())
-        {
-            dataList.prepend(model()->data(it, completionRole()).toString());
-        }
-        return dataList.join('/');
-    }
-
-    void addToCompletionTree(const QString &name)
-    {
-        auto parts = name.split('/');
-        if( parts.size() == 0 )
-        {
-            return;
-        }
-
-        TreeItem* tree_parent = & _root_tree_item;
-        QStandardItem *item_parent = tree_parent->standardItem();
-
-        for (const auto& part: parts)
-        {
-            TreeItem* matching_child = tree_parent->findChild( part );
-            if(matching_child)
-            {
-                tree_parent = matching_child;
-                item_parent = matching_child->standardItem();
-            }
-            else
-            {
-                QStandardItem* item = new QStandardItem( part );
-                item_parent->appendRow(item);
-                tree_parent = tree_parent->appendChild(part, item);
-                item_parent = item;
-            }
-        }
-    }
-
-private:
-
-    QStandardItemModel* _model;
-    TreeItem _root_tree_item;
+ private:
+  TreeItem _root_tree_item;
+  QStandardItemModel* _parent_model;
 };
 
-
-#endif // TREE_COMPLETER_H
+#endif  // TREE_COMPLETER_H

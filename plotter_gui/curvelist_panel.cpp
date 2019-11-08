@@ -37,17 +37,16 @@ private:
 //-------------------------------------------------
 
 CurveListPanel::CurveListPanel(const CustomPlotMap &mapped_math_plots,
-                                           QWidget *parent) :
+                               QWidget *parent) :
     QWidget(parent),
     ui(new Ui::CurveListPanel),
-    _completer( new TreeModelCompleter(this) ),
+    _model(new QStandardItemModel(0, 2, this)),
+    _tree_model(new TreeModel(_model)),
     _custom_plots(mapped_math_plots),
     _point_size(9)
 {
     ui->setupUi(this);
     ui->tableView->viewport()->installEventFilter( this );
-
-    _model = new QStandardItemModel(0, 2, this);
 
     for(auto table_view: {ui->tableView, ui->tableViewCustom})
     {
@@ -62,9 +61,6 @@ CurveListPanel::CurveListPanel(const CustomPlotMap &mapped_math_plots,
 
     ui->radioRegExp->setAutoExclusive(true);
     ui->radioContains->setAutoExclusive(true);
-    ui->radioPrefix->setAutoExclusive(true);
-
-    _completer->setCompletionMode( QCompleter::PopupCompletion );
 
     QSettings settings;
 
@@ -73,10 +69,6 @@ CurveListPanel::CurveListPanel(const CustomPlotMap &mapped_math_plots,
 
         ui->radioRegExp->setChecked(true);
     }
-    else if( active_filter == "radioPrefix"){
-
-        ui->radioPrefix->setChecked(true);
-    }
     else if( active_filter == "radioContains"){
 
         ui->radioContains->setChecked(true);
@@ -84,11 +76,10 @@ CurveListPanel::CurveListPanel(const CustomPlotMap &mapped_math_plots,
 
     _point_size = settings.value("FilterableListWidget/table_point_size", 9).toInt();
 
-    _completer_need_update = ui->radioPrefix->isChecked();
-    ui->lineEdit->setCompleter( _completer_need_update ? _completer : nullptr );
-
     ui->splitter->setStretchFactor(0,5);
     ui->splitter->setStretchFactor(1,1);
+
+    ui->treeView->setModel(_tree_model);
 
     connect(  ui->tableViewCustom->selectionModel(), &QItemSelectionModel::selectionChanged,
               this, &CurveListPanel::onCustomSelectionChanged );
@@ -107,7 +98,7 @@ int CurveListPanel::rowCount() const
 void CurveListPanel::clear()
 {
     _model->setRowCount(0);
-    _completer->clear();
+    _tree_model->clear();
     ui->labelNumberDisplayed->setText( "0 of 0");
 }
 
@@ -135,24 +126,17 @@ void CurveListPanel::addItem(const QString &item_name)
     val_cell->setFlags(Qt::NoItemFlags);
 
     _model->setItem(row, 1, val_cell );
-
-    if( _completer_need_update )
-    {
-        _completer->addToCompletionTree(item_name);
-    }
-    ui->treeView->setModel( _completer->treeModel() );
-    ui->treeView->expandAll();
-    ui->treeView->setRootIndex(_model->invisibleRootItem()->child(0, 0)->index());
-
-
+    _tree_model->addToTree(item_name, row);
 }
 
 void CurveListPanel::refreshColumns()
 {
     ui->tableView->sortByColumn(0,Qt::AscendingOrder);
+    ui->treeView->sortByColumn(0,Qt::AscendingOrder);
     ui->tableViewCustom->sortByColumn(0,Qt::AscendingOrder);
 
     ui->tableView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    ui->treeView->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     ui->tableViewCustom->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
 
     updateFilter();
@@ -397,26 +381,6 @@ void CurveListPanel::on_radioRegExp_toggled(bool checked)
     }
 }
 
-void CurveListPanel::on_radioPrefix_toggled(bool checked)
-{
-    _completer_need_update = checked;
-
-    if( checked )
-    {
-        _completer->clear();
-        for (int row=0; row< rowCount(); row++)
-        {
-            auto item = _model->item(row,0);
-            _completer->addToCompletionTree(item->text());
-        }
-
-        updateFilter();
-        ui->lineEdit->setCompleter( _completer );
-        QSettings settings;
-        settings.setValue("FilterableListWidget.searchFilter", "radioPrefix");
-    }
-}
-
 void CurveListPanel::on_checkBoxCaseSensitive_toggled(bool )
 {
     updateFilter();
@@ -450,10 +414,6 @@ void CurveListPanel::on_lineEdit_textChanged(const QString &search_string)
             if( ui->radioRegExp->isChecked())
             {
                 toHide = v.validate( name, pos ) != QValidator::Acceptable;
-            }
-            else if( ui->radioPrefix->isChecked())
-            {
-                toHide = !name.startsWith( search_string, cs ) ;
             }
             else if( ui->radioContains->isChecked())
             {
@@ -520,15 +480,12 @@ void CurveListPanel::removeSelectedCurves()
         emit deleteCurves(getNonHiddenSelectedRows());
     }
 
-    // rebuild the tree model
-    if( _completer_need_update )
+    _tree_model->clear();
+
+    for (int row = 0; row < rowCount(); row++)
     {
-        _completer->clear();
-        for (int row=0; row< rowCount(); row++)
-        {
-            auto item = _model->item(row);
-            _completer->addToCompletionTree(item->text());
-        }
+        auto item = _model->item(row);
+        _tree_model->addToTree(item->text(), row);
     }
 
     updateFilter();

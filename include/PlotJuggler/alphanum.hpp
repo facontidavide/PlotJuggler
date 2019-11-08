@@ -198,7 +198,7 @@ namespace doj
 
      @return negative if l<r, 0 if l==r, positive if l>r.
   */
-  template <>
+  template <> inline
   int alphanum_comp<std::string>(const std::string& l, const std::string& r)
   {
 #ifdef DOJDEBUG
@@ -220,7 +220,7 @@ namespace doj
 
      @return negative if l<r, 0 if l==r, positive if l>r.
   */
-  int alphanum_comp(char* l, char* r)
+  inline int alphanum_comp(char* l, char* r)
   {
     assert(l);
     assert(r);
@@ -230,7 +230,7 @@ namespace doj
     return alphanum_impl(l, r);
   }
 
-  int alphanum_comp(const char* l, const char* r)
+  inline int alphanum_comp(const char* l, const char* r)
   {
     assert(l);
     assert(r);
@@ -240,7 +240,7 @@ namespace doj
     return alphanum_impl(l, r);
   }
 
-  int alphanum_comp(char* l, const char* r)
+  inline int alphanum_comp(char* l, const char* r)
   {
     assert(l);
     assert(r);
@@ -250,7 +250,7 @@ namespace doj
     return alphanum_impl(l, r);
   }
 
-  int alphanum_comp(const char* l, char* r)
+  inline int alphanum_comp(const char* l, char* r)
   {
     assert(l);
     assert(r);
@@ -260,7 +260,7 @@ namespace doj
     return alphanum_impl(l, r);
   }
 
-  int alphanum_comp(const std::string& l, char* r)
+  inline int alphanum_comp(const std::string& l, char* r)
   {
     assert(r);
 #ifdef DOJDEBUG
@@ -269,7 +269,7 @@ namespace doj
     return alphanum_impl(l.c_str(), r);
   }
 
-  int alphanum_comp(char* l, const std::string& r)
+  inline int alphanum_comp(char* l, const std::string& r)
   {
     assert(l);
 #ifdef DOJDEBUG
@@ -278,7 +278,7 @@ namespace doj
     return alphanum_impl(l, r.c_str());
   }
 
-  int alphanum_comp(const std::string& l, const char* r)
+  inline int alphanum_comp(const std::string& l, const char* r)
   {
     assert(r);
 #ifdef DOJDEBUG
@@ -287,7 +287,7 @@ namespace doj
     return alphanum_impl(l.c_str(), r);
   }
 
-  int alphanum_comp(const char* l, const std::string& r)
+  inline int alphanum_comp(const char* l, const std::string& r)
   {
     assert(l);
 #ifdef DOJDEBUG
