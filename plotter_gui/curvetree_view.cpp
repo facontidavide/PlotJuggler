@@ -93,7 +93,7 @@ void CurveTreeView::refreshColumns()
     // TODO emit updateFilter();
 }
 
-std::vector<std::string> CurveTreeView::getNonHiddenSelectedRows()
+std::vector<std::string> CurveTreeView::getSelectedNames()
 {
     std::vector<std::string> non_hidden_list;
 
@@ -202,6 +202,43 @@ bool CurveTreeView::applyVisibilityFilter(CurvesView::FilterType type,
    //-------------
 
    return updated;
+}
+
+void CurveTreeView::removeCurve(const QString &to_be_deleted)
+{
+    auto removeFunc = [&](QTreeWidgetItem* item)
+    {
+        QString curve_name = item->data(0, Qt::UserRole).toString();
+        if( curve_name == to_be_deleted)
+        {
+            auto parent_item = item->parent();
+            parent_item->removeChild(item);
+
+            while (parent_item->childCount() == 0 &&
+                   parent_item != invisibleRootItem())
+            {
+                auto prev_item = parent_item;
+                parent_item = parent_item->parent();
+                if(!parent_item)
+                {
+                    parent_item = invisibleRootItem();
+                }
+                parent_item->removeChild(prev_item);
+            }
+        }
+    };
+
+    treeVisitor( removeFunc );
+}
+
+void CurveTreeView::hideValuesColumn(bool hide)
+{
+    if(hide){
+        hideColumn(1);
+    }
+    else  {
+        showColumn(1);
+    }
 }
 
 void CurveTreeView::treeVisitor(std::function<void(QTreeWidgetItem*)> visitor)

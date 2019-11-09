@@ -36,9 +36,7 @@ public:
 
     void refreshColumns();
 
-    int findRowByName(const std::string &text) const;
-
-    void removeRow(int row);
+    void removeCurve(const std::string &name);
 
     void rebuildEntireList(const std::vector<std::string> &names);
 

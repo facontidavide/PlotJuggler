@@ -38,7 +38,7 @@ class CurveTreeView : public QTreeWidget, public CurvesView
 
     void refreshColumns() override;
 
-    std::vector<std::string> getNonHiddenSelectedRows() override;
+    std::vector<std::string> getSelectedNames() override;
 
     void refreshFontSize() override;
 
@@ -56,20 +56,14 @@ class CurveTreeView : public QTreeWidget, public CurvesView
         }
     }
 
+    void removeCurve(const QString& name) override;
+
     std::pair<int,int> hiddenItemsCount() override
     {
         return { _hidden_count, _leaf_count };
     }
 
-    virtual void hideValuesColumn(bool hide) override
-    {
-        if(hide){
-            hideColumn(1);
-        }
-        else  {
-            showColumn(1);
-        }
-    }
+    virtual void hideValuesColumn(bool hide) override;
 
    void treeVisitor(std::function<void(QTreeWidgetItem *)> visitor);
 

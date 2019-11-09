@@ -868,11 +868,7 @@ void MainWindow::onDeleteMultipleCurves(const std::vector<std::string> &curve_na
             _custom_plots.erase( custom_it );
         }
 
-        int row = _curvelist_widget->findRowByName( curve_name );
-        if( row != -1 )
-        {
-            _curvelist_widget->removeRow(row);
-        }
+        _curvelist_widget->removeCurve(curve_name);
     }
 
     forEachWidget( [](PlotWidget* plot) {

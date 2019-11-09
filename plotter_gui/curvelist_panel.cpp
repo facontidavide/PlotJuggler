@@ -83,7 +83,8 @@ CurveListPanel::~CurveListPanel()
 void CurveListPanel::clear()
 {
     _table_view->setRowCount(0);
-    //_tree_model->clear();
+    _custom_view->setRowCount(0);
+    _tree_view->clear();
     ui->labelNumberDisplayed->setText( "0 of 0");
 }
 
@@ -106,23 +107,6 @@ void CurveListPanel::refreshColumns()
 
     updateFilter();
 }
-
-
-int CurveListPanel::findRowByName(const std::string &text) const
-{
-    auto item_list = _table_view->findItems( QString::fromStdString( text ), Qt::MatchExactly);
-    if( item_list.isEmpty())
-    {
-        return -1;
-    }
-    if( item_list.count()>1)
-    {
-        qDebug() << "FilterableListWidget constins multiple rows with the same name";
-        return -1;
-    }
-    return item_list.front()->row();
-}
-
 
 void CurveListPanel::updateFilter()
 {
@@ -226,21 +210,26 @@ void CurveListPanel::removeSelectedCurves()
 
     if (reply == QMessageBox::Yes)
     {
-        emit deleteCurves( _table_view->getNonHiddenSelectedRows() );
+        emit deleteCurves( _table_view->getSelectedNames() );
+        emit deleteCurves( _tree_view->getSelectedNames() );
+        emit deleteCurves( _custom_view->getSelectedNames() );
     }
 
     updateFilter();
 }
 
-void CurveListPanel::removeRow(int row)
+void CurveListPanel::removeCurve(const std::string &name)
 {
-    _table_view->removeRow(row);
+    QString curve_name = QString::fromStdString(name);
+   _table_view->removeCurve(curve_name);
+   _tree_view->removeCurve(curve_name);
+   _custom_view->removeCurve(curve_name);
 }
 
 void CurveListPanel::on_buttonAddCustom_clicked()
 {
     //TODO: may be the selection is in cutom curves
-    auto curve_names = _table_view->getNonHiddenSelectedRows();
+    auto curve_names = _table_view->getSelectedNames();
 
     if( curve_names.empty() )
     {
@@ -256,7 +245,7 @@ void CurveListPanel::on_buttonAddCustom_clicked()
 
 void CurveListPanel::onCustomSelectionChanged(const QItemSelection&, const QItemSelection &)
 {
-    auto selected = _custom_view->getNonHiddenSelectedRows();
+    auto selected = _custom_view->getSelectedNames();
 
     bool enabled = (selected.size() == 1);
     ui->buttonEditCustom->setEnabled( enabled );

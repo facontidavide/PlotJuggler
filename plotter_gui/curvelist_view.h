@@ -43,7 +43,7 @@ class CurvesView
 
     virtual void addItem(const QString& item_name) = 0;
 
-    virtual std::vector<std::string> getNonHiddenSelectedRows() = 0;
+    virtual std::vector<std::string> getSelectedNames() = 0;
 
     enum FilterType{ CONTAINS, REGEX };
 
@@ -58,6 +58,8 @@ class CurvesView
     bool eventFilterBase(QObject* object, QEvent* event);
 
     virtual std::pair<int,int> hiddenItemsCount() = 0;
+
+    virtual void removeCurve(const QString& name) = 0;
 
     void setFontSize(int size)
     {
@@ -82,9 +84,11 @@ class CurveTableView : public QTableWidget, public CurvesView
 
     void refreshColumns() override;
 
-    std::vector<std::string> getNonHiddenSelectedRows() override;
+    std::vector<std::string> getSelectedNames() override;
 
     void refreshFontSize() override;
+
+    void removeCurve(const QString& name) override;
 
     bool applyVisibilityFilter(FilterType type, const QString& filter_string) override;
 
@@ -105,15 +109,7 @@ class CurveTableView : public QTableWidget, public CurvesView
         return { _hidden_count, model()->rowCount() };
     }
 
-    virtual void hideValuesColumn(bool hide) override
-    {
-        if(hide){
-            hideColumn(1);
-        }
-        else  {
-            showColumn(1);
-        }
-    }
+    virtual void hideValuesColumn(bool hide) override;
    private:
     int _hidden_count = 0;
 };

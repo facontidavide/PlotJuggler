@@ -6,11 +6,11 @@ QDialog {
     background: #E5E5E5;
 }
 QLabel {
-    color: black;
+    color: #111111;
 }
 
 QLineEdit {
-    color: black;
+    color: #111111;
     background: white;
     border-radius: 2px;
     border: 1px solid grey;
@@ -39,7 +39,7 @@ QTabBar::tab {
     border-bottom-right-radius: -4px;
     min-width: 10ex;
     padding: 6px;
-    color: black;
+    color: #111111;
 }
 
 QTabBar::tab:selected {
@@ -53,49 +53,41 @@ QTabBar::tab:!selected {
     border-bottom: 1px solid grey;
 }
 
-
+QTableView,
+QTreeView,
 QListView {
    background: white;
-   color: black;
+   color: #111111;
    border-radius: 2px;
    border: 1px solid grey;
 }
 
+QTableView::item:selected,
+QTreeView::item:selected,
 QListView::item:selected {
    background: #1464a0;
    color: white;
 }
 
+
 QTextBrowser {
    background: white;
-   color: black;
+   color: #111111;
 }
 
 QPlainTextEdit {
    background: white;
-   color: black;
+   color: #111111;
    border-radius: 2px;
    border: 1px solid grey;
 }
 
-QTableView {
-   background: white;
-   color: black;
-   border-radius: 2px;
-   border: 1px solid grey;
-}
-
-
-QTableView::item:selected {
-   background: #1464a0;
-   color: white;
-}
 
 QToolTip {
-    border: 1px solid black;
+    border: 1px solid #111111;
     border-radius: 2px;
     background: white;
-    color: black; }
+    color: #111111; }
 
 QScrollBar {
     background: #EEEEEE;
@@ -103,7 +95,7 @@ QScrollBar {
 
 QSplitter::handle
 {
-    background: black;
+    background: #111111;
     border: 0px;
     width: 1px;
     margin-top: 2px;
@@ -120,7 +112,7 @@ QMenu {
 
 QMenu::item {
     padding: 2px 25px 2px 25px;
-    color: black;
+    color: #111111;
     border: 1px solid transparent;
     margin: 2px;
 }
@@ -128,7 +120,7 @@ QMenu::item {
 
 QMenu::item:selected {
     background: #b5b5b5;
-    color: black;
+    color: #111111;
 }
 
 
@@ -138,7 +130,7 @@ QMenu::item:checked {
 }
 
 QMenu::item:unchecked {
-    color: black;
+    color: #111111;
 }
 
 QMenu::item:disabled {
@@ -154,7 +146,7 @@ QMenu::indicator {
 /* QRadioButton ----------------------------------------------------------- */
 
 QRadioButton{
-    color: black;
+    color: #111111;
     background-color: transparent;
     spacing: 0;
     padding: 0;
@@ -213,7 +205,7 @@ QRadioButton::indicator:unchecked:disabled {
 
 QCheckBox{
    background-color: transparent;
-   color: black;
+   color: #111111;
 }
 
 QCheckBox::indicator {
@@ -304,7 +296,7 @@ QGroupBox::indicator:unchecked:disabled {
 
 QPushButton
 {
-    color: black;
+    color: #111111;
     border-radius: 2px;
     padding: 6px;
     outline: none;
@@ -373,7 +365,7 @@ QPushButton:checked:selected{
 /* QCombobox -------------------------------------------------------------- */
 
 QComboBox {
-    color: black;
+    color: #111111;
     background-color: white;
     selection-background-color:  #b5b5b5;
     border-radius: 2px;
@@ -435,37 +427,49 @@ QSlider::handle:horizontal:hover {
 
 
 /* --------------------------------------------------------------------------- */
+
+QTreeView:branch {
+    background-color: white;
+    selection-background-color:  #b5b5b5;
+}
 QTreeView:branch:selected, QTreeView:branch:hover {
   background: url(":/style_dark/transparent.png");
 }
 
 QTreeView:branch:has-siblings:!adjoins-item {
+  background-color: white;
   border-image: url(":/style_dark/branch_line.png") 0;
 }
 
 QTreeView:branch:has-siblings:adjoins-item {
+  background-color: white;
   border-image: url(":/style_dark/branch_more.png") 0;
 }
 
 QTreeView:branch:!has-children:!has-siblings:adjoins-item {
+  background-color: white;
   border-image: url(":/style_dark/branch_end.png") 0;
 }
 
 QTreeView:branch:has-children:!has-siblings:closed, QTreeView:branch:closed:has-children:has-siblings {
+  background-color: white;
   border-image: none;
   image: url(":/style_dark/branch_closed.png");
 }
 
 QTreeView:branch:open:has-children:!has-siblings, QTreeView:branch:open:has-children:has-siblings {
+  background-color: white;
   border-image: none;
   image: url(":/style_dark/branch_open.png");
 }
 
 QTreeView:branch:has-children:!has-siblings:closed:hover, QTreeView:branch:closed:has-children:has-siblings:hover {
+  background-color: white;
   image: url(":/style_dark/branch_closed_focus.png");
 }
 
 QTreeView:branch:open:has-children:!has-siblings:hover, QTreeView:branch:open:has-children:has-siblings:hover {
+  background-color: white;
   image: url(":/style_dark/branch_open_focus.png");
 }
 
@@ -504,8 +508,6 @@ QListView::indicator:indeterminate:focus,
 QListView::indicator:indeterminate:pressed {
   image: url(":/style_dark/checkbox_indeterminate_focus.png");
 }
-
-
 
 
 

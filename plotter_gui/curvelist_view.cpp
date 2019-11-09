@@ -65,17 +65,13 @@ void CurveTableView::refreshColumns()
     // TODO emit updateFilter();
 }
 
-std::vector<std::string> CurveTableView::getNonHiddenSelectedRows()
+std::vector<std::string> CurveTableView::getSelectedNames()
 {
     std::vector<std::string> non_hidden_list;
 
-    for (const auto& selected_index : selectionModel()->selectedRows(0))
+    for (const QTableWidgetItem* cell : selectedItems())
     {
-        if (!isRowHidden(selected_index.row()))
-        {
-            auto cell = item(selected_index.row(), 0);
-            non_hidden_list.push_back(cell->text().toStdString());
-        }
+        non_hidden_list.push_back(cell->text().toStdString());
     }
     return non_hidden_list;
 }
@@ -107,6 +103,18 @@ void CurveTableView::refreshFontSize()
     horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
     verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+}
+
+void CurveTableView::removeCurve(const QString &name)
+{
+    for (int row=0; row < model()->rowCount(); row++)
+    {
+        if( item(row,0)->text() == name )
+        {
+            removeRow( row );
+            break;
+        }
+    }
 }
 
 bool CurveTableView::applyVisibilityFilter(CurvesView::FilterType type, const QString &search_string)
@@ -154,6 +162,16 @@ bool CurveTableView::applyVisibilityFilter(CurvesView::FilterType type, const QS
     return updated;
 }
 
+void CurveTableView::hideValuesColumn(bool hide)
+{
+    if(hide){
+        hideColumn(1);
+    }
+    else  {
+        showColumn(1);
+    }
+}
+
 
 bool CurvesView::eventFilterBase(QObject *object, QEvent *event)
 {
@@ -171,15 +189,11 @@ bool CurvesView::eventFilterBase(QObject *object, QEvent *event)
         table_widget =  qobject_cast<QAbstractItemView*>(obj);
     }
 
-    bool shift_modifier_pressed =
-            (QGuiApplication::keyboardModifiers() == Qt::ShiftModifier);
     bool ctrl_modifier_pressed =
             (QGuiApplication::keyboardModifiers() == Qt::ControlModifier);
 
     if (event->type() == QEvent::MouseButtonPress )
     {
-        qDebug() << object;
-
         QMouseEvent *mouse_event = static_cast<QMouseEvent *>(event);
 
         _dragging = false;
@@ -216,7 +230,7 @@ bool CurvesView::eventFilterBase(QObject *object, QEvent *event)
             QByteArray mdata;
             QDataStream stream(&mdata, QIODevice::WriteOnly);
 
-            for (const auto &curve_name : getNonHiddenSelectedRows())
+            for (const auto &curve_name : getSelectedNames())
             {
                 stream << QString::fromStdString(curve_name);
             }
@@ -227,9 +241,9 @@ bool CurvesView::eventFilterBase(QObject *object, QEvent *event)
             }
             else
             {
-                if (getNonHiddenSelectedRows().size() != 2)
+                if (getSelectedNames().size() != 2)
                 {
-                    if (getNonHiddenSelectedRows().size() >= 1)
+                    if (getSelectedNames().size() >= 1)
                     {
                         QMessageBox::warning(
                             table_widget, "New in version 2.3+",
