@@ -1,6 +1,19 @@
 #include "curvetree_view.h"
 #include "curvelist_panel.h"
 #include <QFontDatabase>
+#include <QObject>
+
+class TreeWidgetItem : public QTreeWidgetItem
+{
+   public:
+    TreeWidgetItem(QTreeWidgetItem *parent) : QTreeWidgetItem(parent) {}
+
+    bool operator< (const QTreeWidgetItem &other) const
+    {
+        return doj::alphanum_impl(this->text(0).toLocal8Bit(),
+                                  other.text(0).toLocal8Bit()) < 0;
+    }
+};
 
 CurveTreeView::CurveTreeView(CurveListPanel* parent) : QTreeWidget(parent), CurvesView(parent)
 {
@@ -52,7 +65,7 @@ void CurveTreeView::addItem(const QString& item_name)
         }
         else
         {
-            QTreeWidgetItem* child_item = new QTreeWidgetItem(tree_parent);
+            QTreeWidgetItem* child_item = new TreeWidgetItem(tree_parent);
             child_item->setText(0, part);
             child_item->setText(1, is_leaf ? "-" : "");
 
@@ -78,15 +91,14 @@ void CurveTreeView::addItem(const QString& item_name)
             {
                 child_item->setFlags(current_flag & (~Qt::ItemIsSelectable));
             }
-            // tree_parent->setSelectable(is_leaf);
         }
     }
 }
 
 void CurveTreeView::refreshColumns()
 {
-    treeVisitor([&](QTreeWidgetItem* item)
-                {
+    invisibleRootItem()->sortChildren(0, Qt::AscendingOrder);
+    treeVisitor([&](QTreeWidgetItem* item){
                     item->sortChildren(0, Qt::AscendingOrder);
                 } );
     header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);

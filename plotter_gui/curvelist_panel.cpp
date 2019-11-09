@@ -86,6 +86,13 @@ CurveListPanel::CurveListPanel(const CustomPlotMap &mapped_math_plots,
     connect( _tree_view, &QTreeWidget::itemExpanded,
             this, &CurveListPanel::refreshValues );
 
+    bool tree = settings.value("FilterableListWidget/isTreeView", false).toBool();
+
+    ui->radioFlat->setChecked( !tree );
+    ui->radioTree->setChecked( tree );
+
+    _tree_view->setHidden( !tree );
+    _table_view->setHidden( tree );
 }
 
 CurveListPanel::~CurveListPanel()
@@ -277,21 +284,20 @@ void CurveListPanel::on_lineEdit_textChanged(const QString &search_string)
 {
     bool updated = false;
 
-    std::array<CurvesView*,2> views = {_table_view, _tree_view};
+    CurvesView* active_view = ui->radioFlat->isChecked() ? (CurvesView*)_table_view : (CurvesView*)_tree_view;
 
-    for(auto& view: views)
+    if (ui->radioRegExp->isChecked())
     {
-        if( ui->radioRegExp->isChecked())
-        {
-            updated = view->applyVisibilityFilter( CurvesView::REGEX, search_string );
-        }
-        else if( ui->radioContains->isChecked())
-        {
-            updated = view->applyVisibilityFilter( CurvesView::CONTAINS, search_string );
-        }
+        updated = active_view->applyVisibilityFilter(CurvesView::REGEX,
+                                                     search_string);
+    }
+    else if (ui->radioContains->isChecked())
+    {
+        updated = active_view->applyVisibilityFilter(CurvesView::CONTAINS,
+                                                     search_string);
     }
 
-    auto h_c = _table_view->hiddenItemsCount();
+    auto h_c = active_view->hiddenItemsCount();
     int item_count = h_c.second;
     int visible_count = item_count - h_c.first;
 
@@ -309,7 +315,9 @@ void CurveListPanel::on_pushButtonSettings_toggled(bool checked)
 
 void CurveListPanel::on_checkBoxHideSecondColumn_toggled(bool checked)
 {
+    _tree_view->hideValuesColumn(checked);
     _table_view->hideValuesColumn(checked);
+    _custom_view->hideValuesColumn(checked);
     emit hiddenItemsChanged();
 }
 
@@ -341,17 +349,20 @@ void CurveListPanel::removeCurve(const std::string &name)
 
 void CurveListPanel::on_buttonAddCustom_clicked()
 {
-    //TODO: may be the selection is in cutom curves
-    auto curve_names = _table_view->getSelectedNames();
+    std::array<CurvesView*,3> views = { _table_view, _tree_view, _custom_view };
 
-    if( curve_names.empty() )
+    std::string suggested_name;
+    for(CurvesView* view: views )
     {
-        emit createMathPlot("");
+        auto curve_names = view->getSelectedNames();
+        if( curve_names.size() > 0)
+        {
+             suggested_name = ( curve_names.front() );
+             break;
+        }
     }
-    else
-    {
-        createMathPlot( curve_names.front() );
-    }
+
+    emit createMathPlot(suggested_name);
     on_lineEdit_textChanged( ui->lineEdit->text() );
 }
 
@@ -392,4 +403,26 @@ void CurveListPanel::clearSelections()
 void CurveListPanel::on_stylesheetChanged(QString style_dir)
 {
     ui->pushButtonSettings->setIcon(QIcon(tr(":/%1/settings_cog.png").arg(style_dir)));
+}
+
+void CurveListPanel::on_radioTree_toggled(bool checked)
+{
+    _tree_view->setVisible(checked);
+    if( checked )
+    {
+        refreshValues();
+        QSettings settings;
+        settings.setValue("FilterableListWidget/isTreeView", true);
+    }
+}
+
+void CurveListPanel::on_radioFlat_toggled(bool checked)
+{
+    _table_view->setVisible(checked);
+    if( checked )
+    {
+        refreshValues();
+        QSettings settings;
+        settings.setValue("FilterableListWidget/isTreeView", false);
+    }
 }

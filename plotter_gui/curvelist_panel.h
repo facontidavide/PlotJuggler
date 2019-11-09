@@ -73,7 +73,11 @@ private slots:
 
     void onCustomSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
 
-public slots:
+    void on_radioTree_toggled(bool checked);
+
+    void on_radioFlat_toggled(bool checked);
+
+   public slots:
 
     void clearSelections();
 
