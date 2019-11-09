@@ -11,8 +11,8 @@
 
 #include "transforms/custom_function.h"
 #include "tree_completer.h"
+#include "curvelist_view.h"
 
-class SortedTableItem;
 
 namespace Ui {
 class CurveListPanel;
@@ -92,19 +92,12 @@ private:
 
     Ui::CurveListPanel *ui;
 
-    QPoint _drag_start_pos;
-
-    bool _newX_modifier, _dragging;
-
-
-    bool eventFilter(QObject *object, QEvent *event) override;
-
     void updateTreeModel();
     
-    std::vector<std::string> getNonHiddenSelectedRows();
-
     QStandardItemModel* _model;
     TreeModel* _tree_model;
+
+    CurvesView* _table_view;
 
     const CustomPlotMap& _custom_plots;
 
