@@ -541,7 +541,6 @@ void PlotWidget::dragEnterEvent(QDragEnterEvent *event)
     _dragging.source = event->source();
     for(const QString& format: mimeFormats)
     {
-        qDebug() << format;
         if( format.contains( "curveslist/add_curve") )
         {
             _dragging.mode = DragInfo::CURVES;
@@ -571,7 +570,6 @@ void PlotWidget::dragEnterEvent(QDragEnterEvent *event)
             stream >> curve_name;
             if(!curve_name.isEmpty()) {
                 _dragging.curves.push_back(curve_name);
-                qDebug() << "curve = " << curve_name;
             }
         }
     }

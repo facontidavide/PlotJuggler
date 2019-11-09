@@ -27,15 +27,17 @@ CurveListPanel::CurveListPanel(const CustomPlotMap &mapped_math_plots,
     QWidget(parent),
     ui(new Ui::CurveListPanel),
     _model(new QStandardItemModel(0, 2, this)),
+    _custom_model(new QStandardItemModel(0, 2, this)),
     _tree_model(new TreeModel(_model)),
+    _table_view( new CurveTableView( _model, this) ),
+    _custom_view( new CurveTableView( _custom_model, this) ),
     _custom_plots(mapped_math_plots),
     _point_size(9)
 {
     ui->setupUi(this);
 
-    _table_view = new CurveTableView(_model, this);
-
     ui->verticalLayout->insertWidget(3, _table_view->view(), 1 );
+    ui->verticalLayoutCustom->addWidget( _custom_view->view(), 1 );
 
     ui->widgetOptions->setVisible(false);
 
@@ -61,18 +63,19 @@ CurveListPanel::CurveListPanel(const CustomPlotMap &mapped_math_plots,
 
     ui->treeView->setModel(_tree_model);
 
-    connect(  ui->tableViewCustom->selectionModel(), &QItemSelectionModel::selectionChanged,
+    connect(  _custom_view->view()->selectionModel(), &QItemSelectionModel::selectionChanged,
               this, &CurveListPanel::onCustomSelectionChanged );
+
+    connect( _custom_view->view(), &QAbstractItemView::pressed,
+             _table_view->view(), & QAbstractItemView::clearSelection );
+
+    connect( _table_view->view(), &QAbstractItemView::pressed,
+             _custom_view->view(), & QAbstractItemView::clearSelection );
 }
 
 CurveListPanel::~CurveListPanel()
 {
     delete ui;
-}
-
-int CurveListPanel::rowCount() const
-{
-    return _model->rowCount();
 }
 
 void CurveListPanel::clear()
@@ -82,42 +85,23 @@ void CurveListPanel::clear()
     ui->labelNumberDisplayed->setText( "0 of 0");
 }
 
-void CurveListPanel::addItem(const QString &item_name)
+void CurveListPanel::addCurve(const QString &item_name)
 {
-    if( _model->findItems(item_name).size() > 0)
-    {
-        return;
-    }
+    _table_view->addItem(item_name);
+}
 
-    auto item = new SortedTableItem(item_name);
-    QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
-    font.setPointSize(_point_size);
-    item->setFont(font);
-    const int row = rowCount();
-    _model->setRowCount(row+1);
-    _model->setItem(row, 0, item);
-
-    auto val_cell = new QStandardItem("-");
-    val_cell->setTextAlignment(Qt::AlignRight);
-    val_cell->setFlags( Qt::NoItemFlags | Qt::ItemIsEnabled );
-    font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    font.setPointSize( _point_size );
-    val_cell->setFont( font );
-    val_cell->setFlags(Qt::NoItemFlags);
-
-    _model->setItem(row, 1, val_cell );
-    _tree_model->addToTree(item_name, row);
+void CurveListPanel::addCustom(const QString &item_name)
+{
+    _custom_view->addItem(item_name);
 }
 
 void CurveListPanel::refreshColumns()
 {
-    //TODO ui->tableView->sortByColumn(0,Qt::AscendingOrder);
-    ui->treeView->sortByColumn(0,Qt::AscendingOrder);
-    ui->tableViewCustom->sortByColumn(0,Qt::AscendingOrder);
+    _table_view->refreshColumns();
+    _custom_view->refreshColumns();
 
-    //TODO  ui->tableView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    ui->treeView->sortByColumn(0,Qt::AscendingOrder);
     ui->treeView->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    //ui->tableViewCustom->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
 
     updateFilter();
 }
@@ -158,7 +142,7 @@ QTableView *CurveListPanel::getTableView() const
 
 QTableView *CurveListPanel::getCustomView() const
 {
-    return ui->tableViewCustom;
+    return dynamic_cast<QTableView*>(_custom_view);
 }
 
 void CurveListPanel::on_radioContains_toggled(bool checked)
@@ -188,7 +172,6 @@ void CurveListPanel::on_checkBoxCaseSensitive_toggled(bool )
 
 void CurveListPanel::on_lineEdit_textChanged(const QString &search_string)
 {
-    int item_count = rowCount();
     bool updated = false;
 
     if( ui->radioRegExp->isChecked())
@@ -200,9 +183,12 @@ void CurveListPanel::on_lineEdit_textChanged(const QString &search_string)
         updated = _table_view->applyVisibilityFilter( CurvesView::CONTAINS, search_string );
     }
 
-// TODO   ui->labelNumberDisplayed->setText( QString::number( visible_count ) + QString(" of ") +
-//                                       QString::number( item_count ) );
+    auto h_c = _table_view->hiddenItemsCount();
+    int item_count = h_c.second;
+    int visible_count = item_count - h_c.first;
 
+    ui->labelNumberDisplayed->setText( QString::number( visible_count ) + QString(" of ") +
+                                      QString::number( item_count ) );
     if(updated){
         emit hiddenItemsChanged();
     }
@@ -215,19 +201,8 @@ void CurveListPanel::on_pushButtonSettings_toggled(bool checked)
 
 void CurveListPanel::on_checkBoxHideSecondColumn_toggled(bool checked)
 {
-    //TODO
-//    for(auto table_view: {_table_view->view(), ui->tableViewCustom})
-//    {
-//        if(checked){
-//            table_view->hideColumn(1);
-//        }
-//        else{
-//            table_view->showColumn(1);
-//        }
-//        table_view->horizontalHeader()->setStretchLastSection( !checked );
-//    }
-
-//    emit hiddenItemsChanged();
+    _table_view->hideValuesColumn(checked);
+    emit hiddenItemsChanged();
 }
 
 void CurveListPanel::removeSelectedCurves()
@@ -240,15 +215,7 @@ void CurveListPanel::removeSelectedCurves()
 
     if (reply == QMessageBox::Yes)
     {
-        //TODO emit deleteCurves( getNonHiddenSelectedRows() );
-    }
-
-    _tree_model->clear();
-
-    for (int row = 0; row < rowCount(); row++)
-    {
-        auto item = _model->item(row);
-        _tree_model->addToTree(item->text(), row);
+        emit deleteCurves( _table_view->getNonHiddenSelectedRows() );
     }
 
     updateFilter();
@@ -261,17 +228,18 @@ void CurveListPanel::removeRow(int row)
 
 void CurveListPanel::on_buttonAddCustom_clicked()
 {
-    //TODO
-//    auto curve_names = _table_view->getNonHiddenSelectedRows();
-//    if( curve_names.empty() )
-//    {
-//        emit createMathPlot("");
-//    }
-//    else
-//    {
-//        createMathPlot( curve_names.front() );
-//    }
-//    on_lineEdit_textChanged( ui->lineEdit->text() );
+    //TODO: may be the selection is in cutom curves
+    auto curve_names = _table_view->getNonHiddenSelectedRows();
+
+    if( curve_names.empty() )
+    {
+        emit createMathPlot("");
+    }
+    else
+    {
+        createMathPlot( curve_names.front() );
+    }
+    on_lineEdit_textChanged( ui->lineEdit->text() );
 }
 
 //void FilterableListWidget::on_buttonRefreshAll_clicked()
@@ -284,17 +252,9 @@ void CurveListPanel::on_buttonAddCustom_clicked()
 
 void CurveListPanel::onCustomSelectionChanged(const QItemSelection&, const QItemSelection &)
 {
-    int selected_items = 0;
+    auto selected = _custom_view->getNonHiddenSelectedRows();
 
-    for (const auto &index : ui->tableViewCustom->selectionModel()->selectedRows(0))
-    {
-        if (! ui->tableViewCustom->isRowHidden(index.row()) )
-        {
-            selected_items++;
-        }
-    }
-
-    bool enabled = selected_items == 1;
+    bool enabled = (selected.size() == 1);
     ui->buttonEditCustom->setEnabled( enabled );
     ui->buttonEditCustom->setToolTip( enabled ? "Edit the selected custom timeserie" :
                                                 "Select a single custom Timeserie to Edit it");
@@ -302,31 +262,25 @@ void CurveListPanel::onCustomSelectionChanged(const QItemSelection&, const QItem
 
 void CurveListPanel::on_buttonEditCustom_clicked()
 {
-    int selected_count = 0;
-    QModelIndex selected_index;
-    auto table_view = ui->tableViewCustom;
+    QStandardItem* selected_item = nullptr;
+    auto view = _custom_view->view();
 
-    for (QModelIndex index : table_view->selectionModel()->selectedRows(0))
+    for (QModelIndex index : view->selectionModel()->selectedRows(0))
     {
-        if (!table_view->isRowHidden( index.row()) )
-        {
-            selected_count++;
-            selected_index = index;
-        }
+        selected_item = _model->item( index.row(), 0 );
+        break;
     }
-    if( selected_count != 1)
+    if( !selected_item )
     {
         return;
     }
-
-    auto item = _model->item( selected_index.row(), 0 );
-    editMathPlot( item->text().toStdString() );
+    editMathPlot( selected_item->text().toStdString() );
 }
 
 void CurveListPanel::clearSelections()
 {
-    ui->tableViewCustom->clearSelection();
-    // TODO ui->tableView->clearSelection();
+    _custom_view->view()->clearSelection();
+    _table_view->view()->clearSelection();
 }
 
 void CurveListPanel::on_stylesheetChanged(QString style_dir)

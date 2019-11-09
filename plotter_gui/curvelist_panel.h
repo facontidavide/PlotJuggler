@@ -28,11 +28,11 @@ public:
 
     ~CurveListPanel() override;
 
-    int rowCount() const;
-
     void clear();
 
-    void addItem(const QString& item_name);
+    void addCurve(const QString& item_name);
+
+    void addCustom(const QString& item_name);
 
     void refreshColumns();
 
@@ -95,9 +95,11 @@ private:
     void updateTreeModel();
     
     QStandardItemModel* _model;
+    QStandardItemModel* _custom_model;
     TreeModel* _tree_model;
 
     CurvesView* _table_view;
+    CurvesView* _custom_view;
 
     const CustomPlotMap& _custom_plots;
 

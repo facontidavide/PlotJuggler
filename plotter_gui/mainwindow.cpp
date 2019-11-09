@@ -285,7 +285,7 @@ void MainWindow::onUpdateLeftTableValues()
 
         const int vertical_height = table_view->visibleRegion().boundingRect().height();
 
-        for (int row = 0; row < _curvelist_widget->rowCount(); row++)
+        for (int row = 0; row < table_model->rowCount(); row++)
         {
             int vertical_pos = table_view->rowViewportPosition(row);
             if( vertical_pos < 0 || table_view->isRowHidden(row) ){ continue; }
@@ -778,7 +778,7 @@ void MainWindow::checkAllCurvesFromLayout(const QDomElement& root)
         {
             for(auto& name: missing_curves )
             {
-                _curvelist_widget->addItem( QString::fromStdString( name ) );
+                _curvelist_widget->addCurve( QString::fromStdString( name ) );
                 _mapped_plot_data.addNumeric(name);
             }
             _curvelist_widget->refreshColumns();
@@ -1074,7 +1074,7 @@ void MainWindow::importPlotDataMap(PlotDataMapRef& new_data, bool remove_old)
         const std::string& name  = it.first;
         if( it.second.size()>0 && _mapped_plot_data.numeric.count(name) == 0)
         {
-            _curvelist_widget->addItem( QString::fromStdString( name ) );
+            _curvelist_widget->addCurve( QString::fromStdString( name ) );
             curvelist_modified = true;
         }
     }
@@ -1630,7 +1630,7 @@ bool MainWindow::loadLayoutFromFile(QString filename)
                 const auto& name = new_custom_plot->name();
                 _custom_plots[name] = new_custom_plot;
                 new_custom_plot->calculateAndAdd( _mapped_plot_data );
-                _curvelist_widget->addItem( QString::fromStdString( name ) );
+                _curvelist_widget->addCustom( QString::fromStdString( name ) );
             }
             _curvelist_widget->refreshColumns();
         }
@@ -1898,7 +1898,7 @@ void MainWindow::updateDataAndReplot(bool replot_hidden_tabs)
 
         for(const auto& str: curvelist_added)
         {
-            _curvelist_widget->addItem(str);
+            _curvelist_widget->addCurve(str);
         }
 
         if( curvelist_added.size() > 0  )
@@ -2252,7 +2252,7 @@ void MainWindow::addOrEditMathPlot(const std::string &name, bool modifying)
 
         if(!modifying)
         {
-            _curvelist_widget->addItem(qplot_name);
+            _curvelist_widget->addCustom(qplot_name);
         }
         onUpdateLeftTableValues();
 

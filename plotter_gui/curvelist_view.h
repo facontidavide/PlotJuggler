@@ -36,12 +36,7 @@ class SortedTableItem : public QStandardItem
 class CurvesView
 {
    public:
-    CurvesView()
-    {
-        QSettings settings;
-        _point_size =
-            settings.value("FilterableListWidget/table_point_size", 9).toInt();
-    }
+    CurvesView();
 
     virtual void addItem(const QString& item_name) = 0;
 
@@ -55,7 +50,12 @@ class CurvesView
 
     virtual void refreshColumns() = 0;
 
+    virtual void hideValuesColumn(bool hide) = 0;
+
     bool eventFilter(QObject* object, QEvent* event);
+
+    virtual std::pair<int,int> hiddenItemsCount() = 0;
+
 
     QAbstractItemView* view() // ugly code!
     {
@@ -65,8 +65,8 @@ class CurvesView
    protected:
     int _point_size;
     QPoint _drag_start_pos;
-    bool _newX_modifier;
-    bool _dragging;
+    bool _newX_modifier = false;
+    bool _dragging = false;
 };
 
 class CurveTableView : public QTableView, public CurvesView
@@ -74,59 +74,13 @@ class CurveTableView : public QTableView, public CurvesView
    public:
     CurveTableView(QStandardItemModel* model, QWidget* parent);
 
-    void addItem(const QString& item_name)
-    {
-        if (_model->findItems(item_name).size() > 0)
-        {
-            return;
-        }
-
-        auto item = new SortedTableItem(item_name);
-        QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
-        font.setPointSize(_point_size);
-        item->setFont(font);
-        const int row = model()->rowCount();
-        _model->setRowCount(row + 1);
-        _model->setItem(row, 0, item);
-
-        auto val_cell = new QStandardItem("-");
-        val_cell->setTextAlignment(Qt::AlignRight);
-        val_cell->setFlags(Qt::NoItemFlags | Qt::ItemIsEnabled);
-        font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-        font.setPointSize(_point_size);
-        val_cell->setFont(font);
-        val_cell->setFlags(Qt::NoItemFlags);
-
-        _model->setItem(row, 1, val_cell);
-    }
+    void addItem(const QString& item_name);
 
     void refreshColumns() override;
 
     std::vector<std::string> getNonHiddenSelectedRows() override;
 
-    void refreshFontSize() override
-    {
-        horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
-        horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
-
-        verticalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
-        verticalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
-
-        for (int row = 0; row < _model->rowCount(); row++)
-        {
-            for (int col = 0; col < 2; col++)
-            {
-                auto item = _model->item(row, col);
-                auto font = item->font();
-                font.setPointSize(_point_size);
-                item->setFont(font);
-            }
-        }
-
-        horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-        horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
-        verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    }
+    void refreshFontSize() override;
 
     bool applyVisibilityFilter(FilterType type, const QString& filter_string) override;
 
@@ -137,10 +91,28 @@ class CurveTableView : public QTableView, public CurvesView
         {
             return QTableView::eventFilter(object,event);
         }
+        else{
+            return true;
+        }
     }
 
+    virtual std::pair<int,int> hiddenItemsCount()
+    {
+        return { _hidden_count, model()->rowCount() };
+    }
+
+    virtual void hideValuesColumn(bool hide) override
+    {
+        if(hide){
+            hideColumn(1);
+        }
+        else  {
+            showColumn(1);
+        }
+    }
    private:
     QStandardItemModel* _model;
+    int _hidden_count = 0;
 };
 
 #endif  // CURVELIST_VIEW_H

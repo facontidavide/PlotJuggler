@@ -23,11 +23,36 @@ CurveTableView::CurveTableView(QStandardItemModel *model, QWidget *parent)
     setShowGrid(false);
 }
 
+void CurveTableView::addItem(const QString &item_name)
+{
+    if (_model->findItems(item_name).size() > 0)
+    {
+        return;
+    }
+
+    auto item = new SortedTableItem(item_name);
+    QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
+    font.setPointSize(_point_size);
+    item->setFont(font);
+    const int row = model()->rowCount();
+    _model->setRowCount(row + 1);
+    _model->setItem(row, 0, item);
+
+    auto val_cell = new QStandardItem("-");
+    val_cell->setTextAlignment(Qt::AlignRight);
+    val_cell->setFlags(Qt::NoItemFlags | Qt::ItemIsEnabled);
+    font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    font.setPointSize(_point_size);
+    val_cell->setFont(font);
+    val_cell->setFlags(Qt::NoItemFlags);
+
+    _model->setItem(row, 1, val_cell);
+}
+
 void CurveTableView::refreshColumns()
 {
     sortByColumn(0, Qt::AscendingOrder);
-    horizontalHeader()->setSectionResizeMode(0,
-                                             QHeaderView::ResizeToContents);
+    horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     // TODO emit updateFilter();
 }
 
@@ -46,10 +71,34 @@ std::vector<std::string> CurveTableView::getNonHiddenSelectedRows()
     return non_hidden_list;
 }
 
+void CurveTableView::refreshFontSize()
+{
+    horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
+    horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+
+    verticalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
+    verticalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+
+    for (int row = 0; row < _model->rowCount(); row++)
+    {
+        for (int col = 0; col < 2; col++)
+        {
+            auto item = _model->item(row, col);
+            auto font = item->font();
+            font.setPointSize(_point_size);
+            item->setFont(font);
+        }
+    }
+
+    horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+    verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+}
+
 bool CurveTableView::applyVisibilityFilter(CurvesView::FilterType type, const QString &search_string)
 {
     bool updated = false;
-    int visible_count = 0;
+    _hidden_count = 0;
     QRegExp regexp( search_string, Qt::CaseInsensitive, QRegExp::Wildcard );
     QRegExpValidator v(regexp, nullptr);
 
@@ -80,7 +129,7 @@ bool CurveTableView::applyVisibilityFilter(CurvesView::FilterType type, const QS
                 }
             }
         }
-        if( !toHide ) visible_count++;
+        if( toHide ){ _hidden_count++; }
 
         if( toHide != isRowHidden(row) ){
             updated = true;
@@ -91,9 +140,23 @@ bool CurveTableView::applyVisibilityFilter(CurvesView::FilterType type, const QS
     return updated;
 }
 
+CurvesView::CurvesView()
+{
+    QSettings settings;
+    _point_size = settings.value("FilterableListWidget/table_point_size", 9).toInt();
+}
+
 bool CurvesView::eventFilter(QObject *object, QEvent *event)
 {
-    QAbstractItemView* table_widget = dynamic_cast<QAbstractItemView*>(object);
+    QAbstractItemView* table_widget =  dynamic_cast<QAbstractItemView*>(object);
+
+    auto obj = object;
+    while ( obj && !table_widget )
+    {
+        obj = obj->parent();
+        table_widget =  dynamic_cast<QAbstractItemView*>(obj);
+    }
+
 
     bool shift_modifier_pressed =
             (QGuiApplication::keyboardModifiers() == Qt::ShiftModifier);
@@ -107,20 +170,6 @@ bool CurvesView::eventFilter(QObject *object, QEvent *event)
         _dragging = false;
         _drag_start_pos = mouse_event->pos();
 
-        // TODO
-        //            if( !shift_modifier_pressed && !ctrl_modifier_pressed &&
-        //            mouse_event->button() != Qt::RightButton  )
-        //            {
-        //                if( obj == ui->tableView)
-        //                {
-        //                    ui->tableViewCustom->clearSelection() ;
-        //                }
-        //                if( obj == ui->tableViewCustom)
-        //                {
-        //                    ui->tableView->clearSelection() ;
-        //                }
-        //            }
-
         if (mouse_event->button() == Qt::LeftButton)
         {
             _newX_modifier = false;
@@ -129,10 +178,10 @@ bool CurvesView::eventFilter(QObject *object, QEvent *event)
         {
             _newX_modifier = true;
         }
-        else
-        {
+        else{
             return true;
         }
+        return false;
     }
     else if (event->type() == QEvent::MouseMove)
     {
@@ -197,10 +246,6 @@ bool CurvesView::eventFilter(QObject *object, QEvent *event)
                 drag->setDragCursor(cursor, Qt::MoveAction);
             }
 
-            for(const QString& format: mimeData->formats())
-            {
-                qDebug() << format;
-            }
             drag->setMimeData(mimeData);
             drag->exec(Qt::CopyAction | Qt::MoveAction);
         }
@@ -224,8 +269,7 @@ bool CurvesView::eventFilter(QObject *object, QEvent *event)
             {
                 refreshFontSize();
                 QSettings settings;
-                settings.setValue("FilterableListWidget/table_point_size",
-                                  _point_size);
+                settings.setValue("FilterableListWidget/table_point_size", _point_size);
             }
             return true;
         }
