@@ -79,9 +79,9 @@ MainWindow::MainWindow(const QCommandLineParser &commandline_parser, QWidget *pa
 
     connect(this, &MainWindow::stylesheetChanged,
             _curvelist_widget, &CurveListPanel::on_stylesheetChanged);
-
-    connect( _curvelist_widget->getTableView()->verticalScrollBar(), &QScrollBar::sliderMoved,
-             this, &MainWindow::onUpdateLeftTableValues );
+// TODO
+//    connect( _curvelist_widget->getTableView()->verticalScrollBar(), &QScrollBar::sliderMoved,
+//             this, &MainWindow::onUpdateLeftTableValues );
 
     connect( _curvelist_widget, &CurveListPanel::hiddenItemsChanged,
              this, &MainWindow::onUpdateLeftTableValues );
@@ -98,8 +98,9 @@ MainWindow::MainWindow(const QCommandLineParser &commandline_parser, QWidget *pa
     connect(_curvelist_widget, &CurveListPanel::refreshMathPlot,
             this, &MainWindow::on_refreshMathPlot);
 
-    connect(_curvelist_widget->getTableView()->verticalScrollBar(), &QScrollBar::valueChanged,
-            this, &MainWindow::onUpdateLeftTableValues );
+    // TODO
+//    connect(_curvelist_widget->getTableView()->verticalScrollBar(), &QScrollBar::valueChanged,
+//            this, &MainWindow::onUpdateLeftTableValues );
 
     connect( ui->timeSlider, &RealSlider::realValueChanged,
              this, &MainWindow::onTimeSlider_valueChanged );
@@ -274,9 +275,9 @@ void MainWindow::onUndoInvoked( )
 
 void MainWindow::onUpdateLeftTableValues()
 {
-    auto table_model = _curvelist_widget->getTableModel();
+  /*   auto table_model = _curvelist_widget->getTableModel();
 
- /*   for(auto table_view: { _curvelist_widget->getTableView(), _curvelist_widget->getCustomView() } )
+   for(auto table_view: { _curvelist_widget->getTableView(), _curvelist_widget->getCustomView() } )
     {
         if( _curvelist_widget->is2ndColumnHidden() )
         {

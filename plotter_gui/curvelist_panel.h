@@ -44,21 +44,9 @@ public:
 
     void updateFilter();
 
-    QStandardItemModel *getTableModel() const
-    {
-        return dynamic_cast<QStandardItemModel*>(_table_view->model());
-    }
-
-    QTableView* getTableView() const;
-
-    QTableView* getCustomView() const;
-
     void changeFontSize(int point_size);
 
-    bool is2ndColumnHidden() const
-    {
-        return getTableView()->isColumnHidden(1);
-    }
+    bool is2ndColumnHidden() const;
 
     virtual void keyPressEvent(QKeyEvent * event) override;
 

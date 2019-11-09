@@ -20,7 +20,6 @@ CurveTableView::CurveTableView(CurveListPanel* parent)
     viewport()->installEventFilter(this);
 
     verticalHeader()->setVisible(false);
-    verticalHeader()->setMinimumHeight(10);
     verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
     horizontalHeader()->setVisible(false);
@@ -90,16 +89,15 @@ void CurveTableView::refreshFontSize()
     horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
     horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
 
-    verticalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
-    verticalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+    verticalHeader()->setSectionResizeMode( QHeaderView::Fixed);
 
     for (int row = 0; row < rowCount(); row++)
     {
         for (int col = 0; col < 2; col++)
         {
             auto cell = item(row, col);
-            qDebug() << "item: " << cell->text();
-            QFont font = cell->font();
+          //  qDebug() << "item: " << cell->text();
+            QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
             font.setPointSize(_point_size);
           //  qDebug() << font;
             cell->setFont(font);
@@ -284,9 +282,7 @@ bool CurvesView::eventFilterBase(QObject *object, QEvent *event)
             }
             if (_point_size != prev_size)
             {
-                //  _parent_panel->changeFontSize(_point_size);
-                // setFontSize(_point_size);
-                refreshFontSize();
+                  _parent_panel->changeFontSize(_point_size);
             }
             return true;
         }

@@ -82,7 +82,7 @@ CurveListPanel::~CurveListPanel()
 
 void CurveListPanel::clear()
 {
-   getTableModel()->setRowCount(0);
+    _table_view->setRowCount(0);
     //_tree_model->clear();
     ui->labelNumberDisplayed->setText( "0 of 0");
 }
@@ -110,7 +110,7 @@ void CurveListPanel::refreshColumns()
 
 int CurveListPanel::findRowByName(const std::string &text) const
 {
-    auto item_list = getTableModel()->findItems( QString::fromStdString( text ), Qt::MatchExactly);
+    auto item_list = _table_view->findItems( QString::fromStdString( text ), Qt::MatchExactly);
     if( item_list.isEmpty())
     {
         return -1;
@@ -136,24 +136,19 @@ void CurveListPanel::keyPressEvent(QKeyEvent *event)
     }
 }
 
-QTableView *CurveListPanel::getTableView() const
-{
-    return dynamic_cast<QTableView*>(_table_view);
-}
-
-QTableView *CurveListPanel::getCustomView() const
-{
-    return dynamic_cast<QTableView*>(_custom_view);
-}
-
 void CurveListPanel::changeFontSize(int point_size)
 {
     _table_view->setFontSize(point_size);
     _custom_view->setFontSize(point_size);
-    //_tree_view->setFontSize(point_size);
+    _tree_view->setFontSize(point_size);
 
     QSettings settings;
     settings.setValue("FilterableListWidget/table_point_size", point_size);
+}
+
+bool CurveListPanel::is2ndColumnHidden() const
+{
+    return ui->checkBoxHideSecondColumn->isChecked();
 }
 
 void CurveListPanel::on_radioContains_toggled(bool checked)
@@ -239,7 +234,7 @@ void CurveListPanel::removeSelectedCurves()
 
 void CurveListPanel::removeRow(int row)
 {
-    getTableModel()->removeRow(row);
+    _table_view->removeRow(row);
 }
 
 void CurveListPanel::on_buttonAddCustom_clicked()
@@ -271,12 +266,11 @@ void CurveListPanel::onCustomSelectionChanged(const QItemSelection&, const QItem
 
 void CurveListPanel::on_buttonEditCustom_clicked()
 {
-    QStandardItem* selected_item = nullptr;
-    auto view = _custom_view;
+    QTableWidgetItem* selected_item = nullptr;
 
-    for (QModelIndex index : view->selectionModel()->selectedRows(0))
+    for (QModelIndex index : _custom_view->selectionModel()->selectedRows(0))
     {
-        selected_item = getTableModel()->item( index.row(), 0 );
+        selected_item = _custom_view->item( index.row(), 0 );
         break;
     }
     if( !selected_item )
