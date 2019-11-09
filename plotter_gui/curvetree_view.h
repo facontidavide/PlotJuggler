@@ -34,6 +34,13 @@ class CurveTreeView : public QTreeWidget, public CurvesView
    public:
     CurveTreeView(CurveListPanel *parent);
 
+    void clear() override
+    {
+        QTreeWidget::clear();
+        _leaf_count = 0;
+        _hidden_count = 0;
+    }
+
     void addItem(const QString& item_name);
 
     void refreshColumns() override;

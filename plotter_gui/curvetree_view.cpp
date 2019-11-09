@@ -93,6 +93,7 @@ void CurveTreeView::addItem(const QString& item_name)
             }
         }
     }
+    _leaf_count++;
 }
 
 void CurveTreeView::refreshColumns()
@@ -223,6 +224,7 @@ void CurveTreeView::removeCurve(const QString &to_be_deleted)
         QString curve_name = item->data(0, Qt::UserRole).toString();
         if( curve_name == to_be_deleted)
         {
+            _leaf_count --;
             auto parent_item = item->parent();
             parent_item->removeChild(item);
 

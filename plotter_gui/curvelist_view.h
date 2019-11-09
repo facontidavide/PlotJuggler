@@ -41,6 +41,8 @@ class CurvesView
    public:
     CurvesView(CurveListPanel* parent): _parent_panel(parent) {}
 
+    virtual void clear() = 0;
+
     virtual void addItem(const QString& item_name) = 0;
 
     virtual std::vector<std::string> getSelectedNames() = 0;
@@ -79,6 +81,11 @@ class CurveTableView : public QTableWidget, public CurvesView
 {
    public:
     CurveTableView(CurveListPanel* parent);
+
+    void clear() override
+    {
+        setRowCount(0);
+    }
 
     void addItem(const QString& item_name);
 

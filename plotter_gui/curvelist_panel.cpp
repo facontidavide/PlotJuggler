@@ -102,11 +102,11 @@ CurveListPanel::~CurveListPanel()
 
 void CurveListPanel::clear()
 {
-    _table_view->setRowCount(0);
-    _custom_view->setRowCount(0);
+    _table_view->clear();
+    _custom_view->clear();
     _tree_view->clear();
     _numeric_data = nullptr;
-    ui->labelNumberDisplayed->setText( "0 of 0");
+    ui->labelNumberDisplayed->setText("0 of 0");
 }
 
 void CurveListPanel::addCurve(const QString &item_name)
@@ -296,7 +296,6 @@ void CurveListPanel::on_lineEdit_textChanged(const QString &search_string)
         updated = active_view->applyVisibilityFilter(CurvesView::CONTAINS,
                                                      search_string);
     }
-
     auto h_c = active_view->hiddenItemsCount();
     int item_count = h_c.second;
     int visible_count = item_count - h_c.first;
