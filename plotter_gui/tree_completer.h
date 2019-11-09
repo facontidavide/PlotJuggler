@@ -9,7 +9,7 @@
 #include <QFontDatabase>
 #include <map>
 #include "PlotJuggler/alphanum.hpp"
-
+/*/
 class TreeItem {
  public:
   explicit TreeItem(QStandardItem* name_item, QStandardItem* value_item)
@@ -53,7 +53,7 @@ class TreeItem {
   QStandardItem* _value_item;
 };
 
-class TreeModel : public QStandardItemModel {
+class TreeModel : public QAbstractItemModel {
  public:
   TreeModel(QStandardItemModel* parent_model)
       : QStandardItemModel(0, 2, parent_model),
@@ -91,6 +91,6 @@ class TreeModel : public QStandardItemModel {
  private:
   TreeItem _root_tree_item;
   QStandardItemModel* _parent_model;
-};
+};*/
 
 #endif  // TREE_COMPLETER_H

@@ -52,18 +52,18 @@ class CurvesView
 
     virtual void hideValuesColumn(bool hide) = 0;
 
-    bool eventFilter(QObject* object, QEvent* event);
+    bool eventFilterBase(QObject* object, QEvent* event);
 
     virtual std::pair<int,int> hiddenItemsCount() = 0;
 
-
-    QAbstractItemView* view() // ugly code!
+    void setFontSize(int size)
     {
-        return dynamic_cast<QAbstractItemView*>(this);
+        _point_size = size;
+        refreshFontSize();
     }
 
    protected:
-    int _point_size;
+    int _point_size = 9;
     QPoint _drag_start_pos;
     bool _newX_modifier = false;
     bool _dragging = false;
@@ -72,7 +72,7 @@ class CurvesView
 class CurveTableView : public QTableView, public CurvesView
 {
    public:
-    CurveTableView(QStandardItemModel* model, QWidget* parent);
+    CurveTableView(QWidget* parent);
 
     void addItem(const QString& item_name);
 
@@ -86,10 +86,10 @@ class CurveTableView : public QTableView, public CurvesView
 
     bool eventFilter(QObject* object, QEvent* event) override
     {
-        bool ret = CurvesView::eventFilter(object, event);
+        bool ret = CurvesView::eventFilterBase(object, event);
         if(!ret)
         {
-            return QTableView::eventFilter(object,event);
+            return QWidget::eventFilter(object,event);
         }
         else{
             return true;

@@ -96,14 +96,12 @@ private:
     
     QStandardItemModel* _model;
     QStandardItemModel* _custom_model;
-    TreeModel* _tree_model;
 
-    CurvesView* _table_view;
-    CurvesView* _custom_view;
+    CurveTableView* _table_view;
+    CurveTableView* _custom_view;
 
     const CustomPlotMap& _custom_plots;
 
-    int _point_size;
 signals:
 
     void hiddenItemsChanged();

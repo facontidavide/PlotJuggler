@@ -4,9 +4,10 @@
 #include <QMessageBox>
 #include <QMimeData>
 #include <QDebug>
+#include <QScrollBar>
 
-CurveTableView::CurveTableView(QStandardItemModel *model, QWidget *parent)
-    : QTableView(parent), _model(model)
+CurveTableView::CurveTableView(QWidget *parent)
+    : QTableView(parent), _model( new QStandardItemModel(0,2, this) )
 {
     setEditTriggers(NoEditTriggers);
     setDragEnabled(false);
@@ -14,7 +15,7 @@ CurveTableView::CurveTableView(QStandardItemModel *model, QWidget *parent)
     setDragDropOverwriteMode(false);
     setDragDropMode(NoDragDrop);
     viewport()->installEventFilter(this);
-    setModel(model);
+    setModel(_model);
     verticalHeader()->setVisible(false);
     horizontalHeader()->setVisible(false);
     horizontalHeader()->setStretchLastSection(true);
@@ -76,8 +77,10 @@ void CurveTableView::refreshFontSize()
     horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
     horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
 
-    verticalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
-    verticalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+    if( _model->rowCount() ) {
+        verticalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
+        verticalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+    }
 
     for (int row = 0; row < _model->rowCount(); row++)
     {
@@ -142,29 +145,33 @@ bool CurveTableView::applyVisibilityFilter(CurvesView::FilterType type, const QS
 
 CurvesView::CurvesView()
 {
-    QSettings settings;
-    _point_size = settings.value("FilterableListWidget/table_point_size", 9).toInt();
 }
 
-bool CurvesView::eventFilter(QObject *object, QEvent *event)
+bool CurvesView::eventFilterBase(QObject *object, QEvent *event)
 {
-    QAbstractItemView* table_widget =  dynamic_cast<QAbstractItemView*>(object);
+    QAbstractItemView* table_widget =  qobject_cast<QAbstractItemView*>(object);
+
+    if( qobject_cast<QScrollBar*>(object) )
+    {
+        return false;
+    }
 
     auto obj = object;
     while ( obj && !table_widget )
     {
         obj = obj->parent();
-        table_widget =  dynamic_cast<QAbstractItemView*>(obj);
+        table_widget =  qobject_cast<QAbstractItemView*>(obj);
     }
-
 
     bool shift_modifier_pressed =
             (QGuiApplication::keyboardModifiers() == Qt::ShiftModifier);
     bool ctrl_modifier_pressed =
             (QGuiApplication::keyboardModifiers() == Qt::ControlModifier);
 
-    if (event->type() == QEvent::MouseButtonPress)
+    if (event->type() == QEvent::MouseButtonPress )
     {
+        qDebug() << object;
+
         QMouseEvent *mouse_event = static_cast<QMouseEvent *>(event);
 
         _dragging = false;

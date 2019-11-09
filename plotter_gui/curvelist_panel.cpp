@@ -19,25 +19,23 @@
 #include <QScrollBar>
 
 
-
 //-------------------------------------------------
 
 CurveListPanel::CurveListPanel(const CustomPlotMap &mapped_math_plots,
                                QWidget *parent) :
     QWidget(parent),
     ui(new Ui::CurveListPanel),
-    _model(new QStandardItemModel(0, 2, this)),
-    _custom_model(new QStandardItemModel(0, 2, this)),
-    _tree_model(new TreeModel(_model)),
-    _table_view( new CurveTableView( _model, this) ),
-    _custom_view( new CurveTableView( _custom_model, this) ),
-    _custom_plots(mapped_math_plots),
-    _point_size(9)
+//    _model(new QStandardItemModel(0, 2, this)),
+//    _custom_model(new QStandardItemModel(0, 2, this)),
+    //_tree_model(new TreeModel(_model)),
+    _table_view( new CurveTableView( this) ),
+    _custom_view( new CurveTableView( this) ),
+    _custom_plots(mapped_math_plots)
 {
     ui->setupUi(this);
 
-    ui->verticalLayout->insertWidget(3, _table_view->view(), 1 );
-    ui->verticalLayoutCustom->addWidget( _custom_view->view(), 1 );
+    ui->verticalLayout->insertWidget(3, _table_view, 1 );
+    ui->verticalLayoutCustom->addWidget( _custom_view, 1 );
 
     ui->widgetOptions->setVisible(false);
 
@@ -56,21 +54,23 @@ CurveListPanel::CurveListPanel(const CustomPlotMap &mapped_math_plots,
         ui->radioContains->setChecked(true);
     }
 
-    _point_size = settings.value("FilterableListWidget/table_point_size", 9).toInt();
+    int point_size = settings.value("FilterableListWidget/table_point_size", 9).toInt();
+    _table_view->setFontSize(point_size);
+    _custom_view->setFontSize(point_size);
 
     ui->splitter->setStretchFactor(0,5);
     ui->splitter->setStretchFactor(1,1);
 
-    ui->treeView->setModel(_tree_model);
+    //ui->treeView->setModel(_tree_model);
 
-    connect(  _custom_view->view()->selectionModel(), &QItemSelectionModel::selectionChanged,
+    connect(  _custom_view->selectionModel(), &QItemSelectionModel::selectionChanged,
               this, &CurveListPanel::onCustomSelectionChanged );
 
-    connect( _custom_view->view(), &QAbstractItemView::pressed,
-             _table_view->view(), & QAbstractItemView::clearSelection );
+    connect( _custom_view, &QAbstractItemView::pressed,
+             _table_view, & QAbstractItemView::clearSelection );
 
-    connect( _table_view->view(), &QAbstractItemView::pressed,
-             _custom_view->view(), & QAbstractItemView::clearSelection );
+    connect( _table_view, &QAbstractItemView::pressed,
+             _custom_view, & QAbstractItemView::clearSelection );
 }
 
 CurveListPanel::~CurveListPanel()
@@ -81,7 +81,7 @@ CurveListPanel::~CurveListPanel()
 void CurveListPanel::clear()
 {
     _model->setRowCount(0);
-    _tree_model->clear();
+    //_tree_model->clear();
     ui->labelNumberDisplayed->setText( "0 of 0");
 }
 
@@ -100,8 +100,8 @@ void CurveListPanel::refreshColumns()
     _table_view->refreshColumns();
     _custom_view->refreshColumns();
 
-    ui->treeView->sortByColumn(0,Qt::AscendingOrder);
-    ui->treeView->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    // TODO ui->treeView->sortByColumn(0,Qt::AscendingOrder);
+    // TODO  ui->treeView->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
 
     updateFilter();
 }
@@ -263,7 +263,7 @@ void CurveListPanel::onCustomSelectionChanged(const QItemSelection&, const QItem
 void CurveListPanel::on_buttonEditCustom_clicked()
 {
     QStandardItem* selected_item = nullptr;
-    auto view = _custom_view->view();
+    auto view = _custom_view;
 
     for (QModelIndex index : view->selectionModel()->selectedRows(0))
     {
@@ -279,8 +279,8 @@ void CurveListPanel::on_buttonEditCustom_clicked()
 
 void CurveListPanel::clearSelections()
 {
-    _custom_view->view()->clearSelection();
-    _table_view->view()->clearSelection();
+    _custom_view->clearSelection();
+    _table_view->clearSelection();
 }
 
 void CurveListPanel::on_stylesheetChanged(QString style_dir)
