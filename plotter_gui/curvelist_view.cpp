@@ -9,7 +9,9 @@ CurveTableView::CurveTableView(QStandardItemModel *model, QWidget *parent)
     : QTableView(parent), _model(model)
 {
     setEditTriggers(NoEditTriggers);
-    setDragEnabled(true);
+    setDragEnabled(false);
+    setDefaultDropAction(Qt::IgnoreAction);
+    setDragDropOverwriteMode(false);
     setDragDropMode(NoDragDrop);
     viewport()->installEventFilter(this);
     setModel(model);
