@@ -30,11 +30,13 @@ CurveListPanel::CurveListPanel(const CustomPlotMap &mapped_math_plots,
     //_tree_model(new TreeModel(_model)),
     _table_view( new CurveTableView( this) ),
     _custom_view( new CurveTableView( this) ),
+    _tree_view( new CurveTreeView(this)),
     _custom_plots(mapped_math_plots)
 {
     ui->setupUi(this);
 
-    ui->verticalLayout->insertWidget(3, _table_view, 1 );
+    ui->verticalLayout->addWidget(_table_view, 1 );
+    ui->verticalLayout->addWidget(_tree_view, 1 );
     ui->verticalLayoutCustom->addWidget( _custom_view, 1 );
 
     ui->widgetOptions->setVisible(false);
@@ -55,22 +57,22 @@ CurveListPanel::CurveListPanel(const CustomPlotMap &mapped_math_plots,
     }
 
     int point_size = settings.value("FilterableListWidget/table_point_size", 9).toInt();
-    _table_view->setFontSize(point_size);
-    _custom_view->setFontSize(point_size);
+    changeFontSize(point_size);
 
     ui->splitter->setStretchFactor(0,5);
     ui->splitter->setStretchFactor(1,1);
-
-    //ui->treeView->setModel(_tree_model);
 
     connect(  _custom_view->selectionModel(), &QItemSelectionModel::selectionChanged,
               this, &CurveListPanel::onCustomSelectionChanged );
 
     connect( _custom_view, &QAbstractItemView::pressed,
-             _table_view, & QAbstractItemView::clearSelection );
+             _table_view,  & QAbstractItemView::clearSelection );
 
     connect( _table_view, &QAbstractItemView::pressed,
              _custom_view, & QAbstractItemView::clearSelection );
+
+    connect( _table_view, &QAbstractItemView::pressed,
+            _custom_view, & QAbstractItemView::clearSelection );
 }
 
 CurveListPanel::~CurveListPanel()
@@ -80,7 +82,7 @@ CurveListPanel::~CurveListPanel()
 
 void CurveListPanel::clear()
 {
-    _model->setRowCount(0);
+   getTableModel()->setRowCount(0);
     //_tree_model->clear();
     ui->labelNumberDisplayed->setText( "0 of 0");
 }
@@ -88,6 +90,7 @@ void CurveListPanel::clear()
 void CurveListPanel::addCurve(const QString &item_name)
 {
     _table_view->addItem(item_name);
+    _tree_view->addItem(item_name);
 }
 
 void CurveListPanel::addCustom(const QString &item_name)
@@ -98,10 +101,8 @@ void CurveListPanel::addCustom(const QString &item_name)
 void CurveListPanel::refreshColumns()
 {
     _table_view->refreshColumns();
+    _tree_view->refreshColumns();
     _custom_view->refreshColumns();
-
-    // TODO ui->treeView->sortByColumn(0,Qt::AscendingOrder);
-    // TODO  ui->treeView->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
 
     updateFilter();
 }
@@ -109,7 +110,7 @@ void CurveListPanel::refreshColumns()
 
 int CurveListPanel::findRowByName(const std::string &text) const
 {
-    auto item_list = _model->findItems( QString::fromStdString( text ), Qt::MatchExactly);
+    auto item_list = getTableModel()->findItems( QString::fromStdString( text ), Qt::MatchExactly);
     if( item_list.isEmpty())
     {
         return -1;
@@ -145,6 +146,16 @@ QTableView *CurveListPanel::getCustomView() const
     return dynamic_cast<QTableView*>(_custom_view);
 }
 
+void CurveListPanel::changeFontSize(int point_size)
+{
+    _table_view->setFontSize(point_size);
+    _custom_view->setFontSize(point_size);
+    //_tree_view->setFontSize(point_size);
+
+    QSettings settings;
+    settings.setValue("FilterableListWidget/table_point_size", point_size);
+}
+
 void CurveListPanel::on_radioContains_toggled(bool checked)
 {
     if(checked) {
@@ -174,13 +185,18 @@ void CurveListPanel::on_lineEdit_textChanged(const QString &search_string)
 {
     bool updated = false;
 
-    if( ui->radioRegExp->isChecked())
+    std::array<CurvesView*,2> views = {_table_view, _tree_view};
+
+    for(auto& view: views)
     {
-        updated = _table_view->applyVisibilityFilter( CurvesView::REGEX, search_string );
-    }
-    else if( ui->radioContains->isChecked())
-    {
-        updated = _table_view->applyVisibilityFilter( CurvesView::CONTAINS, search_string );
+        if( ui->radioRegExp->isChecked())
+        {
+            updated = view->applyVisibilityFilter( CurvesView::REGEX, search_string );
+        }
+        else if( ui->radioContains->isChecked())
+        {
+            updated = view->applyVisibilityFilter( CurvesView::CONTAINS, search_string );
+        }
     }
 
     auto h_c = _table_view->hiddenItemsCount();
@@ -188,7 +204,7 @@ void CurveListPanel::on_lineEdit_textChanged(const QString &search_string)
     int visible_count = item_count - h_c.first;
 
     ui->labelNumberDisplayed->setText( QString::number( visible_count ) + QString(" of ") +
-                                      QString::number( item_count ) );
+                                       QString::number( item_count ) );
     if(updated){
         emit hiddenItemsChanged();
     }
@@ -223,7 +239,7 @@ void CurveListPanel::removeSelectedCurves()
 
 void CurveListPanel::removeRow(int row)
 {
-    _model->removeRow(row);
+    getTableModel()->removeRow(row);
 }
 
 void CurveListPanel::on_buttonAddCustom_clicked()
@@ -242,13 +258,6 @@ void CurveListPanel::on_buttonAddCustom_clicked()
     on_lineEdit_textChanged( ui->lineEdit->text() );
 }
 
-//void FilterableListWidget::on_buttonRefreshAll_clicked()
-//{
-//    for(auto& it: _mapped_math_plots)
-//    {
-//        emit refreshMathPlot( it.second->name() );
-//    }
-//}
 
 void CurveListPanel::onCustomSelectionChanged(const QItemSelection&, const QItemSelection &)
 {
@@ -267,7 +276,7 @@ void CurveListPanel::on_buttonEditCustom_clicked()
 
     for (QModelIndex index : view->selectionModel()->selectedRows(0))
     {
-        selected_item = _model->item( index.row(), 0 );
+        selected_item = getTableModel()->item( index.row(), 0 );
         break;
     }
     if( !selected_item )
@@ -280,6 +289,7 @@ void CurveListPanel::on_buttonEditCustom_clicked()
 void CurveListPanel::clearSelections()
 {
     _custom_view->clearSelection();
+    _tree_view->clearSelection();
     _table_view->clearSelection();
 }
 

@@ -5,41 +5,50 @@
 #include <QMimeData>
 #include <QDebug>
 #include <QScrollBar>
+#include "curvelist_panel.h"
 
-CurveTableView::CurveTableView(QWidget *parent)
-    : QTableView(parent), _model( new QStandardItemModel(0,2, this) )
+CurveTableView::CurveTableView(CurveListPanel* parent)
+    : QTableWidget(parent),
+      CurvesView(parent)
 {
+    setColumnCount(2);
     setEditTriggers(NoEditTriggers);
     setDragEnabled(false);
     setDefaultDropAction(Qt::IgnoreAction);
     setDragDropOverwriteMode(false);
     setDragDropMode(NoDragDrop);
     viewport()->installEventFilter(this);
-    setModel(_model);
+
     verticalHeader()->setVisible(false);
+    verticalHeader()->setMinimumHeight(10);
+    verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
     horizontalHeader()->setVisible(false);
     horizontalHeader()->setStretchLastSection(true);
+
     horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+
     setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
     setShowGrid(false);
 }
 
 void CurveTableView::addItem(const QString &item_name)
 {
-    if (_model->findItems(item_name).size() > 0)
+    if (findItems(item_name, Qt::MatchExactly).size() > 0)
     {
         return;
     }
 
-    auto item = new SortedTableItem(item_name);
+    auto item = new SortedTableItem<QTableWidgetItem>(item_name);
     QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
     font.setPointSize(_point_size);
     item->setFont(font);
-    const int row = model()->rowCount();
-    _model->setRowCount(row + 1);
-    _model->setItem(row, 0, item);
+    const int row = rowCount();
+    QTableWidget::setRowCount( row + 1 );
+    QTableWidget::setItem(row, 0, item);
 
-    auto val_cell = new QStandardItem("-");
+    auto val_cell = new QTableWidgetItem("-");
     val_cell->setTextAlignment(Qt::AlignRight);
     val_cell->setFlags(Qt::NoItemFlags | Qt::ItemIsEnabled);
     font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
@@ -47,7 +56,7 @@ void CurveTableView::addItem(const QString &item_name)
     val_cell->setFont(font);
     val_cell->setFlags(Qt::NoItemFlags);
 
-    _model->setItem(row, 1, val_cell);
+    QTableWidget::setItem(row, 1, val_cell);
 }
 
 void CurveTableView::refreshColumns()
@@ -65,8 +74,8 @@ std::vector<std::string> CurveTableView::getNonHiddenSelectedRows()
     {
         if (!isRowHidden(selected_index.row()))
         {
-            auto item = _model->item(selected_index.row(), 0);
-            non_hidden_list.push_back(item->text().toStdString());
+            auto cell = item(selected_index.row(), 0);
+            non_hidden_list.push_back(cell->text().toStdString());
         }
     }
     return non_hidden_list;
@@ -74,22 +83,26 @@ std::vector<std::string> CurveTableView::getNonHiddenSelectedRows()
 
 void CurveTableView::refreshFontSize()
 {
+    if (rowCount() == 0)
+    {
+        return;
+    }
     horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
     horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
 
-    if( _model->rowCount() ) {
-        verticalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
-        verticalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
-    }
+    verticalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
+    verticalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
 
-    for (int row = 0; row < _model->rowCount(); row++)
+    for (int row = 0; row < rowCount(); row++)
     {
         for (int col = 0; col < 2; col++)
         {
-            auto item = _model->item(row, col);
-            auto font = item->font();
+            auto cell = item(row, col);
+            qDebug() << "item: " << cell->text();
+            QFont font = cell->font();
             font.setPointSize(_point_size);
-            item->setFont(font);
+          //  qDebug() << font;
+            cell->setFont(font);
         }
     }
 
@@ -109,8 +122,8 @@ bool CurveTableView::applyVisibilityFilter(CurvesView::FilterType type, const QS
 
     for (int row=0; row < model()->rowCount(); row++)
     {
-        auto item = _model->item(row,0);
-        QString name = item->text();
+        auto cell = item(row,0);
+        QString name = cell->text();
         int pos = 0;
         bool toHide = false;
 
@@ -143,9 +156,6 @@ bool CurveTableView::applyVisibilityFilter(CurvesView::FilterType type, const QS
     return updated;
 }
 
-CurvesView::CurvesView()
-{
-}
 
 bool CurvesView::eventFilterBase(QObject *object, QEvent *event)
 {
@@ -274,9 +284,9 @@ bool CurvesView::eventFilterBase(QObject *object, QEvent *event)
             }
             if (_point_size != prev_size)
             {
+                //  _parent_panel->changeFontSize(_point_size);
+                // setFontSize(_point_size);
                 refreshFontSize();
-                QSettings settings;
-                settings.setValue("FilterableListWidget/table_point_size", _point_size);
             }
             return true;
         }

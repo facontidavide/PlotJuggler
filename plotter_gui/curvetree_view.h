@@ -1,74 +1,82 @@
 #ifndef CURVETREE_VIEW_H
 #define CURVETREE_VIEW_H
 
-#include <QWidget>
-#include <QStandardItem>
+#include "curvelist_view.h"
+#include <QTreeWidget>
+#include <functional>
 
-class TreeItem {
-   public:
-    explicit TreeItem(QStandardItem* name_item,
-                      QStandardItem* value_item,
-                      TreeItem* parent)
-        : _name_item(name_item), _value_item(value_item) {}
+//    void addToTree(const QString& name, int reference_row) {
+//        auto parts = name.split('/', QString::SplitBehavior::SkipEmptyParts);
+//        if (parts.size() == 0) {
+//            return;
+//        }
 
-    TreeItem* appendChild(const QString& name);
+//        TreeItem* tree_parent = &_root_tree_item;
 
-    TreeItem* findChild(const QString& name);
+//        for (int i = 0; i < parts.size(); i++) {
+//            bool is_leaf = (i == parts.size() - 1);
+//            const auto& part = parts[i];
 
-    QStandardItem* nameItem() { return _name_item; }
-    QStandardItem* valueItem() { return _value_item; }
+//            TreeItem* matching_child = tree_parent->findChild(part);
+//            if (matching_child) {
+//                tree_parent = matching_child;
+//            } else {
 
-   private:
-    std::map<QString, TreeItem> _child_items_map;
-    QStandardItem* _name_item;
-    QStandardItem* _value_item;
-    TreeItem* _parent;
-};
-
-
-class TreeModel : public QStandardItemModel {
-   public:
-    TreeModel(QStandardItemModel* parent_model)
-        : QStandardItemModel(0, 2, parent_model),
-          _root_tree_item(invisibleRootItem(), nullptr, nullptr) {}
-
-    void clear() {
-        QStandardItemModel::clear();
-        _root_tree_item = TreeItem(invisibleRootItem(), nullptr, nullptr);
-    }
-
-    void addToTree(const QString& name, int reference_row) {
-        auto parts = name.split('/', QString::SplitBehavior::SkipEmptyParts);
-        if (parts.size() == 0) {
-            return;
-        }
-
-        TreeItem* tree_parent = &_root_tree_item;
-
-        for (int i = 0; i < parts.size(); i++) {
-            bool is_leaf = (i == parts.size() - 1);
-            const auto& part = parts[i];
-
-            TreeItem* matching_child = tree_parent->findChild(part);
-            if (matching_child) {
-                tree_parent = matching_child;
-            } else {
-
-                tree_parent = tree_parent->appendChild(part);
-                tree_parent->nameItem()->setSelectable(is_leaf);
-            }
-        }
-    }
-
-   private:
-    TreeItem _root_tree_item;
-};
+//                tree_parent = tree_parent->appendChild(part);
+//                tree_parent->nameItem()->setSelectable(is_leaf);
+//            }
+//        }
+//    }
 
 
-class CurveTreeView
+class CurveTreeView : public QTreeWidget, public CurvesView
 {
    public:
-    CurveTreeView();
+    CurveTreeView(CurveListPanel *parent);
+
+    void addItem(const QString& item_name);
+
+    void refreshColumns() override;
+
+    std::vector<std::string> getNonHiddenSelectedRows() override;
+
+    void refreshFontSize() override;
+
+    bool applyVisibilityFilter(FilterType type, const QString& filter_string) override;
+
+    bool eventFilter(QObject* object, QEvent* event) override
+    {
+        bool ret = CurvesView::eventFilterBase(object, event);
+        if(!ret)
+        {
+            return QWidget::eventFilter(object,event);
+        }
+        else{
+            return true;
+        }
+    }
+
+    std::pair<int,int> hiddenItemsCount() override
+    {
+        return { _hidden_count, _leaf_count };
+    }
+
+    virtual void hideValuesColumn(bool hide) override
+    {
+        if(hide){
+            hideColumn(1);
+        }
+        else  {
+            showColumn(1);
+        }
+    }
+
+   void treeVisitor(std::function<void(QTreeWidgetItem *)> visitor);
+
+   private:
+    int _hidden_count = 0;
+    int _leaf_count = 0;
 };
+
 
 #endif // CURVETREE_VIEW_H

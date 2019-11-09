@@ -11,7 +11,7 @@
 
 #include "transforms/custom_function.h"
 #include "tree_completer.h"
-#include "curvelist_view.h"
+#include "curvetree_view.h"
 
 
 namespace Ui {
@@ -46,12 +46,14 @@ public:
 
     QStandardItemModel *getTableModel() const
     {
-        return _model;
+        return dynamic_cast<QStandardItemModel*>(_table_view->model());
     }
 
     QTableView* getTableView() const;
 
     QTableView* getCustomView() const;
+
+    void changeFontSize(int point_size);
 
     bool is2ndColumnHidden() const
     {
@@ -94,11 +96,9 @@ private:
 
     void updateTreeModel();
     
-    QStandardItemModel* _model;
-    QStandardItemModel* _custom_model;
-
     CurveTableView* _table_view;
     CurveTableView* _custom_view;
+    CurveTreeView* _tree_view;
 
     const CustomPlotMap& _custom_plots;
 

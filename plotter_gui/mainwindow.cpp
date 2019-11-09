@@ -276,7 +276,7 @@ void MainWindow::onUpdateLeftTableValues()
 {
     auto table_model = _curvelist_widget->getTableModel();
 
-    for(auto table_view: { _curvelist_widget->getTableView(), _curvelist_widget->getCustomView() } )
+ /*   for(auto table_view: { _curvelist_widget->getTableView(), _curvelist_widget->getCustomView() } )
     {
         if( _curvelist_widget->is2ndColumnHidden() )
         {
@@ -330,7 +330,7 @@ void MainWindow::onUpdateLeftTableValues()
                 }
             }
         }
-    }
+    }*/
 }
 
 

@@ -10,17 +10,19 @@
 #include <QSettings>
 #include <QStandardItem>
 #include <QStandardItemModel>
-#include <QTableView>
-#include <QTreeView>
+#include <QTableWidget>
 #include <vector>
 
 #include "PlotJuggler/alphanum.hpp"
 
-class SortedTableItem : public QStandardItem
+class CurveListPanel;
+
+template <typename ItemType>
+class SortedTableItem : public ItemType
 {
    public:
     SortedTableItem(const QString& name)
-        : QStandardItem(name), str(name.toStdString())
+        : ItemType(name), str(name.toStdString())
     {
     }
 
@@ -35,8 +37,9 @@ class SortedTableItem : public QStandardItem
 
 class CurvesView
 {
+
    public:
-    CurvesView();
+    CurvesView(CurveListPanel* parent): _parent_panel(parent) {}
 
     virtual void addItem(const QString& item_name) = 0;
 
@@ -67,12 +70,13 @@ class CurvesView
     QPoint _drag_start_pos;
     bool _newX_modifier = false;
     bool _dragging = false;
+    CurveListPanel* _parent_panel;
 };
 
-class CurveTableView : public QTableView, public CurvesView
+class CurveTableView : public QTableWidget, public CurvesView
 {
    public:
-    CurveTableView(QWidget* parent);
+    CurveTableView(CurveListPanel* parent);
 
     void addItem(const QString& item_name);
 
@@ -111,7 +115,6 @@ class CurveTableView : public QTableView, public CurvesView
         }
     }
    private:
-    QStandardItemModel* _model;
     int _hidden_count = 0;
 };
 
