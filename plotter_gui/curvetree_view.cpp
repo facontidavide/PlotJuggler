@@ -54,7 +54,7 @@ void CurveTreeView::addItem(const QString& item_name)
         {
             QTreeWidgetItem* child_item = new QTreeWidgetItem(tree_parent);
             child_item->setText(0, part);
-            child_item->setText(1, "-");
+            child_item->setText(1, is_leaf ? "-" : "");
 
             QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
             font.setPointSize(_point_size);

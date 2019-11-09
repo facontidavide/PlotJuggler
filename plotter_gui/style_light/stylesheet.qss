@@ -430,9 +430,9 @@ QSlider::handle:horizontal:hover {
 
 QTreeView:branch {
     background-color: white;
-    selection-background-color:  #b5b5b5;
 }
 QTreeView:branch:selected, QTreeView:branch:hover {
+  background-color: white;
   background: url(":/style_dark/transparent.png");
 }
 

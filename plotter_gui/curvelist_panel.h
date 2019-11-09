@@ -46,6 +46,9 @@ public:
 
     bool is2ndColumnHidden() const;
 
+    void update2ndColumnValues(double time,
+                               std::unordered_map<std::string, PlotData>* numeric_data);
+
     virtual void keyPressEvent(QKeyEvent * event) override;
 
 private slots:
@@ -76,6 +79,8 @@ public slots:
 
     void on_stylesheetChanged(QString style_dir);
 
+    void refreshValues();
+
 private:
 
     Ui::CurveListPanel *ui;
@@ -85,6 +90,9 @@ private:
     CurveTableView* _table_view;
     CurveTableView* _custom_view;
     CurveTreeView* _tree_view;
+
+    double _tracker_time = 0;
+    std::unordered_map<std::string, PlotData> *_numeric_data = nullptr;
 
     const CustomPlotMap& _custom_plots;
 

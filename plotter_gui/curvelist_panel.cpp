@@ -17,7 +17,7 @@
 #include <QWheelEvent>
 #include <QItemSelectionModel>
 #include <QScrollBar>
-
+#include <QTreeWidget>
 
 //-------------------------------------------------
 
@@ -73,6 +73,19 @@ CurveListPanel::CurveListPanel(const CustomPlotMap &mapped_math_plots,
 
     connect( _table_view, &QAbstractItemView::pressed,
             _custom_view, & QAbstractItemView::clearSelection );
+
+    connect( _table_view->verticalScrollBar(), &QScrollBar::valueChanged,
+            this, &CurveListPanel::refreshValues );
+
+    connect( _custom_view->verticalScrollBar(), &QScrollBar::valueChanged,
+            this, &CurveListPanel::refreshValues );
+
+    connect( _tree_view->verticalScrollBar(), &QScrollBar::valueChanged,
+            this, &CurveListPanel::refreshValues );
+
+    connect( _tree_view, &QTreeWidget::itemExpanded,
+            this, &CurveListPanel::refreshValues );
+
 }
 
 CurveListPanel::~CurveListPanel()
@@ -85,6 +98,7 @@ void CurveListPanel::clear()
     _table_view->setRowCount(0);
     _custom_view->setRowCount(0);
     _tree_view->clear();
+    _numeric_data = nullptr;
     ui->labelNumberDisplayed->setText( "0 of 0");
 }
 
@@ -133,6 +147,105 @@ void CurveListPanel::changeFontSize(int point_size)
 bool CurveListPanel::is2ndColumnHidden() const
 {
     return ui->checkBoxHideSecondColumn->isChecked();
+}
+
+void CurveListPanel::update2ndColumnValues(double tracker_time,
+                                           std::unordered_map<std::string, PlotData> *numeric_data)
+{
+    _tracker_time = tracker_time;
+    _numeric_data = numeric_data;
+
+    refreshValues();
+}
+
+void CurveListPanel::refreshValues()
+{
+    if( is2ndColumnHidden() || !_numeric_data ){
+        return;
+    }
+
+    auto FormattedNumber = [](double value)
+    {
+        QString num_text = QString::number( value, 'f', 3);
+        if(num_text.contains('.'))
+        {
+            int idx = num_text.length() -1;
+            while( num_text[idx] == '0' )
+            {
+                num_text[idx] = ' ';
+                idx--;
+            }
+            if(  num_text[idx] == '.') num_text[idx] = ' ';
+        }
+        return num_text + " ";
+    };
+
+    auto GetValue = [&](const std::string& name) -> nonstd::optional<double>
+    {
+        auto it = _numeric_data->find(name);
+        if( it !=  _numeric_data->end())
+        {
+            auto& data = it->second;
+
+            if( _tracker_time < std::numeric_limits<double>::max())
+            {
+                auto value = data.getYfromX( _tracker_time );
+                if(value){
+                    return value;
+                }
+            }
+            else if( data.size() > 0)
+            {
+                return data.back().y;
+            }
+        }
+        return {};
+    };
+
+    //------------------------------------
+    for(CurveTableView* table: { _table_view, _custom_view } )
+    {
+        const int vertical_height = table->visibleRegion().boundingRect().height();
+
+        for (int row = 0; row < table->rowCount(); row++)
+        {
+            int vertical_pos = table->rowViewportPosition(row);
+            if( vertical_pos < 0 || table->isRowHidden(row) ){ continue; }
+            if( vertical_pos > vertical_height){ break; }
+
+            const std::string& name = table->item(row,0)->text().toStdString();
+            auto val = GetValue(name);
+            if (val)
+            {
+                table->item(row, 1)->setText(FormattedNumber( val.value() ));
+            }
+        }
+    }
+    //------------------------------------
+    {
+        const int vertical_height = _tree_view->visibleRegion().boundingRect().height();
+
+        auto DisplayValue = [&](QTreeWidgetItem* cell)
+        {
+            QString curve_name = cell->data( 0, Qt::UserRole ).toString();
+
+            if( !curve_name.isEmpty() )
+            {
+                auto rect = cell->treeWidget()->visualItemRect(cell);
+
+                if( rect.bottom() < 0 || cell->isHidden() ){ return; }
+                if( rect.top() > vertical_height){ return; }
+
+                auto val = GetValue( curve_name.toStdString() );
+                if (val)
+                {
+                    cell->setText(1, FormattedNumber( val.value() ));
+                }
+            }
+        };
+
+        _tree_view->treeVisitor( DisplayValue );
+    }
 }
 
 void CurveListPanel::on_radioContains_toggled(bool checked)

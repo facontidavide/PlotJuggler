@@ -79,9 +79,6 @@ MainWindow::MainWindow(const QCommandLineParser &commandline_parser, QWidget *pa
 
     connect(this, &MainWindow::stylesheetChanged,
             _curvelist_widget, &CurveListPanel::on_stylesheetChanged);
-// TODO
-//    connect( _curvelist_widget->getTableView()->verticalScrollBar(), &QScrollBar::sliderMoved,
-//             this, &MainWindow::onUpdateLeftTableValues );
 
     connect( _curvelist_widget, &CurveListPanel::hiddenItemsChanged,
              this, &MainWindow::onUpdateLeftTableValues );
@@ -97,10 +94,6 @@ MainWindow::MainWindow(const QCommandLineParser &commandline_parser, QWidget *pa
 
     connect(_curvelist_widget, &CurveListPanel::refreshMathPlot,
             this, &MainWindow::on_refreshMathPlot);
-
-    // TODO
-//    connect(_curvelist_widget->getTableView()->verticalScrollBar(), &QScrollBar::valueChanged,
-//            this, &MainWindow::onUpdateLeftTableValues );
 
     connect( ui->timeSlider, &RealSlider::realValueChanged,
              this, &MainWindow::onTimeSlider_valueChanged );
@@ -275,63 +268,7 @@ void MainWindow::onUndoInvoked( )
 
 void MainWindow::onUpdateLeftTableValues()
 {
-  /*   auto table_model = _curvelist_widget->getTableModel();
-
-   for(auto table_view: { _curvelist_widget->getTableView(), _curvelist_widget->getCustomView() } )
-    {
-        if( _curvelist_widget->is2ndColumnHidden() )
-        {
-            continue;
-        }
-
-        const int vertical_height = table_view->visibleRegion().boundingRect().height();
-
-        for (int row = 0; row < table_model->rowCount(); row++)
-        {
-            int vertical_pos = table_view->rowViewportPosition(row);
-            if( vertical_pos < 0 || table_view->isRowHidden(row) ){ continue; }
-            if( vertical_pos > vertical_height){ break; }
-
-            const std::string& name = table_model->item(row,0)->text().toStdString();
-            auto it = _mapped_plot_data.numeric.find(name);
-            if( it !=  _mapped_plot_data.numeric.end())
-            {
-                auto& data = it->second;
-
-                double num = 0.0;
-                bool valid = false;
-
-                if( _tracker_time < std::numeric_limits<double>::max())
-                {
-                    auto value = data.getYfromX( _tracker_time );
-                    if(value){
-                        valid = true;
-                        num = value.value();
-                    }
-                }
-                else if( data.size() > 0)
-                {
-                    valid = true;
-                    num = data.back().y;
-                }
-                if( valid )
-                {
-                    QString num_text = QString::number( num, 'f', 3);
-                    if(num_text.contains('.'))
-                    {
-                        int idx = num_text.length() -1;
-                        while( num_text[idx] == '0' )
-                        {
-                            num_text[idx] = ' ';
-                            idx--;
-                        }
-                        if(  num_text[idx] == '.') num_text[idx] = ' ';
-                    }
-                    table_model->item(row,1)->setText(num_text + ' ');
-                }
-            }
-        }
-    }*/
+    _curvelist_widget->update2ndColumnValues( _tracker_time, &_mapped_plot_data.numeric );
 }
 
 
