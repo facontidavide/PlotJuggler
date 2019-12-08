@@ -12,7 +12,7 @@
 #include "transforms/custom_function.h"
 #include "tree_completer.h"
 #include "curvetree_view.h"
-
+#include <array>
 
 namespace Ui {
 class CurveListPanel;
