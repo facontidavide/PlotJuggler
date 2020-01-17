@@ -52,7 +52,7 @@ Watch this video to learn how to use it.
 
 For those of you that can't wait and want to get their hands dirty, just download this AppImage:
 
-[PlotJuggler-2.4.3-x86_64.AppImage](https://github.com/facontidavide/PlotJuggler/releases/download/2.4.3/PlotJuggler-2.4.3-x86_64.AppImage).
+[PlotJuggler-2.4.1-x86_64.AppImage](https://github.com/facontidavide/PlotJuggler/releases/download/2.4.1/PlotJuggler-2.4.1-x86_64.AppImage).
    
 Do not forget to make it executable with the command 
 
