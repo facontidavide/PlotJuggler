@@ -65,7 +65,7 @@ template<> struct Serializer< ::PalStatisticsValues_ >
 
 //-----------------------------------------------------
 
-static std::unordered_map<uint32_t, std::vector<std::string> > _stored_pal_statistics_names;
+static std::map<uint32_t, std::vector<std::string> > _stored_pal_statistics_names;
 
 class PalStatisticsNamesParser: public RosParserBase
 {
@@ -157,7 +157,7 @@ public:
     }
 
 private:
-    std::unordered_map<uint32_t, std::vector< PlotData > > _data;
+    std::map<uint32_t, std::vector< PlotData > > _data;
 
 };
 
