@@ -1,7 +1,7 @@
 #include "lua_custom_function.h"
 
 
-LuaCustomFunction::LuaCustomFunction(const std::__cxx11::string &linkedPlot,
+LuaCustomFunction::LuaCustomFunction(const std::string &linkedPlot,
                                      const SnippetData &snippet):
 CustomFunction(linkedPlot,snippet)
 {
