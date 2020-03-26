@@ -152,7 +152,8 @@ else()
 endif()
 
 
-INSTALL( FILES ${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler-icon.png
+INSTALL( FILES ${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler-icon.svg
+
                     DESTINATION /usr/share/icons/hicolor/scalable/apps)
 INSTALL( FILES ${CMAKE_CURRENT_SOURCE_DIR}/PlotJuggler.desktop
                     DESTINATION /usr/share/applications)

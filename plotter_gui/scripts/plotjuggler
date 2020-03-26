@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# Check if a ROS distro has been sourced
+
+if [[ "${ROS_DISTRO}" ]]; then
+  ROS_DISTRO="${ROS_DISTRO}"
+else
+  # Lets try to deduce which version exists and source it
+  ROS_DISTRO="$(ls /opt/ros)"
+fi
+
+SETUP_FILE="/opt/ros/$ROS_DISTRO/setup.sh"
+
+if test -f "$SETUP_FILE"; then
+  source "$SETUP_FILE"
+  rosrun plotjuggler PlotJuggler
+else
+  echo "ROS distro not found. This is dramatically sad. Exiting..."
+  exit 1
+fi
+

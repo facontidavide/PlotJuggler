@@ -130,3 +130,5 @@ the development of those specific features they need.
 [Contact me](https://www.plotjuggler.io/support) for more details.
  
 
+# Credits
+* [Icon ](https://www.svgrepo.com/svg/283627/line-chart-line-graphic)

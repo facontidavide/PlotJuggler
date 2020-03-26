@@ -33,3 +33,7 @@
 
 site/images/
 /PlotJugglerInstaller
+
+# Temp folders for local binary creation
+obj-x86_64-linux-gnu
+debian
