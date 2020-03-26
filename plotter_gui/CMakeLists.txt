@@ -87,8 +87,8 @@ if(COMPILING_WITH_CATKIN)
        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
      )
     install(
-        TARGETS scripts/plotjuggler
-        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+        FILES scripts/plotjuggler
+        DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
     )
 else()
     install(TARGETS PlotJuggler DESTINATION bin  )
