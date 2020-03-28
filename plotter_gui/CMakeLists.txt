@@ -88,7 +88,7 @@ if(COMPILING_WITH_CATKIN)
      )
     install(
         PROGRAMS scripts/plotjuggler
-        DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+        DESTINATION /usr/bin
     )
 else()
     install(TARGETS PlotJuggler DESTINATION bin  )
