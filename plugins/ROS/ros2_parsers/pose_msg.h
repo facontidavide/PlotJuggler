@@ -3,6 +3,7 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/pose_with_covariance.hpp>
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include "covariance_util.h"
 #include "quaternion_msg.h"
 #include "ros2_parser.h"
@@ -79,4 +80,30 @@ public:
 private:
   PoseMsgParser _pose_parser;
   CovarianceParser<6> _covariance;
+};
+
+class PoseCovarianceStampedMsgParser : public BuiltinMessageParser<geometry_msgs::PoseWithCovarianceStamped>
+{
+public:
+  PoseCovarianceStampedMsgParser(const std::string& topic_name, PlotDataMapRef& plot_data)
+    : BuiltinMessageParser<geometry_msgs::PoseWithCovarianceStamped>(topic_name, plot_data)
+    , _pose_covariance_parser(topic_name, plot_data)
+  {
+    _data.emplace_back(&getSeries(plot_data, topic_name + "/header/seq"));
+    _data.emplace_back(&getSeries(plot_data, topic_name + "/header/stamp"));
+  }
+
+  void parseMessageImpl(const geometry_msgs::PoseWithCovarianceStamped& msg, double timestamp) override
+  {
+    double header_stamp = msg.header.stamp.toSec();
+    timestamp = (_use_header_stamp && header_stamp > 0) ? header_stamp : timestamp;
+
+    _data[0]->pushBack({ timestamp, double(msg.header.seq) });
+
+    _pose_covariance_parser.parseMessageImpl(msg.pose, timestamp);
+  }
+
+private:
+  PoseCovarianceMsgParser _pose_covariance_parser;
+  std::vector<PlotData*> _data;
 };
