@@ -780,7 +780,7 @@ ULogParser::Timeseries ULogParser::createTimeseries(const ULogParser::Format* fo
         std::string array_suffix = "";
         if (field.array_size > 1)
         {
-          char buff[10];
+          char buff[16];
           sprintf(buff, ".%02d", i);
           array_suffix = buff;
         }
