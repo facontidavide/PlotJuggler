@@ -17,6 +17,7 @@
 #include <qframe.h>
 #include <qrect.h>
 #include <qpainter.h>
+#include <qpainterpath.h>
 #include <qpalette.h>
 #include <qpaintdevice.h>
 #include <qpixmap.h>

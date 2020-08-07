@@ -16,6 +16,7 @@
 
 #include <qevent.h>
 #include <qpainter.h>
+#include <qpainterpath.h>
 #include <qcursor.h>
 #include <qpointer.h>
 

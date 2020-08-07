@@ -14,6 +14,7 @@
 #include "qwt_plot.h"
 
 #include <qpainter.h>
+#include <qpainterpath.h>
 #include <qstyle.h>
 #include <qstyleoption.h>
 #include <qpaintengine.h>

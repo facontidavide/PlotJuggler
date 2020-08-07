@@ -21,6 +21,7 @@
 #include "qwt_graphic.h"
 
 #include <qpainter.h>
+#include <qpainterpath.h>
 
 static inline QRectF qwtIntersectedClipRect( const QRectF &rect, QPainter *painter )
 {

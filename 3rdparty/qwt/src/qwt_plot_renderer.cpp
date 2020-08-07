@@ -20,6 +20,7 @@
 #include "qwt_math.h"
 
 #include <qpainter.h>
+#include <qpainterpath.h>
 #include <qtransform.h>
 #include <qprinter.h>
 #include <qfiledialog.h>
