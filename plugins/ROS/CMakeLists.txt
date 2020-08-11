@@ -9,6 +9,7 @@ add_definitions(-DQT_SHARED)
 
 QT5_WRAP_UI ( COMMON_UI_SRC
     qnodedialog.ui
+    qwsdialog.ui
     rule_editing.ui
     dialog_select_ros_topics.ui
     dialog_with_itemlist.ui
@@ -38,6 +39,7 @@ if(COMPILING_WITH_CATKIN)
 
     list( APPEND COMMON_SRC
         qnodedialog.cpp
+        qwsdialog.cpp
         rule_editing.cpp
         ros1_parsers/ros1_parser.cpp
         )
@@ -61,6 +63,11 @@ if(COMPILING_WITH_CATKIN)
         DataStreamROS/datastream_ROS.cpp
         ${PLUGIN_BASE_DIR}/datastreamer_base.h )
     target_link_libraries( DataStreamROS  commonROS )
+    #############
+    add_library( DataStreamROSWS SHARED
+            DataStreamROSWS/datastream_ROSWS.cpp
+            ${PLUGIN_BASE_DIR}/datastreamer_base.h )
+    target_link_libraries( DataStreamROSWS  commonROS )
     #############
     add_library( RosTopicPublisher SHARED
         TopicPublisherROS/statepublisher_rostopic.cpp
@@ -152,6 +159,7 @@ if(COMPILING_WITH_CATKIN)
     install(TARGETS
         DataLoadROS
         DataStreamROS
+        DataStreamROSWS
         RosTopicPublisher
         RosoutPublisher
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
