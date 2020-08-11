@@ -276,12 +276,18 @@ void DataStreamROSWS::subscribe()
   }
 }
 
+void topicsCallback(std::shared_ptr<WsClient::Connection> /*connection*/, std::shared_ptr<WsClient::InMessage> in_message){
+    std::cout << in_message->string() << std::endl;
+}
+
 bool DataStreamROSWS::start(QStringList* selected_datasources)
 {
   if (!_node)
   {
       WSManager& manager = WSManager::get();
-      std::cout << manager.getNode() << std::endl;
+      auto socket = manager.getWS();
+      socket->addClient("service_advertiser");
+      socket->callService("/rosapi/topics", &topicsCallback);
   }
 
   if (!_node)

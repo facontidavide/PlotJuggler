@@ -51,7 +51,10 @@ if(COMPILING_WITH_CATKIN)
         ${Qt5Xml_LIBRARIES}
         ${catkin_LIBRARIES}
         ros_type_introspection_static
-        fmt::fmt-header-only )
+        fmt::fmt-header-only
+            rosbridgecpp
+
+            )
 
     #########
     add_library( DataLoadROS SHARED

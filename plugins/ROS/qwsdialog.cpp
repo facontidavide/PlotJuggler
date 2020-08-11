@@ -61,7 +61,7 @@ void QWSDialog::on_pushButtonConnect_pressed()
   bool connected = false;
   if(ui->lineEditWebsocket->text().toStdString() != ""){
       WSManager& manager = WSManager::get();
-      manager.update( ui->lineEditWebsocket->text().toStdString());
+      manager.createWS( ui->lineEditWebsocket->text().toStdString());
       this->close();
   }
   if (connected)
@@ -97,19 +97,15 @@ WSManager::~WSManager()
 {
 }
 
-std::string WSManager::getNode()
-{
-    WSManager& manager = WSManager::get();
+void WSManager::createWS(std::string _address) {
+    m_ws_client = std::make_shared<RosbridgeWsClient>(_address);
+}
 
-    if (!ros::isInitialized() || !ros::master::check())
-    {
-        bool connected = QWSDialog::Connect("test", "localhost");
-        if (!connected)
-        {
-            // as a fallback strategy, launch the QNodeDialog
-            QWSDialog dialog;
-            dialog.exec();
-        }
-    }
-    return m_ws_address;
+std::shared_ptr<RosbridgeWsClient> WSManager::getWS()
+{
+    // as a fallback strategy, launch the QNodeDialog
+    QWSDialog dialog;
+    dialog.exec();
+
+    return m_ws_client;
 }

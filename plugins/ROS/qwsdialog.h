@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <ros/ros.h>
+#include "../3rdparty/rosbridgecpp/rosbridge_ws_client.hpp"
 
 namespace Ui
 {
@@ -31,17 +32,17 @@ private:
 class WSManager
 {
 private:
-    std::string m_ws_address;
-    WSManager() : m_ws_address("")
+    std::shared_ptr<RosbridgeWsClient> m_ws_client;
+    WSManager()
     {
     }
     void stopWS();
 
 public:
-    void update(std::string _address) {m_ws_address = _address;}
+    void createWS(std::string _address);
     static WSManager& get();
     ~WSManager();
-    std::string getNode();
+    std::shared_ptr<RosbridgeWsClient> getWS();
 };
 
 #endif  // QWSDIALOG_H
