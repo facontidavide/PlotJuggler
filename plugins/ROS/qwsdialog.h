@@ -28,4 +28,20 @@ private:
   Ui::QWSDialog* ui;
 };
 
+class WSManager
+{
+private:
+    std::string m_ws_address;
+    WSManager() : m_ws_address("")
+    {
+    }
+    void stopWS();
+
+public:
+    void update(std::string _address) {m_ws_address = _address;}
+    static WSManager& get();
+    ~WSManager();
+    std::string getNode();
+};
+
 #endif  // QWSDIALOG_H

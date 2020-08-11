@@ -280,18 +280,8 @@ bool DataStreamROSWS::start(QStringList* selected_datasources)
 {
   if (!_node)
   {
-      RosManager& manager = RosManager::get();
-
-      if (!ros::isInitialized() || !ros::master::check())
-      {
-          bool connected = QWSDialog::Connect("http://localhost:11311", "localhost");
-          if (!connected)
-          {
-              // as a fallback strategy, launch the QNodeDialog
-              QWSDialog dialog;
-              dialog.exec();
-          }
-      }
+      WSManager& manager = WSManager::get();
+      std::cout << manager.getNode() << std::endl;
   }
 
   if (!_node)

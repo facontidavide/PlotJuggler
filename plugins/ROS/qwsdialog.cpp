@@ -59,6 +59,11 @@ QWSDialog::~QWSDialog()
 void QWSDialog::on_pushButtonConnect_pressed()
 {
   bool connected = false;
+  if(ui->lineEditWebsocket->text().toStdString() != ""){
+      WSManager& manager = WSManager::get();
+      manager.update( ui->lineEditWebsocket->text().toStdString());
+      this->close();
+  }
   if (connected)
   {
     this->close();
@@ -71,4 +76,40 @@ void QWSDialog::on_pushButtonConnect_pressed()
 void QWSDialog::on_pushButtonCancel_pressed()
 {
   this->close();
+}
+
+WSManager& WSManager::get()
+{
+    static WSManager manager;
+    return manager;
+}
+
+void WSManager::stopWS()
+{
+    if (ros::isStarted())
+    {
+        ros::shutdown();  // explicitly needed since we use ros::start();;
+        ros::waitForShutdown();
+    }
+}
+
+WSManager::~WSManager()
+{
+}
+
+std::string WSManager::getNode()
+{
+    WSManager& manager = WSManager::get();
+
+    if (!ros::isInitialized() || !ros::master::check())
+    {
+        bool connected = QWSDialog::Connect("test", "localhost");
+        if (!connected)
+        {
+            // as a fallback strategy, launch the QNodeDialog
+            QWSDialog dialog;
+            dialog.exec();
+        }
+    }
+    return m_ws_address;
 }
