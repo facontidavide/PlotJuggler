@@ -25,6 +25,8 @@
 #include "qnodedialog.h"
 #include "shape_shifter_factory.hpp"
 
+std::vector<std::pair<QString, QString>> _all_topics;
+
 DataStreamROSWS::DataStreamROSWS() : DataStreamer(), _node(nullptr)
   , _action_saveIntoRosbag(nullptr), _prev_clock_time(0)
 {
@@ -277,20 +279,33 @@ void DataStreamROSWS::subscribe()
 }
 
 void topicsCallback(std::shared_ptr<WsClient::Connection> /*connection*/, std::shared_ptr<WsClient::InMessage> in_message){
-    std::cout << in_message->string() << std::endl;
+    std::string messagebuf = in_message->string();
+    std::cout << messagebuf << std::endl;
+    rapidjson::Document document;
+    if (document.Parse(messagebuf.c_str()).HasParseError())
+    {
+        std::cerr << "advertiseServiceCallback(): Error in parsing service request message: " << messagebuf << std::endl;
+        return;
+    }
+    if(document["values"]["topics"].IsArray()){
+        for(int i = 0; i < document["values"]["topics"].Size(); i++){
+            _all_topics.push_back(std::make_pair(QString(document["values"]["topics"][i].GetString()),
+                                                 QString(document["values"]["types"][i].GetString())));
+        }
+    }
 }
 
 bool DataStreamROSWS::start(QStringList* selected_datasources)
 {
-  if (!_node)
+  if (!_ws)
   {
       WSManager& manager = WSManager::get();
-      auto socket = manager.getWS();
-      socket->addClient("service_advertiser");
-      socket->callService("/rosapi/topics", &topicsCallback);
+      _ws = manager.getWS();
+      _ws->addClient("service_advertiser");
+      _ws->callService("/rosapi/topics", &topicsCallback);
   }
 
-  if (!_node)
+  if (!_ws)
   {
     return false;
   }
@@ -304,31 +319,29 @@ bool DataStreamROSWS::start(QStringList* selected_datasources)
 
   using namespace RosIntrospection;
 
-  std::vector<std::pair<QString, QString>> all_topics;
-  ros::master::V_TopicInfo topic_infos;
-  ros::master::getTopics(topic_infos);
-  for (ros::master::TopicInfo topic_info : topic_infos)
-  {
-    all_topics.push_back(std::make_pair(QString(topic_info.name.c_str()), QString(topic_info.datatype.c_str())));
-  }
+
+//  for (ros::master::TopicInfo topic_info : topic_infos)
+//  {
+//    all_topics.push_back(std::make_pair(QString(topic_info.name.c_str()), QString(topic_info.datatype.c_str())));
+//  }
 
   QTimer timer;
   timer.setSingleShot(false);
   timer.setInterval(1000);
   timer.start();
 
-  DialogSelectRosTopics dialog(all_topics, _config);
+  DialogSelectRosTopics dialog(_all_topics, _config);
 
-  connect(&timer, &QTimer::timeout, [&]() {
-    all_topics.clear();
-    topic_infos.clear();
-    ros::master::getTopics(topic_infos);
-    for (ros::master::TopicInfo topic_info : topic_infos)
-    {
-      all_topics.push_back({ QString::fromStdString(topic_info.name), QString::fromStdString(topic_info.datatype) });
-    }
-    dialog.updateTopicList(all_topics);
-  });
+//  connect(&timer, &QTimer::timeout, [&]() {
+//    all_topics.clear();
+//    topic_infos.clear();
+//    ros::master::getTopics(topic_infos);
+//    for (ros::master::TopicInfo topic_info : topic_infos)
+//    {
+//      all_topics.push_back({ QString::fromStdString(topic_info.name), QString::fromStdString(topic_info.datatype) });
+//    }
+//    dialog.updateTopicList(all_topics);
+//  });
 
   int res = dialog.exec();
   _config = dialog.getResult();

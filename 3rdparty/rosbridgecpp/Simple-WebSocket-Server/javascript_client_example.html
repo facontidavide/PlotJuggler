@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>WebSocket Test</title>
+</head>
+<body>
+<script>
+var ws;
+window.onload=function(){
+  ws=new WebSocket("ws://localhost:8080/echo");
+  ws.onmessage=function(evt){console.log(evt.data);};
+  ws.onopen=function(evt){
+    ws.send("Hello");
+  }
+}
+window.onclose=function(){
+  ws.close();
+}
+</script>
+</body>
+</html>

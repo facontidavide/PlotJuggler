@@ -1,0 +1,36 @@
+before_script:
+  - mkdir build && cd build
+  - export CXXFLAGS=-Werror
+  - export CTEST_OUTPUT_ON_FAILURE=1
+
+.script: &compile_and_test
+  script:
+  - cmake -DCMAKE_BUILD_TYPE=Release .. && make && make test
+  - rm -r *
+  - cmake -DCMAKE_BUILD_TYPE=Release -DUSE_STANDALONE_ASIO=ON .. && make && make test
+
+arch:
+  image: "registry.gitlab.com/eidheim/docker-images:arch"
+  <<: *compile_and_test
+
+buster:
+  image: "registry.gitlab.com/eidheim/docker-images:buster"
+  <<: *compile_and_test
+
+jessie:
+  image: "registry.gitlab.com/eidheim/docker-images:jessie"
+  <<: *compile_and_test
+
+stretch:
+  image: "registry.gitlab.com/eidheim/docker-images:stretch"
+  <<: *compile_and_test
+
+thread-safety-analysis:
+  image: "registry.gitlab.com/eidheim/docker-images:arch"
+  script:
+  - CXX=clang++ cmake .. && make
+
+static-analysis:
+  image: "registry.gitlab.com/eidheim/docker-images:arch"
+  script:
+    - scan-build cmake .. && scan-build --status-bugs make

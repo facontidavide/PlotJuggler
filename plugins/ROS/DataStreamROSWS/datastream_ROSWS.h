@@ -12,6 +12,7 @@
 #include "qnodedialog.h"
 #include "dialog_select_ros_topics.h"
 #include "ros1_parsers/ros1_parser.h"
+#include "../3rdparty/rosbridgecpp/rosbridge_ws_client.hpp"
 
 class DataStreamROSWS : public DataStreamer
 {
@@ -64,6 +65,7 @@ private:
   std::string _prefix;
 
   ros::NodeHandlePtr _node;
+  std::shared_ptr<RosbridgeWsClient> _ws;
 
   std::map<std::string, ros::Subscriber> _subscribers;
 
