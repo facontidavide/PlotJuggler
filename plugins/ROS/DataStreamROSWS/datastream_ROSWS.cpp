@@ -36,120 +36,79 @@ DataStreamROSWS::DataStreamROSWS()
     loadDefaultSettings();
 }
 
+void flatten(std::vector<std::pair<std::string, double>> *output, std::string name, rapidjson::Value obj){
+
+}
+
+std::vector<std::pair<std::string, double>> flatten_json(std::string prefix, rapidjson::Value *obj){
+    std::vector<std::pair<std::string, double>> out_arr;
+    if(obj->IsObject()){
+        for (auto itr = obj->MemberBegin(); itr != obj->MemberEnd(); ++itr)
+        {
+            flatten_json(prefix + "/" + itr->name.GetString() , &(*obj)[itr->name]);
+        }
+    }
+    else {
+        if(obj->IsDouble()){
+            std::cout << prefix << ": "<< obj->GetDouble() << std::endl;
+        }
+    }
+    return out_arr;
+}
+
 void DataStreamROSWS::topicCallback(std::shared_ptr<WsClient::InMessage> in_message, const std::string &topic_name) {
-    std::cout << in_message->string() << std::endl;
     if (!_running) {
         return;
     }
 
-//  using namespace RosIntrospection;
-//  const auto& md5sum = msg->getMD5Sum();
-//  const auto& datatype = msg->getDataType();
-//  const auto& definition = msg->getMessageDefinition();
+    std::string messagebuf = in_message->string();
 
-    // register the message type
-//  _parser->registerMessageType(topic_name, datatype, definition);
-//
-//  RosIntrospectionFactory::registerMessage(topic_name, md5sum, datatype, definition);
-//
-//  //------------------------------------
-//
-//  // it is more efficient to recycle this elements
-//  static std::vector<uint8_t> buffer;
-//
-//  buffer.resize(msg->size());
-//
-//  ros::serialization::OStream stream(buffer.data(), buffer.size());
-//  msg->write(stream);
-//
-//  _parser->setUseHeaderStamp(_config.use_header_stamp);
-//
-  double msg_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-  if (msg_time == 0)
-  {
-    // corner case: use_sim_time == true but topic /clock is not published
-    msg_time = ros::WallTime::now().toSec();
-    _parser->setUseHeaderStamp(false);
-  }
-
-  // time wrapping may happen using use_sim_time = true and
-  // rosbag play --clock --loop
-  if (msg_time < _prev_clock_time)
-  {
-    // clear
-    for (auto& it : dataMap().numeric)
-    {
-      it.second.clear();
+    rapidjson::Document document;
+    if (document.Parse(messagebuf.c_str()).HasParseError()) {
+        std::cerr << "advertiseServiceCallback(): Error in parsing service request message: " << messagebuf
+                  << std::endl;
+        return;
     }
-    for (auto& it : dataMap().user_defined)
-    {
-      it.second.clear();
-    }
-    emit clearBuffers();
-  }
-  _prev_clock_time = msg_time;
 
-//  SerializedMessage buffer_view(buffer);
+    flatten_json(topic_name, &document["msg"]);
 
-  // before pushing, lock the mutex
-  std::lock_guard<std::mutex> lock(mutex());
+    double msg_time = std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
 
-//  _parser->parseMessage(topic_name, buffer_view, msg_time);
-
-  const std::string prefixed_topic_name = _prefix + topic_name;
-
-  // adding raw serialized msg for future uses.
-  // do this before msg_time normalization
-  {
-    auto plot_pair = dataMap().user_defined.find(prefixed_topic_name);
-    if (plot_pair == dataMap().user_defined.end())
-    {
-      plot_pair = dataMap().addUserDefined(prefixed_topic_name);
-    }
-    PlotDataAny& user_defined_data = plot_pair->second;
-    user_defined_data.pushBack(PlotDataAny::Point(msg_time, nonstd::any(std::move(in_message->string()))));
-  }
-
-  //------------------------------
-  {
-    int& index = _msg_index[topic_name];
-    index++;
-    const std::string key = prefixed_topic_name + ("/_MSG_INDEX_");
-    auto index_it = dataMap().numeric.find(key);
-    if (index_it == dataMap().numeric.end())
-    {
-      index_it = dataMap().addNumeric(key);
-    }
-    index_it->second.pushBack(PlotData::Point(msg_time, index));
-  }
-}
-
-void DataStreamROSWS::extractInitialSamples() {
-    using namespace std::chrono;
-    milliseconds wait_time_ms(1000);
-
-    QProgressDialog progress_dialog;
-    progress_dialog.setLabelText("Collecting ROS topic samples to understand data layout. ");
-    progress_dialog.setRange(0, wait_time_ms.count());
-    progress_dialog.setAutoClose(true);
-    progress_dialog.setAutoReset(true);
-
-    progress_dialog.show();
-
-    auto start_time = system_clock::now();
-
-    while (system_clock::now() - start_time < (wait_time_ms)) {
-//        ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
-        int i = duration_cast<milliseconds>(system_clock::now() - start_time).count();
-        progress_dialog.setValue(i);
-        QApplication::processEvents();
-        if (progress_dialog.wasCanceled()) {
-            break;
+    if(document["msg"].HasMember("header")){
+        if (document["msg"]["header"]["stamp"]["secs"].GetDouble() != 0) {
+            double sec = document["msg"]["header"]["stamp"]["secs"].GetDouble();
+            double nsec = document["msg"]["header"]["stamp"]["nsecs"].GetDouble();
+            msg_time = sec + (nsec * 1e-9);
         }
     }
 
-    if (progress_dialog.wasCanceled() == false) {
-        progress_dialog.cancel();
+    // before pushing, lock the mutex
+    std::lock_guard<std::mutex> lock(mutex());
+
+    const std::string prefixed_topic_name = _prefix + topic_name;
+
+    // adding raw serialized msg for future uses.
+    // do this before msg_time normalization
+    {
+        auto plot_pair = dataMap().user_defined.find(prefixed_topic_name);
+        if (plot_pair == dataMap().user_defined.end()) {
+            plot_pair = dataMap().addUserDefined(prefixed_topic_name);
+        }
+        PlotDataAny &user_defined_data = plot_pair->second;
+        user_defined_data.pushBack(PlotDataAny::Point(msg_time, nonstd::any(std::move(in_message->string()))));
+    }
+
+    //------------------------------
+    {
+        int &index = _msg_index[topic_name];
+        index++;
+        const std::string key = prefixed_topic_name + ("/_MSG_INDEX_");
+        auto index_it = dataMap().numeric.find(key);
+        if (index_it == dataMap().numeric.end()) {
+            index_it = dataMap().addNumeric(key);
+        }
+        index_it->second.pushBack(PlotData::Point(msg_time, index));
     }
 }
 
@@ -171,8 +130,6 @@ void DataStreamROSWS::timerCallback() {
             subscribe();
 
             _running = true;
-            _spinner = std::make_shared<ros::AsyncSpinner>(1);
-            _spinner->start();
             _periodic_timer->start();
         } else if (ret == 0) {
             this->shutdown();
@@ -242,7 +199,17 @@ void DataStreamROSWS::saveIntoRosbag(const PlotDataMapRef &data) {
 void DataStreamROSWS::subscribe() {
     _ws_subscribers.clear();
 
+    QProgressDialog progress_dialog;
+    progress_dialog.setLabelText("Collecting ROS topic samples to understand data layout. ");
+    progress_dialog.setRange(0, _config.selected_topics.size());
+    progress_dialog.setAutoClose(true);
+    progress_dialog.setAutoReset(true);
+
+    progress_dialog.show();
+
     for (int i = 0; i < _config.selected_topics.size(); i++) {
+
+
         const std::string topic_name = _config.selected_topics[i].toStdString();
         boost::function<void(std::shared_ptr<WsClient::Connection> /*connection*/,
                              std::shared_ptr<WsClient::InMessage> in_message)> callback;
@@ -253,6 +220,12 @@ void DataStreamROSWS::subscribe() {
 
 
         _ws_subscribers.insert({topic_name, RosbridgeWsSubscriber(_ws, topic_name, callback)});
+
+        progress_dialog.setValue(i);
+        QApplication::processEvents();
+        if (progress_dialog.wasCanceled()) {
+            break;
+        }
     }
 }
 
@@ -317,11 +290,6 @@ bool DataStreamROSWS::start(QStringList *selected_datasources) {
 
     saveDefaultSettings();
 
-//  if (_config.use_renaming_rules)
-//  {
-//    _parser->addRules(RuleEditing::getRenamingRules());
-//  }
-
     if (_config.discard_large_arrays) {
         _parser->setMaxArrayPolicy(DISCARD_LARGE_ARRAYS, _config.max_array_size);
     } else {
@@ -331,9 +299,6 @@ bool DataStreamROSWS::start(QStringList *selected_datasources) {
     //-------------------------
     subscribe();
     _running = true;
-
-//  extractInitialSamples();
-
 
     _periodic_timer->setInterval(500);
     _periodic_timer->start();
@@ -347,11 +312,6 @@ bool DataStreamROSWS::isRunning() const {
 
 void DataStreamROSWS::shutdown() {
     _periodic_timer->stop();
-
-    if (_spinner) {
-        _spinner->stop();
-    }
-    _spinner.reset();
 
     _ws.reset();
 
