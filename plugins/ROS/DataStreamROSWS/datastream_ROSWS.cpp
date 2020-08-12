@@ -40,20 +40,18 @@ void flatten(std::vector<std::pair<std::string, double>> *output, std::string na
 
 }
 
-std::vector<std::pair<std::string, double>> flatten_json(std::string prefix, rapidjson::Value *obj){
-    std::vector<std::pair<std::string, double>> out_arr;
+void flatten_json(std::vector<std::pair<std::string, double>> *output, std::string prefix, rapidjson::Value *obj){
     if(obj->IsObject()){
         for (auto itr = obj->MemberBegin(); itr != obj->MemberEnd(); ++itr)
         {
-            flatten_json(prefix + "/" + itr->name.GetString() , &(*obj)[itr->name]);
+            flatten_json(output, prefix + "/" + itr->name.GetString() , &(*obj)[itr->name]);
         }
     }
     else {
         if(obj->IsDouble()){
-            std::cout << prefix << ": "<< obj->GetDouble() << std::endl;
+            output->push_back({prefix, obj->GetDouble()});
         }
     }
-    return out_arr;
 }
 
 void DataStreamROSWS::topicCallback(std::shared_ptr<WsClient::InMessage> in_message, const std::string &topic_name) {
@@ -70,8 +68,6 @@ void DataStreamROSWS::topicCallback(std::shared_ptr<WsClient::InMessage> in_mess
         return;
     }
 
-    flatten_json(topic_name, &document["msg"]);
-
     double msg_time = std::chrono::duration_cast<std::chrono::seconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
 
@@ -85,6 +81,17 @@ void DataStreamROSWS::topicCallback(std::shared_ptr<WsClient::InMessage> in_mess
 
     // before pushing, lock the mutex
     std::lock_guard<std::mutex> lock(mutex());
+
+    std::vector<std::pair<std::string, double>> key_value_arr;
+    flatten_json(&key_value_arr, topic_name, &document["msg"]);
+
+    for( auto &data : key_value_arr){
+        auto index_it = dataMap().numeric.find(data.first);
+        if (index_it == dataMap().numeric.end()) {
+            index_it = dataMap().addNumeric(data.first);
+        }
+        index_it->second.pushBack(PlotData::Point(msg_time, data.second));
+    }
 
     const std::string prefixed_topic_name = _prefix + topic_name;
 
