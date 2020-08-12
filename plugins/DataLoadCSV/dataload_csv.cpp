@@ -151,8 +151,8 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   //-----------------
   double prev_time = -std::numeric_limits<double>::max();
   bool monotonic_warning = false;
-  int ignored_lines = 0;
   int lines_read = 0;
+  int lines_ignored = 0;
 
   while (!inB.atEnd())
   {
@@ -162,7 +162,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
     lines_read++;
     if (string_items.size() != columncount)
     {
-      ignored_lines++;
+      lines_ignored++;
       continue;
     }
     double t = linecount;
@@ -228,11 +228,11 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
     plot_data.numeric.clear();
   }
 
-  if (ignored_lines > 0 && lines_read > 0)
+  if (lines_ignored > 0 && lines_read > 0)
   {
     QString message = QString("Ignored %1 out of %2 lines read from file\n"
                               "Valid delimiters are %3"
-                             ).arg(ignored_lines).arg(lines_read).arg(csv_separator.pattern());
+                             ).arg(lines_ignored).arg(lines_read).arg(csv_separator.pattern());
     QMessageBox::warning(0, tr("Warning"), message);
   }
 
