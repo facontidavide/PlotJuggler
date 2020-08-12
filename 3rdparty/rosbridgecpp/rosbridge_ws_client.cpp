@@ -7,7 +7,7 @@
 
 #include <future>
 
-RosbridgeWsClient rbc("localhost:9090");
+RosbridgeWsClient rbc("10.10.20.138/sda/rosbridge");
 
 void advertiseServiceCallback(std::shared_ptr<WsClient::Connection> /*connection*/, std::shared_ptr<WsClient::InMessage> in_message)
 {
@@ -64,22 +64,22 @@ void topicsCallback(std::shared_ptr<WsClient::Connection> /*connection*/, std::s
 }
 
 int main() {
-  rbc.addClient("service_advertiser");
-  rbc.callService("/rosapi/topics", &topicsCallback);
+//  rbc.addClient("service_advertiser");
+//  rbc.callService("/rosapi/topics", &topicsCallback);
 //  rbc.advertiseService("service_advertiser", "/zservice", "std_srvs/SetBool", advertiseServiceCallback);
 //
 //  rbc.addClient("topic_advertiser");
 //  rbc.advertise("topic_advertiser", "/ztopic", "std_msgs/String");
 //
-//  rbc.addClient("topic_subscriber");
-//  rbc.subscribe("topic_subscriber", "/ztopic", subscriberCallback);
+  rbc.addClient("topic_subscriber");
+  rbc.subscribe("topic_subscriber", "/tevel/perception/state", subscriberCallback);
 //
 //  // Test calling a service
 //  rapidjson::Document document(rapidjson::kObjectType);
 //  document.AddMember("data", true, document.GetAllocator());
 //  rbc.callService("/zservice", callServiceCallback, document);
 //
-//  // Test creating and stopping a publisher
+  // Test creating and stopping a publisher
 //  {
 //    // Create a std::promise object
 //    std::promise<void> exitSignal;
@@ -101,6 +101,9 @@ int main() {
 //    // Wait for thread to join
 //    th.join();
 //  }
+while (1){
+    sleep(1000);
+}
 //
 //  // Test removing clients
 //  rbc.removeClient("service_advertiser");

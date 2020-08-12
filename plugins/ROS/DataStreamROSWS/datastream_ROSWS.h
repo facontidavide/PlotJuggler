@@ -44,7 +44,7 @@ public:
   virtual void addActionsToParentMenu(QMenu* menu) override;
 
 private:
-  void topicCallback(const RosIntrospection::ShapeShifter::ConstPtr& msg, const std::string& topic_name);
+  void topicCallback(std::shared_ptr<WsClient::InMessage> in_message, const std::string& topic_name);
 
   void extractInitialSamples();
 
@@ -64,12 +64,11 @@ private:
 
   std::string _prefix;
 
-  ros::NodeHandlePtr _node;
   std::shared_ptr<RosbridgeWsClient> _ws;
 
-  std::map<std::string, ros::Subscriber> _subscribers;
+  std::map<std::string, RosbridgeWsSubscriber> _ws_subscribers;
 
-  RosIntrospection::SubstitutionRuleMap _rules;
+    RosIntrospection::SubstitutionRuleMap _rules;
 
   int _received_msg_count;
 
