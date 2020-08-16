@@ -14,16 +14,9 @@
 #include <QCheckBox>
 #include <QSettings>
 #include <QFileDialog>
-#include <ros/callback_queue.h>
-#include <rosbag/bag.h>
-#include <ros_type_introspection/utils/shape_shifter.hpp>
-#include <ros/transport_hints.h>
 #include <qwsdialog.h>
 
 #include "dialog_select_ros_topics.h"
-#include "rule_editing.h"
-#include "qnodedialog.h"
-#include "shape_shifter_factory.hpp"
 
 std::vector<std::pair<QString, QString>> _all_topics;
 
@@ -48,7 +41,7 @@ void flatten_json(std::vector<std::pair<std::string, double>> *output, std::stri
         }
     }
     else {
-        if(obj->IsDouble()){
+        if(obj->IsNumber()){
             output->push_back({prefix, obj->GetDouble()});
         }
     }
@@ -133,7 +126,6 @@ void DataStreamROSWS::timerCallback() {
                 emit connectionClosed();
                 return;
             }
-            _parser.reset(new CompositeParser(dataMap()));
             subscribe();
 
             _running = true;
@@ -142,64 +134,6 @@ void DataStreamROSWS::timerCallback() {
             this->shutdown();
             emit connectionClosed();
         }
-    }
-}
-
-void DataStreamROSWS::saveIntoRosbag(const PlotDataMapRef &data) {
-    if (data.user_defined.empty()) {
-        QMessageBox::warning(nullptr, tr("Warning"), tr("Your buffer is empty. Nothing to save.\n"));
-        return;
-    }
-
-    QFileDialog saveDialog;
-    saveDialog.setAcceptMode(QFileDialog::AcceptSave);
-    saveDialog.setDefaultSuffix("bag");
-    saveDialog.exec();
-
-    if (saveDialog.result() != QDialog::Accepted || saveDialog.selectedFiles().empty()) {
-        return;
-    }
-
-    QString fileName = saveDialog.selectedFiles().first();
-
-    if (fileName.size() > 0) {
-        rosbag::Bag rosbag(fileName.toStdString(), rosbag::bagmode::Write);
-
-        for (const auto &it : data.user_defined) {
-            const std::string &topicname = it.first;
-            const auto &plotdata = it.second;
-
-            auto registered_msg_type = RosIntrospectionFactory::get().getShapeShifter(topicname);
-            if (!registered_msg_type)
-                continue;
-
-            RosIntrospection::ShapeShifter msg;
-            msg.morph(registered_msg_type->getMD5Sum(), registered_msg_type->getDataType(),
-                      registered_msg_type->getMessageDefinition());
-
-            for (int i = 0; i < plotdata.size(); i++) {
-                const auto &point = plotdata.at(i);
-                const PlotDataAny::TimeType msg_time = point.x;
-                const nonstd::any &type_erased_buffer = point.y;
-
-                if (type_erased_buffer.type() != typeid(std::vector<uint8_t>)) {
-                    // can't cast to expected type
-                    continue;
-                }
-
-                std::vector<uint8_t> raw_buffer = nonstd::any_cast<std::vector<uint8_t>>(type_erased_buffer);
-                ros::serialization::IStream stream(raw_buffer.data(), raw_buffer.size());
-                msg.read(stream);
-
-                rosbag.write(topicname, ros::Time(msg_time), msg);
-            }
-        }
-        rosbag.close();
-
-        QProcess process;
-        QStringList args;
-        args << "reindex" << fileName;
-        process.start("rosbag", args);
     }
 }
 
@@ -218,7 +152,7 @@ void DataStreamROSWS::subscribe() {
 
 
         const std::string topic_name = _config.selected_topics[i].toStdString();
-        boost::function<void(std::shared_ptr<WsClient::Connection> /*connection*/,
+        std::function<void(std::shared_ptr<WsClient::Connection> /*connection*/,
                              std::shared_ptr<WsClient::InMessage> in_message)> callback;
         callback = [this, topic_name](std::shared_ptr<WsClient::Connection> /*connection*/,
                                       std::shared_ptr<WsClient::InMessage> in_message) -> void {
@@ -269,10 +203,7 @@ bool DataStreamROSWS::start(QStringList *selected_datasources) {
         std::lock_guard<std::mutex> lock(mutex());
         dataMap().numeric.clear();
         dataMap().user_defined.clear();
-        _parser.reset(new CompositeParser(dataMap()));
     }
-
-    using namespace RosIntrospection;
 
     QTimer timer;
     timer.setSingleShot(false);
@@ -297,12 +228,6 @@ bool DataStreamROSWS::start(QStringList *selected_datasources) {
 
     saveDefaultSettings();
 
-    if (_config.discard_large_arrays) {
-        _parser->setMaxArrayPolicy(DISCARD_LARGE_ARRAYS, _config.max_array_size);
-    } else {
-        _parser->setMaxArrayPolicy(KEEP_LARGE_ARRAYS, _config.max_array_size);
-    }
-
     //-------------------------
     subscribe();
     _running = true;
@@ -324,7 +249,6 @@ void DataStreamROSWS::shutdown() {
 
     _ws_subscribers.clear();
     _running = false;
-    _parser.reset();
 }
 
 DataStreamROSWS::~DataStreamROSWS() {

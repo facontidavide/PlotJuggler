@@ -5,14 +5,9 @@
 #include <QAction>
 #include <QTimer>
 #include <thread>
-#include <ros_type_introspection/utils/shape_shifter.hpp>
 #include "PlotJuggler/datastreamer_base.h"
-#include <ros_type_introspection/ros_introspection.hpp>
-#include <rosgraph_msgs/Clock.h>
-#include "qnodedialog.h"
 #include "dialog_select_ros_topics.h"
-#include "ros1_parsers/ros1_parser.h"
-#include "../3rdparty/rosbridgecpp/rosbridge_ws_client.hpp"
+#include "../../../3rdparty/rosbridgecpp/rosbridge_ws_client.hpp"
 
 class DataStreamROSWS : public DataStreamer
 {
@@ -58,8 +53,6 @@ private:
 
   bool _running;
 
-  std::shared_ptr<ros::AsyncSpinner> _spinner;
-
   double _initial_time;
 
   std::string _prefix;
@@ -68,8 +61,6 @@ private:
 
   std::map<std::string, RosbridgeWsSubscriber> _ws_subscribers;
 
-    RosIntrospection::SubstitutionRuleMap _rules;
-
   int _received_msg_count;
 
   QAction* _action_saveIntoRosbag;
@@ -77,8 +68,6 @@ private:
   std::map<std::string, int> _msg_index;
 
   DialogSelectRosTopics::Configuration _config;
-
-  std::unique_ptr<CompositeParser> _parser;
 
   QTimer* _periodic_timer;
 

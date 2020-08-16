@@ -15,41 +15,6 @@ QWSDialog::QWSDialog(QWidget* parent) : QDialog(parent), ui(new Ui::QWSDialog)
 
 }
 
-namespace ros
-{
-namespace master
-{
-void init(const M_string& remappings);
-}
-}  // namespace ros
-
-bool QWSDialog::Connect(const std::string& ros_master_uri, const std::string& hostname)
-{
-  std::map<std::string, std::string> remappings;
-  remappings["__master"] = ros_master_uri;
-  remappings["__hostname"] = hostname;
-
-  static bool first_time = true;
-  if (first_time)
-  {
-    ros::init(remappings, "PlotJugglerListener", ros::init_options::AnonymousName);
-    first_time = false;
-  }
-  else
-  {
-    ros::master::init(remappings);
-  }
-
-  bool connected = ros::master::check();
-  if (!connected)
-  {
-    QMessageBox msgBox;
-    msgBox.setText(QString("Could not connect to the ros master [%1]").arg(QString::fromStdString(ros_master_uri)));
-    msgBox.exec();
-  }
-  return connected;
-}
-
 QWSDialog::~QWSDialog()
 {
   QSettings settings;
@@ -86,11 +51,7 @@ WSManager& WSManager::get()
 
 void WSManager::stopWS()
 {
-    if (ros::isStarted())
-    {
-        ros::shutdown();  // explicitly needed since we use ros::start();;
-        ros::waitForShutdown();
-    }
+
 }
 
 WSManager::~WSManager()

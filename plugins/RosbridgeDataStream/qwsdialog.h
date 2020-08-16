@@ -2,9 +2,7 @@
 #define QWSDIALOG_H
 
 #include <QDialog>
-#include <ros/ros.h>
 #include "../3rdparty/rosbridgecpp/rosbridge_ws_client.hpp"
-
 namespace Ui
 {
 class QWSDialog;
