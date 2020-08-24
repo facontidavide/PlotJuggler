@@ -135,6 +135,7 @@ void DataStreamROSWS::handleWsMessage(const QString& message)
 
     const std::string prefixed_topic_name = _prefix + topic_name;
 
+    std::lock_guard<std::mutex> lock(mutex());
     // adding raw serialized msg for future uses.
     // do this before msg_time normalization
     {
