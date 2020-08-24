@@ -161,6 +161,10 @@ void CompositeParser::registerMessageType(const std::string& topic_name,
   {
     parser.reset(new PoseCovarianceMsgParser(topic_name, _plot_data));
   }
+  else if (type == "geometry_msgs/PoseWithCovarianceStamped")
+  {
+    parser.reset(new PoseCovarianceStampedMsgParser(topic_name, _plot_data));
+  }
   else if (type == "geometry_msgs/Twist")
   {
     parser.reset(new TwistMsgParser(topic_name, _plot_data));

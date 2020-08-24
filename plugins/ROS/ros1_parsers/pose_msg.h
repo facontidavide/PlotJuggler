@@ -3,6 +3,7 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovariance.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include "covariance_util.h"
 #include "quaternion_msg.h"
 #include "ros1_parser.h"
@@ -78,4 +79,22 @@ public:
 private:
   PoseMsgParser _pose_parser;
   CovarianceParser<6> _covariance;
+};
+
+class PoseCovarianceStampedMsgParser : public BuiltinMessageParser<geometry_msgs::PoseWithCovarianceStamped>
+{
+public:
+  PoseCovarianceStampedMsgParser(const std::string& topic_name, PlotDataMapRef& plot_data)
+    : BuiltinMessageParser<geometry_msgs::PoseWithCovarianceStamped>(topic_name, plot_data)
+    , _pose_cov_parser(topic_name, plot_data)
+  {
+  }
+
+  void parseMessageImpl(const geometry_msgs::PoseWithCovarianceStamped& msg, double timestamp) override
+  {
+    _pose_cov_parser.parseMessageImpl(msg.pose, timestamp);
+  }
+
+private:
+  PoseCovarianceMsgParser _pose_cov_parser;
 };
