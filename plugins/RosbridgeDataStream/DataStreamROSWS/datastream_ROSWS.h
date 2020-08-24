@@ -8,7 +8,6 @@
 #include <thread>
 #include "PlotJuggler/datastreamer_base.h"
 #include "dialog_select_ros_topics.h"
-//#include "../../../3rdparty/rosbridgecpp/rosbridge_ws_client.hpp"
 
 class DataStreamROSWS : public DataStreamer
 {
@@ -47,12 +46,7 @@ private slots:
 
 
 private:
-//  void topicCallback(std::shared_ptr<WsClient::InMessage> in_message, const std::string& topic_name);
-
-  void timerCallback();
-
-
-//  void subscribe();
+  void subscribe();
 
   void saveDefaultSettings();
 
@@ -64,25 +58,20 @@ private:
 
   std::string _prefix;
 
-//  std::shared_ptr<RosbridgeWsClient> _ws;
   QWebSocket _ws;
 
-//  std::map<std::string, RosbridgeWsSubscriber> _ws_subscribers;
+  std::vector<std::pair<QString, QString>> _all_topics;
 
-  int _received_msg_count;
+  bool _fetched_topics;
 
-  QAction* _action_saveIntoRosbag;
+//  QAction* _action_saveIntoRosbag;
 
   std::map<std::string, int> _msg_index;
 
   DialogSelectRosTopics::Configuration _config;
 
-  QTimer* _periodic_timer;
-
   double _prev_clock_time;
 
-private:
-//  static void saveIntoRosbag(const PlotDataMapRef& data);
 };
 
-#endif  // DATALOAD_CSV_H
+#endif  // DATASTREAM_ROS_TOPIC_H
