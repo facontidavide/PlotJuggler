@@ -4,10 +4,11 @@
 #include <QtPlugin>
 #include <QAction>
 #include <QTimer>
+#include <QWebSocket>
 #include <thread>
 #include "PlotJuggler/datastreamer_base.h"
 #include "dialog_select_ros_topics.h"
-#include "../../../3rdparty/rosbridgecpp/rosbridge_ws_client.hpp"
+//#include "../../../3rdparty/rosbridgecpp/rosbridge_ws_client.hpp"
 
 class DataStreamROSWS : public DataStreamer
 {
@@ -36,16 +37,22 @@ public:
 
   virtual bool xmlLoadState(const QDomElement& parent_element) override;
 
-  virtual void addActionsToParentMenu(QMenu* menu) override;
+//  virtual void addActionsToParentMenu(QMenu* menu) override;
+
+
+private slots:
+    void onConnected();
+    void onDisconnected();
+    void handleWsMessage(const QString &message);
+
 
 private:
-  void topicCallback(std::shared_ptr<WsClient::InMessage> in_message, const std::string& topic_name);
-
-  void extractInitialSamples();
+//  void topicCallback(std::shared_ptr<WsClient::InMessage> in_message, const std::string& topic_name);
 
   void timerCallback();
 
-  void subscribe();
+
+//  void subscribe();
 
   void saveDefaultSettings();
 
@@ -57,9 +64,10 @@ private:
 
   std::string _prefix;
 
-  std::shared_ptr<RosbridgeWsClient> _ws;
+//  std::shared_ptr<RosbridgeWsClient> _ws;
+  QWebSocket _ws;
 
-  std::map<std::string, RosbridgeWsSubscriber> _ws_subscribers;
+//  std::map<std::string, RosbridgeWsSubscriber> _ws_subscribers;
 
   int _received_msg_count;
 
@@ -74,7 +82,7 @@ private:
   double _prev_clock_time;
 
 private:
-  static void saveIntoRosbag(const PlotDataMapRef& data);
+//  static void saveIntoRosbag(const PlotDataMapRef& data);
 };
 
 #endif  // DATALOAD_CSV_H

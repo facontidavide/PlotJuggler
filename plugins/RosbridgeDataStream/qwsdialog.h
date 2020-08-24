@@ -2,7 +2,7 @@
 #define QWSDIALOG_H
 
 #include <QDialog>
-#include "../3rdparty/rosbridgecpp/rosbridge_ws_client.hpp"
+//#include "../3rdparty/rosbridgecpp/rosbridge_ws_client.hpp"
 namespace Ui
 {
 class QWSDialog;
@@ -16,7 +16,7 @@ public:
   ~QWSDialog();
   explicit QWSDialog(QWidget* parent = 0);
 
-  static bool Connect(const std::string& ros_master_uri, const std::string& hostname = "localhost");
+  std::string get_url() { return m_url; }
 
 private slots:
   void on_pushButtonConnect_pressed();
@@ -25,22 +25,7 @@ private slots:
 
 private:
   Ui::QWSDialog* ui;
-};
-
-class WSManager
-{
-private:
-    std::shared_ptr<RosbridgeWsClient> m_ws_client;
-    WSManager()
-    {
-    }
-    void stopWS();
-
-public:
-    void createWS(std::string _address);
-    static WSManager& get();
-    ~WSManager();
-    std::shared_ptr<RosbridgeWsClient> getWS();
+  std::string m_url;
 };
 
 #endif  // QWSDIALOG_H

@@ -164,7 +164,7 @@ add_subdirectory( 3rdparty/color_widgets )
 #add_subdirectory( 3rdparty/marl )
 add_subdirectory( 3rdparty/qwt/src )
 add_subdirectory( 3rdparty/lua-5.3.4 )
-add_subdirectory( 3rdparty/rosbridgecpp )
+#add_subdirectory( 3rdparty/rosbridgecpp )
 add_subdirectory( plotter_gui )
 
 add_subdirectory( plugins/DataLoadCSV )

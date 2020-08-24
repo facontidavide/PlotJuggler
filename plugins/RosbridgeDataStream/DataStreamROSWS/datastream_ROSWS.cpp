@@ -14,6 +14,8 @@
 #include <QCheckBox>
 #include <QSettings>
 #include <QFileDialog>
+#include <QJsonDocument>
+#include <QJsonArray>
 #include <qwsdialog.h>
 
 #include "dialog_select_ros_topics.h"
@@ -21,7 +23,10 @@
 std::vector<std::pair<QString, QString>> _all_topics;
 
 DataStreamROSWS::DataStreamROSWS()
-        : DataStreamer(), _ws(nullptr), _action_saveIntoRosbag(nullptr), _prev_clock_time(0) {
+        : DataStreamer(),
+//        _ws(nullptr),
+        _action_saveIntoRosbag(nullptr),
+        _prev_clock_time(0) {
     _running = false;
     _periodic_timer = new QTimer();
 //    connect(_periodic_timer, &QTimer::timeout, this, &DataStreamROSWS::timerCallback); // TODO: enable disconnection monitor on ros ws
@@ -29,88 +34,84 @@ DataStreamROSWS::DataStreamROSWS()
     loadDefaultSettings();
 }
 
-void flatten(std::vector<std::pair<std::string, double>> *output, std::string name, rapidjson::Value obj){
+//void flatten_json(std::vector<std::pair<std::string, double>> *output, std::string prefix, rapidjson::Value *obj){
+//    if(obj->IsObject()){
+//        for (auto itr = obj->MemberBegin(); itr != obj->MemberEnd(); ++itr)
+//        {
+//            flatten_json(output, prefix + "/" + itr->name.GetString() , &(*obj)[itr->name]);
+//        }
+//    }
+//    else {
+//        if(obj->IsNumber()){
+//            output->push_back({prefix, obj->GetDouble()});
+//        }
+//    }
+//}
 
-}
-
-void flatten_json(std::vector<std::pair<std::string, double>> *output, std::string prefix, rapidjson::Value *obj){
-    if(obj->IsObject()){
-        for (auto itr = obj->MemberBegin(); itr != obj->MemberEnd(); ++itr)
-        {
-            flatten_json(output, prefix + "/" + itr->name.GetString() , &(*obj)[itr->name]);
-        }
-    }
-    else {
-        if(obj->IsNumber()){
-            output->push_back({prefix, obj->GetDouble()});
-        }
-    }
-}
-
-void DataStreamROSWS::topicCallback(std::shared_ptr<WsClient::InMessage> in_message, const std::string &topic_name) {
-    if (!_running) {
-        return;
-    }
-
-    std::string messagebuf = in_message->string();
-
-    rapidjson::Document document;
-    if (document.Parse(messagebuf.c_str()).HasParseError()) {
-        std::cerr << "advertiseServiceCallback(): Error in parsing service request message: " << messagebuf
-                  << std::endl;
-        return;
-    }
-
-    double msg_time = std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
-
-    if(document["msg"].HasMember("header")){
-        if (document["msg"]["header"]["stamp"]["secs"].GetDouble() != 0) {
-            double sec = document["msg"]["header"]["stamp"]["secs"].GetDouble();
-            double nsec = document["msg"]["header"]["stamp"]["nsecs"].GetDouble();
-            msg_time = sec + (nsec * 1e-9);
-        }
-    }
-
-    // before pushing, lock the mutex
-    std::lock_guard<std::mutex> lock(mutex());
-
-    std::vector<std::pair<std::string, double>> key_value_arr;
-    flatten_json(&key_value_arr, topic_name, &document["msg"]);
-
-    for( auto &data : key_value_arr){
-        auto index_it = dataMap().numeric.find(data.first);
-        if (index_it == dataMap().numeric.end()) {
-            index_it = dataMap().addNumeric(data.first);
-        }
-        index_it->second.pushBack(PlotData::Point(msg_time, data.second));
-    }
-
-    const std::string prefixed_topic_name = _prefix + topic_name;
-
-    // adding raw serialized msg for future uses.
-    // do this before msg_time normalization
-    {
-        auto plot_pair = dataMap().user_defined.find(prefixed_topic_name);
-        if (plot_pair == dataMap().user_defined.end()) {
-            plot_pair = dataMap().addUserDefined(prefixed_topic_name);
-        }
-        PlotDataAny &user_defined_data = plot_pair->second;
-        user_defined_data.pushBack(PlotDataAny::Point(msg_time, nonstd::any(std::move(in_message->string()))));
-    }
-
-    //------------------------------
-    {
-        int &index = _msg_index[topic_name];
-        index++;
-        const std::string key = prefixed_topic_name + ("/_MSG_INDEX_");
-        auto index_it = dataMap().numeric.find(key);
-        if (index_it == dataMap().numeric.end()) {
-            index_it = dataMap().addNumeric(key);
-        }
-        index_it->second.pushBack(PlotData::Point(msg_time, index));
-    }
-}
+//void DataStreamROSWS::topicCallback(std::shared_ptr<WsClient::InMessage> in_message, const std::string &topic_name) {
+//    if (!_running) {
+//        return;
+//    }
+//
+//    std::string messagebuf = in_message->string();
+//
+//    rapidjson::Document document;
+//    if (document.Parse(messagebuf.c_str()).HasParseError()) {
+//        std::cerr << "advertiseServiceCallback(): Error in parsing service request message: " << messagebuf
+//                  << std::endl;
+//        return;
+//    }
+//
+//    double msg_time = std::chrono::duration_cast<std::chrono::seconds>(
+//            std::chrono::system_clock::now().time_since_epoch()).count();
+//
+//    if(document["msg"].HasMember("header")){
+//        if (document["msg"]["header"]["stamp"]["secs"].GetDouble() != 0) {
+//            double sec = document["msg"]["header"]["stamp"]["secs"].GetDouble();
+//            double nsec = document["msg"]["header"]["stamp"]["nsecs"].GetDouble();
+//            msg_time = sec + (nsec * 1e-9);
+//        }
+//    }
+//
+//    // before pushing, lock the mutex
+//    std::lock_guard<std::mutex> lock(mutex());
+//
+//    std::vector<std::pair<std::string, double>> key_value_arr;
+//    flatten_json(&key_value_arr, topic_name, &document["msg"]);
+//
+//    for( auto &data : key_value_arr){
+//        auto index_it = dataMap().numeric.find(data.first);
+//        if (index_it == dataMap().numeric.end()) {
+//            index_it = dataMap().addNumeric(data.first);
+//        }
+//        index_it->second.pushBack(PlotData::Point(msg_time, data.second));
+//    }
+//
+//    const std::string prefixed_topic_name = _prefix + topic_name;
+//
+//    // adding raw serialized msg for future uses.
+//    // do this before msg_time normalization
+//    {
+//        auto plot_pair = dataMap().user_defined.find(prefixed_topic_name);
+//        if (plot_pair == dataMap().user_defined.end()) {
+//            plot_pair = dataMap().addUserDefined(prefixed_topic_name);
+//        }
+//        PlotDataAny &user_defined_data = plot_pair->second;
+//        user_defined_data.pushBack(PlotDataAny::Point(msg_time, nonstd::any(std::move(in_message->string()))));
+//    }
+//
+//    //------------------------------
+//    {
+//        int &index = _msg_index[topic_name];
+//        index++;
+//        const std::string key = prefixed_topic_name + ("/_MSG_INDEX_");
+//        auto index_it = dataMap().numeric.find(key);
+//        if (index_it == dataMap().numeric.end()) {
+//            index_it = dataMap().addNumeric(key);
+//        }
+//        index_it->second.pushBack(PlotData::Point(msg_time, index));
+//    }
+//}
 
 void DataStreamROSWS::timerCallback() {
     if (_running) {
@@ -120,13 +121,13 @@ void DataStreamROSWS::timerCallback() {
                                         tr("Stop Streaming"), tr("Try reconnect"), nullptr);
         if (ret == 1) {
             this->shutdown();
-            _ws = WSManager::get().getWS();
+//            _ws = WSManager::get().getWS();
 
-            if (!_ws) {
-                emit connectionClosed();
-                return;
-            }
-            subscribe();
+//            if (!_ws) {
+//                emit connectionClosed();
+//                return;
+//            }
+//            subscribe();
 
             _running = true;
             _periodic_timer->start();
@@ -137,65 +138,104 @@ void DataStreamROSWS::timerCallback() {
     }
 }
 
-void DataStreamROSWS::subscribe() {
-    _ws_subscribers.clear();
+//void DataStreamROSWS::subscribe() {
+//    _ws_subscribers.clear();
+//
+//    QProgressDialog progress_dialog;
+//    progress_dialog.setLabelText("Collecting ROS topic samples to understand data layout. ");
+//    progress_dialog.setRange(0, _config.selected_topics.size());
+//    progress_dialog.setAutoClose(true);
+//    progress_dialog.setAutoReset(true);
+//
+//    progress_dialog.show();
+//
+//    for (int i = 0; i < _config.selected_topics.size(); i++) {
+//
+//
+//        const std::string topic_name = _config.selected_topics[i].toStdString();
+//        std::function<void(std::shared_ptr<WsClient::Connection> /*connection*/,
+//                             std::shared_ptr<WsClient::InMessage> in_message)> callback;
+//        callback = [this, topic_name](std::shared_ptr<WsClient::Connection> /*connection*/,
+//                                      std::shared_ptr<WsClient::InMessage> in_message) -> void {
+//            this->topicCallback(in_message, topic_name);
+//        };
+//
+//
+//        _ws_subscribers.insert({topic_name, RosbridgeWsSubscriber(_ws, topic_name, callback)});
+//
+//        progress_dialog.setValue(i);
+//        QApplication::processEvents();
+//        if (progress_dialog.wasCanceled()) {
+//            break;
+//        }
+//    }
+//}
 
-    QProgressDialog progress_dialog;
-    progress_dialog.setLabelText("Collecting ROS topic samples to understand data layout. ");
-    progress_dialog.setRange(0, _config.selected_topics.size());
-    progress_dialog.setAutoClose(true);
-    progress_dialog.setAutoReset(true);
+//void
+//topicsCallback(std::shared_ptr<WsClient::Connection> /*connection*/, std::shared_ptr<WsClient::InMessage> in_message) {
+//    std::string messagebuf = in_message->string();
+//    rapidjson::Document document;
+//    if (document.Parse(messagebuf.c_str()).HasParseError()) {
+//        std::cerr << "advertiseServiceCallback(): Error in parsing service request message: " << messagebuf
+//                  << std::endl;
+//        return;
+//    }
+//    if (document["values"]["topics"].IsArray()) {
+//        for (int i = 0; i < document["values"]["topics"].Size(); i++) {
+//            _all_topics.push_back(std::make_pair(QString(document["values"]["topics"][i].GetString()),
+//                                                 QString(document["values"]["types"][i].GetString())));
+//        }
+//    }
+//}
 
-    progress_dialog.show();
-
-    for (int i = 0; i < _config.selected_topics.size(); i++) {
-
-
-        const std::string topic_name = _config.selected_topics[i].toStdString();
-        std::function<void(std::shared_ptr<WsClient::Connection> /*connection*/,
-                             std::shared_ptr<WsClient::InMessage> in_message)> callback;
-        callback = [this, topic_name](std::shared_ptr<WsClient::Connection> /*connection*/,
-                                      std::shared_ptr<WsClient::InMessage> in_message) -> void {
-            this->topicCallback(in_message, topic_name);
-        };
-
-
-        _ws_subscribers.insert({topic_name, RosbridgeWsSubscriber(_ws, topic_name, callback)});
-
-        progress_dialog.setValue(i);
-        QApplication::processEvents();
-        if (progress_dialog.wasCanceled()) {
-            break;
-        }
-    }
+QString generateGetTopicsListMessage(){
+    QJsonObject topics_request;
+    topics_request["op"] = "call_service";
+    topics_request["service"] = "/rosapi/topics";
+    QJsonDocument doc(topics_request);
+    QString strJson(doc.toJson(QJsonDocument::Compact));
+    return strJson;
 }
 
-void
-topicsCallback(std::shared_ptr<WsClient::Connection> /*connection*/, std::shared_ptr<WsClient::InMessage> in_message) {
-    std::string messagebuf = in_message->string();
-    rapidjson::Document document;
-    if (document.Parse(messagebuf.c_str()).HasParseError()) {
-        std::cerr << "advertiseServiceCallback(): Error in parsing service request message: " << messagebuf
-                  << std::endl;
-        return;
-    }
-    if (document["values"]["topics"].IsArray()) {
-        for (int i = 0; i < document["values"]["topics"].Size(); i++) {
-            _all_topics.push_back(std::make_pair(QString(document["values"]["topics"][i].GetString()),
-                                                 QString(document["values"]["types"][i].GetString())));
+void DataStreamROSWS::onConnected() {
+    qDebug() << "on connection";
+    _ws.sendTextMessage(generateGetTopicsListMessage());
+}
+
+void DataStreamROSWS::handleWsMessage(const QString &message) {
+    QJsonDocument jsonResponse = QJsonDocument::fromJson(message.toUtf8());
+    QJsonObject jsonObject = jsonResponse.object();
+
+    qDebug() << jsonObject["service"].toString();
+
+    if(jsonObject["service"].toString() == "/rosapi/topics"){
+        auto topicsArr = jsonObject["topics"].toArray();
+        auto typesArr = jsonObject["types"].toArray();
+        for(int i = 0; i < topicsArr.size(); i++){
+            qDebug() << topicsArr[i].toString() << " : " << typesArr[i].toString();
         }
     }
+
+}
+
+void DataStreamROSWS::onDisconnected() {
+    qDebug() << "on disconnected";
 }
 
 bool DataStreamROSWS::start(QStringList *selected_datasources) {
-    if (!_ws) {
-        WSManager &manager = WSManager::get();
-        _ws = manager.getWS();
-        _ws->addClient("service_advertiser");
-        _ws->callService("/rosapi/topics", &topicsCallback);
+    if (!_ws.isValid()) {
+        QWSDialog dialog;
+        dialog.exec();
+        auto url = dialog.get_url();
+
+        connect(&_ws, &QWebSocket::connected, this, &DataStreamROSWS::onConnected);
+        connect(&_ws, &QWebSocket::disconnected, this, &DataStreamROSWS::onDisconnected);
+        connect(&_ws, &QWebSocket::textMessageReceived, this, &DataStreamROSWS::handleWsMessage);
+        _ws.open(QUrl(url.c_str()));
+
     }
 
-    if (!_ws) {
+    if (!_ws.isValid()) {
         return false;
     }
 
@@ -205,10 +245,10 @@ bool DataStreamROSWS::start(QStringList *selected_datasources) {
         dataMap().user_defined.clear();
     }
 
-    QTimer timer;
-    timer.setSingleShot(false);
-    timer.setInterval(5000);
-    timer.start();
+//    QTimer timer;
+//    timer.setSingleShot(false);
+//    timer.setInterval(5000);
+//    timer.start();
 
     DialogSelectRosTopics dialog(_all_topics, _config);
 
@@ -220,7 +260,7 @@ bool DataStreamROSWS::start(QStringList *selected_datasources) {
 
     int res = dialog.exec();
     _config = dialog.getResult();
-    timer.stop();
+//    timer.stop();
 
     if (res != QDialog::Accepted || _config.selected_topics.empty()) {
         return false;
@@ -229,7 +269,7 @@ bool DataStreamROSWS::start(QStringList *selected_datasources) {
     saveDefaultSettings();
 
     //-------------------------
-    subscribe();
+//    subscribe();
     _running = true;
 
     _periodic_timer->setInterval(500);
@@ -245,9 +285,9 @@ bool DataStreamROSWS::isRunning() const {
 void DataStreamROSWS::shutdown() {
     _periodic_timer->stop();
 
-    _ws.reset();
+//    _ws.reset();
 
-    _ws_subscribers.clear();
+//    _ws_subscribers.clear();
     _running = false;
 }
 
@@ -291,13 +331,13 @@ bool DataStreamROSWS::xmlLoadState(const QDomElement &parent_element) {
     return true;
 }
 
-void DataStreamROSWS::addActionsToParentMenu(QMenu *menu) {
-    _action_saveIntoRosbag = new QAction(QString("Save cached value in a rosbag"), menu);
-    menu->addAction(_action_saveIntoRosbag);
+//void DataStreamROSWS::addActionsToParentMenu(QMenu *menu) {
+//    _action_saveIntoRosbag = new QAction(QString("Save cached value in a rosbag"), menu);
+//    menu->addAction(_action_saveIntoRosbag);
 
-    connect(_action_saveIntoRosbag, &QAction::triggered, this,
-            [this]() { DataStreamROSWS::saveIntoRosbag(dataMap()); });
-}
+//    connect(_action_saveIntoRosbag, &QAction::triggered, this,
+//            [this]() { DataStreamROSWS::saveIntoRosbag(dataMap()); });
+//}
 
 void DataStreamROSWS::saveDefaultSettings() {
     QSettings settings;
