@@ -653,6 +653,17 @@ void TopicPublisherROS::updateState(double current_time) {
 
         if (any_value.type() == typeid(rosbag::MessageInstance)) {
             const auto &msg_instance = nonstd::any_cast<rosbag::MessageInstance>(any_value);
+            if(_ws_selected){
+                auto it = _ws_advertisers.find(msg_instance.getTopic().c_str());
+                if(it == _ws_advertisers.end()){
+                    _ws_advertisers.insert({msg_instance.getTopic(), msg_instance.getDataType()});
+                    json advertise_msg;
+                    advertise_msg["op"] = "advertise";
+                    advertise_msg["topic"] = msg_instance.getTopic();
+                    advertise_msg["type"] = msg_instance.getDataType();
+                    _ws.sendTextMessage(advertise_msg.dump().c_str());
+                }
+            }
             publishAnyMsg(msg_instance);
         }
     }
