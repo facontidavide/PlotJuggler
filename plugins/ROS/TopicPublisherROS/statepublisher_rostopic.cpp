@@ -15,13 +15,14 @@
 #include <QMessageBox>
 #include "publisher_select_dialog.h"
 #include "QtCore/qjsondocument.h"
-#include "QtCore/qjsonobject.h"
 #include <nlohmann/json.hpp>
+#include <QtCore/QTimer>
 
 // for convenience
 using json = nlohmann::json;
 
-TopicPublisherROS::TopicPublisherROS() : _enabled(false), _node(nullptr), _publish_clock(true) {
+TopicPublisherROS::TopicPublisherROS() : _enabled(false), _ros_selected(true), _ws_selected(false),
+_node(nullptr), _publish_clock(true) {
     QSettings settings;
     _publish_clock = settings.value("TopicPublisherROS/publish_clock", true).toBool();
 }
@@ -40,39 +41,64 @@ void TopicPublisherROS::setParentMenu(QMenu *menu, QAction *action) {
     connect(_select_topics_to_publish, &QAction::triggered, this, &TopicPublisherROS::filterDialog);
 }
 
-void TopicPublisherROS::setEnabled(bool to_enable) {
-    if (!_node && to_enable) {
-        _node = RosManager::getNode();
-    }
-    _enabled = (to_enable && _node);
-
-    if (_enabled) {
-        filterDialog(true);
-
-        if (!_tf_broadcaster) {
-            _tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>();
-        }
-        if (!_tf_static_broadcaster) {
-            _tf_static_broadcaster = std::make_unique<tf2_ros::StaticTransformBroadcaster>();
-        }
-
-        _previous_play_index = std::numeric_limits<int>::max();
-
-        if (_publish_clock) {
-            _clock_publisher = _node->advertise<rosgraph_msgs::Clock>("/clock", 10, true);
-        } else {
-            _clock_publisher.shutdown();
-        }
+void TopicPublisherROS::ws_connected() {
+    _enabled = true;
+    StatePublisher::setEnabled(true);
+    if(_clock_publisher){
+        //TODO: advertise clock with ws
     } else {
-        _node.reset();
-        _publishers.clear();
-        _clock_publisher.shutdown();
-
-        _tf_broadcaster.reset();
-        _tf_static_broadcaster.reset();
+        //TODO: disadvertise clock with ws
     }
+}
 
-    StatePublisher::setEnabled(_enabled);
+void TopicPublisherROS::ws_disconnected() {
+    _enabled = false;
+    StatePublisher::setEnabled(false);
+}
+
+void TopicPublisherROS::setEnabled(bool to_enable) {
+    if(_ros_selected){
+        if (!_node && to_enable) {
+            _node = RosManager::getNode();
+        }
+        _enabled = (to_enable && _node);
+
+        if (_enabled) {
+            filterDialog(true);
+
+            if (!_tf_broadcaster) {
+                _tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>();
+            }
+            if (!_tf_static_broadcaster) {
+                _tf_static_broadcaster = std::make_unique<tf2_ros::StaticTransformBroadcaster>();
+            }
+
+            _previous_play_index = std::numeric_limits<int>::max();
+
+            if (_publish_clock) {
+                _clock_publisher = _node->advertise<rosgraph_msgs::Clock>("/clock", 10, true);
+            } else {
+                _clock_publisher.shutdown();
+            }
+        } else {
+            _node.reset();
+            _publishers.clear();
+            _clock_publisher.shutdown();
+
+            _tf_broadcaster.reset();
+            _tf_static_broadcaster.reset();
+        }
+        StatePublisher::setEnabled(_enabled);
+    }
+    else if(_ws_selected){
+        if(to_enable){
+            connect(&_ws, &QWebSocket::connected, this, &TopicPublisherROS::ws_connected);
+            connect(&_ws, &QWebSocket::disconnected, this, &TopicPublisherROS::ws_disconnected);
+            _ws.open(QUrl(_ws_url.c_str()));
+        } else {
+            _ws.close();
+        }
+    }
 }
 
 void TopicPublisherROS::filterDialog(bool autoconfirm) {
@@ -112,21 +138,55 @@ void TopicPublisherROS::filterDialog(bool autoconfirm) {
         }
 
         // remove already created publisher if not needed anymore
-        for (auto it = _publishers.begin(); it != _publishers.end(); /* no increment */) {
-            const std::string &topic_name = it->first;
-            if (!toPublish(topic_name)) {
-                it = _publishers.erase(it);
-            } else {
-                it++;
+        if(_ros_selected){
+            for (auto it = _publishers.begin(); it != _publishers.end(); /* no increment */) {
+                const std::string &topic_name = it->first;
+                if (!toPublish(topic_name)) {
+                    it = _publishers.erase(it);
+                } else {
+                    it++;
+                }
+            }
+        }
+        else if(_ws_selected){
+            for (auto it = _ws_advertisers.begin(); it != _ws_advertisers.end(); /* no increment */) {
+                const std::string &topic_name = it->first;
+                if (!toPublish(topic_name)) {
+                    if(_enabled){
+                        json advertise_msg;
+                        advertise_msg["op"] = "unadvertise";
+                        advertise_msg["topic"] = it->first;
+                        _ws.sendTextMessage(advertise_msg.dump().c_str());
+                    }
+                    it = _ws_advertisers.erase(it);
+                } else {
+                    it++;
+                }
             }
         }
 
         _publish_clock = dialog->ui()->radioButtonClock->isChecked();
+        _ros_selected = dialog->ui()->radioButtonROS->isChecked();
+        _ws_selected = dialog->ui()->radioButtonWS->isChecked();
+
+        if(_ws_selected){
+            _ws_url = dialog->ui()->lineEditWebsocketUrl->text().toStdString();
+        }
 
         if (_enabled && _publish_clock) {
-            _clock_publisher = _node->advertise<rosgraph_msgs::Clock>("/clock", 10, true);
+            if(_ros_selected){
+                _clock_publisher = _node->advertise<rosgraph_msgs::Clock>("/clock", 10, true);
+            }
+            else if(_ws_selected){
+                //TODO: advertise clock with ws
+            }
         } else {
-            _clock_publisher.shutdown();
+            if(_ros_selected){
+                _clock_publisher.shutdown();
+            }
+            else if(_ws_selected){
+                //TODO: disadvertise clock with ws
+            }
         }
 
         dialog->deleteLater();
@@ -205,18 +265,20 @@ void TopicPublisherROS::broadcastTF(double current_time) {
         std::vector<geometry_msgs::TransformStamped> transforms_vector;
         transforms_vector.reserve(transforms_ptr->size());
 
-        const auto now = ros::Time::now();
-        for (auto &trans : *transforms_ptr) {
-            if (!_publish_clock) {
-                trans.second.header.stamp = now;
+        if(_ros_selected){
+            auto now = ros::Time::now().toSec();
+            for (auto &trans : *transforms_ptr) {
+                if (!_publish_clock) {
+                    trans.second.header.stamp.fromSec(now);
+                }
+                transforms_vector.emplace_back(std::move(trans.second));
             }
-            transforms_vector.emplace_back(std::move(trans.second));
-        }
-        if (transforms_vector.size() > 0) {
-            if (transforms_ptr == &transforms) {
-                _tf_broadcaster->sendTransform(transforms_vector);
-            } else {
-                _tf_static_broadcaster->sendTransform(transforms_vector);
+            if (transforms_vector.size() > 0) {
+                if (transforms_ptr == &transforms) {
+                    _tf_broadcaster->sendTransform(transforms_vector);
+                } else {
+                    _tf_static_broadcaster->sendTransform(transforms_vector);
+                }
             }
         }
     }
@@ -230,6 +292,7 @@ bool TopicPublisherROS::toPublish(const std::string &topic_name) {
         return it->second;
     }
 }
+
 template<class T>
 void addLeaf(json *obj, const std::string& path, T value){
     auto tail = path.substr(1, path.size() - 1); // remove first /
@@ -250,6 +313,22 @@ void addLeaf(json *obj, const std::string& path, T value){
             (*obj)[tail.c_str()] = value;
         }
     }
+}
+
+int nthOccurrence(const std::string& str, const std::string& findMe, int nth)
+{
+    size_t  pos = 0;
+    int     cnt = 0;
+
+    while( cnt != nth )
+    {
+        pos+=1;
+        pos = str.find(findMe, pos);
+        if ( pos == std::string::npos )
+            return -1;
+        cnt++;
+    }
+    return pos;
 }
 
 json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clock){
@@ -287,35 +366,182 @@ json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clo
     // Print the content of the message
     for (auto it: renamed_value)
     {
-        const std::string& key = it.first;
+        auto key = it.first;
         const Variant& value   = it.second;
+
+        key = key.substr(nthOccurrence(key, "/", 1), key.size() - 1);
+
         if(!publish_clock){
             if(key.find("header") != std::string::npos){
-                auto header = ros::Time::now().toSec();
+                auto header = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
                 if(key.find("stamp") != std::string::npos) {
                     addLeaf(&msg["msg"], key, header);
                 }
                 else {
-                    addLeaf(&msg["msg"], key, value.convert<double>());
+                    switch (value.getTypeID()) {
+                        case BOOL:
+                            addLeaf(&msg["msg"], key, value.convert<int>());
+                            break;
+                        case BYTE:
+                            addLeaf(&msg["msg"], key, value.convert<uint8_t>());
+                            break;
+                        case INT8:
+                            addLeaf(&msg["msg"], key, value.convert<int8_t>());
+                            break;
+                        case CHAR:
+                            addLeaf(&msg["msg"], key, value.convert<uint8_t>());
+                            break;
+                        case UINT8:
+                            addLeaf(&msg["msg"], key, value.convert<uint8_t>());
+                            break;
+                        case UINT16:
+                            addLeaf(&msg["msg"], key, value.convert<uint16_t>());
+                            break;
+                        case INT16:
+                            addLeaf(&msg["msg"], key, value.convert<int16_t>());
+                            break;
+                        case UINT32:
+                            addLeaf(&msg["msg"], key, value.convert<uint32_t>());
+                            break;
+                        case INT32:
+                            addLeaf(&msg["msg"], key, value.convert<int32_t>());
+                            break;
+                        case FLOAT32:
+                            addLeaf(&msg["msg"], key, value.convert<float>());
+                            break;
+                        case UINT64:
+                            addLeaf(&msg["msg"], key, value.convert<uint64_t>());
+                            break;
+                        case INT64:
+                            addLeaf(&msg["msg"], key, value.convert<int64_t>());
+                            break;
+                        case FLOAT64:
+                            addLeaf(&msg["msg"], key, value.convert<double>());
+                            break;
+                        case TIME:
+                            addLeaf(&msg["msg"], key, value.convert<double>());
+                            break;
+                        case DURATION:
+                            addLeaf(&msg["msg"], key, value.convert<double>());
+                            break;
+                    }
                 }
             }
             else {
-                addLeaf(&msg["msg"], key, value.convert<double>());
+                switch (value.getTypeID()) {
+                    case BOOL:
+                        addLeaf(&msg["msg"], key, value.convert<int>());
+                        break;
+                    case BYTE:
+                        addLeaf(&msg["msg"], key, value.convert<uint8_t>());
+                        break;
+                    case INT8:
+                        addLeaf(&msg["msg"], key, value.convert<int8_t>());
+                        break;
+                    case CHAR:
+                        addLeaf(&msg["msg"], key, value.convert<uint8_t>());
+                        break;
+                    case UINT8:
+                        addLeaf(&msg["msg"], key, value.convert<uint8_t>());
+                        break;
+                    case UINT16:
+                        addLeaf(&msg["msg"], key, value.convert<uint16_t>());
+                        break;
+                    case INT16:
+                        addLeaf(&msg["msg"], key, value.convert<int16_t>());
+                        break;
+                    case UINT32:
+                        addLeaf(&msg["msg"], key, value.convert<uint32_t>());
+                        break;
+                    case INT32:
+                        addLeaf(&msg["msg"], key, value.convert<int32_t>());
+                        break;
+                    case FLOAT32:
+                        addLeaf(&msg["msg"], key, value.convert<float>());
+                        break;
+                    case UINT64:
+                        addLeaf(&msg["msg"], key, value.convert<uint64_t>());
+                        break;
+                    case INT64:
+                        addLeaf(&msg["msg"], key, value.convert<int64_t>());
+                        break;
+                    case FLOAT64:
+                        addLeaf(&msg["msg"], key, value.convert<double>());
+                        break;
+                    case TIME:
+                        addLeaf(&msg["msg"], key, value.convert<double>());
+                        break;
+                    case DURATION:
+                        addLeaf(&msg["msg"], key, value.convert<double>());
+                        break;
+                }
             }
         } else {
-            addLeaf(&msg["msg"], key, value.convert<double>());
+                switch (value.getTypeID()) {
+                    case BOOL:
+                        addLeaf(&msg["msg"], key, value.convert<int>());
+                        break;
+                    case BYTE:
+                        addLeaf(&msg["msg"], key, value.convert<uint8_t>());
+                        break;
+                    case INT8:
+                        addLeaf(&msg["msg"], key, value.convert<int8_t>());
+                        break;
+                    case CHAR:
+                        addLeaf(&msg["msg"], key, value.convert<uint8_t>());
+                        break;
+                    case UINT8:
+                        addLeaf(&msg["msg"], key, value.convert<uint8_t>());
+                        break;
+                    case UINT16:
+                        addLeaf(&msg["msg"], key, value.convert<uint16_t>());
+                        break;
+                    case INT16:
+                        addLeaf(&msg["msg"], key, value.convert<int16_t>());
+                        break;
+                    case UINT32:
+                        addLeaf(&msg["msg"], key, value.convert<uint32_t>());
+                        break;
+                    case INT32:
+                        addLeaf(&msg["msg"], key, value.convert<int32_t>());
+                        break;
+                    case FLOAT32:
+                        addLeaf(&msg["msg"], key, value.convert<float>());
+                        break;
+                    case UINT64:
+                        addLeaf(&msg["msg"], key, value.convert<uint64_t>());
+                        break;
+                    case INT64:
+                        addLeaf(&msg["msg"], key, value.convert<int64_t>());
+                        break;
+                    case FLOAT64:
+                        addLeaf(&msg["msg"], key, value.convert<double>());
+                        break;
+                    case TIME:
+                        addLeaf(&msg["msg"], key, value.convert<double>());
+                        break;
+                    case DURATION:
+                        addLeaf(&msg["msg"], key, value.convert<double>());
+                        break;
+                }
         }
     }
     for (auto it: flat_container.name)
     {
-        const std::string& key    = it.first.toStdString();
+        auto key    = it.first.toStdString();
         const std::string& value  = it.second;
+
+        key = key.substr(nthOccurrence(key, "/", 1), key.size() - 1);
+
         addLeaf(&msg["msg"], key, value);
     }
     for (auto it: flat_container.blob)
     {
-        const std::string& key    = it.first.toStdString();
+        auto key    = it.first.toStdString();
         auto value  = it.second;
+
+        key = key.substr(nthOccurrence(key, "/", 1), key.size() - 1);
+
         addLeaf(&msg["msg"], key, value);
     }
 
@@ -323,62 +549,76 @@ json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clo
 }
 
 void TopicPublisherROS::publishAnyMsg(const rosbag::MessageInstance &msg_instance) {
-    auto msg = messageToJson(msg_instance, _publish_clock);
-    std::cout << msg << std::endl;
-    using namespace RosIntrospection;
-
-    const auto &topic_name = msg_instance.getTopic();
-
-    RosIntrospection::ShapeShifter *shapeshifted = RosIntrospectionFactory::get().getShapeShifter(topic_name);
-
-    if (!shapeshifted) {
-        return;  // Not registered, just skip
+    if(_ws_selected){
+        auto msg = messageToJson(msg_instance, _publish_clock);
+        if(_enabled){
+            _ws.sendTextMessage(msg.dump().c_str());
+        }
     }
+    else if(_ros_selected){
+        using namespace RosIntrospection;
 
-    std::vector<uint8_t> raw_buffer;
-    raw_buffer.resize(msg_instance.size());
-    ros::serialization::OStream ostream(raw_buffer.data(), raw_buffer.size());
-    msg_instance.write(ostream);
+        const auto &topic_name = msg_instance.getTopic();
 
-    if (!_publish_clock) {
-        const ROSMessageInfo *msg_info = RosIntrospectionFactory::parser().getMessageInfo(topic_name);
-        if (msg_info && msg_info->message_tree.croot()->children().size() >= 1) {
-            const auto &first_field = msg_info->message_tree.croot()->child(0)->value();
-            if (first_field->type().baseName() == "std_msgs/Header") {
-                std_msgs::Header msg;
-                ros::serialization::IStream is(raw_buffer.data(), raw_buffer.size());
-                ros::serialization::deserialize(is, msg);
-                msg.stamp = ros::Time::now();
-                ros::serialization::OStream os(raw_buffer.data(), raw_buffer.size());
-                ros::serialization::serialize(os, msg);
+        RosIntrospection::ShapeShifter *shapeshifted = RosIntrospectionFactory::get().getShapeShifter(topic_name);
+
+        if (!shapeshifted) {
+            return;  // Not registered, just skip
+        }
+
+        std::vector<uint8_t> raw_buffer;
+        raw_buffer.resize(msg_instance.size());
+        ros::serialization::OStream ostream(raw_buffer.data(), raw_buffer.size());
+        msg_instance.write(ostream);
+
+        if (!_publish_clock) {
+            const ROSMessageInfo *msg_info = RosIntrospectionFactory::parser().getMessageInfo(topic_name);
+            if (msg_info && msg_info->message_tree.croot()->children().size() >= 1) {
+                const auto &first_field = msg_info->message_tree.croot()->child(0)->value();
+                if (first_field->type().baseName() == "std_msgs/Header") {
+                    std_msgs::Header msg;
+                    ros::serialization::IStream is(raw_buffer.data(), raw_buffer.size());
+                    ros::serialization::deserialize(is, msg);
+                    msg.stamp = ros::Time::now();
+                    ros::serialization::OStream os(raw_buffer.data(), raw_buffer.size());
+                    ros::serialization::serialize(os, msg);
+                }
+            }
+        }
+
+        ros::serialization::IStream istream(raw_buffer.data(), raw_buffer.size());
+        shapeshifted->read(istream);
+
+        auto publisher_it = _publishers.find(topic_name);
+        if (publisher_it == _publishers.end()) {
+            auto res = _publishers.insert({topic_name, shapeshifted->advertise(*_node, topic_name, 10, true)});
+            publisher_it = res.first;
+        }
+
+        const ros::Publisher &publisher = publisher_it->second;
+        publisher.publish(*shapeshifted);
+    }
+}
+
+void TopicPublisherROS::updateState(double current_time) {
+    if(!_enabled){
+        if(_ros_selected) {
+            if(!_node) return;
+            if (!ros::master::check()) {
+                QMessageBox::warning(nullptr, tr("Disconnected!"),
+                                     "The roscore master cannot be detected.\n"
+                                     "The publisher will be disabled.");
+                _enable_self_action->setChecked(false);
+                return;
+            }
+        }
+        else if(_ws_selected){
+            if(!_enabled){
+                return;
             }
         }
     }
 
-    ros::serialization::IStream istream(raw_buffer.data(), raw_buffer.size());
-    shapeshifted->read(istream);
-
-    auto publisher_it = _publishers.find(topic_name);
-    if (publisher_it == _publishers.end()) {
-        auto res = _publishers.insert({topic_name, shapeshifted->advertise(*_node, topic_name, 10, true)});
-        publisher_it = res.first;
-    }
-
-    const ros::Publisher &publisher = publisher_it->second;
-    publisher.publish(*shapeshifted);
-}
-
-void TopicPublisherROS::updateState(double current_time) {
-    if (!_enabled || !_node)
-        return;
-
-    if (!ros::master::check()) {
-        QMessageBox::warning(nullptr, tr("Disconnected!"),
-                             "The roscore master cannot be detected.\n"
-                             "The publisher will be disabled.");
-        _enable_self_action->setChecked(false);
-        return;
-    }
 
     //-----------------------------------------------
     broadcastTF(current_time);
@@ -421,7 +661,12 @@ void TopicPublisherROS::updateState(double current_time) {
         rosgraph_msgs::Clock clock;
         try {
             clock.clock.fromSec(current_time);
-            _clock_publisher.publish(clock);
+            if(_ros_selected){
+                _clock_publisher.publish(clock);
+            }
+            else if(_ws_selected){
+                //TODO: publish clock with ws
+            }
         }
         catch (...) {
             qDebug() << "error: " << current_time;
@@ -430,15 +675,22 @@ void TopicPublisherROS::updateState(double current_time) {
 }
 
 void TopicPublisherROS::play(double current_time) {
-    if (!_enabled || !_node)
-        return;
-
-    if (!ros::master::check()) {
-        QMessageBox::warning(nullptr, tr("Disconnected!"),
-                             "The roscore master cannot be detected.\n"
-                             "The publisher will be disabled.");
-        _enable_self_action->setChecked(false);
-        return;
+    if(!_enabled){
+        if(_ros_selected) {
+            if(!_node) return;
+            if (!ros::master::check()) {
+                QMessageBox::warning(nullptr, tr("Disconnected!"),
+                                     "The roscore master cannot be detected.\n"
+                                     "The publisher will be disabled.");
+                _enable_self_action->setChecked(false);
+                return;
+            }
+        }
+        else if(_ws_selected){
+            if(!_enabled){
+                return;
+            }
+        }
     }
 
     auto data_it = _datamap->user_defined.find("__consecutive_message_instances__");
@@ -464,12 +716,28 @@ void TopicPublisherROS::play(double current_time) {
                 }
 
                 // qDebug() << QString("p: %1").arg( index );
+                if(_ws_selected){
+                    auto it = _ws_advertisers.find(msg_instance.getTopic().c_str());
+                    if(it == _ws_advertisers.end()){
+                        _ws_advertisers.insert({msg_instance.getTopic(), msg_instance.getDataType()});
+                        json advertise_msg;
+                        advertise_msg["op"] = "advertise";
+                        advertise_msg["topic"] = msg_instance.getTopic();
+                        advertise_msg["type"] = msg_instance.getDataType();
+                        _ws.sendTextMessage(advertise_msg.dump().c_str());
+                    }
+                }
                 publishAnyMsg(msg_instance);
 
                 if (_publish_clock) {
                     rosgraph_msgs::Clock clock;
                     clock.clock = msg_instance.getTime();
-                    _clock_publisher.publish(clock);
+                    if(_ros_selected){
+                        _clock_publisher.publish(clock);
+                    }
+                    else if(_ws_selected){
+                        //TODO: publish clock with ws
+                    }
                 }
             }
         }
