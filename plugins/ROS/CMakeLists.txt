@@ -66,7 +66,7 @@ if(COMPILING_WITH_CATKIN)
     add_library( RosTopicPublisher SHARED
         TopicPublisherROS/statepublisher_rostopic.cpp
         ${PLUGIN_BASE_DIR}/statepublisher_base.h)
-    target_link_libraries( RosTopicPublisher commonROS )
+    target_link_libraries( RosTopicPublisher commonROS nlohmann_json::nlohmann_json)
     #############
     QT5_WRAP_UI ( ROSOUT_UI RosoutPublisher/logwidget.ui )
     add_library( RosoutPublisher SHARED ${ROSOUT_UI}

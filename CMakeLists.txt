@@ -167,6 +167,10 @@ add_subdirectory( 3rdparty/lua-5.3.4 )
 #add_subdirectory( 3rdparty/rosbridgecpp )
 add_subdirectory( plotter_gui )
 
+
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+add_subdirectory(3rdparty/json)
+
 add_subdirectory( plugins/DataLoadCSV )
 add_subdirectory( plugins/DataLoadULog )
 add_subdirectory( plugins/DataStreamSample )
