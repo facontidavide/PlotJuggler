@@ -240,7 +240,6 @@ void addLeaf(json *obj, const std::string& path, T value){
     } else {
         if(std::is_same<T, nonstd::span<uint8_t>>::value){ // check if type is blob
             (*obj)[tail.c_str()] = value;
-            std::cout << "blob" << std::endl;
         }
         else if(tail.find('.') != std::string::npos){
             auto name = tail.substr(0, tail.find('.'));
@@ -253,7 +252,7 @@ void addLeaf(json *obj, const std::string& path, T value){
     }
 }
 
-void messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clock){
+json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clock){
     using namespace RosIntrospection;
 
     const auto &topic_name = msg_instance.getTopic();
@@ -283,14 +282,29 @@ void messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clo
 
     json msg;
     msg["op"] = "publish";
+    msg["topic"] = topic_name;
 
     // Print the content of the message
-    printf("--------- %s ----------\n", topic_name.c_str() );
     for (auto it: renamed_value)
     {
         const std::string& key = it.first;
         const Variant& value   = it.second;
-        addLeaf(&msg["msg"], key, value.convert<double>());
+        if(!publish_clock){
+            if(key.find("header") != std::string::npos){
+                auto header = ros::Time::now().toSec();
+                if(key.find("stamp") != std::string::npos) {
+                    addLeaf(&msg["msg"], key, header);
+                }
+                else {
+                    addLeaf(&msg["msg"], key, value.convert<double>());
+                }
+            }
+            else {
+                addLeaf(&msg["msg"], key, value.convert<double>());
+            }
+        } else {
+            addLeaf(&msg["msg"], key, value.convert<double>());
+        }
     }
     for (auto it: flat_container.name)
     {
@@ -304,26 +318,13 @@ void messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clo
         auto value  = it.second;
         addLeaf(&msg["msg"], key, value);
     }
-    std::cout << msg.dump() << std::endl;
 
-//    if (!publish_clock) {
-//        const ROSMessageInfo *msg_info = RosIntrospectionFactory::parser().getMessageInfo(topic_name);
-//        if (msg_info && msg_info->message_tree.croot()->children().size() >= 1) {
-//            const auto &first_field = msg_info->message_tree.croot()->child(0)->value();
-//            if (first_field->type().baseName() == "std_msgs/Header") {
-//                std_msgs::Header msg;
-//                ros::serialization::IStream is(raw_buffer.data(), raw_buffer.size());
-//                ros::serialization::deserialize(is, msg);
-//                msg.stamp = ros::Time::now();
-//                ros::serialization::OStream os(raw_buffer.data(), raw_buffer.size());
-//                ros::serialization::serialize(os, msg);
-//            }
-//        }
-//    }
+    return msg;
 }
 
 void TopicPublisherROS::publishAnyMsg(const rosbag::MessageInstance &msg_instance) {
-    messageToJson(msg_instance, _publish_clock);
+    auto msg = messageToJson(msg_instance, _publish_clock);
+    std::cout << msg << std::endl;
     using namespace RosIntrospection;
 
     const auto &topic_name = msg_instance.getTopic();
