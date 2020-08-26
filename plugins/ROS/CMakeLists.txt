@@ -15,6 +15,7 @@ QT5_WRAP_UI ( COMMON_UI_SRC
     dialog_select_ros_topics.ui
     dialog_with_itemlist.ui
     publisher_select_dialog.ui
+        TopicPublisherROS/ws/imageview_dialog.ui
     )
 
 SET( COMMON_SRC
@@ -22,6 +23,7 @@ SET( COMMON_SRC
     dialog_select_ros_topics.cpp
     dialog_with_itemlist.h
     publisher_select_dialog.h
+    TopicPublisherROS/ws/imageview_dialog.h
    )
 
 set(PLUGIN_BASE_DIR ${PROJECT_SOURCE_DIR}/include/PlotJuggler)

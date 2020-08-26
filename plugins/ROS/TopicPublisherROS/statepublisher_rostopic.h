@@ -12,6 +12,8 @@
 #include "shape_shifter_factory.hpp"
 #include <rosbag/bag.h>
 #include <QtWebSockets/qwebsocket.h>
+#include "TopicPublisherROS/ws/imageview_dialog.h"
+
 
 class TopicPublisherROS : public StatePublisher {
 Q_OBJECT
@@ -71,6 +73,8 @@ private:
     QAction *_select_topics_to_publish;
 
     std::unordered_map<std::string, bool> _topics_to_publish;
+//    ImageViewDialog image_dialog;
+    std::map<std::string, ImageViewDialog*> _img_dialog_map;
 
     bool toPublish(const std::string &topic_name);
 

@@ -479,9 +479,22 @@ json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clo
 
 void TopicPublisherROS::publishAnyMsg(const rosbag::MessageInstance &msg_instance) {
     if(_ws_selected){
-        auto msg = messageToJson(msg_instance, _publish_clock);
-        if(_enabled){
-            _ws.sendTextMessage(msg.dump().c_str());
+        if(msg_instance.getDataType() == "sensor_msgs/Image"){
+            auto img_dialog = _img_dialog_map.find(msg_instance.getTopic());
+            if(img_dialog == _img_dialog_map.end()){
+                _img_dialog_map.insert({msg_instance.getTopic().c_str(), new ImageViewDialog()});
+                img_dialog = _img_dialog_map.find(msg_instance.getTopic());
+            }
+            img_dialog->second->update_frame(msg_instance);
+        }
+        else if(msg_instance.getDataType() == "sensor_msgs/CameraInfo"){
+
+        }
+        else {
+            auto msg = messageToJson(msg_instance, _publish_clock);
+            if(_enabled){
+                _ws.sendTextMessage(msg.dump().c_str());
+            }
         }
     }
     else if(_ros_selected){
