@@ -53,6 +53,8 @@ void TopicPublisherROS::ws_connected() {
 
 void TopicPublisherROS::ws_disconnected() {
     _enabled = false;
+    _ws_advertisers.clear();
+    _ws_url.clear();
     StatePublisher::setEnabled(false);
 }
 
@@ -108,7 +110,14 @@ void TopicPublisherROS::filterDialog(bool autoconfirm) {
         return;
     }
 
-    PublisherSelectDialog *dialog = new PublisherSelectDialog();
+    auto *dialog = new PublisherSelectDialog();
+
+    if(!_ws_url.empty()){
+        QString qurl(_ws_url.c_str());
+        dialog->ui()->lineEditWebsocketUrl->setText(qurl);
+        dialog->ui()->radioButtonWS->setChecked(_ws_selected);
+        dialog->ui()->radioButtonROS->setChecked(_ros_selected);
+    }
 
     std::map<std::string, QCheckBox *> checkbox;
 
@@ -293,15 +302,24 @@ bool TopicPublisherROS::toPublish(const std::string &topic_name) {
     }
 }
 
-template<class T>
-void addLeaf(json *obj, const std::string& path, T value){
+//template<class T>
+template<typename LeafValueType>
+void addLeaf(json *obj, const std::string& path, LeafValueType value){
     auto tail = path.substr(1, path.size() - 1); // remove first /
     if(tail.find('/') != std::string::npos){
         auto current = tail.substr(0, tail.find('/'));
         tail.erase(0, current.size());
-        addLeaf(&(*obj)[current.c_str()], tail, value);
+        if(current.find('.') != std::string::npos){
+            auto name = current.substr(0, current.find('.'));
+            auto pos = std::stoi(current.substr(current.find('.') + 1, current.size() - 1),nullptr,0);
+            addLeaf(&(*obj)[name.c_str()][pos], tail, value);
+        }
+        else {
+            addLeaf(&(*obj)[current.c_str()], tail, value);
+        }
+//        addLeaf(&(*obj)[current.c_str()], tail, value);
     } else {
-        if(std::is_same<T, nonstd::span<uint8_t>>::value){ // check if type is blob
+        if(std::is_same<LeafValueType, nonstd::span<uint8_t>>::value){ // check if type is blob
             (*obj)[tail.c_str()] = value;
         }
         else if(tail.find('.') != std::string::npos){
@@ -329,6 +347,55 @@ int nthOccurrence(const std::string& str, const std::string& findMe, int nth)
         cnt++;
     }
     return pos;
+}
+
+void castValue(json *msg, const std::string& path, const RosIntrospection::Variant& value){
+    using namespace RosIntrospection;
+    switch (value.getTypeID()) {
+        case BOOL:
+            if (value.convert<int>()) addLeaf(msg, path, true);
+            else addLeaf(msg, path, false);
+            break;
+        case BYTE:
+            addLeaf(msg, path, value.convert<uint8_t>());
+            break;
+        case INT8:
+            addLeaf(msg, path, value.convert<int8_t>());
+            break;
+        case CHAR:
+            addLeaf(msg, path, value.convert<uint8_t>());
+            break;
+        case UINT8:
+            addLeaf(msg, path, value.convert<uint8_t>());
+            break;
+        case UINT16:
+            addLeaf(msg, path, value.convert<uint16_t>());
+            break;
+        case INT16:
+            addLeaf(msg, path, value.convert<int16_t>());
+            break;
+        case UINT32:
+            addLeaf(msg, path, value.convert<uint32_t>());
+            break;
+        case INT32:
+            addLeaf(msg, path, value.convert<int32_t>());
+            break;
+        case FLOAT32:
+            if (!isnan(value.convert<float>())) addLeaf(msg, path, value.convert<float>());
+            break;
+        case UINT64:
+            addLeaf(msg, path, value.convert<uint64_t>());
+            break;
+        case INT64:
+            addLeaf(msg, path, value.convert<int64_t>());
+            break;
+        case FLOAT64:
+        case TIME:
+        case DURATION:
+        default:
+            if (!isnan(value.convert<double>())) addLeaf(msg, path, value.convert<double>());
+            break;
+    }
 }
 
 json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clock){
@@ -364,7 +431,7 @@ json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clo
     msg["topic"] = topic_name;
 
     // Print the content of the message
-    for (auto it: renamed_value)
+    for (const auto& it: renamed_value)
     {
         auto key = it.first;
         const Variant& value   = it.second;
@@ -378,155 +445,17 @@ json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clo
                     addLeaf(&msg["msg"], key, header);
                 }
                 else {
-                    switch (value.getTypeID()) {
-                        case BOOL:
-                            addLeaf(&msg["msg"], key, value.convert<int>());
-                            break;
-                        case BYTE:
-                            addLeaf(&msg["msg"], key, value.convert<uint8_t>());
-                            break;
-                        case INT8:
-                            addLeaf(&msg["msg"], key, value.convert<int8_t>());
-                            break;
-                        case CHAR:
-                            addLeaf(&msg["msg"], key, value.convert<uint8_t>());
-                            break;
-                        case UINT8:
-                            addLeaf(&msg["msg"], key, value.convert<uint8_t>());
-                            break;
-                        case UINT16:
-                            addLeaf(&msg["msg"], key, value.convert<uint16_t>());
-                            break;
-                        case INT16:
-                            addLeaf(&msg["msg"], key, value.convert<int16_t>());
-                            break;
-                        case UINT32:
-                            addLeaf(&msg["msg"], key, value.convert<uint32_t>());
-                            break;
-                        case INT32:
-                            addLeaf(&msg["msg"], key, value.convert<int32_t>());
-                            break;
-                        case FLOAT32:
-                            addLeaf(&msg["msg"], key, value.convert<float>());
-                            break;
-                        case UINT64:
-                            addLeaf(&msg["msg"], key, value.convert<uint64_t>());
-                            break;
-                        case INT64:
-                            addLeaf(&msg["msg"], key, value.convert<int64_t>());
-                            break;
-                        case FLOAT64:
-                            addLeaf(&msg["msg"], key, value.convert<double>());
-                            break;
-                        case TIME:
-                            addLeaf(&msg["msg"], key, value.convert<double>());
-                            break;
-                        case DURATION:
-                            addLeaf(&msg["msg"], key, value.convert<double>());
-                            break;
-                    }
+                    castValue(&msg["msg"], key, value);
                 }
             }
             else {
-                switch (value.getTypeID()) {
-                    case BOOL:
-                        addLeaf(&msg["msg"], key, value.convert<int>());
-                        break;
-                    case BYTE:
-                        addLeaf(&msg["msg"], key, value.convert<uint8_t>());
-                        break;
-                    case INT8:
-                        addLeaf(&msg["msg"], key, value.convert<int8_t>());
-                        break;
-                    case CHAR:
-                        addLeaf(&msg["msg"], key, value.convert<uint8_t>());
-                        break;
-                    case UINT8:
-                        addLeaf(&msg["msg"], key, value.convert<uint8_t>());
-                        break;
-                    case UINT16:
-                        addLeaf(&msg["msg"], key, value.convert<uint16_t>());
-                        break;
-                    case INT16:
-                        addLeaf(&msg["msg"], key, value.convert<int16_t>());
-                        break;
-                    case UINT32:
-                        addLeaf(&msg["msg"], key, value.convert<uint32_t>());
-                        break;
-                    case INT32:
-                        addLeaf(&msg["msg"], key, value.convert<int32_t>());
-                        break;
-                    case FLOAT32:
-                        addLeaf(&msg["msg"], key, value.convert<float>());
-                        break;
-                    case UINT64:
-                        addLeaf(&msg["msg"], key, value.convert<uint64_t>());
-                        break;
-                    case INT64:
-                        addLeaf(&msg["msg"], key, value.convert<int64_t>());
-                        break;
-                    case FLOAT64:
-                        addLeaf(&msg["msg"], key, value.convert<double>());
-                        break;
-                    case TIME:
-                        addLeaf(&msg["msg"], key, value.convert<double>());
-                        break;
-                    case DURATION:
-                        addLeaf(&msg["msg"], key, value.convert<double>());
-                        break;
-                }
+                castValue(&msg["msg"], key, value);
             }
         } else {
-                switch (value.getTypeID()) {
-                    case BOOL:
-                        addLeaf(&msg["msg"], key, value.convert<int>());
-                        break;
-                    case BYTE:
-                        addLeaf(&msg["msg"], key, value.convert<uint8_t>());
-                        break;
-                    case INT8:
-                        addLeaf(&msg["msg"], key, value.convert<int8_t>());
-                        break;
-                    case CHAR:
-                        addLeaf(&msg["msg"], key, value.convert<uint8_t>());
-                        break;
-                    case UINT8:
-                        addLeaf(&msg["msg"], key, value.convert<uint8_t>());
-                        break;
-                    case UINT16:
-                        addLeaf(&msg["msg"], key, value.convert<uint16_t>());
-                        break;
-                    case INT16:
-                        addLeaf(&msg["msg"], key, value.convert<int16_t>());
-                        break;
-                    case UINT32:
-                        addLeaf(&msg["msg"], key, value.convert<uint32_t>());
-                        break;
-                    case INT32:
-                        addLeaf(&msg["msg"], key, value.convert<int32_t>());
-                        break;
-                    case FLOAT32:
-                        addLeaf(&msg["msg"], key, value.convert<float>());
-                        break;
-                    case UINT64:
-                        addLeaf(&msg["msg"], key, value.convert<uint64_t>());
-                        break;
-                    case INT64:
-                        addLeaf(&msg["msg"], key, value.convert<int64_t>());
-                        break;
-                    case FLOAT64:
-                        addLeaf(&msg["msg"], key, value.convert<double>());
-                        break;
-                    case TIME:
-                        addLeaf(&msg["msg"], key, value.convert<double>());
-                        break;
-                    case DURATION:
-                        addLeaf(&msg["msg"], key, value.convert<double>());
-                        break;
-                }
+            castValue(&msg["msg"], key, value);
         }
     }
-    for (auto it: flat_container.name)
+    for (const auto& it: flat_container.name)
     {
         auto key    = it.first.toStdString();
         const std::string& value  = it.second;
@@ -535,7 +464,7 @@ json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clo
 
         addLeaf(&msg["msg"], key, value);
     }
-    for (auto it: flat_container.blob)
+    for (const auto& it: flat_container.blob)
     {
         auto key    = it.first.toStdString();
         auto value  = it.second;
