@@ -430,13 +430,13 @@ json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clo
     msg["op"] = "publish";
     msg["topic"] = topic_name;
 
-    // Print the content of the message
+
     for (const auto& it: renamed_value)
     {
         auto key = it.first;
         const Variant& value   = it.second;
 
-        key = key.substr(nthOccurrence(key, "/", 1), key.size() - 1);
+        key = key.substr(topic_name.length(), key.length() -1 );
 
         if(!publish_clock){
             if(key.find("header") != std::string::npos){
@@ -460,7 +460,7 @@ json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clo
         auto key    = it.first.toStdString();
         const std::string& value  = it.second;
 
-        key = key.substr(nthOccurrence(key, "/", 1), key.size() - 1);
+        key = key.substr(topic_name.length(), key.length() -1 );
 
         addLeaf(&msg["msg"], key, value);
     }
@@ -469,7 +469,7 @@ json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clo
         auto key    = it.first.toStdString();
         auto value  = it.second;
 
-        key = key.substr(nthOccurrence(key, "/", 1), key.size() - 1);
+        key = key.substr(topic_name.length(), key.length() -1 );
 
         addLeaf(&msg["msg"], key, value);
     }
@@ -486,9 +486,6 @@ void TopicPublisherROS::publishAnyMsg(const rosbag::MessageInstance &msg_instanc
                 img_dialog = _img_dialog_map.find(msg_instance.getTopic());
             }
             img_dialog->second->update_frame(msg_instance);
-        }
-        else if(msg_instance.getDataType() == "sensor_msgs/CameraInfo"){
-
         }
         else {
             auto msg = messageToJson(msg_instance, _publish_clock);

@@ -43,14 +43,28 @@ public:
         _current_frame = img;
       }
 
-      using namespace std::chrono;
       repaint();
   }
 
   void paintEvent(QPaintEvent *event){
       if (_current_frame != NULL){
-          QImage image = QImage((const unsigned char*)_current_frame->data.data(),_current_frame->width,
-                                _current_frame->height,_current_frame->step,QImage::Format_RGB888);
+          QImage image;
+          if(_current_frame->encoding == "8UC1"){
+              image = QImage((const unsigned char*)_current_frame->data.data(),_current_frame->width,
+                                    _current_frame->height,_current_frame->step,QImage::Format_Grayscale8);
+          }
+          else if(_current_frame->encoding == "16UC1"){
+              image = QImage((const unsigned char*)_current_frame->data.data(),_current_frame->width,
+                                    _current_frame->height,_current_frame->step,QImage::Format_RGB16);
+          }
+          else if(_current_frame->encoding == "rgb8"){
+              image = QImage((const unsigned char*)_current_frame->data.data(),_current_frame->width,
+                                    _current_frame->height,_current_frame->step,QImage::Format_RGB888);
+          } else {
+              image = QImage((const unsigned char*)_current_frame->data.data(),_current_frame->width,
+                             _current_frame->height,_current_frame->step,QImage::Format_ARGB32);
+          }
+
 
           QRectF target(0.0,0.0,image.width(),image.height());
           QRectF source(0.0,0.0,image.width(),image.height());
