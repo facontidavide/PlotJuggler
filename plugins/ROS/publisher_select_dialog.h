@@ -21,7 +21,9 @@ private:
 private slots:
 void on_radioButtonWS_toggled(bool checked){
     ui()->lineEditWebsocketUrl->setEnabled(checked);
+    ui()->checkBoxShowVideo->setEnabled(checked);
 };
+
 
 public:
   explicit PublisherSelectDialog(QWidget* parent = nullptr)

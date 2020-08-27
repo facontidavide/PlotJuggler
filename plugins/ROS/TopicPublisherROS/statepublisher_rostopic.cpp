@@ -21,7 +21,7 @@
 // for convenience
 using json = nlohmann::json;
 
-TopicPublisherROS::TopicPublisherROS() : _enabled(false), _ros_selected(true), _ws_selected(false),
+TopicPublisherROS::TopicPublisherROS() : _enabled(false), _ros_selected(true), _ws_selected(false), _ws_show_video(true),
 _node(nullptr), _publish_clock(true) {
     QSettings settings;
     _publish_clock = settings.value("TopicPublisherROS/publish_clock", true).toBool();
@@ -117,6 +117,7 @@ void TopicPublisherROS::filterDialog(bool autoconfirm) {
         dialog->ui()->lineEditWebsocketUrl->setText(qurl);
         dialog->ui()->radioButtonWS->setChecked(_ws_selected);
         dialog->ui()->radioButtonROS->setChecked(_ros_selected);
+        dialog->ui()->checkBoxShowVideo->setChecked(_ws_show_video);
     }
 
     std::map<std::string, QCheckBox *> checkbox;
@@ -177,6 +178,7 @@ void TopicPublisherROS::filterDialog(bool autoconfirm) {
         _publish_clock = dialog->ui()->radioButtonClock->isChecked();
         _ros_selected = dialog->ui()->radioButtonROS->isChecked();
         _ws_selected = dialog->ui()->radioButtonWS->isChecked();
+        _ws_show_video = dialog->ui()->checkBoxShowVideo->isChecked();
 
         if(_ws_selected){
             _ws_url = dialog->ui()->lineEditWebsocketUrl->text().toStdString();
@@ -304,7 +306,7 @@ bool TopicPublisherROS::toPublish(const std::string &topic_name) {
 
 //template<class T>
 template<typename LeafValueType>
-void addLeaf(json *obj, const std::string& path, LeafValueType value){
+void addLeaf(json *obj, const std::string& path, LeafValueType value, bool is_blob= false){
     auto tail = path.substr(1, path.size() - 1); // remove first /
     if(tail.find('/') != std::string::npos){
         auto current = tail.substr(0, tail.find('/'));
@@ -317,10 +319,10 @@ void addLeaf(json *obj, const std::string& path, LeafValueType value){
         else {
             addLeaf(&(*obj)[current.c_str()], tail, value);
         }
-//        addLeaf(&(*obj)[current.c_str()], tail, value);
     } else {
-        if(std::is_same<LeafValueType, nonstd::span<uint8_t>>::value){ // check if type is blob
-            (*obj)[tail.c_str()] = value;
+        if(is_blob){ // check if type is blob
+            auto name = tail.substr(0, tail.find('.'));
+            (*obj)[name] = value;
         }
         else if(tail.find('.') != std::string::npos){
             auto name = tail.substr(0, tail.find('.'));
@@ -471,7 +473,7 @@ json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clo
 
         key = key.substr(topic_name.length(), key.length() -1 );
 
-        addLeaf(&msg["msg"], key, value);
+        addLeaf(&msg["msg"], key, value, true);
     }
 
     return msg;
@@ -479,15 +481,22 @@ json messageToJson(const rosbag::MessageInstance &msg_instance, bool publish_clo
 
 void TopicPublisherROS::publishAnyMsg(const rosbag::MessageInstance &msg_instance) {
     if(_ws_selected){
-        if(msg_instance.getDataType() == "sensor_msgs/Image"){
-            auto img_dialog = _img_dialog_map.find(msg_instance.getTopic());
-            if(img_dialog == _img_dialog_map.end()){
-                _img_dialog_map.insert({msg_instance.getTopic().c_str(), new ImageViewDialog()});
-                img_dialog = _img_dialog_map.find(msg_instance.getTopic());
+        if(_ws_show_video){
+            if(msg_instance.getDataType() == "sensor_msgs/Image"){
+                auto img_dialog = _img_dialog_map.find(msg_instance.getTopic());
+                if(img_dialog == _img_dialog_map.end()){
+                    _img_dialog_map.insert({msg_instance.getTopic().c_str(), new ImageViewDialog()});
+                    img_dialog = _img_dialog_map.find(msg_instance.getTopic());
+                }
+                img_dialog->second->update_frame(msg_instance);
             }
-            img_dialog->second->update_frame(msg_instance);
-        }
-        else {
+            else {
+                auto msg = messageToJson(msg_instance, _publish_clock);
+                if(_enabled){
+                    _ws.sendTextMessage(msg.dump().c_str());
+                }
+            }
+        } else {
             auto msg = messageToJson(msg_instance, _publish_clock);
             if(_enabled){
                 _ws.sendTextMessage(msg.dump().c_str());
@@ -595,12 +604,24 @@ void TopicPublisherROS::updateState(double current_time) {
             if(_ws_selected){
                 auto it = _ws_advertisers.find(msg_instance.getTopic().c_str());
                 if(it == _ws_advertisers.end()){
-                    _ws_advertisers.insert({msg_instance.getTopic(), msg_instance.getDataType()});
-                    json advertise_msg;
-                    advertise_msg["op"] = "advertise";
-                    advertise_msg["topic"] = msg_instance.getTopic();
-                    advertise_msg["type"] = msg_instance.getDataType();
-                    _ws.sendTextMessage(advertise_msg.dump().c_str());
+                    if(_ws_show_video) { // advertise only whats not a video topic
+                        if (!(msg_instance.getDataType() == "sensor_msgs/Image")) {
+                            _ws_advertisers.insert({msg_instance.getTopic(), msg_instance.getDataType()});
+                            json advertise_msg;
+                            advertise_msg["op"] = "advertise";
+                            advertise_msg["topic"] = msg_instance.getTopic();
+                            advertise_msg["type"] = msg_instance.getDataType();
+                            _ws.sendTextMessage(advertise_msg.dump().c_str());
+                        }
+                    }
+                     else { // advertise all topics to ws
+                        _ws_advertisers.insert({msg_instance.getTopic(), msg_instance.getDataType()});
+                        json advertise_msg;
+                        advertise_msg["op"] = "advertise";
+                        advertise_msg["topic"] = msg_instance.getTopic();
+                        advertise_msg["type"] = msg_instance.getDataType();
+                        _ws.sendTextMessage(advertise_msg.dump().c_str());
+                     }
                 }
             }
             publishAnyMsg(msg_instance);

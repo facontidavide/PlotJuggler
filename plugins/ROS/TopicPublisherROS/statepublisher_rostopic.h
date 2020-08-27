@@ -53,6 +53,7 @@ private:
     std::map<std::string, std::string> _ws_advertisers;
     bool _ros_selected;
     bool _ws_selected;
+    bool _ws_show_video;
     bool _enabled;
     ros::NodeHandlePtr _node;
     bool _publish_clock;
