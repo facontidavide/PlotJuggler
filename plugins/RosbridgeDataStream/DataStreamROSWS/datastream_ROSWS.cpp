@@ -8,39 +8,68 @@
 #include <QApplication>
 #include <QSettings>
 #include <QFileDialog>
-#include <QJsonDocument>
-#include <QJsonArray>
+//#include <QJsonDocument>
+//#include <QJsonArray>
 #include <qwsdialog.h>
 
 #include "dialog_select_ros_topics.h"
+#include "../../../3rdparty/json/single_include/nlohmann/json.hpp"
 
-DataStreamROSWS::DataStreamROSWS() : DataStreamer(), _fetched_topics(false), _prev_clock_time(0)
+using json = nlohmann::json;
+
+DataStreamROSWS::DataStreamROSWS() : DataStreamer(), _fetched_topics(false), _prev_clock_time(0), _connected(false)
 {
   _running = false;
   loadDefaultSettings();
 }
 
- void flatten_json(std::vector<std::pair<std::string, double>> *output, std::string prefix, QJsonValueRef obj){
-    if(obj.isObject()){
-        foreach(const QString& key, obj.toObject().keys()) {
-          flatten_json(output, prefix + "/" + key.toStdString() , obj.toObject()[key]);
+void DataStreamROSWS::ws_thread(){
+    try {
+        // Initialize ASIO
+        _ws.init_asio();
+        _ws.set_access_channels(websocketpp::log::alevel::none);
+        _ws.clear_access_channels(websocketpp::log::alevel::none);
+        _ws.set_error_channels(websocketpp::log::elevel::none);
+
+        // Register our callbacks
+        _ws.set_open_handler(bind(&DataStreamROSWS::onConnected, this, ::_1));
+        _ws.set_close_handler(bind(&DataStreamROSWS::onDisconnected, this, ::_1));
+        _ws.set_message_handler(bind(&DataStreamROSWS::handleWsMessage, this, ::_1,::_2));
+
+
+        websocketpp::lib::error_code ec;
+        ws_client::connection_ptr con = _ws.get_connection(_ws_url, ec);
+        if (ec) {
+            std::cout << "could not create connection because: " << ec.message() << std::endl;
+        }
+
+        _ws.connect(con);
+
+        _ws.run();
+    } catch (websocketpp::exception const & e) {
+        std::cout << e.what() << std::endl;
+    }
+}
+
+ void flatten_json(std::vector<std::pair<std::string, double>> *output, std::string prefix, json *obj){
+    if(obj->is_object()){
+        for (auto it : (*obj).items()){
+            flatten_json(output, prefix + "/" + it.key() , &(*obj)[it.key()]);
         }
     }
     else {
-        if(obj.isDouble()){
-            output->push_back({prefix, obj.toDouble()});
+        if(obj->is_number()){
+            output->push_back({prefix, obj->get<double>()});
         }
     }
 }
 
-QString generateSubscribeTopicMessage(const std::string& topic_name)
+std::string generateSubscribeTopicMessage(const std::string& topic_name)
 {
-  QJsonObject topic_request;
-  topic_request["op"] = "subscribe";
-  topic_request["topic"] = topic_name.c_str();
-  QJsonDocument doc(topic_request);
-  QString strJson(doc.toJson(QJsonDocument::Compact));
-  return strJson;
+    json topic_list_req;
+    topic_list_req["op"] = "subscribe";
+    topic_list_req["topic"] = topic_name.c_str();
+  return topic_list_req.dump();
 }
 
 void DataStreamROSWS::subscribe()
@@ -57,7 +86,7 @@ void DataStreamROSWS::subscribe()
   {
     const std::string topic_name = _config.selected_topics[i].toStdString();
 
-    _ws.sendTextMessage(generateSubscribeTopicMessage(topic_name));
+    _ws.send(_ws_connection, generateSubscribeTopicMessage(topic_name), websocketpp::frame::opcode::text);
 
     progress_dialog.setValue(i);
     QApplication::processEvents();
@@ -68,35 +97,38 @@ void DataStreamROSWS::subscribe()
   }
 }
 
-QString generateGetTopicsListMessage()
+std::string generateGetTopicsListMessage()
 {
-  QJsonObject topics_request;
-  topics_request["op"] = "call_service";
-  topics_request["service"] = "/rosapi/topics";
-  QJsonDocument doc(topics_request);
-  QString strJson(doc.toJson(QJsonDocument::Compact));
-  return strJson;
+    json topics_list_req;
+    topics_list_req["op"] = "call_service";
+    topics_list_req["service"] = "/rosapi/topics";
+  return topics_list_req.dump();
 }
 
-void DataStreamROSWS::onConnected()
+void DataStreamROSWS::onConnected(connection_hdl hdl)
 {
+    _connected = true;
+    _ws_connection = hdl;
   qDebug() << "on connection";
-  _ws.sendTextMessage(generateGetTopicsListMessage());
+  _ws.send(_ws_connection, generateGetTopicsListMessage(), websocketpp::frame::opcode::text);
+
 }
 
-void DataStreamROSWS::handleWsMessage(const QString& message)
+void DataStreamROSWS::handleWsMessage(connection_hdl hdl, ws_client::message_ptr msg)
 {
-  QJsonDocument jsonResponse = QJsonDocument::fromJson(message.toUtf8());
-  QJsonObject jsonObject = jsonResponse.object();
+    json jsonRes;
+    jsonRes = json::parse(msg->get_payload().data());
 
-  if (jsonObject["service"].toString() == "/rosapi/topics")
+  if (jsonRes["service"] == "/rosapi/topics")
   {
-    auto topicsArr = jsonObject["values"].toObject()["topics"].toArray();
-    auto typesArr = jsonObject["values"].toObject()["types"].toArray();
+    auto topicsArr = jsonRes["values"]["topics"];
+    auto typesArr = jsonRes["values"]["types"];
 
     for (int i = 0; i < topicsArr.size(); i++)
     {
-      _all_topics.emplace_back(topicsArr[i].toString(), typesArr[i].toString());
+        QString topic_name(topicsArr[i].get<std::string>().c_str());
+        QString topic_type(typesArr[i].get<std::string>().c_str());
+      _all_topics.emplace_back(topic_name, topic_type);
     }
 
     if (!_all_topics.empty())
@@ -104,26 +136,26 @@ void DataStreamROSWS::handleWsMessage(const QString& message)
       _fetched_topics = true;
     }
   }
-  else if(jsonObject["op"].toString() == "publish")
+  else if(jsonRes["op"] == "publish")
   {
     double msg_time =
         std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
-    if (!jsonObject["msg"].toObject()["header"].isNull())
+    if (jsonRes["msg"]["header"].empty())
     {
-      auto header = jsonObject["msg"].toObject()["header"].toObject();
-      if (header["stamp"].toObject()["secs"].toDouble() != 0)
+      auto header = jsonRes["msg"]["header"];
+      if (!header["stamp"]["secs"].empty())
       {
-        double sec = header["stamp"].toObject()["secs"].toDouble();
-        double nsec = header["stamp"].toObject()["nsecs"].toDouble();
+        double sec = header["stamp"]["secs"].get<double>();
+        double nsec = header["stamp"]["nsecs"].get<double>();
         msg_time = sec + (nsec * 1e-9);
       }
     }
 
-    auto topic_name = jsonObject["topic"].toString().toStdString();
+    auto topic_name = jsonRes["topic"].get<std::string>();
 
     std::vector<std::pair<std::string, double>> key_value_arr;
-    flatten_json(&key_value_arr, topic_name, jsonObject["msg"]);
+    flatten_json(&key_value_arr, topic_name, &jsonRes["msg"]);
 
     for( auto &data : key_value_arr){
         auto index_it = dataMap().numeric.find(data.first);
@@ -144,7 +176,7 @@ void DataStreamROSWS::handleWsMessage(const QString& message)
             plot_pair = dataMap().addUserDefined(prefixed_topic_name);
         }
         PlotDataAny &user_defined_data = plot_pair->second;
-        user_defined_data.pushBack(PlotDataAny::Point(msg_time, nonstd::any(std::move(message))));
+        user_defined_data.pushBack(PlotDataAny::Point(msg_time, nonstd::any(std::move(msg->get_payload().data()))));
     }
 
     //------------------------------
@@ -161,8 +193,10 @@ void DataStreamROSWS::handleWsMessage(const QString& message)
   }
 }
 
-void DataStreamROSWS::onDisconnected()
+void DataStreamROSWS::onDisconnected(connection_hdl hdl)
 {
+    _connected = false;
+    _ws_connection.reset(); // TODO: check if this causes troubles
   qDebug() << "on disconnected";
   if (_running)
   {
@@ -173,7 +207,7 @@ void DataStreamROSWS::onDisconnected()
     if (ret == 1)
     {
       this->shutdown();
-      if (!_ws.isValid())
+      if (!_connected)
       {
         emit connectionClosed();
         return;
@@ -192,16 +226,13 @@ void DataStreamROSWS::onDisconnected()
 
 bool DataStreamROSWS::start(QStringList* selected_datasources)
 {
-  if (!_ws.isValid())
+  if (!_connected) // TODO: does it indicate open websocket?
   {
     QWSDialog dialog;
     dialog.exec();
-    auto url = dialog.get_url();
+    _ws_url = dialog.get_url();
 
-    connect(&_ws, &QWebSocket::connected, this, &DataStreamROSWS::onConnected);
-    connect(&_ws, &QWebSocket::disconnected, this, &DataStreamROSWS::onDisconnected);
-    connect(&_ws, &QWebSocket::textMessageReceived, this, &DataStreamROSWS::handleWsMessage);
-    _ws.open(QUrl(url.c_str()));
+      _ws_trd = new std::thread(&DataStreamROSWS::ws_thread, this);
   }
 
   {
@@ -251,7 +282,7 @@ bool DataStreamROSWS::isRunning() const
 
 void DataStreamROSWS::shutdown()
 {
-  _ws.close();
+  _ws.stop();
   _running = false;
 }
 

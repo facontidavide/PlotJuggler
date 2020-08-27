@@ -7,8 +7,6 @@ add_definitions(${QT_DEFINITIONS})
 add_definitions(-DQT_PLUGIN)
 add_definitions(-DQT_SHARED)
 
-find_package(Qt5 COMPONENTS WebSockets REQUIRED)
-
 QT5_WRAP_UI ( COMMON_UI_SRC
     qnodedialog.ui
     rule_editing.ui
@@ -70,7 +68,7 @@ if(COMPILING_WITH_CATKIN)
     add_library( RosTopicPublisher SHARED
         TopicPublisherROS/statepublisher_rostopic.cpp
         ${PLUGIN_BASE_DIR}/statepublisher_base.h)
-    target_link_libraries( RosTopicPublisher commonROS nlohmann_json::nlohmann_json ${Qt5WebSockets_LIBRARIES})
+    target_link_libraries( RosTopicPublisher commonROS nlohmann_json::nlohmann_json ${WEBSOCKETPP_LIB})
     #############
     QT5_WRAP_UI ( ROSOUT_UI RosoutPublisher/logwidget.ui )
     add_library( RosoutPublisher SHARED ${ROSOUT_UI}

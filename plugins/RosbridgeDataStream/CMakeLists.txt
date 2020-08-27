@@ -7,8 +7,6 @@ add_definitions(${QT_DEFINITIONS})
 add_definitions(-DQT_PLUGIN)
 add_definitions(-DQT_SHARED)
 
-find_package(Qt5 COMPONENTS WebSockets REQUIRED)
-
 
 QT5_WRAP_UI ( COMMON_UI_SRC
     qwsdialog.ui
@@ -31,13 +29,16 @@ list( APPEND COMMON_SRC
     qwsdialog.cpp
     )
 
+
 add_library( commonLibs STATIC ${COMMON_SRC} ${COMMON_UI_SRC} )
 target_compile_definitions(commonLibs PUBLIC DISABLE_RULE_EDITING)
 target_link_libraries( commonLibs PRIVATE
     ${Qt5Widgets_LIBRARIES}
     ${Qt5Xml_LIBRARIES}
-    ${Qt5WebSockets_LIBRARIES}
     fmt::fmt-header-only
+    ${WEBSOCKETPP_LIB}
+        boost_system
+        nlohmann_json::nlohmann_json
 )
 
 #########

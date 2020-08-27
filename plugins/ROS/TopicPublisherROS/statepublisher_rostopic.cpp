@@ -18,11 +18,39 @@
 #include <nlohmann/json.hpp>
 #include <QtCore/QTimer>
 
+
 // for convenience
 using json = nlohmann::json;
 
+void TopicPublisherROS::ws_thread(){
+    using websocketpp::lib::bind;
+    try {
+        // Initialize ASIO
+        _ws.init_asio();
+        _ws.set_access_channels(websocketpp::log::alevel::none);
+        _ws.clear_access_channels(websocketpp::log::alevel::none);
+        _ws.set_error_channels(websocketpp::log::elevel::none);
+
+        // Register our callbacks
+        _ws.set_open_handler(bind(&TopicPublisherROS::ws_connected, this, ::_1));
+        _ws.set_close_handler(bind(&TopicPublisherROS::ws_disconnected, this, ::_1));
+
+        websocketpp::lib::error_code ec;
+        ws_client::connection_ptr con = _ws.get_connection(_ws_url, ec);
+        if (ec) {
+            std::cout << "could not create connection because: " << ec.message() << std::endl;
+        }
+
+        _ws.connect(con);
+
+        _ws.run();
+    } catch (websocketpp::exception const & e) {
+        std::cout << e.what() << std::endl;
+    }
+}
+
 TopicPublisherROS::TopicPublisherROS() : _enabled(false), _ros_selected(true), _ws_selected(false), _ws_show_video(true),
-_node(nullptr), _publish_clock(true) {
+_node(nullptr), _publish_clock(true), _ws_trd(nullptr) {
     QSettings settings;
     _publish_clock = settings.value("TopicPublisherROS/publish_clock", true).toBool();
 }
@@ -41,7 +69,8 @@ void TopicPublisherROS::setParentMenu(QMenu *menu, QAction *action) {
     connect(_select_topics_to_publish, &QAction::triggered, this, &TopicPublisherROS::filterDialog);
 }
 
-void TopicPublisherROS::ws_connected() {
+void TopicPublisherROS::ws_connected(connection_hdl hdl) {
+    _ws_connection = hdl;
     _enabled = true;
     StatePublisher::setEnabled(true);
     if(_clock_publisher){
@@ -51,7 +80,8 @@ void TopicPublisherROS::ws_connected() {
     }
 }
 
-void TopicPublisherROS::ws_disconnected() {
+void TopicPublisherROS::ws_disconnected(connection_hdl hdl) {
+    _ws_connection.reset(); //TODO: check if causing trouble
     _enabled = false;
     _ws_advertisers.clear();
     _ws_url.clear();
@@ -94,11 +124,9 @@ void TopicPublisherROS::setEnabled(bool to_enable) {
     }
     else if(_ws_selected){
         if(to_enable){
-            connect(&_ws, &QWebSocket::connected, this, &TopicPublisherROS::ws_connected);
-            connect(&_ws, &QWebSocket::disconnected, this, &TopicPublisherROS::ws_disconnected);
-            _ws.open(QUrl(_ws_url.c_str()));
+            _ws_trd = new std::thread(&TopicPublisherROS::ws_thread, this);
         } else {
-            _ws.close();
+            _ws.stop();
         }
     }
 }
@@ -166,7 +194,7 @@ void TopicPublisherROS::filterDialog(bool autoconfirm) {
                         json advertise_msg;
                         advertise_msg["op"] = "unadvertise";
                         advertise_msg["topic"] = it->first;
-                        _ws.sendTextMessage(advertise_msg.dump().c_str());
+                        _ws.send(_ws_connection, advertise_msg.dump(), websocketpp::frame::opcode::text);
                     }
                     it = _ws_advertisers.erase(it);
                 } else {
@@ -493,13 +521,13 @@ void TopicPublisherROS::publishAnyMsg(const rosbag::MessageInstance &msg_instanc
             else {
                 auto msg = messageToJson(msg_instance, _publish_clock);
                 if(_enabled){
-                    _ws.sendTextMessage(msg.dump().c_str());
+                    _ws.send(_ws_connection, msg.dump(), websocketpp::frame::opcode::text);
                 }
             }
         } else {
             auto msg = messageToJson(msg_instance, _publish_clock);
             if(_enabled){
-                _ws.sendTextMessage(msg.dump().c_str());
+                _ws.send(_ws_connection, msg.dump(), websocketpp::frame::opcode::text);
             }
         }
     }
@@ -611,7 +639,7 @@ void TopicPublisherROS::updateState(double current_time) {
                             advertise_msg["op"] = "advertise";
                             advertise_msg["topic"] = msg_instance.getTopic();
                             advertise_msg["type"] = msg_instance.getDataType();
-                            _ws.sendTextMessage(advertise_msg.dump().c_str());
+                            _ws.send(_ws_connection, advertise_msg.dump(), websocketpp::frame::opcode::text);
                         }
                     }
                      else { // advertise all topics to ws
@@ -620,8 +648,9 @@ void TopicPublisherROS::updateState(double current_time) {
                         advertise_msg["op"] = "advertise";
                         advertise_msg["topic"] = msg_instance.getTopic();
                         advertise_msg["type"] = msg_instance.getDataType();
-                        _ws.sendTextMessage(advertise_msg.dump().c_str());
-                     }
+                        _ws.send(_ws_connection, advertise_msg.dump(), websocketpp::frame::opcode::text);
+
+                    }
                 }
             }
             publishAnyMsg(msg_instance);
@@ -695,7 +724,8 @@ void TopicPublisherROS::play(double current_time) {
                         advertise_msg["op"] = "advertise";
                         advertise_msg["topic"] = msg_instance.getTopic();
                         advertise_msg["type"] = msg_instance.getDataType();
-                        _ws.sendTextMessage(advertise_msg.dump().c_str());
+                        _ws.send(_ws_connection, advertise_msg.dump(), websocketpp::frame::opcode::text);
+
                     }
                 }
                 publishAnyMsg(msg_instance);

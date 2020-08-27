@@ -136,6 +136,7 @@ include_directories(
     ./3rdparty/marl/include
     ./3rdparty/sol
     ./3rdparty/lua-5.3.4/src
+    ./3rdparty/websocketpp
 )
 
 #########################  INSTALL ####################################
@@ -164,8 +165,9 @@ add_subdirectory( 3rdparty/color_widgets )
 #add_subdirectory( 3rdparty/marl )
 add_subdirectory( 3rdparty/qwt/src )
 add_subdirectory( 3rdparty/lua-5.3.4 )
-#add_subdirectory( 3rdparty/rosbridgecpp )
+add_subdirectory( 3rdparty/websocketpp )
 add_subdirectory( plotter_gui )
+
 
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")

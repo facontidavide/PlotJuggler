@@ -11,9 +11,16 @@
 #include "PlotJuggler/statepublisher_base.h"
 #include "shape_shifter_factory.hpp"
 #include <rosbag/bag.h>
-#include <QtWebSockets/qwebsocket.h>
 #include "TopicPublisherROS/ws/imageview_dialog.h"
 
+#include <websocketpp/config/asio_no_tls_client.hpp>
+#include <websocketpp/client.hpp>
+
+typedef websocketpp::client<websocketpp::config::asio_client> ws_client;
+using websocketpp::connection_hdl;
+using websocketpp::lib::placeholders::_1;
+using websocketpp::lib::placeholders::_2;
+using websocketpp::lib::bind;
 
 class TopicPublisherROS : public StatePublisher {
 Q_OBJECT
@@ -58,11 +65,14 @@ private:
     ros::NodeHandlePtr _node;
     bool _publish_clock;
 
-    void ws_connected();
+    void ws_connected(connection_hdl hdl);
+    void ws_disconnected(connection_hdl hdl);
 
-    void ws_disconnected();
+    void ws_thread();
 
-    QWebSocket _ws;
+    ws_client _ws;
+    connection_hdl _ws_connection;
+    std::thread *_ws_trd;
     std::string _ws_url;
 
     std::shared_ptr<tf2_ros::TransformBroadcaster> _tf_broadcaster;
