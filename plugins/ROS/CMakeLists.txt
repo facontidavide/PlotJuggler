@@ -30,11 +30,15 @@ set(PLUGIN_BASE_DIR ${PROJECT_SOURCE_DIR}/include/PlotJuggler)
 
 if(COMPILING_WITH_CATKIN)
 
+    find_package(sensor_msgs REQUIRED)
+
     include_directories(
         ./ ../
         ${PROJECT_SOURCE_DIR}/include/
         ros1_introspection/include
-        ${catkin_INCLUDE_DIRS}  )
+        ${catkin_INCLUDE_DIRS}
+            ${sensor_msgs_INCLUDE_DIRS}
+    )
 
     add_subdirectory(ros1_introspection)
 
