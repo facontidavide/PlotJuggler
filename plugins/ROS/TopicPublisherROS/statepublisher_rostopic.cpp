@@ -17,6 +17,7 @@
 #include "QtCore/qjsondocument.h"
 #include <nlohmann/json.hpp>
 #include <QtCore/QTimer>
+#include <cmath>
 
 
 // for convenience
