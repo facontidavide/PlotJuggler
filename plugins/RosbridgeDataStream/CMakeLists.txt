@@ -47,7 +47,15 @@ add_library(DataStreamROSWS SHARED
         ${PLUGIN_BASE_DIR}/datastreamer_base.h )
 target_link_libraries(DataStreamROSWS commonLibs )
 
-install(TARGETS
-        DataStreamROSWS
-    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    )
+
+if(COMPILING_WITH_CATKIN)
+    install(TARGETS DataStreamROSWS
+            ARCHIVE DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+            LIBRARY DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+            RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION} )
+elseif(COMPILING_WITH_AMENT)
+    install(TARGETS DataStreamROSWS
+            DESTINATION  lib/${PROJECT_NAME} )
+else()
+    install(TARGETS DataStreamROSWS DESTINATION bin  )
+endif()
