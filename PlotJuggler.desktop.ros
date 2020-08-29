@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=PlotJuggler
-Exec=plotjuggler
-Icon=plotjuggler.svg
-Comment=Visualize timeseries like a pro
-Terminal=false
-Categories=Development;
-Name[en_US]=PlotJuggler

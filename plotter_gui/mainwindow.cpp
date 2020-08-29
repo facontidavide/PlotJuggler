@@ -875,7 +875,7 @@ void MainWindow::updateRecentLayoutMenu(QStringList new_filenames)
 
 void MainWindow::deleteAllData()
 {
-  forEachWidget([](PlotWidget* plot) { plot->detachAllCurves(); });
+  forEachWidget([](PlotWidget* plot) { plot->removeAllCurves(); });
 
   _mapped_plot_data.numeric.clear();
   _mapped_plot_data.user_defined.clear();

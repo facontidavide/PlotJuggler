@@ -152,9 +152,8 @@ bool TabbedPlotWidget::xmlLoadState(QDomElement& tabbed_area)
       this->addTab(NULL);
       num_tabs++;
     }
-    PlotMatrix* plot_matrix = static_cast<PlotMatrix*>(tabWidget()->widget(index));
-    bool success = plot_matrix->xmlLoadState(plotmatrix_el);
 
+    PlotMatrix* plot_matrix = static_cast<PlotMatrix*>(tabWidget()->widget(index));
     // read tab name
     if (plotmatrix_el.hasAttribute("tab_name"))
     {
@@ -162,6 +161,8 @@ bool TabbedPlotWidget::xmlLoadState(QDomElement& tabbed_area)
       tabWidget()->setTabText(index, tab_name);
       plot_matrix->setName(tab_name);
     }
+
+    bool success = plot_matrix->xmlLoadState(plotmatrix_el);
 
     if (!success)
     {
@@ -495,7 +496,7 @@ void TabbedPlotWidget::on_tabWidget_tabCloseRequested(int index)
     for (unsigned p = 0; p < matrix->plotCount(); p++)
     {
       PlotWidget* plot = matrix->plotAt(p);
-      plot->detachAllCurves();
+      plot->removeAllCurves();
       plot->deleteLater();
     }
     matrix->deleteLater();

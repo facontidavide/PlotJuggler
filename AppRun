@@ -1,0 +1,14 @@
+#!/bin/sh
+
+SELF_DIR="$(dirname "$(readlink -f "$0")")"
+LIBS_PATH="$SELF_DIR/usr/lib"
+
+if [ -z "$LD_LIBRARY_PATH" ]; then
+  LD_LIBRARY_PATH="$LIBS_PATH"
+else
+  LD_LIBRARY_PATH="$LIBS_PATH:$LD_LIBRARY_PATH"
+fi
+
+export LD_LIBRARY_PATH
+
+exec "$SELF_DIR/usr/bin/PlotJuggler"

@@ -2,6 +2,18 @@
 Changelog for package plotjuggler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.8.4 (2020-08-15)
+------------------
+* readme updated
+* fix issue `#318 <https://github.com/facontidavide/PlotJuggler/issues/318>`_
+* fix  `#170 <https://github.com/facontidavide/PlotJuggler/issues/170>`_ : problem with ULOG parser in Windows
+* build fixes to work on ROS2 eloquent (`#314 <https://github.com/facontidavide/PlotJuggler/issues/314>`_)
+* add qtpainterpath.h (`#313 <https://github.com/facontidavide/PlotJuggler/issues/313>`_)
+* Update datastream_sample.cpp
+* Update contributors.txt
+* Fix another sprintf buffer size warning (`#303 <https://github.com/facontidavide/PlotJuggler/issues/303>`_)
+* Contributors: Akash Patel, Davide Faconti, Lucas, Mike Purvis
+
 2.8.3 (2020-07-11)
 ------------------
 * more memes

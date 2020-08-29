@@ -7,7 +7,7 @@
 [![Join the chat at https://gitter.im/PlotJuggler/Lobby](https://badges.gitter.im/PlotJuggler/Lobby.svg)](https://gitter.im/PlotJuggler/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=I%20use%20PlotJuggler%20and%20it%20is%20amazing%0D%0A&url=https://github.com/facontidavide/PlotJuggler&via=facontidavide&hashtags=dataviz,plotjuggler,GoROS,PX4)
 
-# PlotJuggler 2.8.3
+# PlotJuggler 2.8.4
 
 QT5 based application to display time series in plots, using an intuitive "drag and drop" interface.
 
@@ -44,15 +44,18 @@ Watch this video to learn how to use it.
 [![Custom timeseries](docs/images/custom_functions.png)](https://vimeo.com/311245098)
 
 
-## "Download and Run" (Ubuntu 16.04 Xenial or later)
+## "Download and Run" 
 
-For those of you that can't wait and want to get their hands dirty, just download the AppImage:
+For those of you that can't wait and want to get their hands dirty, you can download these binaries:
 
-ROS1 only: [PlotJuggler-2.7.x-x86_64.AppImage](https://github.com/facontidavide/PlotJuggler/releases/download/2.7.0/PlotJuggler-2.7.0-x86_64.AppImage).
+**Linux with ROS plugins**: [PlotJuggler-Linux-ROS-2.8.4.AppImage](https://github.com/facontidavide/PlotJuggler/releases/download/2.8.4/PlotJuggler-Linux-ROS-2.8.4.AppImage).
    
 Do not forget to make it executable with the command 
 
     chmod +x ./PlotJuggler-*-x86_64.AppImage
+	
+    
+**Windows Installer**: [PlotJuggler_WIN_Installer-2.8.4.exe](https://github.com/facontidavide/PlotJuggler/releases/download/2.8.4/PlotJuggler_WIN_Installer-2.8.4.exe).
 
 ## How to build (without ROS plugins)
 

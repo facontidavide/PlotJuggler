@@ -226,7 +226,7 @@ void PlotWidget::buildActions()
   connect(_action_removeCurve, &QAction::triggered, this, &PlotWidget::launchRemoveCurveDialog);
 
   _action_removeAllCurves = new QAction("&Remove ALL curves", this);
-  connect(_action_removeAllCurves, &QAction::triggered, this, &PlotWidget::detachAllCurves);
+  connect(_action_removeAllCurves, &QAction::triggered, this, &PlotWidget::removeAllCurves);
   connect(_action_removeAllCurves, &QAction::triggered, this, &PlotWidget::undoableChange);
 
   _action_changeColorsDialog = new QAction("&Change colors", this);
@@ -722,7 +722,7 @@ void PlotWidget::dropEvent(QDropEvent*)
   _dragging.curves.clear();
 }
 
-void PlotWidget::detachAllCurves()
+void PlotWidget::removeAllCurves()
 {
   for (auto& it : _curve_list)
   {
@@ -829,14 +829,20 @@ QDomElement PlotWidget::xmlSaveState(QDomDocument& doc) const
 
 bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
 {
-  std::set<std::string> added_curve_names;
-
   QDomElement transform = plot_widget.firstChildElement("transform");
   QString trans_value = transform.attribute("value");
 
   if (trans_value == "XYPlot")
   {
-    convertToXY();
+    if( !isXYPlot()){
+      convertToXY();
+    }
+  }
+  else {
+    if( isXYPlot() ){
+      removeAllCurves();
+      _xy_mode = false;
+    }
   }
 
   QDomElement limitY_el = plot_widget.firstChildElement("limitY");
@@ -869,7 +875,34 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
 
   bool curve_added = false;
 
-  for (QDomElement curve_element = plot_widget.firstChildElement("curve"); !curve_element.isNull();
+  std::set<std::string> curves_to_add;
+  for (QDomElement curve_element = plot_widget.firstChildElement("curve");
+       !curve_element.isNull();
+       curve_element = curve_element.nextSiblingElement("curve"))
+  {
+    curves_to_add.insert(curve_element.attribute("name").toStdString() );
+  }
+
+  bool curve_removed = true;
+
+  while (curve_removed)
+  {
+    curve_removed = false;
+    for (auto& it : _curve_list)
+    {
+      auto curve_name = it.first;
+      if (curves_to_add.find(curve_name) == curves_to_add.end())
+      {
+        removeCurve(curve_name);
+        curve_removed = true;
+        break;
+      }
+    }
+  }
+  //---------------------------------------
+
+  for (QDomElement curve_element = plot_widget.firstChildElement("curve");
+       !curve_element.isNull();
        curve_element = curve_element.nextSiblingElement("curve"))
   {
     QString curve_name = curve_element.attribute("name");
@@ -891,7 +924,6 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
         auto added = addCurve(curve_name_std);
         curve_added = curve_added || added;
         _curve_list[curve_name_std]->setPen(color, 1.0);
-        added_curve_names.insert(curve_name_std);
       }
     }
     else
@@ -909,7 +941,6 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
         auto added = addCurveXY(curve_x, curve_y, curve_name);
         curve_added = curve_added || added;
         _curve_list[curve_name_std]->setPen(color, 1.0);
-        added_curve_names.insert(curve_name_std);
       }
     }
 
@@ -919,23 +950,6 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
                            tr("Can't find one or more curves.\n"
                               "This message will be shown only once."));
       warning_message_shown = true;
-    }
-  }
-
-  bool curve_removed = true;
-
-  while (curve_removed)
-  {
-    curve_removed = false;
-    for (auto& it : _curve_list)
-    {
-      auto curve_name = it.first;
-      if (added_curve_names.find(curve_name) == added_curve_names.end())
-      {
-        removeCurve(curve_name);
-        curve_removed = true;
-        break;
-      }
     }
   }
 
@@ -971,7 +985,7 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
     _action_custom_transform->setChecked(true);
   }
 
-  if (curve_removed || curve_added)
+  if (curve_added)
   {
     _tracker->redraw();
     // replot();
@@ -1604,7 +1618,7 @@ void PlotWidget::convertToXY()
 
   this->setFooter(text);
 
-  zoomOut(true);
+  zoomOut(false);
   on_changeDateTimeScale(_use_date_time_scale);
   replot();
 }

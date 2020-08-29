@@ -31,6 +31,8 @@ set(PLUGIN_BASE_DIR ${PROJECT_SOURCE_DIR}/include/PlotJuggler)
 if(COMPILING_WITH_CATKIN)
     find_package(websocketpp)
 
+    find_package(websocketpp REQUIRED)
+
     include_directories(
         ./ ../
         ${PROJECT_SOURCE_DIR}/include/
@@ -96,6 +98,7 @@ elseif(COMPILING_WITH_AMENT)
     find_package(Boost REQUIRED)
     find_package(plotjuggler_msgs REQUIRED)
     find_package(tf2_msgs REQUIRED)
+    find_package(tf2_ros REQUIRED)
 
     include_directories(
         ./ ../ ../
@@ -108,7 +111,7 @@ elseif(COMPILING_WITH_AMENT)
         ros2_introspection/src/stringtree.cpp
         ros2_parsers/ros2_parser.cpp )
 
-    set(AMENT_DEPENDECIES
+    set(AMENT_DEPENDENCIES
         rclcpp
         rosbag2
         rcpputils
@@ -119,6 +122,7 @@ elseif(COMPILING_WITH_AMENT)
         nav_msgs
         plotjuggler_msgs
         tf2_msgs
+        tf2_ros
         )
 
     add_library( commonROS STATIC ${COMMON_SRC} ${COMMON_UI_SRC})
@@ -129,26 +133,26 @@ elseif(COMPILING_WITH_AMENT)
         ${Qt5Xml_LIBRARIES}
         fastcdr
         fmt::fmt-header-only )
-    ament_target_dependencies( commonROS ${AMENT_DEPENDECIES})
+    ament_target_dependencies( commonROS ${AMENT_DEPENDENCIES})
 
     #############
     add_library( DataLoadROS2 SHARED
         DataLoadROS2/dataload_ros2.cpp
         ${PLUGIN_BASE_DIR}/dataloader_base.h )
     target_link_libraries( DataLoadROS2 commonROS)
-    ament_target_dependencies( DataLoadROS2 ${AMENT_DEPENDECIES})
+    ament_target_dependencies( DataLoadROS2 ${AMENT_DEPENDENCIES})
     #############
     add_library( DataStreamROS2 SHARED
         DataStreamROS2/datastream_ros2.cpp
         ${PLUGIN_BASE_DIR}/datastreamer_base.h )
     target_link_libraries( DataStreamROS2  commonROS)
-    ament_target_dependencies( DataStreamROS2 ${AMENT_DEPENDECIES})
+    ament_target_dependencies( DataStreamROS2 ${AMENT_DEPENDENCIES})
     #############
     add_library( TopicPublisherROS2 SHARED
         TopicPublisherROS2/publisher_ros2.cpp
         ${PLUGIN_BASE_DIR}/statepublisher_base.h)
     target_link_libraries( TopicPublisherROS2 commonROS)
-    ament_target_dependencies( TopicPublisherROS2 ${AMENT_DEPENDECIES})
+    ament_target_dependencies( TopicPublisherROS2 ${AMENT_DEPENDENCIES})
 endif()
 
 #######################################################################

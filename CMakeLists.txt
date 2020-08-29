@@ -6,7 +6,7 @@ PROJECT(plotjuggler)
 add_definitions(
     -DPJ_MAJOR_VERSION="2"
     -DPJ_MINOR_VERSION="8"
-    -DPJ_PATCH_VERSION="3" )
+    -DPJ_PATCH_VERSION="4" )
 
 # http://answers.ros.org/question/230877/optionally-build-a-package-with-catkin/
 if( CATKIN_DEVEL_PREFIX OR catkin_FOUND OR CATKIN_BUILD_BINARY_PACKAGE)
@@ -35,7 +35,7 @@ if( CATKIN_DEVEL_PREFIX OR catkin_FOUND OR CATKIN_BUILD_BINARY_PACKAGE)
 
 elseif( DEFINED ENV{AMENT_PREFIX_PATH})
     set(COMPILING_WITH_AMENT 1)
-
+    
     message(STATUS "---------------------------------------------------------------------")
     message(STATUS "PlotJuggler is being built using AMENT. ROS2 plugins will be compiled")
     message(STATUS "---------------------------------------------------------------------")
@@ -136,7 +136,7 @@ include_directories(
     ./3rdparty/marl/include
     ./3rdparty/sol
     ./3rdparty/lua-5.3.4/src
-    ./3rdparty/websocketpp
+    /3rdparty/
 )
 
 #########################  INSTALL ####################################
@@ -147,6 +147,7 @@ if(COMPILING_WITH_CATKIN)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_BIN_DESTINATION})
 
 elseif(COMPILING_WITH_AMENT)
+    find_package(ament_cmake REQUIRED)
 
 else()
     set(CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})

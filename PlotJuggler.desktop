@@ -2,7 +2,7 @@
 Type=Application
 Name=PlotJuggler
 Exec=PlotJuggler
-Icon=plotjuggler.svg
+Icon=plotjuggler
 Comment=Visualize timeseries like a pro
 Terminal=false
 Categories=Development;

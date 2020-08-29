@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <string.h>
 
 #include "string_view.hpp"
 
@@ -98,19 +99,35 @@ public:
   const std::vector<MessageLog>& getLogs() const;
 
 private:
-  bool readFileHeader(std::ifstream& file);
+  struct DataStream
+  {
+    DataStream(): offset(0) {}
 
-  bool readFileDefinitions(std::ifstream& file);
+    std::vector<char> data;
+    size_t offset;
 
-  bool readFormat(std::ifstream& file, uint16_t msg_size);
+    void read(char* dst, int len)
+    {
+      memcpy(dst, &data[offset], len);
+      offset += len;
+    }
 
-  bool readFlagBits(std::ifstream& file, uint16_t msg_size);
+    operator bool() { return offset < data.size(); }
+  };
 
-  bool readInfo(std::ifstream& file, uint16_t msg_size);
+  bool readFileHeader(DataStream& datastream);
 
-  bool readParameter(std::ifstream& file, uint16_t msg_size);
+  bool readFileDefinitions(DataStream& datastream);
 
-  bool readSubscription(std::ifstream& file, uint16_t msg_size);
+  bool readFormat(DataStream& datastream, uint16_t msg_size);
+
+  bool readFlagBits(DataStream& datastream, uint16_t msg_size);
+
+  bool readInfo(DataStream& datastream, uint16_t msg_size);
+
+  bool readParameter(DataStream& datastream, uint16_t msg_size);
+
+  bool readSubscription(DataStream& datastream, uint16_t msg_size);
 
   size_t fieldsCount(const Format& format) const;
 

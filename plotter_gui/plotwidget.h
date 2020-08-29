@@ -102,7 +102,7 @@ public slots:
 
   void updateCurves();
 
-  void detachAllCurves();
+  void removeAllCurves();
 
   void on_panned(int dx, int dy);
 

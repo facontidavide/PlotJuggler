@@ -6,39 +6,54 @@
 #include <iosfwd>
 #include <sstream>
 #include <iomanip>
+#include <QDebug>
+
 using ios = std::ios;
+
+
 
 ULogParser::ULogParser(const std::string& filename) : _file_start_time(0)
 {
-  std::ifstream replay_file(filename, std::ifstream::in);
 
-  if (!replay_file.is_open())
+  DataStream datastream;
+
   {
-    throw std::runtime_error("ULog: Failed to open replay file");
+    std::ifstream file(filename, std::ifstream::in);
+    if (!file.is_open())
+    {
+      throw std::runtime_error("ULog: Failed to open replay file");
+    }
+
+    file.seekg(0, std::ios::end);    // go to the end
+    long length = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    datastream.data.resize(length);
+    file.read( &datastream.data[0], length);
   }
 
-  bool ret = readFileHeader(replay_file);
+  bool ret = readFileHeader(datastream);
 
   if (!ret)
   {
     throw std::runtime_error("ULog: wrong header");
   }
 
-  if (!readFileDefinitions(replay_file))
+  if (!readFileDefinitions(datastream))
   {
     throw std::runtime_error("ULog: error loading definitions");
   }
 
-  replay_file.seekg(_data_section_start);
+  datastream.offset = _data_section_start;
 
-  while (replay_file)
+  while (datastream)
   {
     ulog_message_header_s message_header;
-    replay_file.read((char*)&message_header, ULOG_MSG_HEADER_LEN);
+    datastream.read((char*)&message_header, ULOG_MSG_HEADER_LEN);
 
     _read_buffer.reserve(message_header.msg_size + 1);
     char* message = (char*)_read_buffer.data();
-    replay_file.read(message, message_header.msg_size);
+    datastream.read(message, message_header.msg_size);
     message[message_header.msg_size] = '\0';
 
     switch (message_header.msg_type)
@@ -266,15 +281,15 @@ const std::vector<ULogParser::MessageLog>& ULogParser::getLogs() const
   return _message_logs;
 }
 
-bool ULogParser::readSubscription(std::ifstream& file, uint16_t msg_size)
+bool ULogParser::readSubscription(DataStream& datastream, uint16_t msg_size)
 {
   _read_buffer.reserve(msg_size + 1);
   char* message = (char*)_read_buffer.data();
 
-  file.read(message, msg_size);
+  datastream.read(message, msg_size);
   message[msg_size] = 0;
 
-  if (!file)
+  if (!datastream)
   {
     return false;
   }
@@ -320,13 +335,12 @@ std::vector<StringView> ULogParser::splitString(const StringView& strToSplit, ch
   return splitted_strings;
 }
 
-bool ULogParser::readFileHeader(std::ifstream& file)
+bool ULogParser::readFileHeader(DataStream& datastream)
 {
-  file.seekg(0);
   ulog_file_header_s msg_header;
-  file.read((char*)&msg_header, sizeof(msg_header));
+  datastream.read((char*)&msg_header, sizeof(msg_header));
 
-  if (!file)
+  if (!datastream)
   {
     return false;
   }
@@ -345,16 +359,18 @@ bool ULogParser::readFileHeader(std::ifstream& file)
   return memcmp(magic, msg_header.magic, 7) == 0;
 }
 
-bool ULogParser::readFileDefinitions(std::ifstream& file)
+bool ULogParser::readFileDefinitions(DataStream& datastream)
 {
   ulog_message_header_s message_header;
-  file.seekg(sizeof(ulog_file_header_s));
 
   while (true)
   {
-    file.read((char*)&message_header, ULOG_MSG_HEADER_LEN);
+    qDebug() <<"\n" << datastream.offset;
+    datastream.read((char*)&message_header, ULOG_MSG_HEADER_LEN);
+    qDebug() << message_header.msg_size;
+    qDebug() << datastream.offset;
 
-    if (!file)
+    if (!datastream)
     {
       return false;
     }
@@ -362,14 +378,14 @@ bool ULogParser::readFileDefinitions(std::ifstream& file)
     switch (message_header.msg_type)
     {
       case (int)ULogMessageType::FLAG_BITS:
-        if (!readFlagBits(file, message_header.msg_size))
+        if (!readFlagBits(datastream, message_header.msg_size))
         {
           return false;
         }
         break;
 
       case (int)ULogMessageType::FORMAT:
-        if (!readFormat(file, message_header.msg_size))
+        if (!readFormat(datastream, message_header.msg_size))
         {
           return false;
         }
@@ -377,7 +393,7 @@ bool ULogParser::readFileDefinitions(std::ifstream& file)
         break;
 
       case (int)ULogMessageType::PARAMETER:
-        if (!readParameter(file, message_header.msg_size))
+        if (!readParameter(datastream, message_header.msg_size))
         {
           return false;
         }
@@ -385,32 +401,34 @@ bool ULogParser::readFileDefinitions(std::ifstream& file)
         break;
 
       case (int)ULogMessageType::ADD_LOGGED_MSG: {
-        _data_section_start = file.tellg() - (std::streamoff)ULOG_MSG_HEADER_LEN;
+        _data_section_start = datastream.offset - ULOG_MSG_HEADER_LEN;
         return true;
       }
 
       case (int)ULogMessageType::INFO: {
-        if (!readInfo(file, message_header.msg_size))
+        if (!readInfo(datastream, message_header.msg_size))
         {
           return false;
         }
       }
       break;
       case (int)ULogMessageType::INFO_MULTIPLE:  // skip
-        file.seekg(message_header.msg_size, ios::cur);
+        datastream.offset += message_header.msg_size;
         break;
 
       default:
-        printf("unknown log definition type %i, size %i (offset %i)", (int)message_header.msg_type,
-               (int)message_header.msg_size, (int)file.tellg());
-        file.seekg(message_header.msg_size, ios::cur);
+        printf("unknown log definition type %i, size %i (offset %i)",
+               (int)message_header.msg_type,
+               (int)message_header.msg_size,
+               (int)datastream.offset);
+        datastream.offset += message_header.msg_size;
         break;
     }
   }
   return true;
 }
 
-bool ULogParser::readFlagBits(std::ifstream& file, uint16_t msg_size)
+bool ULogParser::readFlagBits(DataStream& datastream, uint16_t msg_size)
 {
   if (msg_size != 40)
   {
@@ -420,7 +438,7 @@ bool ULogParser::readFlagBits(std::ifstream& file, uint16_t msg_size)
 
   _read_buffer.reserve(msg_size);
   uint8_t* message = (uint8_t*)_read_buffer.data();
-  file.read((char*)message, msg_size);
+  datastream.read((char*)message, msg_size);
 
   // uint8_t *compat_flags = message;
   uint8_t* incompat_flags = message + 8;
@@ -463,16 +481,16 @@ bool ULogParser::readFlagBits(std::ifstream& file, uint16_t msg_size)
   return true;
 }
 
-bool ULogParser::readFormat(std::ifstream& file, uint16_t msg_size)
+bool ULogParser::readFormat(DataStream& datastream, uint16_t msg_size)
 {
   static int count = 0;
 
   _read_buffer.reserve(msg_size + 1);
   char* buffer = (char*)_read_buffer.data();
-  file.read(buffer, msg_size);
+  datastream.read(buffer, msg_size);
   buffer[msg_size] = 0;
 
-  if (!file)
+  if (!datastream)
   {
     return false;
   }
@@ -624,13 +642,13 @@ std::string int_to_hex(T i)
   return stream.str();
 }
 
-bool ULogParser::readInfo(std::ifstream& file, uint16_t msg_size)
+bool ULogParser::readInfo(DataStream& datastream, uint16_t msg_size)
 {
   _read_buffer.reserve(msg_size);
   uint8_t* message = (uint8_t*)_read_buffer.data();
-  file.read((char*)message, msg_size);
+  datastream.read((char*)message, msg_size);
 
-  if (!file)
+  if (!datastream)
   {
     return false;
   }
@@ -715,13 +733,13 @@ bool ULogParser::readInfo(std::ifstream& file, uint16_t msg_size)
   return true;
 }
 
-bool ULogParser::readParameter(std::ifstream& file, uint16_t msg_size)
+bool ULogParser::readParameter(DataStream& datastream, uint16_t msg_size)
 {
   _read_buffer.reserve(msg_size);
   uint8_t* message = (uint8_t*)_read_buffer.data();
-  file.read((char*)message, msg_size);
+  datastream.read((char*)message, msg_size);
 
-  if (!file)
+  if (!datastream)
   {
     return false;
   }
