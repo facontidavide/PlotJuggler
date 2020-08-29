@@ -44,6 +44,7 @@
     <depend>libqt5-svg-dev</depend>
     <depend>libqt5multimedia5-plugins</depend>
     <depend>boost</depend>
+    <depend>libwebsocketpp-dev</depend>
 
     <!-- The export tag contains other, unspecified, tags -->
     <export>

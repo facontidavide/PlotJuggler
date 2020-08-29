@@ -15,7 +15,7 @@
 #include <QMessageBox>
 #include "publisher_select_dialog.h"
 #include "QtCore/qjsondocument.h"
-#include <nlohmann/json.hpp>
+#include "../../../3rdparty/json/json.hpp"
 #include <QtCore/QTimer>
 #include <cmath>
 

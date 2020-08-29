@@ -165,13 +165,7 @@ add_subdirectory( 3rdparty/color_widgets )
 #add_subdirectory( 3rdparty/marl )
 add_subdirectory( 3rdparty/qwt/src )
 add_subdirectory( 3rdparty/lua-5.3.4 )
-add_subdirectory( 3rdparty/websocketpp )
 add_subdirectory( plotter_gui )
-
-
-
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-add_subdirectory(3rdparty/json)
 
 add_subdirectory( plugins/DataLoadCSV )
 add_subdirectory( plugins/DataLoadULog )

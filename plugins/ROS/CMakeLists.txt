@@ -29,15 +29,13 @@ set(PLUGIN_BASE_DIR ${PROJECT_SOURCE_DIR}/include/PlotJuggler)
 #############
 
 if(COMPILING_WITH_CATKIN)
-
-    find_package(sensor_msgs REQUIRED)
+    find_package(websocketpp)
 
     include_directories(
         ./ ../
         ${PROJECT_SOURCE_DIR}/include/
         ros1_introspection/include
         ${catkin_INCLUDE_DIRS}
-            ${sensor_msgs_INCLUDE_DIRS}
     )
 
     add_subdirectory(ros1_introspection)
@@ -72,7 +70,7 @@ if(COMPILING_WITH_CATKIN)
     add_library( RosTopicPublisher SHARED
         TopicPublisherROS/statepublisher_rostopic.cpp
         ${PLUGIN_BASE_DIR}/statepublisher_base.h)
-    target_link_libraries( RosTopicPublisher commonROS nlohmann_json::nlohmann_json ${WEBSOCKETPP_LIB})
+    target_link_libraries( RosTopicPublisher commonROS ${websocketpp_LIBRARIES})
     #############
     QT5_WRAP_UI ( ROSOUT_UI RosoutPublisher/logwidget.ui )
     add_library( RosoutPublisher SHARED ${ROSOUT_UI}

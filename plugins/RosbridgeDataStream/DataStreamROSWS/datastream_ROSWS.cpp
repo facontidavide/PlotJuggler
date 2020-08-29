@@ -8,12 +8,10 @@
 #include <QApplication>
 #include <QSettings>
 #include <QFileDialog>
-//#include <QJsonDocument>
-//#include <QJsonArray>
 #include <qwsdialog.h>
 
 #include "dialog_select_ros_topics.h"
-#include "../../../3rdparty/json/single_include/nlohmann/json.hpp"
+#include "../../../3rdparty/json/json.hpp"
 
 using json = nlohmann::json;
 

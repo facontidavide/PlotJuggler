@@ -7,6 +7,8 @@ add_definitions(${QT_DEFINITIONS})
 add_definitions(-DQT_PLUGIN)
 add_definitions(-DQT_SHARED)
 
+find_package(websocketpp)
+
 
 QT5_WRAP_UI ( COMMON_UI_SRC
     qwsdialog.ui
@@ -36,9 +38,8 @@ target_link_libraries( commonLibs PRIVATE
     ${Qt5Widgets_LIBRARIES}
     ${Qt5Xml_LIBRARIES}
     fmt::fmt-header-only
-    ${WEBSOCKETPP_LIB}
+    ${websocketpp_LIBRARIES}
         boost_system
-        nlohmann_json::nlohmann_json
 )
 
 #########
