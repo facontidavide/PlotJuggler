@@ -88,13 +88,21 @@ public:
     : BuiltinMessageParser<geometry_msgs::PoseWithCovarianceStamped>(topic_name, plot_data)
     , _pose_cov_parser(topic_name, plot_data)
   {
+    _data.emplace_back(&getSeries(plot_data, topic_name + "/header/seq"));
+    _data.emplace_back(&getSeries(plot_data, topic_name + "/header/stamp"));
   }
 
   void parseMessageImpl(const geometry_msgs::PoseWithCovarianceStamped& msg, double timestamp) override
   {
+    double header_stamp = msg.header.stamp.toSec();
+    timestamp = (_use_header_stamp && header_stamp > 0) ? header_stamp : timestamp;
+
+    _data[0]->pushBack({ timestamp, double(msg.header.seq) });
+
     _pose_cov_parser.parseMessageImpl(msg.pose, timestamp);
   }
 
 private:
   PoseCovarianceMsgParser _pose_cov_parser;
+  std::vector<PlotData*> _data;
 };
