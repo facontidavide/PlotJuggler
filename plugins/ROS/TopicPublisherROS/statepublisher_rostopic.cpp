@@ -412,7 +412,7 @@ void castValue(json *msg, const std::string& path, const RosIntrospection::Varia
             addLeaf(msg, path, value.convert<int32_t>());
             break;
         case FLOAT32:
-            if (!isnan(value.convert<float>())) addLeaf(msg, path, value.convert<float>());
+            if (!std::isnan(value.convert<float>())) addLeaf(msg, path, value.convert<float>());
             break;
         case UINT64:
             addLeaf(msg, path, value.convert<uint64_t>());
@@ -424,7 +424,7 @@ void castValue(json *msg, const std::string& path, const RosIntrospection::Varia
         case TIME:
         case DURATION:
         default:
-            if (!isnan(value.convert<double>())) addLeaf(msg, path, value.convert<double>());
+            if (!std::isnan(value.convert<double>())) addLeaf(msg, path, value.convert<double>());
             break;
     }
 }
