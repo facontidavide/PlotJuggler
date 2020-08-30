@@ -13,7 +13,8 @@ QT5_WRAP_UI ( COMMON_UI_SRC
     dialog_select_ros_topics.ui
     dialog_with_itemlist.ui
     publisher_select_dialog.ui
-        TopicPublisherROS/ws/imageview_dialog.ui
+    TopicPublisherROS/ws/imageview_dialog.ui
+    RosbridgeDataStream/qwsdialog.ui
     )
 
 SET( COMMON_SRC
@@ -22,6 +23,7 @@ SET( COMMON_SRC
     dialog_with_itemlist.h
     publisher_select_dialog.h
     TopicPublisherROS/ws/imageview_dialog.h
+    RosbridgeDataStream/qwsdialog.cpp
    )
 
 set(PLUGIN_BASE_DIR ${PROJECT_SOURCE_DIR}/include/PlotJuggler)
@@ -54,6 +56,7 @@ if(COMPILING_WITH_CATKIN)
         ${Qt5Widgets_LIBRARIES}
         ${Qt5Xml_LIBRARIES}
         ${catkin_LIBRARIES}
+        ${websocketpp_LIBRARIES}
         ros_type_introspection_static
         fmt::fmt-header-only
     )
@@ -69,10 +72,15 @@ if(COMPILING_WITH_CATKIN)
         ${PLUGIN_BASE_DIR}/datastreamer_base.h )
     target_link_libraries( DataStreamROS  commonROS )
     #############
+    add_library( DataStreamRosbridge SHARED
+            RosbridgeDataStream/datastream_ROSWS.cpp
+            ${PLUGIN_BASE_DIR}/datastreamer_base.h )
+    target_link_libraries( DataStreamROS  commonROS )
+    #############
     add_library( RosTopicPublisher SHARED
         TopicPublisherROS/statepublisher_rostopic.cpp
         ${PLUGIN_BASE_DIR}/statepublisher_base.h)
-    target_link_libraries( RosTopicPublisher commonROS ${websocketpp_LIBRARIES})
+    target_link_libraries( RosTopicPublisher commonROS)
     #############
     QT5_WRAP_UI ( ROSOUT_UI RosoutPublisher/logwidget.ui )
     add_library( RosoutPublisher SHARED ${ROSOUT_UI}
@@ -161,6 +169,7 @@ if(COMPILING_WITH_CATKIN)
     install(TARGETS
         DataLoadROS
         DataStreamROS
+        DataStreamRosbridge
         RosTopicPublisher
         RosoutPublisher
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

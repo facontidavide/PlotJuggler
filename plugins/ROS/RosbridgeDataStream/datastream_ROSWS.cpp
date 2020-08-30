@@ -7,8 +7,7 @@
 #include <QtGlobal>
 #include <QApplication>
 #include <QSettings>
-#include <QFileDialog>
-#include <qwsdialog.h>
+#include "qwsdialog.h"
 
 #include "dialog_select_ros_topics.h"
 #include "../../../3rdparty/json/json.hpp"
