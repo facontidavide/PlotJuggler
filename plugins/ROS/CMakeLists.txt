@@ -22,7 +22,6 @@ SET( COMMON_SRC
     dialog_select_ros_topics.cpp
     dialog_with_itemlist.h
     publisher_select_dialog.h
-    TopicPublisherROS/ws/imageview_dialog.h
     RosbridgeDataStream/qwsdialog.cpp
    )
 
@@ -48,7 +47,8 @@ if(COMPILING_WITH_CATKIN)
         qnodedialog.cpp
         rule_editing.cpp
         ros1_parsers/ros1_parser.cpp
-        )
+        TopicPublisherROS/ws/imageview_dialog.h
+    )
 
     add_library( commonROS STATIC ${COMMON_SRC} ${COMMON_UI_SRC} )
     target_compile_definitions(commonROS PUBLIC DISABLE_RULE_EDITING)
