@@ -75,7 +75,7 @@ if(COMPILING_WITH_CATKIN)
     add_library( DataStreamRosbridge SHARED
             RosbridgeDataStream/datastream_ROSWS.cpp
             ${PLUGIN_BASE_DIR}/datastreamer_base.h )
-    target_link_libraries( DataStreamROS  commonROS )
+    target_link_libraries( DataStreamRosbridge  commonROS )
     #############
     add_library( RosTopicPublisher SHARED
         TopicPublisherROS/statepublisher_rostopic.cpp
