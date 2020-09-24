@@ -37,3 +37,7 @@ site/images/
 # Temp folders for local binary creation
 obj-x86_64-linux-gnu
 debian
+
+# Clion (JetBrains IDE related files and directories)
+.idea
+cmake-build-debug
