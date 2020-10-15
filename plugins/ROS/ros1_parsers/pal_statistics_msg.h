@@ -139,7 +139,7 @@ public:
       const auto& name = names[index];
       if (index >= values.size())
       {
-        values.emplace_back(&getSeries(_plot_data, _topic_name + "/" + name));
+        values.emplace_back(&getSeries(_plot_data, _base_name + "/" + name));
       }
       values[index]->pushBack({ timestamp, pal_msg.values[index] });
     }
