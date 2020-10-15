@@ -1,0 +1,2 @@
+- git: {local-name: plotjuggler, uri: 'https://github.com/facontidavide/plotjuggler.git', version: master}
+- git: {local-name: plotjuggler_msgs, uri: 'https://github.com/facontidavide/plotjuggler_msgs.git', version: ros1}

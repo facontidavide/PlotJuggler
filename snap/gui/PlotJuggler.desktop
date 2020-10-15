@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=PlotJuggler
+Exec=plotjuggler
+Icon=${SNAP}/meta/gui/plotjuggler.svg
+Comment=Visualize timeseries like a pro
+Terminal=false
+Categories=Development;
+Name[en_US]=PlotJuggler

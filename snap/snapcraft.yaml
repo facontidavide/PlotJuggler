@@ -1,0 +1,29 @@
+name: plotjuggler
+version: 2.8.4
+summary: Visualize timeseries like a pro
+description: |
+  QT5 based application to display time series in plots,
+  using an intuitive "drag and drop" interface..
+
+grade: devel
+confinement: strict
+base: core18
+
+apps:
+  plotjuggler:
+    command: opt/ros/melodic/lib/plotjuggler/PlotJuggler
+    plugs: [network, network-bind, network-manager-observe, opengl, home]
+    extensions: [kde-neon]
+
+parts:
+  plotjuggler:
+    plugin: catkin
+    source: .
+    rosinstall-files: ['snap/local/plotjuggler.rosinstall']
+    include-roscore: false
+    build-snaps:
+      - kde-frameworks-5-core18-sdk
+      - kde-frameworks-5-core18
+    build-packages:
+      - distro-info-data
+      - libpulse0
