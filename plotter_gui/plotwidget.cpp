@@ -435,7 +435,7 @@ bool PlotWidget::addCurve(const std::string& name)
   marker->attach(this);
   marker->setVisible(isXYPlot());
 
-  QwtSymbol* sym = new QwtSymbol(QwtSymbol::Diamond, Qt::red, color, QSize(10, 10));
+  QwtSymbol* sym = new QwtSymbol(QwtSymbol::Diamond, QBrush(color), color, QSize(10, 10));
 
   marker->setSymbol(sym);
 
@@ -520,7 +520,7 @@ bool PlotWidget::addCurveXY(std::string name_x, std::string name_y, QString curv
   marker->attach(this);
   marker->setVisible(isXYPlot());
 
-  QwtSymbol* sym = new QwtSymbol(QwtSymbol::Diamond, Qt::red, color, QSize(10, 10));
+  QwtSymbol* sym = new QwtSymbol(QwtSymbol::Diamond, QBrush(color), color, QSize(10, 10));
 
   marker->setSymbol(sym);
 
