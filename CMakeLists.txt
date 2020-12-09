@@ -103,6 +103,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIC")
 ENDIF()
 
 find_package(ZMQ)
+find_package(LSL)
 
 include_directories(
     ${Qt5Core_INCLUDE_DIRS}
@@ -230,5 +231,11 @@ if( ZMQ_FOUND )
   add_subdirectory( plugins/DataStreamZMQ )
 endif()
 
+if( LSL_FOUND )
+  message(STATUS "LSL is found.")
+  add_subdirectory( plugins/DataStreamLSL )
+else()
+  message(STATUS "LSL is not found! please visit: https://github.com/sccn/liblsl")
+endif()
 
 
