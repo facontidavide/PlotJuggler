@@ -3,4 +3,4 @@
 	url = https://github.com/eclipse/paho.mqtt.c.git
 [submodule "3rdparty/liblsl"]
 	path = 3rdparty/liblsl
-	url = https://github.com/csavur/liblsl.git
+	url = https://github.com/PlotJuggler/liblsl.git
