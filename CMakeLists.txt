@@ -80,7 +80,8 @@ find_package(Qt5 REQUIRED COMPONENTS
     Xml
     Svg
     OpenGL
-    WebSockets)
+    WebSockets
+    Network)
 
 set( QT_LINK_LIBRARIES
     Qt5::Core
