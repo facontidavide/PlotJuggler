@@ -1,3 +1,6 @@
 [submodule "3rdparty/paho.mqtt.c"]
 	path = 3rdparty/paho.mqtt.c
 	url = https://github.com/eclipse/paho.mqtt.c.git
+[submodule "3rdparty/liblsl"]
+	path = 3rdparty/liblsl
+	url = https://github.com/sccn/liblsl.git
