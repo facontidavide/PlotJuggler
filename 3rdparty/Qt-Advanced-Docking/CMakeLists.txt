@@ -52,7 +52,7 @@ set(ads_SRCS
     include/Qads/DockComponentsFactory.h
 )
 
-if (UNIX)
+if (UNIX AND NOT APPLE)
     set(ads_SRCS
         src/linux/FloatingWidgetTitleBar.cpp
         ${ads_SRCS}
