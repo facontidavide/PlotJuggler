@@ -18,11 +18,11 @@
 
 class CurveListPanel;
 
-template <typename ItemType>
-class SortedTableItem : public ItemType
+template <typename Item>
+class SortedTableItem : public Item
 {
 public:
-  SortedTableItem(const QString& name) : ItemType(name), str(name.toStdString())
+  SortedTableItem(const QString& name) : Item(name), str(name.toStdString())
   {
   }
 
