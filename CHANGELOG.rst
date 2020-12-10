@@ -2,8 +2,8 @@
 Changelog for package plotjuggler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.5 (2020-12-10)
+------------------
 * fix a crash when data is cleared during streaming (LuaCustomFunction)
 * should fix issue `#360 <https://github.com/PlotJuggler/PlotJuggler/issues/360>`_ with stylesheet
 * fix bug `#359 <https://github.com/PlotJuggler/PlotJuggler/issues/359>`_
