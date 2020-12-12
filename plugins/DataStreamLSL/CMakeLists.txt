@@ -12,7 +12,7 @@ add_library(DataStreamLSL SHARED ${SRC} ${UI_SRC}  )
 target_link_libraries(DataStreamLSL
     ${Qt5Widgets_LIBRARIES}
     plotjuggler_plugin_base
-    lsl
+    lsl-static
     )
 
 
