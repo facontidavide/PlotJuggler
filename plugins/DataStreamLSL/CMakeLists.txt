@@ -1,4 +1,4 @@
-include_directories(../)
+include_directories(../ ../../include liblsl/include)
 
 add_definitions(${QT_DEFINITIONS})
 add_definitions(-DQT_PLUGIN)
