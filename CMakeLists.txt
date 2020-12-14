@@ -122,6 +122,7 @@ include_directories(
     ./3rdparty/sol
     ./3rdparty/lua-5.4.1/src
     ./3rdparty/liblsl/src
+    ./3rdparty/liblsl/include
 )
 
 #########################  LIBRARY  ####################################
