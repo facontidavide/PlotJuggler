@@ -461,7 +461,7 @@ QStringList MainWindow::initializePlugins(QString directory_name)
         plugin_name = streamer->name();
       }
       else if (message_parser){
-        plugin_name = streamer->name();
+        plugin_name = message_parser->name();
       }
 
       if (loaded_plugins.find(plugin_name) == loaded_plugins.end())
