@@ -222,7 +222,7 @@ if(EXISTS "${PROJECT_SOURCE_DIR}/3rdparty/paho.mqtt.c/CMakeLists.txt")
     add_subdirectory( plugins/DataStreamMQTT )
 endif()
 
-if(EXISTS "${PROJECT_SOURCE_DIR}/3rdparty/liblsl/CMakeLists.txt")
+if(EXISTS "${PROJECT_SOURCE_DIR}/3rdparty/liblsl/CMakeLists.txt" AND NOT WIN32)
     SET(LSL_ENABLE_TESTING FALSE CACHE BOOL "Build tests and run" FORCE)
     SET(LSL_ENABLE_CPACK FALSE CACHE BOOL "Enable CPack" FORCE)
     SET(LSL_BUILD_STATIC TRUE CACHE BOOL "Build static library" FORCE)

@@ -150,7 +150,11 @@ PlotWidget::PlotWidget(PlotDataMapRef& datamap, QWidget* parent)
   this->sizePolicy().setHorizontalPolicy(QSizePolicy::Expanding);
   this->sizePolicy().setVerticalPolicy(QSizePolicy::Expanding);
 
+#ifdef Q_OS_WIN
+  auto canvas = new QwtPlotCanvas();
+#else
   auto canvas = new QwtPlotOpenGLCanvas();
+#endif
 
   canvas->setFrameStyle(QFrame::NoFrame);
 
