@@ -295,23 +295,6 @@ namespace doj
 #endif
     return alphanum_impl(l, r.c_str());
   }
-
-  ////////////////////////////////////////////////////////////////////////////
-
-  /**
-     Functor class to compare two objects with the "Alphanum
-     Algorithm". If the objects are no std::string, they must
-     implement "std::ostream operator<< (std::ostream&, const Ty&)".
-  */
-  template<class Ty>
-  struct alphanum_less : public std::binary_function<Ty, Ty, bool>
-  {
-    bool operator()(const Ty& left, const Ty& right) const
-    {
-      return alphanum_comp(left, right) < 0;
-    }
-  };
-
 }
 
 
