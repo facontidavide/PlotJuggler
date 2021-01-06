@@ -1,3 +1,6 @@
+if (WIN32)
+  add_definitions(-DQT_NO_FLOAT16_OPERATORS)
+endif()
 
 include_directories( ./ ../  ../include )
 
