@@ -64,9 +64,10 @@ public:
 
   virtual void initEngine() = 0;
 
-  virtual std::vector<PlotData::Point> calculatePoints(const PlotData& src_data,
-                                                       const std::vector<const PlotData*>& channels_data,
-                                                       size_t point_index) = 0;
+  virtual void calculatePoints(const PlotData& src_data,
+                               const std::vector<const PlotData*>& channels_data,
+                               size_t point_index,
+                               std::vector<PlotData::Point> &new_points) = 0;
 
 protected:
   const SnippetData _snippet;
