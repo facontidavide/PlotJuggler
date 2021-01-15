@@ -120,7 +120,7 @@ void LuaCustomFunction::calculatePoints(const PlotData& src_data,
   }
   else
   {
-    throw std::runtime_error("Lua Engine : return either a single value "
-                             "or an array with size 2 (time, value)");
+    throw std::runtime_error("Lua Engine : return either a single value, two values (time, value) "
+                             "or an array of two-sized arrays (time, value)");
   }
 }
