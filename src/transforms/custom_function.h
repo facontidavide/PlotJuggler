@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 #include <QWidget>
 #include <QString>
 #include <QDomDocument>
@@ -63,9 +64,9 @@ public:
 
   virtual void initEngine() = 0;
 
-  virtual PlotData::Point calculatePoint(const PlotData& src_data,
-                                         const std::vector<const PlotData*>& channels_data,
-                                         size_t point_index) = 0;
+  virtual std::vector<PlotData::Point> calculatePoints(const PlotData& src_data,
+                                                       const std::vector<const PlotData*>& channels_data,
+                                                       size_t point_index) = 0;
 
 protected:
   const SnippetData _snippet;
