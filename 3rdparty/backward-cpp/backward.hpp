@@ -3928,7 +3928,11 @@ public:
 #elif defined(__arm__)
     error_addr = reinterpret_cast<void *>(uctx->uc_mcontext.arm_pc);
 #elif defined(__aarch64__)
-    error_addr = reinterpret_cast<void *>(uctx->uc_mcontext.pc);
+   #if defined(__APPLE__)
+     error_addr = reinterpret_cast<void *>(uctx->uc_mcontext->__ss.__pc);
+   #else
+     error_addr = reinterpret_cast<void *>(uctx->uc_mcontext.pc);
+   #endif
 #elif defined(__mips__)
     error_addr = reinterpret_cast<void *>(reinterpret_cast<struct sigcontext*>(&uctx->uc_mcontext)->sc_pc);
 #elif defined(__ppc__) || defined(__powerpc) || defined(__powerpc__) ||        \
