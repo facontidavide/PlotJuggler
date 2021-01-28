@@ -103,6 +103,12 @@ endif()
 
 IF (NOT WIN32)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIC")
+else()
+set(CMAKE_WIN32_EXECUTABLE ON)
+set(GUI_TYPE WIN32)
+set(CMAKE_BUILD_TYPE "Release")
+### Embedd Icon to Plotjuggler.exe
+set(BACKWARD_ENABLE ${BACKWARD_ENABLE} ../../Plotjuggler.rc)
 ENDIF()
 
 find_package(ZMQ)

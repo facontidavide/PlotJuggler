@@ -45,6 +45,12 @@ Component.prototype.createOperations = function()
     try {
         // call the base create operations function
         component.createOperations();
+		if (systemInfo.productType === "windows") {
+			component.addOperation("CreateShortcut", "@TargetDir@/PlotJuggler.exe", "@StartMenuDir@/PlotJuggler.lnk",
+				"workingDirectory=@TargetDir@",	"iconId=0", "description=Launch PlotJuggler");
+			component.addOperation("CreateShortcut", "@TargetDir@/PlotJuggler.exe", "@DesktopDir@/PlotJuggler.lnk",
+				"workingDirectory=@TargetDir@",	"iconId=0", "description=Launch PlotJuggler");                
+		}		
     } catch (e) {
         console.log(e);
     }
