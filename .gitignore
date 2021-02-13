@@ -28,7 +28,7 @@
 *.out
 *.app
 
-/build*
+build/*
 /*.user
 
 site/images/
