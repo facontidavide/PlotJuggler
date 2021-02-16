@@ -513,7 +513,7 @@ PlotWidget::CurveInfo *PlotWidget::addCurveXY(std::string name_x, std::string na
   auto marker = new QwtPlotMarker;
   marker->attach(this);
   marker->setVisible(isXYPlot());
-  QwtSymbol* sym = new QwtSymbol(QwtSymbol::Ellipse, Qt::red, QPen(Qt::black), QSize(8, 8));
+  QwtSymbol* sym = new QwtSymbol(QwtSymbol::Ellipse, color, QPen(Qt::black), QSize(8, 8));
   marker->setSymbol(sym);
 
   CurveInfo curve_info;
@@ -927,6 +927,7 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
           continue;
         }
         curve_it->curve->setPen(color, 1.3);
+        curve_it->marker->setSymbol(new QwtSymbol(QwtSymbol::Ellipse, color, QPen(Qt::black), QSize(8, 8)));
         added_curve_names.insert(curve_name_std);
       }
     }
@@ -940,7 +941,6 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
     }
   }
 
-  _tracker->redraw();
   emit curveListChanged();
 
   //-----------------------------------------
