@@ -43,3 +43,5 @@ debian
 cmake-build-*
 
 installer/io.plotjuggler.application/data
+
+.vscode/

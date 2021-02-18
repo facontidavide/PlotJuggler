@@ -11,4 +11,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libqt5x11extras5-dev \
   libbfd-dev \
   libdwarf-dev \
-  libdw-dev
+  libdw-dev \
+  libbz2-dev \
+  libcapnp-dev
