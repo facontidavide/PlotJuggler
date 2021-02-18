@@ -39,7 +39,7 @@ QByteArray read_raw_file(QString fn){
 
 DataLoadRlog::DataLoadRlog()
 {
-  _extensions.push_back("bz2"); 
+  _extensions.push_back("bz2");
   _extensions.push_back("rlog");
 }
 
@@ -61,7 +61,6 @@ bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
   progress_dialog.show();
 
   auto fn = fileload_info->filename;
-  qDebug() << "Loading: " << fn;
 
   // Load file:
   QByteArray raw;
@@ -73,7 +72,6 @@ bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
       qDebug() << "Raw file read failed, larger than 2GB?";
     }
   }
-  qDebug() << "Done loading";
 
   kj::ArrayPtr<const capnp::word> amsg = kj::ArrayPtr((const capnp::word*)raw.data(), raw.size()/sizeof(capnp::word));
 
@@ -113,7 +111,7 @@ bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
       parser.parseMessageImpl("", event, (double)event.get("logMonoTime").as<uint64_t>() / 1e9);
     }
     catch (const kj::Exception& e)
-    { 
+    {
       std::cerr << e.getDescription().cStr() << std::endl;
       break;
     }
@@ -126,6 +124,7 @@ bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
     }
   }
 
+  qDebug() << "Done"; // unit tests rely on this signal
   return true;
 }
 
