@@ -13,4 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libdwarf-dev \
   libdw-dev \
   libbz2-dev \
-  libcapnp-dev
+  libcapnp-dev \
+  python3 \
+  python3-pip
+RUN pip3 install jinja2
+ENV PYTHONPATH /tmp/plotjuggler/3rdparty

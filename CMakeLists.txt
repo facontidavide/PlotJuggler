@@ -126,6 +126,7 @@ include_directories(
     ./3rdparty/paho.mqtt.c/src
     ./3rdparty/qwt/src
     ./3rdparty/sol
+    ./3rdparty/opendbc/can
     ./3rdparty/lua-5.4.1/src
     ./3rdparty/liblsl/src
     ./3rdparty/liblsl/include

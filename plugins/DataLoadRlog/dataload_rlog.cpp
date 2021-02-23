@@ -54,7 +54,6 @@ const std::vector<const char*>& DataLoadRlog::compatibleFileExtensions() const
 
 bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef& plot_data)
 {
-
   QProgressDialog progress_dialog;
   progress_dialog.setLabelText("Decompressing log...");
   progress_dialog.setWindowModality(Qt::ApplicationModal);
@@ -108,7 +107,30 @@ bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
 
       capnp::DynamicStruct::Reader event = tmsg->getRoot<capnp::DynamicStruct>(event_struct_schema);
 
-      parser.parseMessageImpl("", event, (double)event.get("logMonoTime").as<uint64_t>() / 1e9);
+      if (!can_dialog_tried && (event.has("can") || event.has("sendcan"))) {
+        std::string dbc_name;
+        if (std::getenv("DBC_NAME") != nullptr) {
+          dbc_name = std::getenv("DBC_NAME");
+        } 
+        else {
+          dbc_name = SelectDBCDialog();
+        }
+        if (!dbc_name.empty()) {
+          if (!parser.loadDBC(dbc_name)) {
+            qDebug() << "Could not load specified DBC file";
+          }
+        }
+        can_dialog_tried = true;
+      }
+      
+      double time_stamp = (double)event.get("logMonoTime").as<uint64_t>() / 1e9;
+      if (event.has("can")) {
+        parser.parseCanMessage("/can", event.get("can").as<capnp::DynamicList>(), time_stamp);
+      } else if (event.has("sendcan")) {
+        parser.parseCanMessage("/sendcan", event.get("sendcan").as<capnp::DynamicList>(), time_stamp);
+      } else {
+        parser.parseMessageImpl("", event, time_stamp);
+      }
     }
     catch (const kj::Exception& e)
     {
@@ -126,6 +148,21 @@ bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
 
   qDebug() << "Done"; // unit tests rely on this signal
   return true;
+}
+
+std::string DataLoadRlog::SelectDBCDialog() {
+  QStringList dbc_items;
+  dbc_items.append("");
+  for (auto dbc : get_dbcs()) {
+    dbc_items.append(dbc->name);
+  }
+  bool dbc_selected;
+  QString selected_str = QInputDialog::getItem(
+    nullptr, tr("Select DBC"), tr("Parse CAN using DBC:"), dbc_items, 0, false, &dbc_selected);
+  if (dbc_selected && !selected_str.isEmpty()) {
+    return selected_str.toStdString();
+  }
+  return "";
 }
 
 bool DataLoadRlog::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const

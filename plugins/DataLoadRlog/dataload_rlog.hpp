@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QProgressDialog>
+#include <QComboBox>
+#include <QInputDialog>
 #include <QDir>
 
 #include <iostream>
@@ -17,7 +19,6 @@ using namespace PJ;
 
 class DataLoadRlog : public DataLoader 
 {
-
   Q_OBJECT
   Q_PLUGIN_METADATA(IID "facontidavide.PlotJuggler3.DataLoader")
   Q_INTERFACES(PJ::DataLoader)
@@ -31,7 +32,10 @@ public:
   virtual bool xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const override;
   virtual bool xmlLoadState(const QDomElement& parent_element) override;
 
+  std::string SelectDBCDialog();
+
 private:
   std::vector<const char*> _extensions;
   std::string _default_time_axis;
+  bool can_dialog_tried = false;
 };
