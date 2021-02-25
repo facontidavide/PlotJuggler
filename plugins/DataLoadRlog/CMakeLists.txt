@@ -15,6 +15,8 @@ SET(SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/opendbc/can/parser.cc
 )
 
+add_definitions(-L /usr/local/lib)
+
 add_custom_target(
   compile_dbcs ALL
 )
@@ -38,10 +40,10 @@ add_dependencies(DataLoadRlog compile_dbcs  )
 target_link_libraries(DataLoadRlog
   ${Qt5Widgets_LIBRARIES}
   ${Qt5Xml_LIBRARIES}
-  -lcapnp
-  -lcapnpc
-  -lbz2
-  -lkj
+  bz2.a
+  capnpc.a
+  capnp.a
+  kj.a
   plotjuggler_plugin_base)
 
 install(TARGETS DataLoadRlog DESTINATION bin  )

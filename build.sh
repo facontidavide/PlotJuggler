@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 docker build -f Dockerfile -t plotjuggler:latest .
 
