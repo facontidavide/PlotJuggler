@@ -24,7 +24,7 @@ QByteArray read_bz2_file(const char* fn){
 
     cur += chunk_size;
   }
-  
+
   BZ2_bzReadClose(&bzError, bytes);
   fclose(f);
 
@@ -111,7 +111,7 @@ bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
         std::string dbc_name;
         if (std::getenv("DBC_NAME") != nullptr) {
           dbc_name = std::getenv("DBC_NAME");
-        } 
+        }
         else {
           dbc_name = SelectDBCDialog();
         }
@@ -122,7 +122,7 @@ bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
         }
         can_dialog_tried = true;
       }
-      
+
       double time_stamp = (double)event.get("logMonoTime").as<uint64_t>() / 1e9;
       if (event.has("can")) {
         parser.parseCanMessage("/can", event.get("can").as<capnp::DynamicList>(), time_stamp);
@@ -146,7 +146,7 @@ bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
     }
   }
 
-  qDebug() << "Done"; // unit tests rely on this signal
+  qDebug() << "Done reading Rlog data"; // unit tests rely on this signal
   return true;
 }
 
