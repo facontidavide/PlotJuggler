@@ -14,6 +14,7 @@ jobs:
     - name: zip Rlog plugin
       run: |
         cd build/bin
+        sudo tar -czf plotjuggler.tar.gz plotjuggler
         sudo tar -czf libDataLoadRlog.so.tar.gz libDataLoadRlog.so
     - name: Upload libDataLoadRlog.so.tar.gz to release
       if: github.ref == 'refs/heads/rlog-release' && github.event_name == 'push'
@@ -22,6 +23,15 @@ jobs:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: build/bin/libDataLoadRlog.so.tar.gz
         asset_name: libDataLoadRlog.so.tar.gz
+        tag: "latest"
+        overwrite: true
+    - name: Upload plotjuggler.tar.gz to release
+      if: github.ref == 'refs/heads/rlog-release' && github.event_name == 'push'
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: build/bin/plotjuggler.tar.gz
+        asset_name: plotjuggler.tar.gz
         tag: "latest"
         overwrite: true
 
