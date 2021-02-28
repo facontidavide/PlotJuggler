@@ -93,11 +93,17 @@ void CustomFunction::calculate(const PlotDataMapRef& plotData, PlotData* dst_dat
     last_updated_stamp = dst_data->back().x;
   }
 
+  std::vector<PlotData::Point> points;
   for (size_t i = 0; i < src_data.size(); ++i)
   {
     if (src_data.at(i).x > last_updated_stamp)
     {
-      dst_data->pushBack(calculatePoint(src_data, channel_data, i));
+      points.clear();
+      calculatePoints(src_data, channel_data, i, points);
+
+      for (PlotData::Point const &point : points) {
+        dst_data->pushBack(point);
+      }
     }
   }
 }

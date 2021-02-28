@@ -1,14 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 
-cmake_policy(SET CMP0048 OLD)
 PROJECT(plotjuggler)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 add_definitions(
     -DPJ_MAJOR_VERSION="3"
-    -DPJ_MINOR_VERSION="0"
-    -DPJ_PATCH_VERSION="6" )
+    -DPJ_MINOR_VERSION="1"
+    -DPJ_PATCH_VERSION="0" )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
@@ -96,13 +95,17 @@ set( QT_LINK_LIBRARIES
     Qt5::WebSockets
     )
 
+
 if (NOT CMAKE_BUILD_TYPE)
     message(STATUS "No build type selected, default to RelWithDebInfo")
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
 
 IF (NOT WIN32)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIC")
+else()
+    set(CMAKE_WIN32_EXECUTABLE ON)
+    set(GUI_TYPE WIN32)
 ENDIF()
 
 find_package(ZMQ)
@@ -213,8 +216,15 @@ endif()
 if(EXISTS "${PROJECT_SOURCE_DIR}/3rdparty/paho.mqtt.c/CMakeLists.txt")
     SET(PAHO_ENABLE_TESTING FALSE CACHE BOOL "Build tests and run" FORCE)
     SET(PAHO_ENABLE_CPACK FALSE CACHE BOOL "Enable CPack" FORCE)
-    SET(PAHO_BUILD_STATIC TRUE CACHE BOOL "Build static library" FORCE)
-    SET(PAHO_BUILD_SHARED FALSE CACHE BOOL "Build shared library" FORCE)
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        SET(PAHO_BUILD_STATIC FALSE CACHE BOOL "Build static library" FORCE)
+        SET(PAHO_BUILD_SHARED TRUE CACHE BOOL "Build shared library" FORCE)
+    else()
+        SET(PAHO_BUILD_STATIC TRUE CACHE BOOL "Build static library" FORCE)
+        SET(PAHO_BUILD_SHARED FALSE CACHE BOOL "Build shared library" FORCE)
+    endif()
+
     SET(CMAKE_INSTALL_INCLUDEDIR )
 
     add_subdirectory( 3rdparty/paho.mqtt.c EXCLUDE_FROM_ALL)
@@ -222,7 +232,7 @@ if(EXISTS "${PROJECT_SOURCE_DIR}/3rdparty/paho.mqtt.c/CMakeLists.txt")
     add_subdirectory( plugins/DataStreamMQTT )
 endif()
 
-if(EXISTS "${PROJECT_SOURCE_DIR}/3rdparty/liblsl/CMakeLists.txt")
+if(EXISTS "${PROJECT_SOURCE_DIR}/3rdparty/liblsl/CMakeLists.txt" AND NOT WIN32)
     SET(LSL_ENABLE_TESTING FALSE CACHE BOOL "Build tests and run" FORCE)
     SET(LSL_ENABLE_CPACK FALSE CACHE BOOL "Enable CPack" FORCE)
     SET(LSL_BUILD_STATIC TRUE CACHE BOOL "Build static library" FORCE)

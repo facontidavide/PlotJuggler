@@ -22,14 +22,6 @@
 #include "nlohmann_parsers.h"
 #include "new_release_dialog.h"
 
-#ifdef COMPILED_WITH_CATKIN
-
-#endif
-#ifdef COMPILED_WITH_AMENT
-#include <ament_index_cpp/get_package_prefix.hpp>
-#include <ament_index_cpp/get_package_share_directory.hpp>
-#endif
-
 static QString VERSION_STRING = QString("%1.%2.%3").arg(PJ_MAJOR_VERSION).arg(PJ_MINOR_VERSION).arg(PJ_PATCH_VERSION);
 
 inline int GetVersionNumber(QString str)
@@ -73,11 +65,11 @@ void OpenNewReleaseDialog(QNetworkReply* reply)
 QPixmap getFunnySplashscreen()
 {
   QSettings settings;
-  qsrand(time(nullptr));
+  srand (time(nullptr));
 
   auto getNum = []() {
     const int last_image_num = 60;
-    int n = qrand() % (last_image_num + 2);
+    int n = rand() % (last_image_num + 2);
     if (n > last_image_num)
     {
       n = 0;
@@ -114,30 +106,6 @@ int main(int argc, char* argv[])
 
   app.setApplicationVersion(VERSION_STRING);
 
-  QString extra_path;
-
-  try {
-#ifdef COMPILED_WITH_CATKIN
-    //TODO: use pluginlib instead
-    QDir ros_plugins_dir( QCoreApplication::applicationDirPath() + "_ros" );
-    if( !ros_plugins_dir.exists() || ros_plugins_dir.isEmpty() )
-    {
-      throw std::runtime_error("Missing ros plugins directory");
-    }
-    extra_path = ros_plugins_dir.path();
-#endif
-#ifdef COMPILED_WITH_AMENT
-    extra_path = QString::fromStdString(ament_index_cpp::get_package_prefix("plotjuggler_ros"));
-    extra_path += "/lib/plotjuggler_ros";
-#endif
-  } catch (...) {
-
-    QMessageBox::warning(nullptr, "Missing package [plotjuggler-ros]",
-                         "If you just upgraded from PlotJuggler 2.x to 3.x , try installing this package:\n\n"
-                         "sudo apt install ros-${ROS_DISTRO}-plotjuggler-ros",
-                         QMessageBox::Cancel, QMessageBox::Cancel);
-  }
-
   //---------------------------
   TransformFactory::registerTransform<FirstDerivative>();
   TransformFactory::registerTransform<ScaleTransform>();
@@ -163,12 +131,12 @@ int main(int argc, char* argv[])
 
   QCommandLineOption loadfile_option(QStringList() << "d"
                                                    << "datafile",
-                                     "Load a file containing data", "file");
+                                     "Load a file containing data", "file_path");
   parser.addOption(loadfile_option);
 
   QCommandLineOption layout_option(QStringList() << "l"
                                                  << "layout",
-                                   "Load a file containing the layout configuration", "file");
+                                   "Load a file containing the layout configuration", "file_path");
   parser.addOption(layout_option);
 
   QCommandLineOption publish_option(QStringList() << "p"
@@ -176,12 +144,9 @@ int main(int argc, char* argv[])
                                     "Automatically start publisher when loading the layout file");
   parser.addOption(publish_option);
 
-  QCommandLineOption folder_option(QStringList() << "extra-plugin-folders",
-                                    "Add semicolon-separated list of folders where you should look for plugins.");
-  if(!extra_path.isEmpty())
-  {
-    folder_option.setDefaultValue( extra_path );
-  }
+  QCommandLineOption folder_option(QStringList() << "plugin_folders",
+                                    "Add semicolon-separated list of folders where you should look for additional plugins.",
+                                   "directory_paths");
   parser.addOption(folder_option);
 
   QCommandLineOption buffersize_option(QStringList() << "buffer_size",
@@ -227,7 +192,7 @@ int main(int argc, char* argv[])
     QPixmap main_pixmap = getFunnySplashscreen();
     QSplashScreen splash(main_pixmap, Qt::WindowStaysOnTopHint);
     QDesktopWidget* desktop = QApplication::desktop();
-    const int scrn = desktop->screenNumber(QCursor::pos());
+    const int scrn = desktop->screenNumber();
     const QPoint currentDesktopsCenter = desktop->availableGeometry(scrn).center();
     splash.move(currentDesktopsCenter - splash.rect().center());
 

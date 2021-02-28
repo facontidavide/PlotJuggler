@@ -12,12 +12,18 @@ SET( SRC datastream_mqtt.cpp )
 
 add_library(DataStreamMQTT SHARED ${SRC} ${UI_SRC}  )
 
-target_link_libraries(DataStreamMQTT
-    ${Qt5Widgets_LIBRARIES}
-    paho-mqtt3c-static
-    paho-mqtt3a-static
-    plotjuggler_plugin_base
-    )
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_link_libraries(DataStreamMQTT
+        ${Qt5Widgets_LIBRARIES} plotjuggler_plugin_base
+        paho-mqtt3c
+        paho-mqtt3a  )
+else()
+    target_link_libraries(DataStreamMQTT
+        ${Qt5Widgets_LIBRARIES} plotjuggler_plugin_base
+        paho-mqtt3c-static
+        paho-mqtt3a-static)
+endif()
+
 
 if(COMPILING_WITH_CATKIN)
     install(TARGETS DataStreamMQTT

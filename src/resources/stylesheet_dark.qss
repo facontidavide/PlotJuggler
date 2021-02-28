@@ -9,7 +9,7 @@ dark_background: #444444
 default_text:  #F0F0F0
 disabled_text: #777777
 
-widget_background_disabled: transparent;
+widget_background_disabled: #404040;
 
 border_default: #666666
 border_hover:   #148CD2
@@ -20,19 +20,21 @@ item_selection_background: #148CD2
 //------- PALETTE END --------
 
 QWidget {
-  background-color: transparent;
+  background: transparent;
   border: 0px solid ${border_default};
   padding: 0px;
   color: ${default_text};
+  font-size: 10pt;
 }
 
 
 QWidget:disabled{
   color: ${disabled_text};
+  background: ${widget_background_disabled};
 }
 
 PlotWidget {
-    background: ${main_background};
+    background: ${widget_background};
     border: 0px solid white;
 }
 
@@ -58,7 +60,6 @@ QLineEdit {
 
 QLineEdit:disabled {
     color: ${disabled_text};
-    background: ${widget_background_disabled};
 }
 
 QTabWidget{
@@ -120,13 +121,6 @@ QToolTip {
     border-radius: 2px;
     background: ${widget_background};
     color: ${default_text}; }
-
-/* QScrollArea ------------------------------------------------------------
-
---------------------------------------------------------------------------- */
-QScrollArea QWidget QWidget:disabled {
-  background-color: ${widget_background_disabled};
-}
 
 /* QScrollBar -------------------------------------------------------------
 
@@ -273,11 +267,11 @@ QMenu::icon {
 }
 
 QMenu::item {
-    background-color: transparent;
+    background: ${widget_background};
     padding: 2px 25px 2px 25px;
     color: ${default_text};
     border: 1px solid transparent;
-    margin: 2px;
+    margin: 0px;
     margin-left: 0px;
     margin-right: 0px;
 }
@@ -523,7 +517,6 @@ QPushButton[flat="false"]
 
 QPushButton:disabled {
     color: ${disabled_text};
-    background: ${widget_background_disabled};
 }
 
 
@@ -572,11 +565,6 @@ QComboBox {
     padding-bottom: 2px;  /* This fix  #103, #111*/
     padding-left: 4px;
     padding-right: 4px;
-}
-
-QComboBox:disabled {
-    color: ${disabled_text};
-    background: ${widget_background_disabled};
 }
 
 

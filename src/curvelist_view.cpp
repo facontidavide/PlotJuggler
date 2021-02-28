@@ -244,7 +244,8 @@ bool CurvesView::eventFilterBase(QObject* object, QEvent* event)
       QByteArray mdata;
       QDataStream stream(&mdata, QIODevice::WriteOnly);
 
-      auto selected_names = getSelectedNames();
+      auto selected_names = _parent_panel->getSelectedNames();
+
       std::sort(selected_names.begin(), selected_names.end());
 
       for (const auto& curve_name : selected_names)

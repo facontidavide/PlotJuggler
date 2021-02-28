@@ -104,8 +104,8 @@ bool UDP_Server::start(QStringList*)
 
   std::shared_ptr<MessageParserCreator> parser_creator;
 
-  connect(dialog.ui->comboBoxProtocol, qOverload<const QString &>( &QComboBox::currentIndexChanged), this,
-          [&](QString protocol)
+  connect(dialog.ui->comboBoxProtocol, qOverload<int>( &QComboBox::currentIndexChanged), this,
+          [&](int)
   {
     if( parser_creator ){
       QWidget*  prev_widget = parser_creator->optionsWidget();
@@ -178,7 +178,8 @@ void UDP_Server::processMessage()
     auto ts = high_resolution_clock::now().time_since_epoch();
     double timestamp = 1e-6* double( duration_cast<microseconds>(ts).count() );
 
-    MessageRef msg ( reinterpret_cast<uint8_t*>(datagram.data().data()), datagram.data().size() );
+    QByteArray m = datagram.data();
+    MessageRef msg ( reinterpret_cast<uint8_t*>(m.data()), m.count() );    
 
     try {
       std::lock_guard<std::mutex> lock(mutex());

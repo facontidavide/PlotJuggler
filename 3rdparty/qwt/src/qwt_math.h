@@ -85,6 +85,7 @@
 #endif
 
 #if defined( QT_WARNING_PUSH )
+QT_WARNING_PUSH
 // on earlier Qt versions you will be flooded with warnings anyway
 QT_WARNING_DISABLE_CLANG("-Wdouble-promotion")
 QT_WARNING_DISABLE_GCC("-Wdouble-promotion")

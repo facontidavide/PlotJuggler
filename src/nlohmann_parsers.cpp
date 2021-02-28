@@ -14,25 +14,54 @@ bool NlohmannParser::parseMessageImpl(double timestamp)
         }
     }
 
-    std::string key;
-    for(const auto& el: _json.items())
+    std::function<void(const std::string&,  const nlohmann::json&)> flatten;
+
+    flatten =[&](const std::string& prefix,
+            const nlohmann::json& value)
     {
-        double value = 0;
-        if( el.value().is_boolean())
+        if (value.empty()){
+            return;
+        }
+
+        switch (value.type())
         {
-            value = el.value().get<bool>();
+        case nlohmann::detail::value_t::array:{
+            // iterate array and use index as reference string
+            for (std::size_t i = 0; i < value.size(); ++i) {
+                flatten( fmt::format("{}[{}]", prefix, i), value[i]);
+            }
+            break;
         }
-        else if( el.value().is_number())
-        {
-            value = el.value().get<double>();
+
+        case nlohmann::detail::value_t::object:{
+            // iterate object and use keys as reference string
+            for(const auto& element: value.items()) {
+                flatten( fmt::format("{}/{}", prefix, element.key()), element.value());
+            }
+            break;
         }
-        else{
-            continue;
+
+        default:{
+            double numeric_value = 0;
+            if( value.is_boolean()) {
+                numeric_value = value.get<bool>();
+            }
+            else if( value.is_number()) {
+                numeric_value = value.get<double>();
+            }
+            else{
+                return;
+            }
+
+            auto plot_data = &(getSeries(prefix));
+            plot_data->pushBack( {timestamp, numeric_value} );
+
+            break;
         }
-        key = fmt::format("{}/{}", _topic_name, el.key() );
-        auto plot_data = &(getSeries(key));
-        plot_data->pushBack( {timestamp, value} );
-    }
+        } // end switch
+    };
+
+    flatten(_topic_name, _json);
     return true;
 }
 
@@ -40,7 +69,7 @@ bool MessagePack_Parser::parseMessage(const MessageRef msg,
                                       double timestamp)
 {
     _json = nlohmann::json::from_msgpack( msg.data(),
-                                          msg.data() + msg.size() ).flatten();
+                                          msg.data() + msg.size() );
     return parseMessageImpl(timestamp);
 }
 
@@ -48,7 +77,7 @@ bool JSON_Parser::parseMessage(const MessageRef msg,
                                double timestamp)
 {
     _json = nlohmann::json::parse( msg.data(),
-                                   msg.data()+ msg.size()).flatten();
+                                   msg.data()+ msg.size());
     return parseMessageImpl(timestamp);
 }
 
@@ -56,7 +85,7 @@ bool CBOR_Parser::parseMessage(const MessageRef msg,
                                double timestamp)
 {
     _json = nlohmann::json::from_cbor( msg.data(),
-                                       msg.data()+ msg.size() ).flatten();
+                                       msg.data()+ msg.size() );
     return parseMessageImpl(timestamp);
 }
 
@@ -64,6 +93,6 @@ bool BSON_Parser::parseMessage(const MessageRef msg,
                                double timestamp)
 {
     _json = nlohmann::json::from_bson( msg.data(),
-                                       msg.data()+ msg.size() ).flatten();
+                                       msg.data()+ msg.size() );
     return parseMessageImpl(timestamp);
 }

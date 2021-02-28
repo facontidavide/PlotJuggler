@@ -1,6 +1,8 @@
 
 include_directories( ./ ../  ../include )
 
+set (CMAKE_CXX_STANDARD 17)
+
 QT5_ADD_RESOURCES (RES_SRC  resource.qrc )
 
 
@@ -18,6 +20,7 @@ QT5_WRAP_UI ( UI_SRC
     plotwidget_editor.ui
 
     transforms/function_editor.ui
+    transforms/function_editor_help.ui
     transforms/transform_selector.ui
 
     transforms/first_derivative.ui

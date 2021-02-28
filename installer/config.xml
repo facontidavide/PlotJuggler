@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Installer>
-    <Name>PlotJuggler</Name>
-    <Version>2.1.4</Version>
-    <Title>PlotJuggler installer</Title>
-    <Publisher>Davide Faconti</Publisher>
-    <StartMenuDir>Applications</StartMenuDir>
-    <TargetDir>@ApplicationsDir@/PlotJuggler</TargetDir>
+  <Name>PlotJuggler</Name>
+  <Version>3.1.0</Version>
+  <Title>PlotJuggler installer</Title>
+  <Publisher>Davide Faconti</Publisher>
+  <StartMenuDir>PlotJuggler</StartMenuDir>
+  <TargetDir>@ApplicationsDirX64@/PlotJuggler</TargetDir>
+  <DependsOnLocalInstallerBinary>true</DependsOnLocalInstallerBinary>
+  <RunProgram>@TargetDir@/PlotJuggler</RunProgram>
 </Installer>
 

@@ -5,6 +5,8 @@
 #include <QDebug>
 #include <QSettings>
 #include <QProgressDialog>
+#include <QDateTime>
+#include <QInputDialog>
 #include "selectlistdialog.h"
 
 DataLoadCSV::DataLoadCSV()
@@ -150,6 +152,9 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   //-----------------
   double prev_time = -std::numeric_limits<double>::max();
   bool monotonic_warning = false;
+  bool to_string_parse = false;
+  QString format_string = "";
+
 
   while (!inB.atEnd())
   {
@@ -173,16 +178,44 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
     if (time_index >= 0)
     {
       bool is_number = false;
-      t = string_items[time_index].toDouble(&is_number);
-
-      if (!is_number)
+      if (!to_string_parse)
       {
-        QMessageBox::StandardButton reply;
-        reply = QMessageBox::warning(0, tr("Error reading file"),
-                                     tr("One of the timestamps is not a valid number. Abort\n"));
-
-        return false;
+          t = string_items[time_index].toDouble(&is_number);
+          if (!is_number)
+          {
+              to_string_parse = true;
+          }
       }
+
+      if (!is_number || to_string_parse)
+      {
+          if (format_string.isEmpty())
+          {
+              bool ok;
+              format_string = QInputDialog::getText(nullptr, tr("Error reading file"),
+                      tr("One of the timestamps is not a valid number, please enter a Format String - see QDateTime::fromString"),
+                      QLineEdit::Normal, "yyyy-MM-dd hh:mm:ss", &ok);
+
+              if (!ok || format_string.isEmpty())
+              {
+                  return false;
+              }
+          }
+
+          QDateTime ts = QDateTime::fromString(string_items[time_index], format_string);
+          is_number = ts.isValid();
+          if (!is_number)
+          {
+              QMessageBox::StandardButton reply;
+              reply = QMessageBox::warning(0, tr("Error reading file"),
+                      tr("Couldn't parse timestamp. Aborting.\n"));
+
+              return false;
+          }
+          t = ts.toMSecsSinceEpoch()/1000.0;
+      }
+
+
       if (t < prev_time)
       {
         QMessageBox::StandardButton reply;

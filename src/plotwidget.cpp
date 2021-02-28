@@ -150,7 +150,11 @@ PlotWidget::PlotWidget(PlotDataMapRef& datamap, QWidget* parent)
   this->sizePolicy().setHorizontalPolicy(QSizePolicy::Expanding);
   this->sizePolicy().setVerticalPolicy(QSizePolicy::Expanding);
 
+#ifdef Q_OS_WIN
+  auto canvas = new QwtPlotCanvas();
+#else
   auto canvas = new QwtPlotOpenGLCanvas();
+#endif
 
   canvas->setFrameStyle(QFrame::NoFrame);
 
@@ -509,7 +513,7 @@ PlotWidget::CurveInfo *PlotWidget::addCurveXY(std::string name_x, std::string na
   auto marker = new QwtPlotMarker;
   marker->attach(this);
   marker->setVisible(isXYPlot());
-  QwtSymbol* sym = new QwtSymbol(QwtSymbol::Ellipse, Qt::red, QPen(Qt::black), QSize(8, 8));
+  QwtSymbol* sym = new QwtSymbol(QwtSymbol::Ellipse, color, QPen(Qt::black), QSize(8, 8));
   marker->setSymbol(sym);
 
   CurveInfo curve_info;
@@ -923,6 +927,7 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
           continue;
         }
         curve_it->curve->setPen(color, 1.3);
+        curve_it->marker->setSymbol(new QwtSymbol(QwtSymbol::Ellipse, color, QPen(Qt::black), QSize(8, 8)));
         added_curve_names.insert(curve_name_std);
       }
     }
@@ -936,7 +941,6 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
     }
   }
 
-  _tracker->redraw();
   emit curveListChanged();
 
   //-----------------------------------------
@@ -1378,7 +1382,7 @@ void PlotWidget::updateCurves()
   for (auto& it : _curve_list)
   {
     auto series = dynamic_cast<QwtSeriesWrapper*>(it.curve->data());
-    bool res = series->updateCache(false);
+    series->updateCache(false);
     // TODO check res and do something if false.
   }
   updateMaximumZoomArea();
@@ -1828,11 +1832,11 @@ bool PlotWidget::canvasEventFilter(QEvent* event)
         {
           int prev_size = _legend->font().pointSize();
           int new_size = prev_size;
-          if (mouse_event->delta() > 0)
+          if (mouse_event->angleDelta().y() > 0)
           {
             new_size = std::min(13, prev_size+1);
           }
-          if (mouse_event->delta() < 0)
+          if (mouse_event->angleDelta().y() < 0)
           {
             new_size = std::max(7, prev_size-1);
           }
@@ -1888,7 +1892,7 @@ bool PlotWidget::canvasEventFilter(QEvent* event)
         }
         return false;  // send to canvas()
       }
-      else if (mouse_event->buttons() == Qt::MidButton && mouse_event->modifiers() == Qt::NoModifier)
+      else if (mouse_event->buttons() == Qt::MiddleButton && mouse_event->modifiers() == Qt::NoModifier)
       {
         overrideCursonMove();
         return false;
@@ -2063,7 +2067,7 @@ void PlotWidget::replot()
     _zoomer->setZoomBase(false);
   }
 
-  static int replot_count = 0;
+ // static int replot_count = 0;
   QwtPlot::replot();
   //qDebug() << replot_count++;
 }

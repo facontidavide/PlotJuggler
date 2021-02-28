@@ -29,7 +29,9 @@ inline QString SetApplicationStyleSheet(QString style)
     auto parts = lines[i].split(":");
     if( parts.size() == 2 )
     {
-       palette.insert( {parts[0].remove(" "), parts[1].remove(" ")} );
+       QString value = parts[1].remove(" ");
+       value.remove("\r");
+       palette.insert( {parts[0].remove(" ") ,value } );
     }
 
     if( lines[i++].contains("PALETTE END") )

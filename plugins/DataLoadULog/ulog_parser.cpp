@@ -18,7 +18,7 @@ ULogParser::ULogParser(const std::string& filename) : _file_start_time(0)
   DataStream datastream;
 
   {
-    std::ifstream file(filename, std::ifstream::in);
+    std::ifstream file(filename, std::ios::binary);
     if (!file.is_open())
     {
       throw std::runtime_error("ULog: Failed to open replay file");
@@ -30,6 +30,11 @@ ULogParser::ULogParser(const std::string& filename) : _file_start_time(0)
 
     datastream.data.resize(length);
     file.read( &datastream.data[0], length);
+
+    if (!file) {
+         throw std::runtime_error("ULog: error reading file");
+    }
+    file.close();
   }
 
   bool ret = readFileHeader(datastream);
@@ -365,10 +370,11 @@ bool ULogParser::readFileDefinitions(DataStream& datastream)
 
   while (true)
   {
-    qDebug() <<"\n" << datastream.offset;
+//    qDebug() <<"\noffset before" << datastream.offset;
     datastream.read((char*)&message_header, ULOG_MSG_HEADER_LEN);
-    qDebug() << message_header.msg_size;
-    qDebug() << datastream.offset;
+//    qDebug() <<"msg_size" << message_header.msg_size;
+//    qDebug() <<"type" << char(message_header.msg_type);
+//    qDebug() <<"offset after" << datastream.offset;
 
     if (!datastream)
     {

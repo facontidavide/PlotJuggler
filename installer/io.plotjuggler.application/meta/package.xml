@@ -2,8 +2,8 @@
 <Package>
     <DisplayName>PlotJuggler Main App</DisplayName>
     <Description>Install PlotJuggler with basic plugins.</Description>
-    <Version>2.1.5</Version>
-    <ReleaseDate>2019-02-25</ReleaseDate>
+    <Version>3.0.7</Version>
+    <ReleaseDate>2021-01-28</ReleaseDate>
     <Licenses>
         <License name="LGPL" file="license.txt" />
     </Licenses>

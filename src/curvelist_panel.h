@@ -66,6 +66,8 @@ private slots:
 
 public slots:
 
+  std::vector<std::string> getSelectedNames() const;
+
   void clearSelections();
 
   void on_stylesheetChanged(QString theme);

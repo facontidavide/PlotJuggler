@@ -112,7 +112,9 @@ private:
       offset += len;
     }
 
-    operator bool() { return offset < data.size(); }
+    operator bool() {
+        return offset < data.size();
+    }
   };
 
   bool readFileHeader(DataStream& datastream);

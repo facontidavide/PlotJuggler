@@ -114,6 +114,11 @@
                <height>20</height>
               </size>
              </property>
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>File</string>
              </property>
@@ -440,6 +445,11 @@
                <height>20</height>
               </size>
              </property>
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Streaming</string>
              </property>
@@ -533,11 +543,11 @@
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
-                <property name="font">
-                 <font>
-                  <family>Ubuntu</family>
-                  <pointsize>11</pointsize>
-                 </font>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>22</height>
+                 </size>
                 </property>
                 <property name="toolTip">
                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the streaming plugin.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -620,9 +630,7 @@
                </property>
                <property name="font">
                 <font>
-                 <family>Ubuntu</family>
-                 <pointsize>11</pointsize>
-                 <stylestrategy>PreferAntialias</stylestrategy>
+                 <pointsize>9</pointsize>
                 </font>
                </property>
                <property name="focusPolicy">
@@ -821,6 +829,11 @@
            </property>
            <item>
             <widget class="QLabel" name="label_8">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Publishers</string>
              </property>
@@ -1311,7 +1324,7 @@
                      <string>tt</string>
                     </property>
                     <property name="icon">
-                     <iconset>
+                     <iconset resource="resource.qrc">
                       <normaloff>:/style_light/line_tracker_1.png</normaloff>:/style_light/line_tracker_1.png</iconset>
                     </property>
                     <property name="iconSize">
@@ -1736,7 +1749,7 @@
      <x>0</x>
      <y>0</y>
      <width>1248</width>
-     <height>25</height>
+     <height>26</height>
     </rect>
    </property>
    <property name="minimumSize">
@@ -1810,7 +1823,7 @@
   </action>
   <action name="actionReportBug">
    <property name="icon">
-    <iconset>
+    <iconset resource="resource.qrc">
      <normaloff>:/resources/github.png</normaloff>:/resources/github.png</iconset>
    </property>
    <property name="text">
@@ -1871,7 +1884,7 @@
   </action>
   <action name="actionShare_the_love">
    <property name="icon">
-    <iconset>
+    <iconset resource="resource.qrc">
      <normaloff>:/resources/twitter.png</normaloff>:/resources/twitter.png</iconset>
    </property>
    <property name="text">
@@ -1897,6 +1910,8 @@
    <header location="global">menubar.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

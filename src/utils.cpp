@@ -52,29 +52,28 @@ std::vector<double> BuiltTimepointsList(PlotDataMapRef &data)
 }
 */
 
-std::pair<std::vector<QString>, bool> MoveData(PlotDataMapRef &source, PlotDataMapRef &destination)
+std::pair<std::vector<QString>, bool> MoveData(PlotDataMapRef &source,
+                                               PlotDataMapRef &destination)
 {
   bool destination_updated = false;
-
   std::vector<QString> added_curves;
-  for (auto& it : source.numeric)
-  {
-    const std::string& name = it.first;
-    if (it.second.size() > 0 && destination.numeric.count(name) == 0)
-    {
-      added_curves.push_back(QString::fromStdString(name));
-    }
-  }
 
   for (auto& it : source.numeric)
   {
     const std::string& name = it.first;
     auto& source_plot = it.second;
+    if(source_plot.size() == 0)
+    {
+      continue;
+    }
+
     auto plot_with_same_name = destination.numeric.find(name);
 
     // this is a new plot
     if (plot_with_same_name == destination.numeric.end())
     {
+      added_curves.push_back(QString::fromStdString(name));
+
       plot_with_same_name =
           destination.numeric
           .emplace(std::piecewise_construct, std::forward_as_tuple(name), std::forward_as_tuple(name))

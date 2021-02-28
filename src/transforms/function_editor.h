@@ -82,6 +82,8 @@ private slots:
 
   void on_updatePreview();
 
+  void on_pushButtonHelp_clicked();
+
 private:
   void importSnippets(const QByteArray& xml_text);
 

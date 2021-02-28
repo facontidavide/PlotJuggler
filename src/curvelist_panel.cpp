@@ -325,6 +325,14 @@ void CurveListPanel::on_buttonEditCustom_clicked()
   }
 }
 
+std::vector<std::string> CurveListPanel::getSelectedNames() const
+{
+    auto selected =  _tree_view->getSelectedNames();
+    auto custom_select =  _custom_view->getSelectedNames();
+    selected.insert( selected.end(), custom_select.begin(), custom_select.end() );
+    return selected;
+}
+
 void CurveListPanel::clearSelections()
 {
   _custom_view->clearSelection();

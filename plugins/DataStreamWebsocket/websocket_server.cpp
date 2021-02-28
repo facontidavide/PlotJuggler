@@ -106,13 +106,14 @@ bool WebsocketServer::start(QStringList*)
 
   std::shared_ptr<MessageParserCreator> parser_creator;
 
-  connect(dialog->ui->comboBoxProtocol, qOverload<const QString &>( &QComboBox::currentIndexChanged), this,
-          [&](QString protocol)
+  connect(dialog->ui->comboBoxProtocol, qOverload<int>( &QComboBox::currentIndexChanged), this,
+          [&](int index)
   {
     if( parser_creator ){
       QWidget*  prev_widget = parser_creator->optionsWidget();
       prev_widget->setVisible(false);
     }
+    QString protocol = dialog->ui->comboBoxProtocol->itemText(index);
     parser_creator = availableParsers()->at( protocol );
 
     if(auto widget = parser_creator->optionsWidget() ){

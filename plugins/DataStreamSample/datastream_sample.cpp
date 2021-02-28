@@ -17,10 +17,10 @@ DataStreamSample::DataStreamSample()
   {
     auto str = QString("data_vect/%1").arg(i).toStdString();
     DataStreamSample::Parameters param;
-    param.A = 6 * ((double)qrand() / (double)RAND_MAX) - 3;
-    param.B = 3 * ((double)qrand() / (double)RAND_MAX);
-    param.C = 3 * ((double)qrand() / (double)RAND_MAX);
-    param.D = 20 * ((double)qrand() / (double)RAND_MAX);
+    param.A = 6 * ((double)rand() / (double)RAND_MAX) - 3;
+    param.B = 3 * ((double)rand() / (double)RAND_MAX);
+    param.C = 3 * ((double)rand() / (double)RAND_MAX);
+    param.D = 20 * ((double)rand() / (double)RAND_MAX);
     _parameters.insert({str, param});
     dataMap().addNumeric(str);
   }

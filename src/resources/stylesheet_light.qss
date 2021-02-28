@@ -9,9 +9,9 @@ dark_background: #dddddd
 default_text:  #111111
 disabled_text: #666666
 
-widget_background_disabled: #dddddd;
+widget_background_disabled: #eeeeee;
 
-border_default: grey
+border_default: #333333
 border_hover:   #62c5ff
 border_checked: #1177ff
 
@@ -20,19 +20,21 @@ item_selection_background: #62c5ff
 //------- PALETTE END --------
 
 QWidget {
-  background-color: transparent;
+  background: transparent;
   border: 0px solid ${border_default};
   padding: 0px;
   color: ${default_text};
+  font-size: 10pt;
 }
 
 
 QWidget:disabled{
   color: ${disabled_text};
+  background: ${widget_background_disabled};
 }
 
 PlotWidget {
-    background: ${main_background};
+    background: ${widget_background};
     border: 0px solid white;
 }
 
@@ -58,7 +60,6 @@ QLineEdit {
 
 QLineEdit:disabled {
     color: ${disabled_text};
-    background: ${widget_background_disabled};
 }
 
 QTabWidget{
@@ -121,12 +122,11 @@ QToolTip {
     background: ${widget_background};
     color: ${default_text}; }
 
+
 /* QScrollArea ------------------------------------------------------------
 
 --------------------------------------------------------------------------- */
-QScrollArea QWidget QWidget:disabled {
-  background-color: ${widget_background_disabled};
-}
+
 
 /* QScrollBar -------------------------------------------------------------
 
@@ -264,7 +264,7 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
 /* QMenu ----------------------------------------------------------- */
 
 QMenu {
-    background-color: ${widget_background};
+    background: ${widget_background};
     border: 1px solid ${border_default};
 }
 
@@ -273,11 +273,11 @@ QMenu::icon {
 }
 
 QMenu::item {
-    background-color: transparent;
+    background: ${widget_background};
     padding: 2px 25px 2px 25px;
     color: ${default_text};
     border: 1px solid transparent;
-    margin: 2px;
+    margin: 0px;
     margin-left: 0px;
     margin-right: 0px;
 }
@@ -520,11 +520,6 @@ QPushButton[flat="false"]
     border: 1px solid ${border_default};
 }
 
-QPushButton:disabled {
-    color: ${disabled_text};
-    background: ${widget_background_disabled};
-}
-
 
 QPushButton:checked {
   border: 2px solid ${border_checked};
@@ -571,11 +566,6 @@ QComboBox {
     padding-bottom: 2px;  /* This fix  #103, #111*/
     padding-left: 4px;
     padding-right: 4px;
-}
-
-QComboBox:disabled {
-    color: ${disabled_text};
-    background: ${widget_background_disabled};
 }
 
 
@@ -766,6 +756,7 @@ QWidget#leftMainWindowFrame
 {
   background-color: ${main_background};
 }
+
 
 QWidget#widgetLabelLoad,
 QWidget#widgetLabelStreaming,

@@ -47,6 +47,13 @@
 #include "nlohmann_parsers.h"
 #include "cheatsheet/cheatsheet_dialog.h"
 
+#ifdef COMPILED_WITH_CATKIN
+
+#endif
+#ifdef COMPILED_WITH_AMENT
+#include <ament_index_cpp/get_package_prefix.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
+#endif
 
 MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* parent)
   : QMainWindow(parent)
@@ -73,6 +80,8 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   _curvelist_widget = new CurveListPanel(_custom_plots, this);
 
   ui->setupUi(this);
+
+  QSettings settings;
 
   ui->playbackLoop->setText("");
   ui->pushButtonZoomOut->setText("");
@@ -147,16 +156,51 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
 
   initializeActions();
 
+  //------------ Load plugins -------------
   QStringList loaded;
-  loaded += initializePlugins(QCoreApplication::applicationDirPath());
-  loaded += initializePlugins( QStandardPaths::writableLocation( QStandardPaths::GenericDataLocation) + "/PlotJuggler" );
+  QStringList plugin_folders;
 
-  auto extra_folders = commandline_parser.value("extra-plugin-folders").split(";", QString::SkipEmptyParts);
+  plugin_folders += commandline_parser.value("plugin_folders").split(";", QString::SkipEmptyParts);
+  plugin_folders += QCoreApplication::applicationDirPath();
+  plugin_folders += settings.value("Preferences::plugin_folders", QStringList()).toStringList();
 
-  for(const auto& folder: extra_folders)
+  try {
+#ifdef COMPILED_WITH_CATKIN
+    const char * env = std::getenv("CMAKE_PREFIX_PATH");
+    if (env) {
+      QString env_catkin_paths = QString::fromStdString( env );
+      env_catkin_paths.replace(";",":"); // for windows
+      auto catkin_paths = env_catkin_paths.split(":");
+
+      for(const auto& path: catkin_paths)
+      {
+        plugin_folders += path + "/lib/plotjuggler_ros";
+      }
+    }
+    plugin_folders += QCoreApplication::applicationDirPath() + "_ros";
+#endif
+#ifdef COMPILED_WITH_AMENT
+    auto ros2_path = QString::fromStdString(ament_index_cpp::get_package_prefix("plotjuggler_ros"));
+    ros2_path += "/lib/plotjuggler_ros";
+    loaded += initializePlugins(ros2_path);
+#endif
+  } catch (...) {
+
+    QMessageBox::warning(nullptr, "Missing package [plotjuggler-ros]",
+                         "If you just upgraded from PlotJuggler 2.x to 3.x , try installing this package:\n\n"
+                         "sudo apt install ros-${ROS_DISTRO}-plotjuggler-ros",
+                         QMessageBox::Cancel, QMessageBox::Cancel);
+  }
+
+  plugin_folders += QStandardPaths::writableLocation( QStandardPaths::GenericDataLocation) + "/PlotJuggler";
+  plugin_folders.removeDuplicates();
+
+  for(const auto& folder: plugin_folders)
   {
     loaded += initializePlugins(folder);
   }
+
+  //------------------------------------
 
   _undo_timer.start();
 
@@ -192,7 +236,7 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
     loadLayoutFromFile(commandline_parser.value("layout"));
   }
 
-  QSettings settings;
+
   restoreGeometry(settings.value("MainWindow.geometry").toByteArray());
   restoreState(settings.value("MainWindow.state").toByteArray());
 
@@ -471,10 +515,7 @@ QStringList MainWindow::initializePlugins(QString directory_name)
       }
       else
       {
-        QMessageBox::warning(this, tr("Warning"),
-                             tr("Trying to load twice a plugin with name [%1].\n"
-                                "Only the first will be loaded.")
-                             .arg(plugin_name));
+        qDebug() << tr("Trying to load twice a plugin with name [%1]. Skipping...").arg(plugin_name);
         continue;
       }
 
@@ -656,10 +697,10 @@ void MainWindow::buildDummyData()
 
   for (const QString& name : words_list)
   {
-    double A = 6 * ((double)qrand() / (double)RAND_MAX) - 3;
-    double B = 3 * ((double)qrand() / (double)RAND_MAX);
-    double C = 3 * ((double)qrand() / (double)RAND_MAX);
-    double D = 20 * ((double)qrand() / (double)RAND_MAX);
+    double A = 6 * ((double)rand() / (double)RAND_MAX) - 3;
+    double B = 3 * ((double)rand() / (double)RAND_MAX);
+    double C = 3 * ((double)rand() / (double)RAND_MAX);
+    double D = 20 * ((double)rand() / (double)RAND_MAX);
 
     auto it = datamap.addNumeric(name.toStdString());
     PlotData& plot = it->second;
@@ -1333,6 +1374,18 @@ bool MainWindow::loadDataFromFile(const FileLoadInfo& info)
                          tr("Cannot read files with extension %1.\n No plugin can handle that!\n").arg(info.filename));
   }
   _curvelist_widget->updateFilter();
+
+  // clean the custom plot. Function updateDataAndReplot will update them
+  for (auto& custom_it : _custom_plots)
+  {
+    auto dst_data_it = _mapped_plot_data.numeric.find( custom_it.first );
+    if (dst_data_it != _mapped_plot_data.numeric.end())
+    {
+      dst_data_it->second.clear();
+    }
+    custom_it.second->clear();
+  }
+
   updateDataAndReplot(true);
   ui->timeSlider->setRealValue(ui->timeSlider->getMinimum());
 
@@ -1499,7 +1552,7 @@ void MainWindow::loadStyleSheet(QString file_path)
     QString theme = SetApplicationStyleSheet( styleFile.readAll() );
 
     forEachWidget([&](PlotWidget* plot) {
-        plot->replot();
+      plot->replot();
     });
 
     emit stylesheetChanged(theme);

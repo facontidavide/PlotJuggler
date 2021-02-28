@@ -26,9 +26,10 @@ void LuaCustomFunction::initEngine()
   _lua_function = (*_lua_engine)["calc"];
 }
 
-PlotData::Point LuaCustomFunction::calculatePoint(const PlotData& src_data,
-                                                  const std::vector<const PlotData*>& channels_data,
-                                                  size_t point_index)
+void LuaCustomFunction::calculatePoints(const PlotData& src_data,
+                                        const std::vector<const PlotData*>& channels_data,
+                                        size_t point_index,
+                                        std::vector<PlotData::Point> &points)
 {
   std::unique_lock<std::mutex> lk(mutex_);
 
@@ -51,9 +52,6 @@ PlotData::Point LuaCustomFunction::calculatePoint(const PlotData& src_data,
     }
     _chan_values[chan_index] = value;
   }
-
-  PlotData::Point new_point;
-  new_point.x = old_point.x;
 
   sol::safe_function_result result;
   const auto& v = _chan_values;
@@ -97,17 +95,36 @@ PlotData::Point LuaCustomFunction::calculatePoint(const PlotData& src_data,
 
   if (result.return_count() == 2)
   {
+    PlotData::Point new_point;
     new_point.x = result.get<double>(0);
     new_point.y = result.get<double>(1);
+    points.push_back(new_point);
   }
-  else if (result.return_count() == 1)
+  else if (result.return_count() == 1 && result.get_type(0) == sol::type::number)
   {
+    PlotData::Point new_point;
+    new_point.x = old_point.x;
     new_point.y = result.get<double>(0);
+    points.push_back(new_point);
+  }
+  else if (result.return_count() == 1 && result.get_type(0) == sol::type::table)
+  {
+    static std::vector<std::array<double, 2>> multi_samples;
+    multi_samples.clear();
+
+    multi_samples = result.get<std::vector<std::array<double, 2>>>(0);
+
+    for (std::array<double, 2> sample : multi_samples)
+    {
+      PlotData::Point point;
+      point.x = sample[0];
+      point.y = sample[1];
+      points.push_back(point);
+    }
   }
   else
   {
-    throw std::runtime_error("Lua Engine : return either a single value "
-                             "or an array with size 2 (time, value)");
+    throw std::runtime_error("Lua Engine : return either a single value, two values (time, value) "
+                             "or an array of two-sized arrays (time, value)");
   }
-  return new_point;
 }

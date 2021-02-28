@@ -6,6 +6,7 @@
 MovingAverageFilter::MovingAverageFilter() :
   ui(new Ui::MovingAverageFilter),
   _widget(new QWidget()),
+  _buffer(1),
   _ring_view( _buffer.begin(), _buffer.end() )
 {
   ui->setupUi(_widget);
