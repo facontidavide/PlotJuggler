@@ -9,7 +9,8 @@
 #include "fstream"
 #include "selectlistdialog.h"
 
-const QRegularExpression can_frame_regexp("\\((\\d*\\.\\d*)\\)\\s{1,2}([A-Za-z0-9]*)\\s([0-9a-fA-F]{3,})\\#([0-9a-fA-F]*)");
+const QRegularExpression can_frame_regexp("\\((\\d*\\.\\d*)\\)\\s{1,2}([A-Za-z0-9]*)\\s([0-9a-fA-F]{3,})\\#([0-9a-fA-F]"
+                                          "*)");
 const QRegExp csv_separator("(\\,|\\;|\\|)");
 
 DataLoadCAN::DataLoadCAN()
@@ -93,16 +94,18 @@ bool DataLoadCAN::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   progress_dialog.show();
 
   // Add all signals by name
-  can_network_->forEachMessage([&](const dbcppp::Message& msg) 
-  {
+  can_network_->forEachMessage([&](const dbcppp::Message& msg) {
     msg.forEachSignal([&](const dbcppp::Signal& signal) {
-        auto str = QString("can_frames/%1/").arg(msg.getId()).toStdString() + signal.getName();
-        plot_data.addNumeric(str);
-  });});
+      auto str = QString("can_frames/%1/").arg(msg.getId()).toStdString() + signal.getName();
+      plot_data.addNumeric(str);
+    });
+  });
   //-----------------
   double prev_time = -std::numeric_limits<double>::max();
   bool monotonic_warning = false;
-
+  // To have . as decimal seperator, save current locale and change it.
+  const auto oldLocale = std::setlocale(LC_NUMERIC, nullptr);
+  std::setlocale(LC_NUMERIC, "C");
   while (!inB.atEnd())
   {
     QString line = inB.readLine();
@@ -115,11 +118,13 @@ bool DataLoadCAN::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
     qCritical() << canFrame.captured(3);  // FRAME_ID
     qCritical() << canFrame.captured(4);  // DATA
     */
-    uint64_t frameId = std::stoul(canFrame.captured(3).toStdString(),0,16);
-    uint64_t frameData = std::stoul(canFrame.captured(4).toStdString(),0,16);
-    //uint8_t frameDataBytes[4];
+    uint64_t frameId = std::stoul(canFrame.captured(3).toStdString(), 0, 16);
+    uint64_t frameData = std::stoul(canFrame.captured(4).toStdString(), 0, 16);
+    // uint8_t frameDataBytes[8];
     auto frameDataBytes = static_cast<uint8_t*>(static_cast<void*>(&frameData));
-    double frameTime = std::stof(canFrame.captured(1).toStdString());
+    std::reverse(frameDataBytes, frameDataBytes + 8);
+    // qCritical() << frameData << canFrame.captured(4) << frameDataBytes[0] << frameDataBytes[1];
+    double frameTime = std::stod(canFrame.captured(1).toStdString());
     const dbcppp::Message* msg = can_network_->getMessageById(frameId);
     if (msg)
     {
@@ -135,6 +140,8 @@ bool DataLoadCAN::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       });
     }
   }
+  // Restore locale setting
+  std::setlocale(LC_NUMERIC, oldLocale);
   file.close();
 
   if (interrupted)
