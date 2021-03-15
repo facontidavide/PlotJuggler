@@ -122,6 +122,8 @@ ULogParser::ULogParser(const std::string& filename) : _file_start_time(0)
         break;
       case (int)ULogMessageType::INFO_MULTIPLE:  // printf("INFO_MULTIPLE\n" );
         break;
+      case (int)ULogMessageType::PARAMETER_DEFAULT:  // printf("PARAMETER_DEFAULT\n" );
+        break;
       case (int)ULogMessageType::PARAMETER:
         printf("PARAMETER changed at run-time. Ignored\n");
         std::cout << std::flush;
@@ -413,11 +415,12 @@ bool ULogParser::readFileDefinitions(DataStream& datastream)
       }
       break;
       case (int)ULogMessageType::INFO_MULTIPLE:  // skip
+      case (int)ULogMessageType::PARAMETER_DEFAULT:  // skip
         datastream.offset += message_header.msg_size;
         break;
 
       default:
-        printf("unknown log definition type %i, size %i (offset %i)",
+        printf("unknown log definition type %i, size %i (offset %i)\n",
                (int)message_header.msg_type,
                (int)message_header.msg_size,
                (int)datastream.offset);
