@@ -1899,7 +1899,7 @@ bool MainWindow::loadLayoutFromFile(QString filename)
     {
       QMessageBox msgBox(this);
       msgBox.setWindowTitle("Overwrite custom transforms?");
-      msgBox.setText("Your layour file contains a set of custom transforms different from "
+      msgBox.setText("Your layout file contains a set of custom transforms different from "
                      "the last one you used.\nWant to load these transformations?");
       msgBox.addButton(QMessageBox::No);
       msgBox.addButton(QMessageBox::Yes);
