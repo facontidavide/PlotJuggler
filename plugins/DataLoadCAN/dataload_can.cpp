@@ -119,9 +119,21 @@ bool DataLoadCAN::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
     qCritical() << canFrame.captured(4);  // DATA
     */
     uint64_t frameId = std::stoul(canFrame.captured(3).toStdString(), 0, 16);
-    uint64_t frameData = std::stoul(canFrame.captured(4).toStdString(), 0, 16);
-    // uint8_t frameDataBytes[8];
-    auto frameDataBytes = static_cast<uint8_t*>(static_cast<void*>(&frameData));
+    int dlc = canFrame.capturedLength(4)/2;
+    std::string frameDataString;
+    // When dlc is less than 8, right padding is required
+    if(dlc < 8)
+    {
+      std::string padding = std::string( 2*(8-dlc), '0');
+      frameDataString =canFrame.captured(4).toStdString().append(padding);
+    }
+    else
+    {
+      frameDataString =canFrame.captured(4).toStdString();
+    }
+    uint64_t frameData = std::stoul(frameDataString, 0, 16);
+    uint8_t frameDataBytes[8];
+    std::memcpy(frameDataBytes, &frameData,8);
     std::reverse(frameDataBytes, frameDataBytes + 8);
     // qCritical() << frameData << canFrame.captured(4) << frameDataBytes[0] << frameDataBytes[1];
     double frameTime = std::stod(canFrame.captured(1).toStdString());
