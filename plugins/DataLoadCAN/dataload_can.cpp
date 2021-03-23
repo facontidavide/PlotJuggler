@@ -9,9 +9,8 @@
 #include "fstream"
 #include "selectlistdialog.h"
 
-const QRegularExpression can_frame_regexp("\\((\\d*\\.\\d*)\\)\\s{1,2}([A-Za-z0-9]*)\\s([0-9a-fA-F]{3,})\\#([0-9a-fA-F]"
-                                          "*)");
-const QRegExp csv_separator("(\\,|\\;|\\|)");
+// Regular expression for log files created by candump -L
+const QRegularExpression canlog_rgx("\\((\\d*\\.\\d*)\\)\\s{1,2}([A-Za-z0-9]*)\\s([0-9a-fA-F]{3,})\\#([0-9a-fA-F]*)");
 
 DataLoadCAN::DataLoadCAN()
 {
@@ -110,7 +109,7 @@ bool DataLoadCAN::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   {
     QString line = inB.readLine();
     static QRegularExpressionMatchIterator rxIterator;
-    rxIterator = can_frame_regexp.globalMatch(line);
+    rxIterator = canlog_rgx.globalMatch(line);
     QRegularExpressionMatch canFrame = rxIterator.next();
     /*
     qCritical() << canFrame.captured(1);  // time
@@ -119,21 +118,21 @@ bool DataLoadCAN::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
     qCritical() << canFrame.captured(4);  // DATA
     */
     uint64_t frameId = std::stoul(canFrame.captured(3).toStdString(), 0, 16);
-    int dlc = canFrame.capturedLength(4)/2;
+    int dlc = canFrame.capturedLength(4) / 2;
     std::string frameDataString;
     // When dlc is less than 8, right padding is required
-    if(dlc < 8)
+    if (dlc < 8)
     {
-      std::string padding = std::string( 2*(8-dlc), '0');
-      frameDataString =canFrame.captured(4).toStdString().append(padding);
+      std::string padding = std::string(2 * (8 - dlc), '0');
+      frameDataString = canFrame.captured(4).toStdString().append(padding);
     }
     else
     {
-      frameDataString =canFrame.captured(4).toStdString();
+      frameDataString = canFrame.captured(4).toStdString();
     }
     uint64_t frameData = std::stoul(frameDataString, 0, 16);
     uint8_t frameDataBytes[8];
-    std::memcpy(frameDataBytes, &frameData,8);
+    std::memcpy(frameDataBytes, &frameData, 8);
     std::reverse(frameDataBytes, frameDataBytes + 8);
     // qCritical() << frameData << canFrame.captured(4) << frameDataBytes[0] << frameDataBytes[1];
     double frameTime = std::stod(canFrame.captured(1).toStdString());
