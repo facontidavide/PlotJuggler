@@ -15,7 +15,7 @@ add_library(DataLoadCAN SHARED ${SRC} ${UI_SRC}  )
 target_link_libraries(DataLoadCAN
     ${Qt5Widgets_LIBRARIES}
     ${Qt5Xml_LIBRARIES}
-    dbcppp
+    libdbcppp
     plotjuggler_plugin_base)
 
 if(COMPILING_WITH_CATKIN)

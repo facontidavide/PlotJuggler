@@ -4,3 +4,6 @@
 [submodule "3rdparty/liblsl"]
 	path = 3rdparty/liblsl
 	url = https://github.com/PlotJuggler/liblsl.git
+[submodule "3rdparty/dbcppp"]
+	path = 3rdparty/dbcppp
+	url = git@github.com:ozzdemir/dbcppp.git

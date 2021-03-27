@@ -128,6 +128,7 @@ include_directories(
     ./3rdparty/lua-5.4.1/src
     ./3rdparty/liblsl/src
     ./3rdparty/liblsl/include
+    ./3rdparty/dbcppp/include
 )
 
 #########################  LIBRARY  ####################################
@@ -197,6 +198,7 @@ add_subdirectory( 3rdparty/Qt-Advanced-Docking )
 add_subdirectory( 3rdparty/qwt/src )
 
 add_subdirectory( 3rdparty/lua-5.4.1 )
+add_subdirectory( 3rdparty/dbcppp )
 
 find_package(Git QUIET)
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
