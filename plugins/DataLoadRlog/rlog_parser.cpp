@@ -16,7 +16,7 @@ bool RlogMessageParser::parseMessage(const MessageRef msg, double time_stamp)
   return false;
 }
 
-bool RlogMessageParser::parseMessageImpl(const std::string& topic_name, capnp::DynamicValue::Reader value, double time_stamp)
+bool RlogMessageParser::parseMessageImpl(const std::string& topic_name, capnp::DynamicValue::Reader value, double time_stamp, bool show_deprecated)
 {
 
   PJ::PlotData& _data_series = getSeries(topic_name);
@@ -53,7 +53,7 @@ bool RlogMessageParser::parseMessageImpl(const std::string& topic_name, capnp::D
       int i = 0;
       for(auto element : value.as<capnp::DynamicList>())
       {
-        parseMessageImpl(topic_name + '/' + std::to_string(i), element, time_stamp);
+        parseMessageImpl(topic_name + '/' + std::to_string(i), element, time_stamp, show_deprecated);
         i++;
       }
       break;
@@ -74,7 +74,9 @@ bool RlogMessageParser::parseMessageImpl(const std::string& topic_name, capnp::D
         if (structValue.has(field))
         {
           std::string name = field.getProto().getName();
-          parseMessageImpl(topic_name + '/' + name, structValue.get(field), time_stamp);
+          if (show_deprecated || name.find("DEPRECATED") == std::string::npos) {
+            parseMessageImpl(topic_name + '/' + name, structValue.get(field), time_stamp, show_deprecated);
+          }
         }
       }
       break;

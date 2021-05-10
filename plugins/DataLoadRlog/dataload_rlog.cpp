@@ -81,6 +81,8 @@ bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
   progress_dialog.show();
 
   QString schema_path(std::getenv("BASEDIR"));
+  bool show_deprecated = std::getenv("SHOW_DEPRECATED");
+
   if(schema_path.isNull())
   {
     schema_path = QDir(getpwuid(getuid())->pw_dir).filePath("openpilot"); // fallback to $HOME/openpilot
@@ -129,7 +131,7 @@ bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
       } else if (event.has("sendcan")) {
         parser.parseCanMessage("/sendcan", event.get("sendcan").as<capnp::DynamicList>(), time_stamp);
       } else {
-        parser.parseMessageImpl("", event, time_stamp);
+        parser.parseMessageImpl("", event, time_stamp, show_deprecated);
       }
     }
     catch (const kj::Exception& e)
