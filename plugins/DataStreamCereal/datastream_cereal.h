@@ -5,8 +5,10 @@
 #include <thread>
 #include "PlotJuggler/datastreamer_base.h"
 #include "PlotJuggler/messageparser_base.h"
-#include "ui_datastream_zmq.h"
-#include "zmq.hpp"
+#include "ui_datastream_cereal.h"
+//#include "zmq.hpp"
+//#include "cereal/gen/cpp/car.capnp.h"
+#include "messaging.h"
 
 class StreamZMQDialog : public QDialog
 {

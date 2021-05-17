@@ -1,5 +1,5 @@
-#include "datastream_zmq.h"
-#include "ui_datastream_zmq.h"
+#include "datastream_cereal.h"
+#include "ui_datastream_cereal.h"
 
 #include <QMessageBox>
 #include <QDebug>
