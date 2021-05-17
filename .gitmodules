@@ -7,3 +7,6 @@
 [submodule "3rdparty/opendbc"]
 	path = 3rdparty/opendbc
 	url = ../opendbc
+[submodule "3rdparty/cereal"]
+	path = 3rdparty/cereal
+	url = https://github.com/commaai/cereal

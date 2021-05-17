@@ -8,7 +8,7 @@
 #include "ui_datastream_cereal.h"
 //#include "zmq.hpp"
 //#include "cereal/gen/cpp/car.capnp.h"
-#include "messaging.h"
+//#include "cereal/messaging/messaging.h"
 
 class StreamZMQDialog : public QDialog
 {

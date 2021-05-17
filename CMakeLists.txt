@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 PROJECT(plotjuggler)
 
+set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 add_definitions(
@@ -128,6 +129,7 @@ include_directories(
     ./3rdparty/qwt/src
     ./3rdparty/sol
     ./3rdparty/opendbc/can
+    ./3rdparty/cereal/messaging
     ./3rdparty/lua-5.4.1/src
     ./3rdparty/liblsl/src
     ./3rdparty/liblsl/include

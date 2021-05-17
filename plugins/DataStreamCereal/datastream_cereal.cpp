@@ -1,5 +1,6 @@
 #include "datastream_cereal.h"
 #include "ui_datastream_cereal.h"
+#include "cereal/messaging/messaging.h"
 
 #include <QMessageBox>
 #include <QDebug>

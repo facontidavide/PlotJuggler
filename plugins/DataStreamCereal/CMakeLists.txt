@@ -10,6 +10,11 @@ SET( SRC datastream_cereal.cpp )
 
 add_library(DataStreamCereal SHARED ${SRC} ${UI_SRC}  )
 
+target_include_directories(
+    DataStreamCereal
+    PUBLIC /home/batman/openpilot/openpilot/cereal
+    )
+
 target_link_libraries(DataStreamCereal
     ${Qt5Widgets_LIBRARIES}
     plotjuggler_plugin_base
