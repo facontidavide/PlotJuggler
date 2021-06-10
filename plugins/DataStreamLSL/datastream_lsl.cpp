@@ -54,7 +54,7 @@ QStringList StreamLSLDialog::getSelectedStreams()
 
 void StreamLSLDialog::resolveLSLStreams()
 {
-    std::vector<lsl::stream_info> streams = lsl::resolve_streams(0.0);
+    std::vector<lsl::stream_info> streams = lsl::resolve_streams(0.75);
 
     std::set<std::string> streams_id;
     for (const auto& stream: streams)
