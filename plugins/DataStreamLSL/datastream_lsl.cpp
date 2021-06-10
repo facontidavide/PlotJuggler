@@ -171,7 +171,7 @@ void DataStreamLSL::dataReceived(std::vector<std::vector<double> > *chunk, std::
 {
     Streamer *streamer = qobject_cast<Streamer*>(sender());
 
-    if (!streamer || (stamps->size() > 0))
+    if (streamer && (stamps->size() > 0))
     {
         //    qInfo() << chunk->size() << chunk->at(0).size();
         std::lock_guard<std::mutex> lock( mutex() );
