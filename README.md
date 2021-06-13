@@ -7,7 +7,7 @@
 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=I%20use%20PlotJuggler%20and%20it%20is%20amazing%0D%0A&url=https://github.com/facontidavide/PlotJuggler&via=facontidavide&hashtags=dataviz,plotjuggler,GoROS,PX4)
 **Gold Sponsor**: [Greenzie](https://www.greenzie.com/)
 
-# PlotJuggler 3.1
+# PlotJuggler 3.2
 
 PlotJuggler is a tool to visualize time series that is **fast**, **powerful** and  **intuitive**.
 

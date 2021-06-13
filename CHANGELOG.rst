@@ -2,6 +2,40 @@
 Changelog for package plotjuggler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* file removed
+* fix potential bug in StringSeries
+* fix rebase
+* apply color and style recursively in a group
+* delete button added. CPU optimized
+* apply the array visualization in the curvelist_panel itself
+* bug fix
+* add deleteSerieFromGroup
+* Fix "TextColor" in dark mode
+* fix PlotGroup and new attributes
+* multiple changes
+  - remove redundant importPlotDataMapHelper
+  - add "text_color" attribute
+  - change the way _replot_timer works (one shot triggered by
+  DataStreamer::dataReceived() )
+* adding PlotGroups and alternative "tree_name"
+* bug fix
+* fix issue when starting streaming plugins (add placeholders)
+* string series seems to work
+* WIP
+* embracing C++17 and new data strucutre to accomodate more types
+* Updated support for windows build + installer (`#396 <https://github.com/facontidavide/PlotJuggler/issues/396>`_)
+  Added win32build.bat batch file for easy windows builds (need to update QT path variables inside to correct ones in case it does not work)
+* Fix issue `#453 <https://github.com/facontidavide/PlotJuggler/issues/453>`_, `#419 <https://github.com/facontidavide/PlotJuggler/issues/419>`_ and `#405 <https://github.com/facontidavide/PlotJuggler/issues/405>`_ . Ulog path in Windows
+* Lag and crash fixed (`#455 <https://github.com/facontidavide/PlotJuggler/issues/455>`_)
+  * reduce lag when looking for streams
+  * crash fixed when lsl stream start and stop
+  * select all button added for LSL plugin
+* Update README.md
+* Update appimage.md
+* Contributors: Celal Savur, Davide Faconti, alkaes
+
 3.1.2 (2021-06-03)
 ------------------
 * add disable_opnegl option in command line
