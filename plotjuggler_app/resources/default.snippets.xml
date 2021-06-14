@@ -55,4 +55,51 @@ end
 return value - first_value</function>
     <linkedSource></linkedSource>
   </snippet>
+  
+  <snippet name="quat_to_roll">
+    <global></global>
+    <function>w = value
+x = v1
+y = v2
+z = v3
+
+dcm21 = 2 * (w * x + y * z)
+dcm22 = w*w - x*x - y*y + z*z
+
+roll = math.atan(dcm21, dcm22)
+
+return roll</function>
+    <linkedSource></linkedSource>
+  </snippet>
+
+  <snippet name="quat_to_pitch">
+    <global></global>
+    <function>w = value
+x = v1
+y = v2
+z = v3
+
+dcm20 = 2 * (x * z - w * y)
+
+pitch = math.asin(-dcm20)
+
+return pitch</function>
+    <linkedSource></linkedSource>
+  </snippet>
+
+    <snippet name="quat_to_yaw">
+    <global></global>
+    <function>w = value
+x = v1
+y = v2
+z = v3
+
+dcm10 = 2 * (x * y + w * z)
+dcm00 = w*w + x*x - y*y - z*z
+
+yaw = math.atan(dcm10, dcm00)
+
+return yaw</function>
+    <linkedSource></linkedSource>
+  </snippet>
 </snippets>
