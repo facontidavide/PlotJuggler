@@ -37,7 +37,7 @@ message(${catkin_INCLUDE_DIRS})
 
 elseif( DEFINED ENV{AMENT_PREFIX_PATH})
     set(COMPILING_WITH_AMENT 1)
-    
+
     find_package(ament_index_cpp REQUIRED)
     include_directories(${ament_index_cpp_INCLUDE_DIRS})
 
@@ -49,7 +49,7 @@ elseif( DEFINED ENV{AMENT_PREFIX_PATH})
 
 else()
     message(STATUS "--------------------------------------------------")
-    message(STATUS "PlotJuggler is being WITHOUT any ROS support")
+    message(STATUS "PlotJuggler is being built WITHOUT any ROS support")
     message(STATUS "--------------------------------------------------")
 endif()
 
@@ -208,4 +208,3 @@ add_subdirectory( plotjuggler_plugins/StatePublisherCSV )
 if( ZMQ_FOUND )
   add_subdirectory( plotjuggler_plugins/DataStreamZMQ )
 endif()
-
