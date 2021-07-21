@@ -9,6 +9,8 @@ if (UNIX AND NOT APPLE)
         find_package(Qt5 5.5 COMPONENTS X11Extras REQUIRED)
 endif()
 
+find_package(X11 REQUIRED)
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(ads_SRCS
@@ -67,7 +69,7 @@ target_link_libraries(qt_advanced_docking PUBLIC Qt5::Core Qt5::Gui Qt5::Widgets
 
 if(UNIX AND NOT APPLE)
     target_link_libraries(qt_advanced_docking PUBLIC Qt5::X11Extras)
-        target_link_libraries(qt_advanced_docking PRIVATE xcb)
+        target_link_libraries(qt_advanced_docking PRIVATE X11::xcb)
 endif()
 
 set_target_properties(qt_advanced_docking PROPERTIES
