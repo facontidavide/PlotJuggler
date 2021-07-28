@@ -75,10 +75,7 @@ MoveDataRet MoveData(PlotDataMapRef &source,
         ret.data_pushed = true;
       }
 
-      for (size_t i = 0; i < source_plot.size(); i++)
-      {
-        destination_plot.pushBack( source_plot.at(i) );
-      }
+      destination_plot.pushBack(source_plot.begin(), source_plot.end());
 
       double max_range_x = source_plot.maximumRangeX();
       destination_plot.setMaximumRangeX(max_range_x);

@@ -46,6 +46,14 @@ public:
       return ( index < 0 ) ? std::nullopt : std::optional( _points[index].y );
     }
 
+    void pushBack(typename std::deque<Point>::iterator start, typename std::deque<Point>::iterator end) override {
+        for(auto it = start; it != end; ++it) {
+            auto temp = *it;
+            PlotDataBase<double, Value>::pushBack(std::move(temp));
+        }
+        std::sort(_points.begin(), _points.end(), [](auto& p1, auto& p2){return p1.x < p2.x;});
+    }
+
     void pushBack(const Point &p) override
     {
         auto temp = p;

@@ -270,6 +270,12 @@ public:
         return std::nullopt;
     }
 
+    virtual void pushBack(Iterator start, Iterator end) {
+        for(auto p = start; p != end; ++p) {
+            pushBack(*p);
+        }
+    }
+
     virtual void pushBack(const Point &p)
     {
         auto temp = p;

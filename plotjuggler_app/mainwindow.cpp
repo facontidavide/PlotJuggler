@@ -1150,15 +1150,16 @@ void MainWindow::importPlotDataMap(PlotDataMapRef& new_data, bool remove_old)
     AddToDeleteList( _mapped_plot_data.numeric, new_data.numeric );
     AddToDeleteList( _mapped_plot_data.strings, new_data.strings );
 
-    if (!old_plots_to_delete.empty())
+    if (!_mapped_plot_data.numeric.empty() || !_mapped_plot_data.strings.empty()|| !_mapped_plot_data.user_defined.empty())
     {
       QMessageBox::StandardButton reply;
       reply = QMessageBox::question(this, tr("Warning"), tr("Do you want to remove the previously loaded data?\n"),
                                     QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-      if (reply == QMessageBox::Yes)
+      if (!old_plots_to_delete.empty() && reply == QMessageBox::Yes)
       {
         onDeleteMultipleCurves(old_plots_to_delete);
       }
+      remove_old = (reply == QMessageBox::Yes);
     }
   }
 

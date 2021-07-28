@@ -29,6 +29,10 @@ public:
         TimeseriesBase<StringRef>::clear();
     }
 
+    void pushBack(typename std::deque<Point>::iterator start, typename std::deque<Point>::iterator end) override {
+        TimeseriesBase<StringRef>::pushBack(start, end);
+    }
+
     void pushBack(const Point &p)  override
     {
         auto temp = p;
