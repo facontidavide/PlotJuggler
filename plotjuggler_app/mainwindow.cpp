@@ -1152,14 +1152,17 @@ void MainWindow::importPlotDataMap(PlotDataMapRef& new_data, bool remove_old)
 
     if (!_mapped_plot_data.numeric.empty() || !_mapped_plot_data.strings.empty()|| !_mapped_plot_data.user_defined.empty())
     {
-      QMessageBox::StandardButton reply;
-      reply = QMessageBox::question(this, tr("Warning"), tr("Do you want to remove the previously loaded data?\n"),
-                                    QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-      if (!old_plots_to_delete.empty() && reply == QMessageBox::Yes)
+      QMessageBox message_box(QMessageBox::Warning, tr("Warning"), tr("Do you want to remove the previously loaded data?\n"));
+      message_box.addButton("Yes",                    QMessageBox::YesRole);   // Remove old data
+      message_box.addButton("No (remove duplicates)", QMessageBox::NoRole);    // Keep old data except duplicates
+      message_box.addButton("No (merge duplicates)",  QMessageBox::ApplyRole); // Keep old data and merge duplicates
+      int reply_int = message_box.exec();
+
+      if (!old_plots_to_delete.empty() && reply_int == 0) // Remove duplicate data
       {
         onDeleteMultipleCurves(old_plots_to_delete);
       }
-      remove_old = (reply == QMessageBox::Yes);
+      remove_old = (reply_int != 2); // Set remove_old to false when the data should be merged.
     }
   }
 
