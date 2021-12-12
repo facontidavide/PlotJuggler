@@ -9,19 +9,51 @@
 #include <QMimeData>
 #include <QSettings>
 #include <cmath>
+#include <QPixmap>
+#include <QImage>
+#include <QProgressDialog>
+
 #include "PlotJuggler/svg_util.h"
 
-bool VideoDialog::loadFile(QString filename)
+ImageLabel::ImageLabel(QWidget *parent) :
+  QWidget(parent)
 {
-  if(!filename.isEmpty() && QFileInfo::exists(filename))
-  {
-    _media_player->play(filename);
-    _media_player->pause(true);
-    ui->lineFilename->setText(filename);
-    return true;
-  }
-  return false;
 }
+
+const QPixmap* ImageLabel::pixmap() const {
+  return &pix;
+}
+
+void ImageLabel::setPixmap (const QPixmap &pixmap){
+  pix = pixmap;
+}
+
+void ImageLabel::paintEvent(QPaintEvent *event)
+{
+  QWidget::paintEvent(event);
+
+  if (pix.isNull())
+  {
+    return;
+  }
+
+  QPainter painter(this);
+  painter.setRenderHint(QPainter::Antialiasing);
+
+  QSize rect_size = event->rect().size();
+  QSize pix_size = pix.size();
+  pix_size.scale(event->rect().size(), Qt::KeepAspectRatio);
+
+  QPoint corner((rect_size.width() - pix_size.width()) / 2,
+                (rect_size.height() - pix_size.height()) / 2);
+
+  QPixmap scaled_pix = pix.scaled(pix_size,
+                                 Qt::KeepAspectRatio,
+                                 Qt::SmoothTransformation);
+  painter.drawPixmap(corner, scaled_pix);
+}
+
+
 
 VideoDialog::VideoDialog(QWidget *parent) :
   QDialog(parent),
@@ -40,7 +72,7 @@ VideoDialog::VideoDialog(QWidget *parent) :
     return;
   }
   _media_player->setRenderer(_video_output);
-  ui->verticalLayoutMain->addWidget(_video_output->widget());
+  ui->verticalLayoutMain->addWidget(_video_output->widget(), 1.0);
 
   connect(_media_player, &AVPlayer::started,
           this, &VideoDialog::updateSlider);
@@ -50,12 +82,39 @@ VideoDialog::VideoDialog(QWidget *parent) :
   QSettings settings;
   QString theme = settings.value("Preferences::theme", "light").toString();
   ui->clearButton->setIcon(LoadSvg(":/resources/svg/trash.svg", theme));
+
+  _label = new ImageLabel;
+  ui->verticalLayoutMain->addWidget(_label, 1.0);
+  _label->setHidden(true);
 }
 
 VideoDialog::~VideoDialog()
 {
   delete ui;
 }
+
+bool VideoDialog::loadFile(QString filename)
+{
+  if(!filename.isEmpty() && QFileInfo::exists(filename))
+  {
+    _media_player->play(filename);
+    _media_player->pause(true);
+    ui->lineFilename->setText(filename);
+
+    _frame_reader = std::make_unique<QtAV::FrameReader>();
+    _frame_reader->setMedia(filename);
+    _frames.clear();
+    ui->decodeButton->setEnabled(true);
+
+    _decoded = false;
+
+    _video_output->widget()->setHidden(false);
+    _label->setHidden(true);
+    return true;
+  }
+  return false;
+}
+
 
 QString VideoDialog::referenceCurve() const
 {
@@ -97,6 +156,28 @@ void VideoDialog::updateSlider()
   ui->timeSlider->setRange(0, num_frames);
   _media_player->setNotifyInterval( static_cast<int>(1000 / fps) );
   _media_player->pause(true);
+
+  ui->timeSlider->setEnabled(true);
+
+  if(_media_player->isSeekable() == false || duration_ms == 0)
+  {
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle("Video is not seekable");
+    msgBox.setText(tr("Video is not seekable. You will need to decode the video into individual frames.\n"));
+    msgBox.addButton(QMessageBox::Cancel);
+    QPushButton* button = msgBox.addButton(tr("Decode!"), QMessageBox::YesRole);
+    msgBox.setDefaultButton(button);
+
+    int res = msgBox.exec();
+
+    if (res < 0 || res == QMessageBox::Cancel)
+    {
+      ui->timeSlider->setEnabled(false);
+    }
+    else{
+      on_decodeButton_clicked();
+    }
+  }
 }
 
 void VideoDialog::on_timeSlider_valueChanged(int frame)
@@ -104,13 +185,19 @@ void VideoDialog::on_timeSlider_valueChanged(int frame)
   double fps = _media_player->statistics().video.frame_rate;
   double period = 1000 / fps;
   qint64 frame_pos = static_cast<qint64>(qreal(frame) * period );
-//  qint64 current_pos = m_player->position();
-//  qint64 frames_diff = frame - _prev_frame;
 
-  _media_player->setSeekType(QtAV::SeekType::AccurateSeek);
-  _media_player->seek(frame_pos);
-
-  _prev_frame = frame;
+  if( _decoded )
+  {
+    frame = std::max(0, frame);
+    frame = std::min(int(_frames.size()-1), frame);
+    _label->setPixmap( QPixmap::fromImage( _frames[frame] ) );
+    _label->repaint();
+  }
+  else
+  {
+    _media_player->setSeekType(QtAV::SeekType::AccurateSeek);
+    _media_player->seek(frame_pos);
+  }
 }
 
 void VideoDialog::seekByValue(double value)
@@ -170,11 +257,6 @@ bool VideoDialog::eventFilter(QObject* obj, QEvent* ev)
   else if (ev->type() == QEvent::Drop)
   {
     auto lineEdit = qobject_cast<QLineEdit*>(obj);
-
-    if (!lineEdit)
-    {
-      return false;
-    }
     lineEdit->setText(_dragging_curve);
   }
   return false;
@@ -185,4 +267,61 @@ void VideoDialog::on_clearButton_clicked()
   _media_player->stop();
   ui->lineFilename->setText("");
   ui->lineEditReference->setText("");
+  ui->timeSlider->setEnabled(false);
+  ui->timeSlider->setValue(0);
+  ui->decodeButton->setEnabled(false);
+
+  _decoded = false;
+  _video_output->widget()->setHidden(false);
+  _label->setHidden(true);
+  _frames.clear();
+}
+
+
+void VideoDialog::on_decodeButton_clicked()
+{
+  if( _decoded )
+  {
+    return;
+  }
+
+  QProgressDialog progress_dialog;
+  progress_dialog.setWindowTitle("PlotJuggler Video");
+  progress_dialog.setLabelText("Decoding file");
+  progress_dialog.setWindowModality(Qt::ApplicationModal);
+  progress_dialog.setRange(0, 0);
+  progress_dialog.setAutoClose(true);
+  progress_dialog.setAutoReset(true);
+  progress_dialog.show();
+
+  int count = 0;
+  while (_frame_reader->readMore())
+  {
+    while (_frame_reader->hasEnoughVideoFrames())
+    {
+      const QtAV::VideoFrame frame = _frame_reader->getVideoFrame();
+      if (!frame)
+      {
+        continue;
+      }
+      _frames.push_back( frame.toImage() );
+      if( ++count % 10 == 0 )
+      {
+        progress_dialog.setValue(count);
+        QApplication::processEvents();
+        if (progress_dialog.wasCanceled())
+        {
+          _frames.clear();
+          return;
+        }
+      }
+    }
+  }
+  _decoded = true;
+  _video_output->widget()->hide();
+  _label->setHidden(false);
+
+  ui->decodeButton->setEnabled(false);
+  ui->timeSlider->setRange(0, _frames.size()-1);
+  on_timeSlider_valueChanged( ui->timeSlider->value() );
 }

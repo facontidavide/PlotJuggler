@@ -1,12 +1,33 @@
 #ifndef VIDEO_DIALOG_H
 #define VIDEO_DIALOG_H
 
+#include <memory>
 #include <QDialog>
 #include <QtAV>
 #include <QSlider>
 #include <QPushButton>
 #include <QCloseEvent>
+#include <QtAV/FrameReader.h>
 #include "ui_video_dialog.h"
+
+class ImageLabel : public QWidget
+{
+  Q_OBJECT
+
+public:
+  explicit ImageLabel(QWidget *parent = nullptr);
+  const QPixmap* pixmap() const;
+
+public slots:
+  void setPixmap(const QPixmap&);
+
+protected:
+  void paintEvent(QPaintEvent *);
+
+private:
+  QPixmap pix;
+};
+
 
 class VideoDialog : public QDialog
 {
@@ -47,6 +68,8 @@ private Q_SLOTS:
 
   void on_clearButton_clicked();
 
+  void on_decodeButton_clicked();
+
 signals:
 
   void closed();
@@ -54,11 +77,15 @@ signals:
 private:
   QtAV::VideoOutput *_video_output;
   QtAV::AVPlayer *_media_player;
-
-  int _prev_frame = 0;
+  std::unique_ptr<QtAV::FrameReader> _frame_reader;
+  std::vector<QImage> _frames;
 
   bool eventFilter(QObject* obj, QEvent* ev);
   QString _dragging_curve;
+
+  ImageLabel *_label;
+
+  bool _decoded = false;
 };
 
 #endif // VIDEO_DIALOG_H
