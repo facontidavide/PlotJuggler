@@ -285,11 +285,12 @@ void VideoDialog::on_decodeButton_clicked()
     return;
   }
 
+  double fps = _media_player->statistics().video.frame_rate;
   QProgressDialog progress_dialog;
   progress_dialog.setWindowTitle("PlotJuggler Video");
   progress_dialog.setLabelText("Decoding file");
   progress_dialog.setWindowModality(Qt::ApplicationModal);
-  progress_dialog.setRange(0, 0);
+  progress_dialog.setRange(0, _media_player->duration() * fps / 1000);
   progress_dialog.setAutoClose(true);
   progress_dialog.setAutoReset(true);
   progress_dialog.show();

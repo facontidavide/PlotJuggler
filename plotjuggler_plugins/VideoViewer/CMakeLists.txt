@@ -25,13 +25,5 @@ else()
         ${QTAVWIDGETS_LIBRARIES}
         plotjuggler_base
         )
-
+    install(TARGETS PublisherVideoViewer DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
 endif()
-
-
-
-
-
-
-install(TARGETS PublisherVideoViewer DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
-
