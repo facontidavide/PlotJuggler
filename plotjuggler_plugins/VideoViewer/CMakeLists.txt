@@ -1,12 +1,12 @@
 
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-find_package(QtAV REQUIRED)
+find_package(QtAV QUIET)
 
 if(NOT QtAV_FOUND)
     message("QtAV not found. VideoPlayer plugin will not be built. Try installing it with 'sudo apt install libqtav-dev'")
 else()
-    message("QtAV FOUND.Building VideoPlayer plugin")
+    message("QtAV FOUND. Building VideoPlayer plugin")
 
     include_directories( ../ ${QTAVWIDGETS_INCLUDE_DIRS})
 
