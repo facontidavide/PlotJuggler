@@ -570,8 +570,6 @@ bool DataLoadCSV::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) c
     elem.setAttribute("date_format", _ui->lineEditDateFormat->text());
   }
 
-
-
   parent_element.appendChild(elem);
   return true;
 }

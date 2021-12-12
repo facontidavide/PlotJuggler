@@ -18,25 +18,25 @@ class PublisherVideo : public PJ::StatePublisher
 public:
   PublisherVideo();
 
-  virtual ~PublisherVideo() {}
+  virtual ~PublisherVideo();
 
-  virtual const char* name() const override
+  const char* name() const override
   {
     return "Video Viewer";
   }
 
-  virtual bool enabled() const override
+  bool enabled() const override
   {
     return _enabled;
   }
 
-  virtual void updateState(double current_time) override
-  {
-  }
+  void updateState(double current_time) override;
 
-  virtual void play(double current_time) override
-  {
-  }
+  void play(double current_time) override;
+
+  bool xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const override;
+
+  bool xmlLoadState(const QDomElement& parent_element) override;
 
 public slots:
   virtual void setEnabled(bool enabled) override;
@@ -44,8 +44,9 @@ public slots:
 private:
 
   bool _enabled = false;
+  bool _xml_loaded = false;
 
-  VideoDialog* _dialog;
+  VideoDialog* _dialog = nullptr;
 };
 
 #endif  // STATE_PUBLISHER_VIDEO_VIEWER_H

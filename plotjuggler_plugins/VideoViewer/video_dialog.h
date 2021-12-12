@@ -2,12 +2,11 @@
 #define VIDEO_DIALOG_H
 
 #include <QDialog>
-#include <QMediaPlayer>
-#include <vlc/vlc.h>
-
-namespace Ui {
-class VideoDialog;
-}
+#include <QtAV>
+#include <QSlider>
+#include <QPushButton>
+#include <QCloseEvent>
+#include "ui_video_dialog.h"
 
 class VideoDialog : public QDialog
 {
@@ -17,37 +16,49 @@ public:
   explicit VideoDialog(QWidget *parent = nullptr);
   ~VideoDialog();
 
+  QString referenceCurve() const;
+
+  void pause(bool paused);
+
+  bool isPaused() const;
+
+  Ui::VideoDialog *ui;
+
+  bool loadFile(QString filename);
+
 private slots:
   void on_loadButton_clicked();
 
   void on_timeSlider_valueChanged(int value);
 
+  void closeEvent (QCloseEvent *event)
+  {
+    emit closed();
+  }
+
+public Q_SLOTS:
+
+  void seekByValue(double value);
+
+private Q_SLOTS:
+  void updateSliderPos(qint64 value);
+  void updateSlider();
+  void updateSliderUnit();
+
+  void on_clearButton_clicked();
+
+signals:
+
+  void closed();
+
 private:
-  Ui::VideoDialog *ui;
-//  QMediaPlayer* _media_player;
+  QtAV::VideoOutput *_video_output;
+  QtAV::AVPlayer *_media_player;
 
-  libvlc_instance_t *_vlcinstance;
-  libvlc_media_player_t *_media_player;
-  libvlc_media_t *_media;
+  int _prev_frame = 0;
 
-  void mediaStateChanged(QMediaPlayer::State state);
-
-  void positionChanged(qint64 position)
-  {
-
-  }
-
-  void durationChanged(qint64 duration)
-  {
-
-  }
-
-  void setPosition(int position)
-  {
-//    _media_player->setPosition(position);
-  }
-
-  void handleError();
+  bool eventFilter(QObject* obj, QEvent* ev);
+  QString _dragging_curve;
 };
 
 #endif // VIDEO_DIALOG_H
