@@ -1,0 +1,35 @@
+#include "winver.h"
+#include "@CMAKE_SOURCE_DIR@/src/QtAV/version.h"
+IDI_ICON1               ICON    DISCARDABLE     "@CMAKE_SOURCE_DIR@/src/QtAV.ico"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION QTAV_MAJOR,QTAV_MINOR,QTAV_PATCH,0
+ PRODUCTVERSION QTAV_MAJOR,QTAV_MINOR,QTAV_PATCH,0
+#ifdef _DEBUG
+ FILEFLAGS VS_FF_DEBUG
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEFLAGSMASK 0x3fL
+ FILEOS VOS_NT_WINDOWS32
+ FILETYPE VFT_DLL
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "CompanyName", "wbsecg1@gmail.com"
+            VALUE "FileDescription", "QtAV Multimedia framework. http://qtav.org"
+            VALUE "FileVersion", QTAV_VERSION_STR ".0"
+            VALUE "LegalCopyright", "Copyright (C) 2012-2019 WangBin, wbsecg1@gmail.com"
+            VALUE "InternalName", "@MODULE@"
+            VALUE "ProductName", "@MODULE@"
+            VALUE "ProductVersion", QTAV_VERSION_STR ".0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END

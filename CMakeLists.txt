@@ -242,10 +242,9 @@ add_subdirectory( plotjuggler_plugins/DataStreamMQTT )
 #add_subdirectory( plotjuggler_plugins/DataStreamZMQ )
 
 add_subdirectory( plotjuggler_plugins/StatePublisherCSV )
+add_subdirectory( plotjuggler_plugins/VideoViewer )
 
 add_subdirectory( plotjuggler_plugins/ToolboxQuaternion )
 add_subdirectory( plotjuggler_plugins/ToolboxFFT )
 
 add_subdirectory( plotjuggler_plugins/ParserProtobuf )
-
-
