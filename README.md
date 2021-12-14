@@ -102,7 +102,7 @@ Clone the repository as usual:
 The only binary dependency that you need installed in your system is Qt5. 
 On Ubuntu, the debians can be installed with the the command:
 
-    sudo apt -y install qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev
+    sudo apt -y install qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev
     
 On Fedora:
 
