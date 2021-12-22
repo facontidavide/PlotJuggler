@@ -10,6 +10,8 @@
 #include <QtAV/FrameReader.h>
 #include "ui_video_dialog.h"
 
+#include "qoi.h"
+
 class ImageLabel : public QWidget
 {
   Q_OBJECT
@@ -78,7 +80,27 @@ private:
   QtAV::VideoOutput *_video_output;
   QtAV::AVPlayer *_media_player;
   std::unique_ptr<QtAV::FrameReader> _frame_reader;
-  std::vector<QImage> _frames;
+  //std::vector<QImage> _frames;
+  struct CompressedFrame
+  {
+    CompressedFrame(): length(0), data(nullptr) {}
+    CompressedFrame(const CompressedFrame&) = delete;
+    CompressedFrame(CompressedFrame&& other): length(0), data(nullptr)
+    {
+      std::swap(other.data, data);
+      std::swap(other.length, length);
+    }
+
+    ~CompressedFrame()
+    {
+      if(data) free(data);
+    }
+
+    int length;
+    qoi_desc info;
+    void* data;
+  };
+  std::vector<CompressedFrame> _compressed_frames;
 
   bool eventFilter(QObject* obj, QEvent* ev);
   QString _dragging_curve;

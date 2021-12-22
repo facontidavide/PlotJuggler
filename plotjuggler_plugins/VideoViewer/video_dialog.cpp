@@ -15,6 +15,9 @@
 
 #include "PlotJuggler/svg_util.h"
 
+#define QOI_IMPLEMENTATION
+#include "qoi.h"
+
 ImageLabel::ImageLabel(QWidget *parent) :
   QWidget(parent)
 {
@@ -103,7 +106,7 @@ bool VideoDialog::loadFile(QString filename)
 
     _frame_reader = std::make_unique<QtAV::FrameReader>();
     _frame_reader->setMedia(filename);
-    _frames.clear();
+    _compressed_frames.clear();
     ui->decodeButton->setEnabled(true);
 
     _decoded = false;
@@ -180,18 +183,26 @@ void VideoDialog::updateSlider()
   }
 }
 
-void VideoDialog::on_timeSlider_valueChanged(int frame)
+void VideoDialog::on_timeSlider_valueChanged(int num)
 {
   double fps = _media_player->statistics().video.frame_rate;
   double period = 1000 / fps;
-  qint64 frame_pos = static_cast<qint64>(qreal(frame) * period );
+  qint64 frame_pos = static_cast<qint64>(qreal(num) * period );
 
   if( _decoded )
   {
-    frame = std::max(0, frame);
-    frame = std::min(int(_frames.size()-1), frame);
-    _label->setPixmap( QPixmap::fromImage( _frames[frame] ) );
+    num = std::max(0, num);
+    num = std::min(int(_compressed_frames.size()-1), num);
+
+    auto& frame = _compressed_frames[num];
+    void* data = qoi_decode( frame.data, frame.length, &frame.info, 3);
+    QImage image(static_cast<uchar*>(data), frame.info.width, frame.info.height, QImage::Format_RGB888);
+
+    //qDebug() << "ratio: " << double(3*frame.info.width*frame.info.height) / double(frame.length);
+
+    _label->setPixmap( QPixmap::fromImage( image ) );
     _label->repaint();
+    free(data);
   }
   else
   {
@@ -274,7 +285,7 @@ void VideoDialog::on_clearButton_clicked()
   _decoded = false;
   _video_output->widget()->setHidden(false);
   _label->setHidden(true);
-  _frames.clear();
+  _compressed_frames.clear();
 }
 
 
@@ -305,14 +316,26 @@ void VideoDialog::on_decodeButton_clicked()
       {
         continue;
       }
-      _frames.push_back( frame.toImage() );
+
+      QImage image = frame.toImage(QImage::Format_RGB888);
+
+      CompressedFrame compressed_frame;
+      compressed_frame.info.width = frame.width();
+      compressed_frame.info.height = frame.height();
+      compressed_frame.info.channels = 3;
+      compressed_frame.info.colorspace = QOI_LINEAR;
+      compressed_frame.data = qoi_encode(image.bits(), &compressed_frame.info, &compressed_frame.length);
+
+//      _frames.push_back( std::move(image) );
+      _compressed_frames.push_back( std::move(compressed_frame) );
+
       if( ++count % 10 == 0 )
       {
         progress_dialog.setValue(count);
         QApplication::processEvents();
         if (progress_dialog.wasCanceled())
         {
-          _frames.clear();
+          _compressed_frames.clear();
           return;
         }
       }
@@ -323,6 +346,6 @@ void VideoDialog::on_decodeButton_clicked()
   _label->setHidden(false);
 
   ui->decodeButton->setEnabled(false);
-  ui->timeSlider->setRange(0, _frames.size()-1);
+  ui->timeSlider->setRange(0, _compressed_frames.size()-1);
   on_timeSlider_valueChanged( ui->timeSlider->value() );
 }
