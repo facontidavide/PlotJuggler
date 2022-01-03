@@ -696,7 +696,7 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
     QMessageBox::warning(qwtPlot(), "Warning",
                          tr("Can't find one or more curves.\n"
                             "This message will be shown only once.\n%1")
-                            .arg(missing_curves.join(", ")));
+                            .arg(missing_curves.join(",\n")));
     warning_message_shown = true;
   }
 
