@@ -12,30 +12,25 @@ class QwtSeriesWrapper : public QwtSeriesData<QPointF>
 {
 private:
   const PlotDataXY* _data;
-  double _time_offset;
 
 public:
-  QwtSeriesWrapper(const PlotDataXY* data) : _data(data), _time_offset(0.0)
+  QwtSeriesWrapper(const PlotDataXY* data) : _data(data)
   {
   }
 
   QPointF sample(size_t i) const override;
 
-  void setTimeOffset(double offset);
-
-  virtual bool updateCache(bool reset_old_data) = 0;
-
   size_t size() const override;
 
   QRectF boundingRect() const override;
 
-  const PlotDataXY* plotData() const;
+  virtual const PlotDataXY* plotData() const;
 
   virtual RangeOpt getVisualizationRangeX();
 
-  virtual RangeOpt getVisualizationRangeY(Range range_X) = 0;
+  virtual RangeOpt getVisualizationRangeY(Range range_X);
 
-  virtual std::optional<QPointF> sampleFromTime(double t) = 0;
+  virtual void updateCache(bool reset_old_data) = 0;
 };
 
 class QwtTimeseries : public QwtSeriesWrapper
@@ -45,12 +40,23 @@ public:
   {
   }
 
+  QPointF sample(size_t i) const override;
+
+  QRectF boundingRect() const override;
+
+  void setTimeOffset(double offset);
+
+  virtual RangeOpt getVisualizationRangeX() override;
+
   virtual RangeOpt getVisualizationRangeY(Range range_X) override;
 
-  virtual std::optional<QPointF> sampleFromTime(double t) override;
+  virtual std::optional<QPointF> sampleFromTime(double t);
+
+  void updateCache(bool) override {}
 
 protected:
   const PlotData* _ts_data;
+  double _time_offset = 0.0;
 };
 
 //------------------------------------
@@ -64,7 +70,7 @@ public:
 
   void setTransform(QString transform_ID);
 
-  virtual bool updateCache(bool reset_old_data) override;
+  virtual void updateCache(bool reset_old_data) override;
 
   QString transformName();
 

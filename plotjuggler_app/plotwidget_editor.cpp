@@ -27,7 +27,7 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   QDomDocument doc;
   auto saved_state = plotwidget->xmlSaveState(doc);
 
-  _plotwidget = new PlotWidget(plotwidget->datamap());
+  _plotwidget = new PlotWidget(plotwidget->datamap(), this);
   _plotwidget->xmlLoadState(saved_state);
   _plotwidget->on_changeTimeOffset(plotwidget->timeOffset());
   _plotwidget->setContextMenuEnabled(false);

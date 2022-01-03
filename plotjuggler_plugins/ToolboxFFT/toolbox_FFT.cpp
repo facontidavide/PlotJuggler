@@ -214,7 +214,7 @@ void ToolboxFFT::onDragEnterEvent(QDragEnterEvent* event)
 
 void ToolboxFFT::onDropEvent(QDropEvent*)
 {
-  _zoom_range.min = -std::numeric_limits<double>::max();
+  _zoom_range.min = std::numeric_limits<double>::lowest();
   _zoom_range.max = std::numeric_limits<double>::max();
 
   for (auto& curve : _dragging_curves)
@@ -260,7 +260,7 @@ void ToolboxFFT::onSaveCurve()
     auto& out_data = _plot_data->getOrCreateNumeric(curve_id + suffix);
     out_data.clone(it->second);
 
-    out_data.setAttribute(PJ::DISABLE_LINKED_ZOOM, true);
+    // TODO out_data.setAttribute(PJ::DISABLE_LINKED_ZOOM, true);
     emit plotCreated(curve_id + suffix);
   }
 

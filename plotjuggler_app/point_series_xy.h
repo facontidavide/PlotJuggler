@@ -3,7 +3,7 @@
 
 #include "timeseries_qwt.h"
 
-class PointSeriesXY : public QwtSeriesWrapper
+class PointSeriesXY : public QwtTimeseries
 {
 public:
   PointSeriesXY(const PlotData* x_axis, const PlotData* y_axis);
@@ -20,7 +20,7 @@ public:
 
   RangeOpt getVisualizationRangeY(Range range_X) override;
 
-  bool updateCache(bool reset_old_data) override;
+  void updateCache(bool reset_old_data) override;
 
   RangeOpt getVisualizationRangeX() override;
 
@@ -31,6 +31,11 @@ public:
   const PlotData* dataY() const
   {
     return _y_axis;
+  }
+
+  const PlotDataXY* plotData() const override
+  {
+    return &_cached_curve;
   }
 
 protected:

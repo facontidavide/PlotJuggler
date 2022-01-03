@@ -3,7 +3,7 @@
 #include <cstdlib>
 
 PointSeriesXY::PointSeriesXY(const PlotData* x_axis, const PlotData* y_axis)
-  : QwtSeriesWrapper(&_cached_curve)
+  : QwtTimeseries(nullptr)
   , _x_axis(x_axis)
   , _y_axis(y_axis)
   , _cached_curve("", x_axis->group())
@@ -37,7 +37,7 @@ RangeOpt PointSeriesXY::getVisualizationRangeY(Range)
   return _cached_curve.rangeY();
 }
 
-bool PointSeriesXY::updateCache(bool reset_old_data)
+void PointSeriesXY::updateCache(bool reset_old_data)
 {
    _cached_curve.clear();
 
@@ -50,7 +50,7 @@ bool PointSeriesXY::updateCache(bool reset_old_data)
 
   if (data_size == 0)
   {
-    return true;
+    return;
   }
 
   const double EPS = std::numeric_limits<double>::epsilon();
@@ -65,7 +65,6 @@ bool PointSeriesXY::updateCache(bool reset_old_data)
     const QPointF p(_x_axis->at(i).y, _y_axis->at(i).y);
     _cached_curve.pushBack({ p.x(), p.y() });
   }
-  return true;
 }
 
 RangeOpt PointSeriesXY::getVisualizationRangeX()

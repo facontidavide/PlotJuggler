@@ -29,7 +29,7 @@ class PlotWidget : public PlotWidgetBase
   Q_OBJECT
 
 public:
-  PlotWidget(PlotDataMapRef& datamap, QWidget* parent = nullptr);
+  PlotWidget(PlotDataMapRef& datamap, QWidget* parent);
 
   void setContextMenuEnabled(bool enabled);
 

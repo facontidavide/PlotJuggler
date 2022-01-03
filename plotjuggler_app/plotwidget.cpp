@@ -35,7 +35,6 @@
 #include "qwt_date_scale_draw.h"
 #include "suggest_dialog.h"
 #include "transforms/custom_function.h"
-#include "transforms/custom_timeseries.h"
 #include "plotwidget_editor.h"
 #include "plotwidget_transforms.h"
 
@@ -883,11 +882,13 @@ void PlotWidget::setTrackerPosition(double abs_time)
   {
     for (auto& it : curveList())
     {
-      auto series = dynamic_cast<QwtSeriesWrapper*>(it.curve->data());
-      auto pointXY = series->sampleFromTime(abs_time);
-      if (pointXY)
+      if( auto series = dynamic_cast<QwtTimeseries*>(it.curve->data()) )
       {
-        it.marker->setValue(pointXY.value());
+        auto pointXY = series->sampleFromTime(abs_time);
+        if (pointXY)
+        {
+          it.marker->setValue(pointXY.value());
+        }
       }
     }
   }
@@ -907,8 +908,11 @@ void PlotWidget::on_changeTimeOffset(double offset)
   {
     for (auto& it : curveList())
     {
-      auto series = dynamic_cast<QwtSeriesWrapper*>(it.curve->data());
-      series->setTimeOffset(_time_offset);
+      auto series = dynamic_cast<QwtTimeseries*>(it.curve->data());
+      if( series )
+      {
+        series->setTimeOffset(_time_offset);
+      }
     }
     if (!isXYPlot() && !curveList().empty())
     {
@@ -1284,10 +1288,11 @@ bool PlotWidget::isZoomLinkEnabled() const
   for (const auto& it : curveList())
   {
     auto series = dynamic_cast<QwtSeriesWrapper*>(it.curve->data());
-    if (series->plotData()->attribute(PJ::DISABLE_LINKED_ZOOM).toBool())
-    {
-      return false;
-    }
+    // TODO
+//    if (series->plotData()->attribute(PJ::DISABLE_LINKED_ZOOM).toBool())
+//    {
+//      return false;
+//    }
   }
   return true;
 }

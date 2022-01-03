@@ -236,7 +236,7 @@ Range PlotWidgetBase::getVisualizationRangeY(Range range_X) const
 
     auto series = dynamic_cast<QwtSeriesWrapper*>(it.curve->data());
 
-    const auto max_range_X = series->plotData()->rangeX();
+    auto max_range_X = series->getVisualizationRangeX();
     if (!max_range_X)
     {
       continue;

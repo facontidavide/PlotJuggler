@@ -36,7 +36,12 @@ T& getOrCreateImpl(std::unordered_map<std::string, T>& series, const std::string
   return it->second;
 }
 
-PlotDataMap::iterator PlotDataMapRef::addNumeric(const std::string& name,
+ScatterXYMap::iterator PlotDataMapRef::addScatterXY(const std::string &name, PlotGroup::Ptr group)
+{
+  return addImpl(scatter_xy, name, group);
+}
+
+TimeseriesMap::iterator PlotDataMapRef::addNumeric(const std::string& name,
                                                  PlotGroup::Ptr group)
 {
   return addImpl(numeric, name, group);

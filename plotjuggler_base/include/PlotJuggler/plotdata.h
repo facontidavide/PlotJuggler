@@ -16,14 +16,20 @@ using PlotDataAny = TimeseriesBase<std::any>;
  * timeseries in a single place.
  */
 
-using PlotDataMap = std::unordered_map<std::string, PlotData>;
+// obsolate. For back compatibility only
+//using PlotDataMap = std::unordered_map<std::string, PlotData>;
+
+using TimeseriesMap = std::unordered_map<std::string, PlotData>;
+using ScatterXYMap = std::unordered_map<std::string, PlotDataXY>;
 using AnySeriesMap = std::unordered_map<std::string, PlotDataAny>;
 using StringSeriesMap = std::unordered_map<std::string, StringSeries>;
 
 struct PlotDataMapRef
 {
+  ScatterXYMap scatter_xy;
+
   /// Numerical timeseries
-  PlotDataMap numeric;
+  TimeseriesMap numeric;
 
   /// Timeseries that can contain any data structure.
   /// PlotJuggler can not display it natively, only plugins can manipulate them.
@@ -38,13 +44,18 @@ struct PlotDataMapRef
    */
   std::unordered_map<std::string, PlotGroup::Ptr> groups;
 
-  PlotDataMap::iterator addNumeric(const std::string& name, PlotGroup::Ptr group = {});
+  ScatterXYMap::iterator addScatterXY(const std::string& name, PlotGroup::Ptr group = {});
+
+  TimeseriesMap::iterator addNumeric(const std::string& name, PlotGroup::Ptr group = {});
 
   AnySeriesMap::iterator addUserDefined(const std::string& name,
                                         PlotGroup::Ptr group = {});
 
   StringSeriesMap::iterator addStringSeries(const std::string& name,
                                             PlotGroup::Ptr group = {});
+
+
+  PlotDataXY& getOrCreateScatterXY(const std::string& name, PlotGroup::Ptr group = {});
 
   PlotData& getOrCreateNumeric(const std::string& name, PlotGroup::Ptr group = {});
 

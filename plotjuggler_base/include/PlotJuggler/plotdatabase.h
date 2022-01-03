@@ -39,10 +39,7 @@ enum PlotAttribute
   ITALIC_FONTS,
   // Tooltip to be displayed on the curve list.
   // Type: QString
-  TOOL_TIP,
-  // Disable the "linked Zoom" property, similar to XY plots.
-  // Type: boolean. Default: false
-  DISABLE_LINKED_ZOOM
+  TOOL_TIP
 };
 
 inline const char* ToStr(const PlotAttribute& attr)
@@ -55,8 +52,6 @@ inline const char* ToStr(const PlotAttribute& attr)
       return "Italic";
     case TOOL_TIP:
       return "ToolTip";
-    case DISABLE_LINKED_ZOOM:
-      return "DisableLinkedZoom";
   }
   return "";
 }

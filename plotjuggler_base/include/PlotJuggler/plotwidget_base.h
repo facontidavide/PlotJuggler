@@ -38,7 +38,7 @@ public:
 
   PlotWidgetBase(QWidget* parent);
 
-  ~PlotWidgetBase();
+  virtual ~PlotWidgetBase();
 
   virtual CurveInfo* addCurve(const std::string& name, PlotData& src_data,
                               QColor color = Qt::transparent);
