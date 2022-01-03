@@ -27,33 +27,42 @@ struct Range
 };
 
 typedef std::optional<Range> RangeOpt;
-using Attributes = std::map<std::string, QVariant>;
 
 // Attributes supported by the GUI.
 enum PlotAttribute
 {
-  // color to be displayed on the curve list. Type: QColor
+  // color to be displayed on the curve list.
+  // Type: QColor
   TEXT_COLOR,
+
   // font style to be displayed on the curve list.
   // Type: boolean. Default: false
   ITALIC_FONTS,
+
   // Tooltip to be displayed on the curve list.
   // Type: QString
-  TOOL_TIP
+  TOOL_TIP,
+
+  // Color of the curve in the plot.
+  // Type: QColor
+  COLOR_HINT
 };
 
-inline const char* ToStr(const PlotAttribute& attr)
+using Attributes = std::unordered_map<PlotAttribute, QVariant>;
+
+inline bool CheckType(PlotAttribute attr, const QVariant& value )
 {
   switch (attr)
   {
     case TEXT_COLOR:
-      return "TextColor";
+    case COLOR_HINT:
+      return value.type() == QVariant::Color;
     case ITALIC_FONTS:
-      return "Italic";
+      return value.type() == QVariant::Bool;
     case TOOL_TIP:
-      return "ToolTip";
+      return value.type() == QVariant::String;
   }
-  return "";
+  return false;
 }
 
 /**
@@ -75,11 +84,6 @@ public:
     return _name;
   }
 
-  void setAttribute(const std::string& name, const QVariant& value)
-  {
-    _attributes[name] = value;
-  }
-
   const Attributes& attributes() const
   {
     return _attributes;
@@ -90,28 +94,15 @@ public:
     return _attributes;
   }
 
-  QVariant attribute(const std::string& name) const
-  {
-    auto it = _attributes.find(name);
-
-    if (it == _attributes.end())
-    {
-      return {};
-    }
-    else
-    {
-      return it->second;
-    }
-  }
-
   void setAttribute(const PlotAttribute& id, const QVariant& value)
   {
-    _attributes[ToStr(id)] = value;
+    _attributes[id] = value;
   }
 
   QVariant attribute(const PlotAttribute& id) const
   {
-    return attribute(ToStr(id));
+    auto it = _attributes.find(id);
+    return (it == _attributes.end()) ? QVariant() : it->second;
   }
 
 private:
@@ -123,6 +114,7 @@ private:
 template <typename TypeX, typename Value>
 class PlotDataBase
 {
+
 public:
   class Point
   {
@@ -143,6 +135,7 @@ public:
 
   typedef typename std::deque<Point>::iterator Iterator;
   typedef typename std::deque<Point>::const_iterator ConstIterator;
+  typedef Value ValueT;
 
   PlotDataBase(const std::string& name, PlotGroup::Ptr group)
     : _name(name), _range_x_dirty(true), _range_y_dirty(true), _group(group)
@@ -154,6 +147,15 @@ public:
 
   PlotDataBase& operator=(const PlotDataBase& other) = delete;
   PlotDataBase& operator=(PlotDataBase&& other) = default;
+
+  void clonePoints(const PlotDataBase& other)
+  {
+    _points = other._points;
+    _range_x = other._range_x;
+    _range_y = other._range_y;
+    _range_x_dirty = other._range_x_dirty;
+    _range_y_dirty = other._range_y_dirty;
+  }
 
   virtual ~PlotDataBase() = default;
 
@@ -175,6 +177,11 @@ public:
   virtual size_t size() const
   {
     return _points.size();
+  }
+
+  virtual bool isTimeseries() const
+  {
+    return false;
   }
 
   const Point& at(size_t index) const
@@ -204,11 +211,6 @@ public:
     _range_y_dirty = true;
   }
 
-  void setAttribute(const std::string& name, const QVariant& value)
-  {
-    _attributes[name] = value;
-  }
-
   const Attributes& attributes() const
   {
     return _attributes;
@@ -219,28 +221,19 @@ public:
     return _attributes;
   }
 
-  QVariant attribute(const std::string& name) const
+  void setAttribute(PlotAttribute id, const QVariant& value)
   {
-    auto it = _attributes.find(name);
-
-    if (it == _attributes.end())
+    _attributes[id] = value;
+    if(!CheckType(id, value))
     {
-      return {};
-    }
-    else
-    {
-      return it->second;
+      throw std::runtime_error("PlotDataBase::setAttribute : wrong type");
     }
   }
 
-  void setAttribute(const PlotAttribute& id, const QVariant& value)
+  QVariant attribute(PlotAttribute id) const
   {
-    _attributes[ToStr(id)] = value;
-  }
-
-  QVariant attribute(const PlotAttribute& id) const
-  {
-    return attribute(ToStr(id));
+    auto it = _attributes.find(id);
+    return (it == _attributes.end()) ? QVariant() : it->second;
   }
 
   const Point& front() const

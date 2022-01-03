@@ -59,6 +59,12 @@ StringSeriesMap::iterator PlotDataMapRef::addStringSeries(const std::string& nam
   return addImpl(strings, name, group);
 }
 
+PlotDataXY &PlotDataMapRef::getOrCreateScatterXY(const std::string &name,
+                                                 PlotGroup::Ptr group)
+{
+  return getOrCreateImpl(scatter_xy, name, group);
+}
+
 PlotData& PlotDataMapRef::getOrCreateNumeric(const std::string& name,
                                              PlotGroup::Ptr group)
 {

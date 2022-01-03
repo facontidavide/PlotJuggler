@@ -1281,6 +1281,7 @@ void MainWindow::importPlotDataMap(PlotDataMapRef& new_data, bool remove_old)
       }
     };
 
+    ClearOldSeries(_mapped_plot_data.scatter_xy, new_data.scatter_xy);
     ClearOldSeries(_mapped_plot_data.numeric, new_data.numeric);
     ClearOldSeries(_mapped_plot_data.strings, new_data.strings);
   }

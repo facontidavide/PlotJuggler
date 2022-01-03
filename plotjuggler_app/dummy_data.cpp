@@ -86,4 +86,11 @@ void BuildDummyData(PlotDataMapRef& datamap)
         break;
     }
   }
+
+  PlotDataXY& octagon = datamap.addScatterXY("octagon_trajectory")->second;
+  for (unsigned i = 0; i < 8; i++)
+  {
+    double angle = double(i) * M_PI / 4;
+    octagon.pushBack(PlotData::Point(cos(angle), sin(angle)));
+  }
 }

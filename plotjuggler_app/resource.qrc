@@ -281,5 +281,7 @@
         <file>resources/skin/mainwindow_title.txt</file>
         <file>resources/svg/alarm-bell.svg</file>
         <file>resources/svg/alarm-bell-active.svg</file>
+        <file>resources/svg/xy.svg</file>
+        <file>resources/svg/scatter.svg</file>
     </qresource>
 </RCC>

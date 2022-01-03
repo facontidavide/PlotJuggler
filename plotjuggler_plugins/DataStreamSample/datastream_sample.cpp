@@ -38,23 +38,18 @@ DataStreamSample::DataStreamSample()
     param.D = 20 * ((double)rand() / (double)RAND_MAX);
     _parameters.insert({ str, param });
     auto& plotdata = dataMap().addNumeric(str)->second;
-
-    if (i % 5 == 0)
-    {
-      plotdata.setAttribute("label_color", "red");
-    }
   }
   //------------
   dataMap().addStringSeries("color");
 
   //------------
   auto tcGroup = std::make_shared<PJ::PlotGroup>("tc");
-  tcGroup->setAttribute("text_color", QColor(Qt::blue));
+  tcGroup->setAttribute(TEXT_COLOR, QColor(Qt::blue));
 
   auto& tc_default = dataMap().addNumeric("tc/default")->second;
   auto& tc_red = dataMap().addNumeric("tc/red")->second;
 
-  tc_red.setAttribute("text_color", QColor(Qt::red));
+  tc_red.setAttribute(TEXT_COLOR, QColor(Qt::red));
 }
 
 bool DataStreamSample::start(QStringList*)

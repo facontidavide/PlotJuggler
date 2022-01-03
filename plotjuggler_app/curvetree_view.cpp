@@ -62,7 +62,8 @@ CurveTreeView::CurveTreeView(CurveListPanel* parent)
   });
 }
 
-void CurveTreeView::addItem(const QString& group_name, const QString& tree_name,
+void CurveTreeView::addItem(const QString& group_name,
+                            const QString& tree_name,
                             const QString& plot_ID)
 {
   QSettings settings;

@@ -256,7 +256,8 @@ void PlotWidget::canvasContextMenuTriggered(const QPoint& pos)
   menu.exec(qwtPlot()->canvas()->mapToGlobal(pos));
 }
 
-PlotWidget::CurveInfo* PlotWidget::addCurveXY(std::string name_x, std::string name_y,
+PlotWidget::CurveInfo* PlotWidget::addCurveXY(std::string name_x,
+                                              std::string name_y,
                                               QString curve_name)
 {
   std::string name = curve_name.toStdString();
@@ -355,12 +356,19 @@ PlotWidget::CurveInfo* PlotWidget::addCurveXY(std::string name_x, std::string na
 
 PlotWidgetBase::CurveInfo* PlotWidget::addCurve(const std::string& name, QColor color)
 {
-  auto it = _mapped_data.numeric.find(name);
-  if (it == _mapped_data.numeric.end())
+  auto it1 = _mapped_data.numeric.find(name);
+  if (it1 != _mapped_data.numeric.end())
   {
-    return nullptr;
+    return PlotWidgetBase::addCurve(name, it1->second, color);
   }
-  return PlotWidgetBase::addCurve(name, it->second, color);
+
+  auto it2 = _mapped_data.scatter_xy.find(name);
+  if (it2 != _mapped_data.scatter_xy.end())
+  {
+    return PlotWidgetBase::addCurve(name, it2->second, color);
+  }
+
+  return nullptr;
 }
 
 void PlotWidget::removeCurve(const QString& title)
@@ -461,19 +469,46 @@ void PlotWidget::onDropEvent(QDropEvent*)
 
   if (_dragging.mode == DragInfo::CURVES)
   {
-    if (isXYPlot() && !curveList().empty())
+    size_t scatter_count = 0;
+    for (const auto& curve_name : _dragging.curves)
+    {
+      scatter_count += _mapped_data.scatter_xy.count( curve_name.toStdString() );
+    }
+    bool scatter_curves = (scatter_count == _dragging.curves.size());
+    if( scatter_count > 0 && !scatter_curves )
     {
       _dragging.mode = DragInfo::NONE;
       _dragging.curves.clear();
       QMessageBox::warning(qwtPlot(), "Warning",
-                           tr("This is a XY plot, you can not drop normal time series "
-                              "here.\n"
-                              "Clear all curves to reset it to normal mode."));
+                           "You can not drag XY (scatter) data and timeseries into the same plot");
       return;
     }
-    else if (isXYPlot() && curveList().empty())
+
+    // if there aren't other curves, you can change the mode
+    if (curveList().empty())
     {
-      setModeXY(false);
+      setModeXY(scatter_curves);
+    }
+
+    if (isXYPlot() && !scatter_curves)
+    {
+      QMessageBox::warning(qwtPlot(), "Warning",
+                           tr("This is a XY plot, you can not drop a timeseries here.\n"
+                              "Clear all curves to reset it."));
+    }
+    if (!isXYPlot() && scatter_curves)
+    {
+
+      QMessageBox::warning(qwtPlot(), "Warning",
+                           tr("This is a timeseries plot, you can not drop XY scatter data here.\n"
+                              "Clear all curves to reset it."));
+    }
+
+    if( isXYPlot() != scatter_curves )
+    {
+      _dragging.mode = DragInfo::NONE;
+      _dragging.curves.clear();
+      return;
     }
 
     for (const auto& curve_name : _dragging.curves)
@@ -567,11 +602,13 @@ QDomElement PlotWidget::xmlSaveState(QDomDocument& doc) const
 
     if (isXYPlot())
     {
-      PointSeriesXY* curve_xy = dynamic_cast<PointSeriesXY*>(curve->data());
-      curve_el.setAttribute("curve_x",
-                            QString::fromStdString(curve_xy->dataX()->plotName()));
-      curve_el.setAttribute("curve_y",
-                            QString::fromStdString(curve_xy->dataY()->plotName()));
+      if (auto xy = dynamic_cast<PointSeriesXY*>(curve->data()))
+      {
+        curve_el.setAttribute("curve_x",
+                              QString::fromStdString(xy->dataX()->plotName()));
+        curve_el.setAttribute("curve_y",
+                              QString::fromStdString(xy->dataY()->plotName()));
+      }
     }
     else
     {
@@ -631,30 +668,42 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
   for (QDomElement curve_element = plot_widget.firstChildElement("curve");
        !curve_element.isNull(); curve_element = curve_element.nextSiblingElement("curve"))
   {
+    bool is_merged_xy = curve_element.hasAttribute("curve_x") &&
+                        curve_element.hasAttribute("curve_y");
+    bool is_timeseries = !isXYPlot();
+    bool is_scatter_xy = !is_timeseries && !is_merged_xy;
+
     QString curve_name = curve_element.attribute("name");
     std::string curve_name_std = curve_name.toStdString();
     QColor color(curve_element.attribute("color"));
 
+<<<<<<< HEAD
     if (!isXYPlot())
+=======
+    bool error = false;
+    //-----------------
+    if( is_timeseries || is_scatter_xy )
+>>>>>>> WIP
     {
-      if (_mapped_data.numeric.find(curve_name_std) == _mapped_data.numeric.end())
+      if ( (is_timeseries && _mapped_data.numeric.count(curve_name_std) == 0) ||
+           (!is_timeseries && _mapped_data.scatter_xy.count(curve_name_std) == 0) )
       {
         missing_curves.append(curve_name);
       }
       else
       {
-        auto curve_it = addCurve(curve_name_std, color);
-        if (!curve_it)
+        auto curve_info = addCurve(curve_name_std, color);
+        if (!curve_info)
         {
           continue;
         }
-        auto& curve = curve_it->curve;
+        auto& curve = curve_info->curve;
         curve->setPen(color, 1.3);
         added_curve_names.insert(curve_name_std);
 
         auto ts = dynamic_cast<TransformedTimeseries*>(curve->data());
         QDomElement transform_el = curve_element.firstChildElement("transform");
-        if (transform_el.isNull() == false)
+        if (ts && transform_el.isNull() == false)
         {
           ts->setTransform(transform_el.attribute("name"));
           ts->transform()->xmlLoadState(transform_el);
@@ -665,11 +714,11 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
         }
       }
     }
-    else
+    //-----------------
+    if( is_merged_xy)
     {
       std::string curve_x = curve_element.attribute("curve_x").toStdString();
       std::string curve_y = curve_element.attribute("curve_y").toStdString();
-
       if (_mapped_data.numeric.find(curve_x) == _mapped_data.numeric.end() ||
           _mapped_data.numeric.find(curve_y) == _mapped_data.numeric.end())
       {
@@ -950,8 +999,6 @@ void PlotWidget::on_changeDateTimeScale(bool enable)
 // TODO report failure for empty dataset
 Range PlotWidget::getVisualizationRangeY(Range range_X) const
 {
-  range_X.min += _time_offset;
-  range_X.max += _time_offset;
   auto [bottom, top] = PlotWidgetBase::getVisualizationRangeY(range_X);
 
   const bool lower_limit = _custom_Y_limits.min > -MAX_DOUBLE;
@@ -1285,15 +1332,14 @@ void PlotWidget::overrideCursonMove()
 
 bool PlotWidget::isZoomLinkEnabled() const
 {
-  for (const auto& it : curveList())
-  {
-    auto series = dynamic_cast<QwtSeriesWrapper*>(it.curve->data());
-    // TODO
+//  for (const auto& it : curveList())
+//  {
+//    auto series = dynamic_cast<QwtSeriesWrapper*>(it.curve->data());
 //    if (series->plotData()->attribute(PJ::DISABLE_LINKED_ZOOM).toBool())
 //    {
 //      return false;
 //    }
-  }
+//  }
   return true;
 }
 

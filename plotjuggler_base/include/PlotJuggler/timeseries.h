@@ -28,10 +28,9 @@ public:
   TimeseriesBase& operator=(const TimeseriesBase& other) = delete;
   TimeseriesBase& operator=(TimeseriesBase&& other) = default;
 
-  void clone(const TimeseriesBase& other)
+  virtual bool isTimeseries() const override
   {
-    _max_range_x = other._max_range_x;
-    _points = other._points;
+    return true;
   }
 
   void setMaximumRangeX(double max_range)

@@ -141,7 +141,7 @@ void ToolboxFFT::calculateCurveFFT()
     kiss_fftr(config, input.data(), out.data());
     QApplication::restoreOverrideCursor();
 
-    auto& curver_fft = _local_data.getOrCreateNumeric(curve_id);
+    auto& curver_fft = _local_data.getOrCreateScatterXY(curve_id);
     curver_fft.clear();
     for (int i = 0; i < N / 2; i++)
     {
@@ -151,7 +151,7 @@ void ToolboxFFT::calculateCurveFFT()
     }
 
     QColor color = Qt::transparent;
-    auto colorHint = curve_data.attribute("ColorHint");
+    auto colorHint = curve_data.attribute(COLOR_HINT);
     if (colorHint.isValid())
     {
       color = colorHint.value<QColor>();
@@ -252,13 +252,13 @@ void ToolboxFFT::onSaveCurve()
   }
   for (const auto& curve_id : _curve_names)
   {
-    auto it = _local_data.numeric.find(curve_id);
-    if (it == _local_data.numeric.end())
+    auto it = _local_data.scatter_xy.find(curve_id);
+    if (it == _local_data.scatter_xy.end())
     {
       continue;
     }
-    auto& out_data = _plot_data->getOrCreateNumeric(curve_id + suffix);
-    out_data.clone(it->second);
+    auto& out_data = _plot_data->getOrCreateScatterXY(curve_id + suffix);
+    out_data.clonePoints(it->second);
 
     // TODO out_data.setAttribute(PJ::DISABLE_LINKED_ZOOM, true);
     emit plotCreated(curve_id + suffix);

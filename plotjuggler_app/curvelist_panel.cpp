@@ -101,6 +101,7 @@ void CurveListPanel::addCurve(const std::string& plot_name)
   };
 
   bool found = FindInPlotData(_plot_data.numeric, plot_name) ||
+               FindInPlotData(_plot_data.scatter_xy, plot_name) ||
                FindInPlotData(_plot_data.strings, plot_name);
 
   if (!found)
@@ -161,7 +162,7 @@ void CurveListPanel::updateColors()
         ChangeColorAndStyle(cell, text_color, italic);
 
         // tooltip doesn't propagate
-        QVariant tooltip = it->second->attribute("ToolTip");
+        QVariant tooltip = it->second->attribute(TOOL_TIP);
         cell->setData(0, CustomRoles::ToolTip, tooltip);
       }
     }
@@ -183,16 +184,17 @@ void CurveListPanel::updateColors()
         auto it = plot_data.find(curve_name);
         if (it != plot_data.end())
         {
-          QVariant color_var = it->second.attribute(PJ::TEXT_COLOR);
+          auto& series = it->second;
+          QVariant color_var = series.attribute(PJ::TEXT_COLOR);
           if (color_var.isValid())
           {
             cell->setForeground(0, color_var.value<QColor>());
           }
 
-          QVariant tooltip_var = it->second.attribute(PJ::TOOL_TIP);
+          QVariant tooltip_var = series.attribute(PJ::TOOL_TIP);
           cell->setData(0, CustomRoles::ToolTip, tooltip_var);
 
-          QVariant style_var = it->second.attribute(PJ::ITALIC_FONTS);
+          QVariant style_var = series.attribute(PJ::ITALIC_FONTS);
           bool italic = (style_var.isValid() && style_var.value<bool>());
           if (italic)
           {
@@ -200,12 +202,17 @@ void CurveListPanel::updateColors()
             font.setItalic(italic);
             cell->setFont(0, font);
           }
+          if( series.isTimeseries() == false )
+          {
+            cell->setIcon(0, LoadSvg("://resources/svg/xy.svg", _style_dir));
+          }
           return true;
         }
         return false;
       };
 
       bool valid = (GetTextColor(_plot_data.numeric, curve_name) ||
+                    GetTextColor(_plot_data.scatter_xy, curve_name) ||
                     GetTextColor(_plot_data.strings, curve_name));
     }
   };
@@ -533,6 +540,23 @@ void CurveListPanel::on_stylesheetChanged(QString theme)
   ui->buttonAddCustom->setIcon(LoadSvg(":/resources/svg/add_tab.svg", theme));
   ui->buttonEditCustom->setIcon(LoadSvg(":/resources/svg/pencil-edit.svg", theme));
   ui->pushButtonTrash->setIcon(LoadSvg(":/resources/svg/trash.svg", theme));
+
+  auto ChangeIconVisitor = [&](QTreeWidgetItem* cell)
+  {
+    const auto& curve_name = cell->data(0, CustomRoles::Name).toString().toStdString();
+
+    auto it = _plot_data.scatter_xy.find(curve_name);
+    if (it != _plot_data.scatter_xy.end())
+    {
+      auto& series = it->second;
+      if( series.isTimeseries() == false )
+      {
+        cell->setIcon(0, LoadSvg("://resources/svg/xy.svg", _style_dir));
+      }
+    }
+  };
+
+  _tree_view->treeVisitor(ChangeIconVisitor);
 }
 
 void CurveListPanel::on_checkBoxShowValues_toggled(bool show)

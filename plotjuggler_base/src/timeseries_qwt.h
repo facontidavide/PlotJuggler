@@ -30,7 +30,8 @@ public:
 
   virtual RangeOpt getVisualizationRangeY(Range range_X);
 
-  virtual void updateCache(bool reset_old_data) = 0;
+  virtual void updateCache(bool reset_old_data)
+  {}
 };
 
 class QwtTimeseries : public QwtSeriesWrapper
