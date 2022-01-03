@@ -61,7 +61,7 @@ void StatePublisherCSV::setEnabled(bool enabled)
     //--------------------
     connect(_ui->checkBoxFirst, &QCheckBox::toggled, this, [this](bool checked) {
       _ui->lineEditStart->setEnabled(!checked);
-      _start_time = (checked) ? -std::numeric_limits<double>::max() : _previous_time;
+      _start_time = (checked) ? std::numeric_limits<double>::lowest() : _previous_time;
       updateButtonsState();
     });
     //--------------------

@@ -105,7 +105,7 @@ public:
   const PlotData* dataSource() const;
 
 protected:
-  double _last_timestamp = -std::numeric_limits<double>::max();
+  double _last_timestamp = std::numeric_limits<double>::lowest();
 };
 
 ///------ The factory to create instances of a SeriesTransform -------------
