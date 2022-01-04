@@ -356,19 +356,18 @@ PlotWidget::CurveInfo* PlotWidget::addCurveXY(std::string name_x,
 
 PlotWidgetBase::CurveInfo* PlotWidget::addCurve(const std::string& name, QColor color)
 {
+  PlotWidgetBase::CurveInfo* info = nullptr;
+
   auto it1 = _mapped_data.numeric.find(name);
   if (it1 != _mapped_data.numeric.end())
   {
-    return PlotWidgetBase::addCurve(name, it1->second, color);
+    info = PlotWidgetBase::addCurve(name, it1->second, color);
+    if( auto timeseries = dynamic_cast<QwtTimeseries*>( info->curve->data() ))
+    {
+      timeseries->setTimeOffset(_time_offset);
+    }
   }
-
-  auto it2 = _mapped_data.scatter_xy.find(name);
-  if (it2 != _mapped_data.scatter_xy.end())
-  {
-    return PlotWidgetBase::addCurve(name, it2->second, color);
-  }
-
-  return nullptr;
+  return info;
 }
 
 void PlotWidget::removeCurve(const QString& title)
@@ -420,45 +419,55 @@ void PlotWidget::onDragEnterEvent(QDragEnterEvent* event)
 {
   const QMimeData* mimeData = event->mimeData();
   QStringList mimeFormats = mimeData->formats();
+
+  _dragging.mode = DragInfo::NONE;
   _dragging.curves.clear();
   _dragging.source = event->source();
 
-  for (const QString& format : mimeFormats)
+  auto& format = mimeFormats.first();
+  QByteArray encoded = mimeData->data(format);
+  QDataStream stream(&encoded, QIODevice::ReadOnly);
+
+  while (!stream.atEnd())
   {
-    QByteArray encoded = mimeData->data(format);
-    QDataStream stream(&encoded, QIODevice::ReadOnly);
-
-    while (!stream.atEnd())
+    QString curve_name;
+    stream >> curve_name;
+    auto name = curve_name.toStdString();
+    if (!curve_name.isEmpty())
     {
-      QString curve_name;
-      stream >> curve_name;
-      if (!curve_name.isEmpty())
-      {
-        _dragging.curves.push_back(curve_name);
-      }
+      _dragging.curves.push_back(curve_name);
     }
-
-    if (format == "curveslist/add_curve")
+    if( _mapped_data.numeric.count(name) == 0 &&
+        _mapped_data.scatter_xy.count(name) == 0 )
     {
-      _dragging.mode = DragInfo::CURVES;
+      event->ignore();
+      return;
+    }
+  }
+
+  if(_dragging.curves.empty())
+  {
+    event->ignore();
+    return;
+  }
+
+  if (format == "curveslist/add_curve")
+  {
+    _dragging.mode = DragInfo::CURVES;
+    event->acceptProposedAction();
+  }
+
+  if (format == "curveslist/new_XY_axis")
+  {
+    if (_dragging.curves.size() != 2)
+    {
+      qDebug() << "FATAL: Dragging " << _dragging.curves.size() << " curves";
+      return;
+    }
+    if (curveList().empty() || isXYPlot())
+    {
+      _dragging.mode = DragInfo::NEW_XY;
       event->acceptProposedAction();
-    }
-    if (format == "curveslist/new_XY_axis")
-    {
-      if (_dragging.curves.size() != 2)
-      {
-        qDebug() << "FATAL: Dragging " << _dragging.curves.size() << " curves";
-        return;
-      }
-      if (curveList().empty() || isXYPlot())
-      {
-        _dragging.mode = DragInfo::NEW_XY;
-        event->acceptProposedAction();
-      }
-      else
-      {
-        event->ignore();
-      }
     }
   }
 }
@@ -493,15 +502,18 @@ void PlotWidget::onDropEvent(QDropEvent*)
     if (isXYPlot() && !scatter_curves)
     {
       QMessageBox::warning(qwtPlot(), "Warning",
-                           tr("This is a XY plot, you can not drop a timeseries here.\n"
-                              "Clear all curves to reset it."));
+                           tr("This is a [XY plot], you can not drop a timeseries here.\n"
+                              "To convert this widget into a [timeseries plot], "
+                              "you must first remove all its curves."));
     }
     if (!isXYPlot() && scatter_curves)
     {
 
       QMessageBox::warning(qwtPlot(), "Warning",
-                           tr("This is a timeseries plot, you can not drop XY scatter data here.\n"
-                              "Clear all curves to reset it."));
+                           tr("This is a [timeseries plot], you can not "
+                              "drop XY scatter data here.\n"
+                              "To convert this widget into a [XY plot], "
+                              "you must first remove all its curves."));
     }
 
     if( isXYPlot() != scatter_curves )
@@ -524,8 +536,10 @@ void PlotWidget::onDropEvent(QDropEvent*)
       _dragging.mode = DragInfo::NONE;
       _dragging.curves.clear();
       QMessageBox::warning(qwtPlot(), "Warning",
-                           tr("To convert this widget into a XY plot, "
-                              "you must first remove all the time series."));
+                           tr("This is a [timeseries plot], you can not "
+                              "drop XY scatter data here.\n"
+                              "To convert this widget into a [XY plot], "
+                              "you must first remove all its curves."));
       return;
     }
 
@@ -677,13 +691,8 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
     std::string curve_name_std = curve_name.toStdString();
     QColor color(curve_element.attribute("color"));
 
-<<<<<<< HEAD
-    if (!isXYPlot())
-=======
-    bool error = false;
     //-----------------
     if( is_timeseries || is_scatter_xy )
->>>>>>> WIP
     {
       if ( (is_timeseries && _mapped_data.numeric.count(curve_name_std) == 0) ||
            (!is_timeseries && _mapped_data.scatter_xy.count(curve_name_std) == 0) )
