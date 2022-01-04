@@ -274,7 +274,7 @@ DockWidget::DockWidget(PlotDataMapRef& datamap, QWidget* parent)
 
   static int plot_count = 0;
   QString plot_name = QString("_plot_%1_").arg(plot_count++);
-  _plot_widget = new PlotWidget(datamap, this);
+  _plot_widget = new PlotWidget(datamap, nullptr);
   setWidget(_plot_widget->widget());
   setFeature(ads::CDockWidget::DockWidgetFloatable, false);
   setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
