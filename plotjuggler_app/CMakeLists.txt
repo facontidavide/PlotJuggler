@@ -84,7 +84,6 @@ SET( PLOtJUGGLER_SRC
     nlohmann_parsers.cpp
     )
 
-
 add_executable(plotjuggler
     ${PLOtJUGGLER_SRC}
     ${RES_SRC}

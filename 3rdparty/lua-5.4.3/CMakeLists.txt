@@ -33,6 +33,9 @@ set(LUA_LIB_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/linit.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/lua.c)
 set(LUA_LIB_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+add_compile_options(-fPIC)
+
 add_library(lua_static STATIC ${LUA_LIB_SRCS})
 target_include_directories(lua_static PUBLIC ${LUA_LIB_INCLUDE})
 
@@ -44,3 +47,4 @@ if(EMSCRIPTEN)
     unset(LUA_DEFINITIONS)
 endif()
 target_compile_definitions(lua_static PUBLIC ${LUA_DEFINITIONS})
+

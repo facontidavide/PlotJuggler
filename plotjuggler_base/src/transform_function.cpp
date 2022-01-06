@@ -23,7 +23,7 @@ void TransformFunction::setData(PlotDataMapRef* data,
     throw std::runtime_error("Wrong number of input data sources "
                              "in setDataSource");
   }
-  if (dst_vect.size() != numOutputs())
+  if (numOutputs() >= 0 && dst_vect.size() != numOutputs())
   {
     throw std::runtime_error("Wrong number of output data destinations");
   }

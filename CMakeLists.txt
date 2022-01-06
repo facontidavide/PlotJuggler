@@ -165,6 +165,7 @@ add_library( plotjuggler_base
      plotjuggler_base/src/plotmagnifier.cpp
      plotjuggler_base/src/plotlegend.cpp
      plotjuggler_base/src/timeseries_qwt.cpp
+     plotjuggler_base/src/reactive_function.cpp
      )
 # target_link_libraries(plotjuggler_base plotjuggler_qwt)
 
@@ -248,5 +249,6 @@ add_subdirectory( plotjuggler_plugins/VideoViewer )
 
 add_subdirectory( plotjuggler_plugins/ToolboxQuaternion )
 add_subdirectory( plotjuggler_plugins/ToolboxFFT )
+add_subdirectory( plotjuggler_plugins/ToolboxLuaEditor )
 
 add_subdirectory( plotjuggler_plugins/ParserProtobuf )

@@ -40,9 +40,10 @@
 #include "transforms/function_editor.h"
 #include "transforms/lua_custom_function.h"
 #include "utils.h"
-#include "PlotJuggler/svg_util.h"
 #include "stylesheet.h"
 #include "dummy_data.h"
+#include "PlotJuggler/svg_util.h"
+#include "PlotJuggler/reactive_function.h"
 
 #include "ui_aboutdialog.h"
 #include "ui_support_dialog.h"
@@ -151,10 +152,10 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
     _animated_streaming_movie->jumpToFrame(0);
   });
 
-  _tracker_delaty_timer = new QTimer();
-  _tracker_delaty_timer->setSingleShot(true);
+  _tracker_delay_timer = new QTimer();
+  _tracker_delay_timer->setSingleShot(true);
 
-  connect(_tracker_delaty_timer, &QTimer::timeout, this, [this]() {
+  connect(_tracker_delay_timer, &QTimer::timeout, this, [this]() {
     updatedDisplayTime();
     onUpdateLeftTableValues();
   });
@@ -457,14 +458,23 @@ void MainWindow::onTimeSlider_valueChanged(double abs_time)
 
 void MainWindow::onTrackerTimeUpdated(double absolute_time, bool do_replot)
 {
-  if (!_tracker_delaty_timer->isActive())
+  if (!_tracker_delay_timer->isActive())
   {
-    _tracker_delaty_timer->start(100);  // 10 Hz at most
+    _tracker_delay_timer->start(100);  // 10 Hz at most
   }
 
   for (auto& it : _state_publisher)
   {
     it.second->updateState(absolute_time);
+  }
+
+  for (auto& it : _transform_functions)
+  {
+    if( auto reactive_function = std::dynamic_pointer_cast<PJ::ReactiveLuaFunction>(it.second))
+    {
+      reactive_function->setTimeTracker(_tracker_time);
+      reactive_function->calculate();
+    }
   }
 
   forEachWidget([&](PlotWidget* plot) {
@@ -637,7 +647,7 @@ QStringList MainWindow::initializePlugins(QString directory_name)
       else if (toolbox)
       {
         plugin_name = toolbox->name();
-        plugin_type = "MessageParser";
+        plugin_type = "Toolbox";
       }
 
       QString message = QString("%1 is a %2 plugin").arg(filename).arg(plugin_type);
