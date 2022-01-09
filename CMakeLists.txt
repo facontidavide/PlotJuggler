@@ -153,6 +153,7 @@ qt5_wrap_cpp(PLOTJUGGLER_BASE_MOCS
   plotjuggler_base/include/PlotJuggler/datastreamer_base.h
   plotjuggler_base/include/PlotJuggler/transform_function.h
   plotjuggler_base/include/PlotJuggler/plotwidget_base.h
+  plotjuggler_base/include/PlotJuggler/lua_highlighter.h
 )
 
 add_library( plotjuggler_base
@@ -166,6 +167,7 @@ add_library( plotjuggler_base
      plotjuggler_base/src/plotlegend.cpp
      plotjuggler_base/src/timeseries_qwt.cpp
      plotjuggler_base/src/reactive_function.cpp
+     plotjuggler_base/src/lua_highlighter.cpp
      )
 # target_link_libraries(plotjuggler_base plotjuggler_qwt)
 
