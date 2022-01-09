@@ -29,6 +29,9 @@ ToolboxLuaEditor::ToolboxLuaEditor()
           } );
 
   connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &ToolboxPlugin::closed);
+
+  _global_highlighter = new LuaHighlighter( ui->textGlobal->document() );
+  _function_highlighter = new LuaHighlighter( ui->textFunction->document() );
 }
 
 ToolboxLuaEditor::~ToolboxLuaEditor()
@@ -106,7 +109,55 @@ void ToolboxLuaEditor::onSave()
   }
 }
 
-bool ToolboxLuaEditor::eventFilter(QObject *obj, QEvent *event)
+bool ToolboxLuaEditor::eventFilter(QObject *obj, QEvent *ev)
 {
+  if(obj != ui->textGlobal && obj != ui->textFunction )
+  {
+    return false;
+  }
+
+
+  if (ev->type() == QEvent::DragEnter)
+  {
+    _dragging_curves.clear();
+    auto event = static_cast<QDragEnterEvent*>(ev);
+    const QMimeData* mimeData = event->mimeData();
+    QStringList mimeFormats = mimeData->formats();
+    for (const QString& format : mimeFormats)
+    {
+      QByteArray encoded = mimeData->data(format);
+      QDataStream stream(&encoded, QIODevice::ReadOnly);
+
+      if (format != "curveslist/add_curve")
+      {
+        return false;
+      }
+
+      while (!stream.atEnd())
+      {
+        QString curve_name;
+        stream >> curve_name;
+        if (!curve_name.isEmpty())
+        {
+          _dragging_curves.push_back(curve_name);
+        }
+      }
+      if( !_dragging_curves.empty() )
+      {
+        event->acceptProposedAction();
+      }
+    }
+    return true;
+  }
+  else if (ev->type() == QEvent::Drop)
+  {
+    auto text_edit = qobject_cast<QPlainTextEdit*>(obj);
+    for(const auto& name: _dragging_curves)
+    {
+      text_edit->insertPlainText(QString("\"%1\"\n").arg(name));
+    }
+    _dragging_curves.clear();
+    return true;
+  }
   return false;
 }

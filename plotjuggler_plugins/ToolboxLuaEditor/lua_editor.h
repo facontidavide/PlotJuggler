@@ -6,6 +6,7 @@
 #include "PlotJuggler/toolbox_base.h"
 #include "PlotJuggler/plotwidget_base.h"
 #include "PlotJuggler/reactive_function.h"
+#include "PlotJuggler/lua_highlighter.h"
 
 namespace Ui
 {
@@ -46,6 +47,10 @@ private:
   std::map<QString, std::shared_ptr<PJ::ReactiveLuaFunction>> _lua_functions;
 
    bool eventFilter(QObject *obj, QEvent *event) override;
+   QStringList _dragging_curves;
+
+   LuaHighlighter* _global_highlighter;
+   LuaHighlighter* _function_highlighter;
 };
 
 #endif // LUA_EDITOR_H
