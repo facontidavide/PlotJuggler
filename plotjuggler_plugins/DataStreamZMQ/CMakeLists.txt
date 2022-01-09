@@ -1,7 +1,17 @@
 
 find_package(ZeroMQ CONFIG QUIET)
 
-if(ZeroMQ_FOUND)
+if(NOT ZeroMQ_FOUND)
+    find_path(ZeroMQ_INCLUDE_DIR
+    NAMES zmq.hpp
+    )
+
+    find_library(ZeroMQ_LIBRARY
+    NAMES zmq
+    )
+endif()
+
+if(ZeroMQ_FOUND OR ZeroMQ_INCLUDE_DIR)
     include_directories(../ ${ZeroMQ_INCLUDE_DIR})
 
     add_definitions(${QT_DEFINITIONS})
@@ -21,6 +31,6 @@ if(ZeroMQ_FOUND)
 
     install(TARGETS DataStreamZMQ DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
 else()
-    message("[libzmq-dev] not found. Skipping plugin DataStreamZMQ.")
+    message("[libzmq3-dev] not found. Skipping plugin DataStreamZMQ.")
 endif()
 
