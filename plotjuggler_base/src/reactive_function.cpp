@@ -1,15 +1,12 @@
 #include "PlotJuggler/reactive_function.h"
 #include <sol/sol.hpp>
+#include <PlotJuggler/fmt/format.h>
 
 namespace PJ
 {
 
-ReactiveLuaFunction::ReactiveLuaFunction(PlotDataMapRef *data_map,
-                                         QString lua_global,
-                                         QString lua_function):
-  _global_code(lua_global.toStdString()), _function_code(lua_function.toStdString())
+void ReactiveLuaFunction::init()
 {
-  _data = data_map;
   _lua_function = {};
   _lua_engine = {};
 
@@ -18,7 +15,7 @@ ReactiveLuaFunction::ReactiveLuaFunction(PlotDataMapRef *data_map,
 
   prepareLua();
 
-  auto calcFunction = QString("function calc(tracker_time)\n%1\nend").arg(lua_function);
+  auto calcFunction = fmt::format("function calc(tracker_time)\n{}\nend", _function_code);
 
   sol::protected_function_result result = _lua_engine.safe_script(_global_code);
   if (!result.valid())
@@ -27,13 +24,22 @@ ReactiveLuaFunction::ReactiveLuaFunction(PlotDataMapRef *data_map,
     throw std::runtime_error(std::string("Error in Global part:\n") + err.what());
   }
 
-  result = _lua_engine.script(calcFunction.toStdString());
+  result = _lua_engine.script(calcFunction);
   if (!result.valid())
   {
     sol::error err = result;
     throw std::runtime_error(std::string("Error in Function part:\n") + err.what());
   }
   _lua_function = _lua_engine["calc"];
+}
+
+ReactiveLuaFunction::ReactiveLuaFunction(PlotDataMapRef *data_map,
+                                         QString lua_global,
+                                         QString lua_function):
+  _global_code(lua_global.toStdString()), _function_code(lua_function.toStdString())
+{
+  _data = data_map;
+  init();
 }
 
 void ReactiveLuaFunction::reset()
@@ -48,6 +54,24 @@ void ReactiveLuaFunction::setTimeTracker(double time_tracker_value)
 void ReactiveLuaFunction::calculate()
 {
   _lua_function(_tracker_value);
+}
+
+bool ReactiveLuaFunction::xmlSaveState(QDomDocument &doc, QDomElement &parent_element) const
+{
+  auto elem = doc.createElement("ReactiveLuaFunction");
+  elem.setAttribute("global", QString::fromStdString(_global_code));
+  elem.setAttribute("function", QString::fromStdString(_function_code));
+  parent_element.appendChild(elem);
+  return false;
+}
+
+bool ReactiveLuaFunction::xmlLoadState(const QDomElement &parent_element)
+{
+  auto elem = parent_element.firstChildElement("ReactiveLuaFunction");
+  _global_code = elem.attribute("global").toStdString();
+  _function_code = elem.attribute("function").toStdString();
+  init();
+  return false;
 }
 
 void ReactiveLuaFunction::prepareLua()
@@ -83,7 +107,8 @@ void ReactiveLuaFunction::prepareLua()
     }
     auto str_name = name.as<std::string>();
     auto series = CreatedSeries(plotData(), str_name, true);
-    _created_cuves.push_back( str_name );
+    series.clear();
+    _created_curves.push_back( str_name );
     return sol::object(_lua_engine, sol::in_place, series);
   };
 
@@ -93,25 +118,25 @@ void ReactiveLuaFunction::prepareLua()
   _created_timeseries["push_back"] = &CreatedSeries::push_back;
 
   //---------------------------------------
- /* sol::usertype<CreatedSeries> created_scatter =
-      lua.new_usertype<CreatedSeries>("MutableScatterXY");
+  sol::usertype<CreatedSeries> created_scatter =
+      _lua_engine.new_usertype<CreatedSeries>("MutableScatterXY");
 
   created_scatter["new"] = [&](sol::object name)
   {
     if (name.is<std::string>() == false)
     {
-      return sol::make_object(lua, sol::lua_nil);
+      return sol::make_object(_lua_engine, sol::lua_nil);
     }
     auto str_name = name.as<std::string>();
     auto series = CreatedSeries(plotData(), str_name, false);
-    _created_cuves.push_back( str_name );
-    return sol::object(lua, sol::in_place, series);
+    _created_curves.push_back( str_name );
+    return sol::object(_lua_engine, sol::in_place, series);
   };
 
   created_scatter["at"] = &CreatedSeries::at;
   created_scatter["size"] = &CreatedSeries::size;
   created_scatter["clear"] = &CreatedSeries::clear;
-  created_scatter["push_back"] = &CreatedSeries::push_back;*/
+  created_scatter["push_back"] = &CreatedSeries::push_back;
 }
 
 TimeseriesRef::TimeseriesRef(PlotData *data): _plot_data(data)

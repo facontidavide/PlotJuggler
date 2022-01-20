@@ -362,11 +362,19 @@ PlotWidgetBase::CurveInfo* PlotWidget::addCurve(const std::string& name, QColor 
   if (it1 != _mapped_data.numeric.end())
   {
     info = PlotWidgetBase::addCurve(name, it1->second, color);
-    if( auto timeseries = dynamic_cast<QwtTimeseries*>( info->curve->data() ))
-    {
-      timeseries->setTimeOffset(_time_offset);
-    }
   }
+
+  auto it2 = _mapped_data.scatter_xy.find(name);
+  if (it2 != _mapped_data.scatter_xy.end())
+  {
+    info = PlotWidgetBase::addCurve(name, it2->second, color);
+  }
+
+  if( auto timeseries = dynamic_cast<QwtTimeseries*>( info->curve->data() ))
+  {
+    timeseries->setTimeOffset(_time_offset);
+  }
+
   return info;
 }
 

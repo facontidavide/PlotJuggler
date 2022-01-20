@@ -8,6 +8,7 @@
 #include <QStandardItemModel>
 #include <QTableView>
 #include <QItemSelection>
+#include <unordered_set>
 
 #include "transforms/custom_function.h"
 #include "tree_completer.h"
@@ -90,6 +91,7 @@ private:
 
   CurveTableView* _custom_view;
   CurveTreeView* _tree_view;
+  std::unordered_set<std::string> _tree_view_items;
 
   double _tracker_time = 0;
 

@@ -13,137 +13,301 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_3">
+  <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,1,0,0">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="2,1">
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,0,0,2">
+    <widget class="QLabel" name="label_6">
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The &lt;span style=&quot; font-weight:600;&quot;&gt;Script Editor &lt;/span&gt;is an advanced Lua editor that allows the user to create new series (scatteXY or timeseries) which are updated any time that the timetracker slider is moved or new data is received.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line">
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>1</number>
+     </property>
+     <widget class="QWidget" name="tab">
+      <attribute name="title">
+       <string>Script Editor</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Section outside the function</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPlainTextEdit" name="textGlobal">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-          </font>
-         </property>
-         <property name="placeholderText">
-          <string>define here your global variables</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>The following function is called every time the time tracker is moved or new data is received. It is up to you to avoid redundant calculations, if possible.</string>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_2">
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>function(tracker_time)</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPlainTextEdit" name="textFunction">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-          </font>
-         </property>
-         <property name="placeholderText">
-          <string>body of the function</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
+        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="2,1">
          <item>
-          <widget class="QLineEdit" name="lineEditFunctionName"/>
+          <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,0,0,2">
+           <item>
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Global code, execute once:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPlainTextEdit" name="textGlobal">
+             <property name="font">
+              <font>
+               <pointsize>14</pointsize>
+              </font>
+             </property>
+             <property name="placeholderText">
+              <string>define here your global variables</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>The following function is called every time the time tracker is moved or new data is received. It is up to you to avoid redundant calculations, if possible.</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_2">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>function(tracker_time)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPlainTextEdit" name="textFunction">
+             <property name="font">
+              <font>
+               <pointsize>14</pointsize>
+              </font>
+             </property>
+             <property name="placeholderText">
+              <string>body of the function</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButtonSave">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Save</string>
-           </property>
-          </widget>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout">
+             <item>
+              <widget class="QLabel" name="label_7">
+               <property name="text">
+                <string>Name:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="lineEditFunctionName"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButtonSave">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>Save</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <property name="topMargin">
+              <number>11</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>Active Functions:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButtonDelete">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>28</width>
+                 <height>28</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>28</width>
+                 <height>28</height>
+                </size>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>25</width>
+                 <height>25</height>
+                </size>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QListWidget" name="listWidgetFunctions"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>Recently created functions:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QListWidget" name="listWidgetRecent"/>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_2">
+      <attribute name="title">
+       <string>Function Library</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
          <property name="topMargin">
-          <number>11</number>
+          <number>10</number>
          </property>
          <item>
-          <widget class="QLabel" name="label_3">
+          <widget class="QLabel" name="label_8">
            <property name="text">
-            <string>Active Functions:</string>
+            <string>Add here your helper functions, which can be used in your script. Useful to make your scripts less verbose.</string>
            </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButtonDelete">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>28</width>
-             <height>28</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>28</width>
-             <height>28</height>
-            </size>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="iconSize">
-            <size>
-             <width>25</width>
-             <height>25</height>
-            </size>
-           </property>
-           <property name="flat">
+           <property name="wordWrap">
             <bool>true</bool>
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QPushButton" name="pushButton">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Restore default</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>
-        <widget class="QListWidget" name="listWidgetFunctions"/>
+        <widget class="QPlainTextEdit" name="textLibrary">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="plainText">
+          <string>--[[ Helper function to create a series from arrays
+
+ series_name: name of the created ScatterXY series
+ prefix:      prefix of the timeseries, before the index of the array
+ suffixes:    list of 1 or 2 suffixes to generate the X/Y pair.  If only one is provided, the X will be the index of the array
+ timestamp:   usually the tracker_time variable
+              
+ Example:
+ 
+ Assuming we have multiple series in the form:
+ 
+   /trajectory/node.{X}/position/x
+   /trajectory/node.{X}/position/y
+   
+ where {N} is the index of the array (integer). We can create a reactive series from the array with:
+ 
+   CreateSeriesFromArray( &quot;my_trajectory&quot;, &quot;/trajectory/node&quot;, { &quot;position/x&quot;, &quot;position/y&quot; }, tracker_time );
+]]--
+
+function CreateSeriesFromArray( series_name, prefix, suffixes, timestamp )
+  --- create a new series or overwite the previous one
+  new_series = MutableScatterXY.new(series_name)
+  
+  --- get number of elements in array suffixes 
+  suffixes_size = table.getn(suffixes)
+   
+  if suffixes_size &lt; 1 or suffixes_size &gt; 2 then
+    print(&quot;wrong number of suffixes&quot;)
+    return
+  end
+  
+  --- Append points to new_series
+  index = 0
+  while(true) do
+
+    if(suffixes_size == 2) then
+      --- 2 suffixes: first is X and second is Y
+      series_x = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffixes[1]) )
+      series_y = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffixes[2]) )
+      -- stop the loop if the series can't be found
+      if series_x == nil or series_y == nil then 
+        break 
+      end	 
+      x = series_x:atTime(timestamp)
+      y = series_y:atTime(timestamp)
+      new_series:push_back(x,y)
+    else
+      --- 1 suffix: index is used as X value.
+      series_y = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffixes[1]) )
+      -- stop the loop if the series can't be found
+      if series_y == nil then 
+        break 
+      end 
+      y = series_y:atTime(timestamp)
+      new_series:push_back(index, y)
+    end
+
+    index = index+1
+end
+</string>
+         </property>
+        </widget>
        </item>
       </layout>
-     </item>
-    </layout>
+     </widget>
+    </widget>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">

@@ -37,6 +37,10 @@ public slots:
 
   void onSave();
 
+  void onDelete();
+
+  void restoreRecent(const QModelIndex &index);
+
 private:
   QWidget* _widget;
   Ui::LuaEditor* ui;
@@ -51,6 +55,7 @@ private:
 
    LuaHighlighter* _global_highlighter;
    LuaHighlighter* _function_highlighter;
+   LuaHighlighter* _helper_highlighter;
 };
 
 #endif // LUA_EDITOR_H

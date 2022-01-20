@@ -47,6 +47,7 @@ public:
   virtual void removeCurve(const QString& title);
 
   const std::list<CurveInfo>& curveList() const;
+  std::list<CurveInfo>& curveList();
 
   bool isEmpty() const;
 
@@ -113,6 +114,7 @@ signals:
 
   void legendSizeChanged(int new_size);
 
+
 protected:
   class QwtPlotPimpl;
   QwtPlotPimpl* p = nullptr;
@@ -121,8 +123,6 @@ protected:
 
   QwtPlot* qwtPlot();
   const QwtPlot* qwtPlot() const;
-
-  std::list<CurveInfo>& curveList();
 
   PlotLegend* legend();
   PlotZoomer* zoomer();

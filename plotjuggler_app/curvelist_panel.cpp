@@ -79,11 +79,18 @@ void CurveListPanel::clear()
 {
   _custom_view->clear();
   _tree_view->clear();
+  _tree_view_items.clear();
   ui->labelNumberDisplayed->setText("0 of 0");
 }
 
 void CurveListPanel::addCurve(const std::string& plot_name)
 {
+  QString plot_id = QString::fromStdString(plot_name);
+  if( _tree_view_items.count(plot_name) > 0 )
+  {
+    return;
+  }
+
   QString group_name;
 
   auto FindInPlotData = [&](auto& plot_data, const std::string& plot_name) {
@@ -109,8 +116,8 @@ void CurveListPanel::addCurve(const std::string& plot_name)
     return;
   }
 
-  QString plot_id = QString::fromStdString(plot_name);
   _tree_view->addItem(group_name, getTreeName(plot_id), plot_id);
+  _tree_view_items.insert(plot_name);
 
   _column_width_dirty = true;
 }
@@ -477,6 +484,7 @@ void CurveListPanel::removeCurve(const std::string& name)
 {
   QString curve_name = QString::fromStdString(name);
   _tree_view->removeCurve(curve_name);
+  _tree_view_items.erase(name);
   _custom_view->removeCurve(curve_name);
 }
 

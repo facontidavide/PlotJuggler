@@ -468,17 +468,37 @@ void MainWindow::onTrackerTimeUpdated(double absolute_time, bool do_replot)
     it.second->updateState(absolute_time);
   }
 
+
+  std::unordered_set<std::string> update_curves;
+
   for (auto& it : _transform_functions)
   {
     if( auto reactive_function = std::dynamic_pointer_cast<PJ::ReactiveLuaFunction>(it.second))
     {
       reactive_function->setTimeTracker(_tracker_time);
       reactive_function->calculate();
+
+      for(auto& name: reactive_function->createdCuves())
+      {
+        // do this just in case, because a curve might be created
+        // inside the LUA function
+        _curvelist_widget->addCurve(name);
+
+        update_curves.insert(name);
+      }
     }
   }
 
   forEachWidget([&](PlotWidget* plot) {
     plot->setTrackerPosition(_tracker_time);
+
+    for(auto& curve: plot->curveList())
+    {
+      if( update_curves.count(curve.src_name) != 0)
+      {
+        plot->zoomOut(false);
+      }
+    }
     if (do_replot)
     {
       plot->replot();

@@ -71,8 +71,12 @@ public:
 
   const std::vector<std::string>& createdCuves() const
   {
-    return _created_cuves;
+    return _created_curves;
   }
+
+  bool xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const override;
+
+  bool xmlLoadState(const QDomElement& parent_element) override;
 
 protected:
 
@@ -82,13 +86,15 @@ protected:
   std::string _global_code;
   std::string _function_code;
 
-  std::vector<std::string> _created_cuves;
+  std::vector<std::string> _created_curves;
 
   sol::state _lua_engine;
   sol::protected_function _lua_function;
 
   sol::usertype<TimeseriesRef> _timeseries_ref;
   sol::usertype<CreatedSeries> _created_timeseries;
+private:
+  void init();
 };
 
 }
