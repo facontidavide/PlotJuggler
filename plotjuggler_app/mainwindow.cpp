@@ -152,10 +152,7 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
     _animated_streaming_movie->jumpToFrame(0);
   });
 
-  _tracker_delay_timer = new QTimer();
-  _tracker_delay_timer->setSingleShot(true);
-
-  connect(_tracker_delay_timer, &QTimer::timeout, this, [this]() {
+  _tracker_delay.connectCallback([this]() {
     updatedDisplayTime();
     onUpdateLeftTableValues();
   });
@@ -458,16 +455,12 @@ void MainWindow::onTimeSlider_valueChanged(double abs_time)
 
 void MainWindow::onTrackerTimeUpdated(double absolute_time, bool do_replot)
 {
-  if (!_tracker_delay_timer->isActive())
-  {
-    _tracker_delay_timer->start(100);  // 10 Hz at most
-  }
+  _tracker_delay.triggerSignal(100);
 
   for (auto& it : _state_publisher)
   {
     it.second->updateState(absolute_time);
   }
-
 
   std::unordered_set<std::string> update_curves;
 

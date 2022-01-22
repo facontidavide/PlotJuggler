@@ -46,7 +46,8 @@ class ReactiveLuaFunction: public PJ::TransformFunction
 public:
   ReactiveLuaFunction(PlotDataMapRef* data_map,
                       QString lua_global,
-                      QString lua_function);
+                      QString lua_function,
+                      QString lua_library);
 
   const char* name() const override
   {
@@ -78,6 +79,16 @@ public:
 
   bool xmlLoadState(const QDomElement& parent_element) override;
 
+  QString getGlobalCode()
+  {
+    return QString::fromStdString(_global_code);
+  }
+
+  QString getFunctionCode()
+  {
+    return QString::fromStdString(_function_code);
+  }
+
 protected:
 
   void prepareLua();
@@ -85,6 +96,7 @@ protected:
   double _tracker_value = 0;
   std::string _global_code;
   std::string _function_code;
+  std::string _library_code;
 
   std::vector<std::string> _created_curves;
 

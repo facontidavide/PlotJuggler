@@ -220,7 +220,33 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QLabel" name="labelSemaphore">
+           <property name="minimumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <property name="topMargin">
+          <number>5</number>
+         </property>
+         <item>
+          <widget class="QPushButton" name="pushButtonDefaultLibrary">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -231,6 +257,32 @@
             <string>Restore default</string>
            </property>
           </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButtonApplyLibrary">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If you have already created one or more reactive series, reload them witrh the new library.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Apply changes</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </item>
@@ -246,7 +298,9 @@
 
  series_name: name of the created ScatterXY series
  prefix:      prefix of the timeseries, before the index of the array
- suffixes:    list of 1 or 2 suffixes to generate the X/Y pair.  If only one is provided, the X will be the index of the array
+ suffix_X:   suffix to complete the name of the series containing the X value.
+             if [nil], the index of the array will be used.
+ suffix_Y:   suffix to complete the name of the series containing the Y value
  timestamp:   usually the tracker_time variable
               
  Example:
@@ -258,48 +312,32 @@
    
  where {N} is the index of the array (integer). We can create a reactive series from the array with:
  
-   CreateSeriesFromArray( &quot;my_trajectory&quot;, &quot;/trajectory/node&quot;, { &quot;position/x&quot;, &quot;position/y&quot; }, tracker_time );
+   CreateSeriesFromArray( &quot;my_trajectory&quot;, &quot;/trajectory/node&quot;,  &quot;position/x&quot;, &quot;position/y&quot;, tracker_time );
 ]]--
 
-function CreateSeriesFromArray( series_name, prefix, suffixes, timestamp )
+function CreateSeriesFromArray( series_name, prefix, suffix_X, suffix_Y, timestamp )
   --- create a new series or overwite the previous one
   new_series = MutableScatterXY.new(series_name)
-  
-  --- get number of elements in array suffixes 
-  suffixes_size = table.getn(suffixes)
-   
-  if suffixes_size &lt; 1 or suffixes_size &gt; 2 then
-    print(&quot;wrong number of suffixes&quot;)
-    return
-  end
   
   --- Append points to new_series
   index = 0
   while(true) do
 
-    if(suffixes_size == 2) then
-      --- 2 suffixes: first is X and second is Y
-      series_x = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffixes[1]) )
-      series_y = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffixes[2]) )
-      -- stop the loop if the series can't be found
-      if series_x == nil or series_y == nil then 
-        break 
-      end	 
-      x = series_x:atTime(timestamp)
-      y = series_y:atTime(timestamp)
-      new_series:push_back(x,y)
-    else
-      --- 1 suffix: index is used as X value.
-      series_y = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffixes[1]) )
-      -- stop the loop if the series can't be found
-      if series_y == nil then 
-        break 
-      end 
-      y = series_y:atTime(timestamp)
-      new_series:push_back(index, y)
+    x = index;
+    -- if not nil, get the X coordinate from a series
+    if suffix_X ~= nil then 
+      series_x = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_X) )
+      if series_x == nil then break end
+      x = series_x:atTime(timestamp)	 
     end
-
+    
+    series_y = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_Y) )
+    if series_x == nil then break end 
+    y = series_y:atTime(timestamp)
+    
+    new_series:push_back(x,y)
     index = index+1
+  end
 end
 </string>
          </property>

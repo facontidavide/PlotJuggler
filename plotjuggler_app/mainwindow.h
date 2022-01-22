@@ -22,6 +22,7 @@
 #include "PlotJuggler/statepublisher_base.h"
 #include "PlotJuggler/toolbox_base.h"
 #include "PlotJuggler/datastreamer_base.h"
+#include "PlotJuggler/util/delayed_callback.hpp"
 #include "transforms/custom_function.h"
 #include "transforms/function_editor.h"
 
@@ -145,7 +146,7 @@ private:
 
   QTimer* _replot_timer;
   QTimer* _publish_timer;
-  QTimer* _tracker_delay_timer;
+  PJ::DelayedCallback _tracker_delay;
 
   QDateTime _prev_publish_time;
 

@@ -2,11 +2,13 @@
 #define LUA_EDITOR_H
 
 #include <QtPlugin>
+#include <QListWidgetItem>
 #include <map>
 #include "PlotJuggler/toolbox_base.h"
 #include "PlotJuggler/plotwidget_base.h"
 #include "PlotJuggler/reactive_function.h"
 #include "PlotJuggler/lua_highlighter.h"
+#include "PlotJuggler/util/delayed_callback.hpp"
 
 namespace Ui
 {
@@ -41,6 +43,12 @@ public slots:
 
   void restoreRecent(const QModelIndex &index);
 
+  void restoreFunction(const QModelIndex &index);
+
+  void onLibraryUpdated();
+
+  void onReloadLibrary();
+
 private:
   QWidget* _widget;
   Ui::LuaEditor* ui;
@@ -56,6 +64,22 @@ private:
    LuaHighlighter* _global_highlighter;
    LuaHighlighter* _function_highlighter;
    LuaHighlighter* _helper_highlighter;
+
+   int _font_size;
+   DelayedCallback _delay_library_check;
+
+   QString _previous_library;
+
+   struct SavedData
+   {
+     QString name;
+     QString global_code;
+     QString function_code;
+   };
+
+   SavedData getItemData(const QListWidgetItem* item);
+
+   void setItemData(QListWidgetItem* item, QString name, QString global_code, QString function_code);
 };
 
 #endif // LUA_EDITOR_H

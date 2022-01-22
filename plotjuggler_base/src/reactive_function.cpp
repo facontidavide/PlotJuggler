@@ -13,17 +13,25 @@ void ReactiveLuaFunction::init()
   _lua_engine.open_libraries(sol::lib::base);
   _lua_engine.open_libraries(sol::lib::string);
 
+  _lua_engine.script(_library_code);
+
   prepareLua();
 
-  auto calcFunction = fmt::format("function calc(tracker_time)\n{}\nend", _function_code);
+  sol::protected_function_result result = _lua_engine.safe_script(_library_code);
+  if (!result.valid())
+  {
+    sol::error err = result;
+    throw std::runtime_error(std::string("Error in Library part:\n") + err.what());
+  }
 
-  sol::protected_function_result result = _lua_engine.safe_script(_global_code);
+  result = _lua_engine.safe_script(_global_code);
   if (!result.valid())
   {
     sol::error err = result;
     throw std::runtime_error(std::string("Error in Global part:\n") + err.what());
   }
 
+  auto calcFunction = fmt::format("function calc(tracker_time)\n{}\nend", _function_code);
   result = _lua_engine.script(calcFunction);
   if (!result.valid())
   {
@@ -35,8 +43,11 @@ void ReactiveLuaFunction::init()
 
 ReactiveLuaFunction::ReactiveLuaFunction(PlotDataMapRef *data_map,
                                          QString lua_global,
-                                         QString lua_function):
-  _global_code(lua_global.toStdString()), _function_code(lua_function.toStdString())
+                                         QString lua_function,
+                                         QString lua_library):
+  _global_code(lua_global.toStdString()),
+  _function_code(lua_function.toStdString()),
+  _library_code(lua_library.toStdString())
 {
   _data = data_map;
   init();
