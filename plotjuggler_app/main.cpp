@@ -71,7 +71,7 @@ QPixmap getFunnySplashscreen()
   srand(time(nullptr));
 
   auto getNum = []() {
-    const int last_image_num = 60;
+    const int last_image_num = 71;
     int n = rand() % (last_image_num + 2);
     if (n > last_image_num)
     {
@@ -79,13 +79,36 @@ QPixmap getFunnySplashscreen()
     }
     return n;
   };
+  std::set<int> previous_set;
+  std::list<int> previous_nums;
+
+  QStringList previous_list = settings.value("previousFunnyMemesList").toStringList();
+  for(auto str: previous_list)
+  {
+    int num = str.toInt();
+    previous_set.insert(num);
+    previous_nums.push_back(num);
+  }
+
   int n = getNum();
-  int prev_n = settings.value("previousFunnySubtitle").toInt();
-  while (n == prev_n)
+  while (previous_set.count(n) != 0)
   {
     n = getNum();
   }
-  settings.setValue("previousFunnySubtitle", n);
+
+  while(previous_nums.size() >= 10)
+  {
+    previous_nums.pop_front();
+  }
+  previous_nums.push_back(n);
+
+  QStringList new_list;
+  for(int num: previous_nums)
+  {
+    new_list.push_back( QString::number(num) );
+  }
+
+  settings.setValue("previousFunnyMemesList", new_list);
   auto filename = QString("://resources/memes/meme_%1.jpg").arg(n, 2, 10, QChar('0'));
   return QPixmap(filename);
 }

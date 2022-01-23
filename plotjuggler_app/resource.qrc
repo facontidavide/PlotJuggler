@@ -283,5 +283,16 @@
         <file>resources/svg/alarm-bell-active.svg</file>
         <file>resources/svg/xy.svg</file>
         <file>resources/svg/scatter.svg</file>
+        <file>resources/memes/meme_61.jpg</file>
+        <file>resources/memes/meme_62.jpg</file>
+        <file>resources/memes/meme_63.jpg</file>
+        <file>resources/memes/meme_64.jpg</file>
+        <file>resources/memes/meme_65.jpg</file>
+        <file>resources/memes/meme_66.jpg</file>
+        <file>resources/memes/meme_67.jpg</file>
+        <file>resources/memes/meme_68.jpg</file>
+        <file>resources/memes/meme_69.jpg</file>
+        <file>resources/memes/meme_70.jpg</file>
+        <file>resources/memes/meme_71.jpg</file>
     </qresource>
 </RCC>
