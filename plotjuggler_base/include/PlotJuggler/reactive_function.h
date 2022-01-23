@@ -70,7 +70,7 @@ public:
 
   void calculate() override;
 
-  const std::vector<std::string>& createdCuves() const
+  const std::vector<std::string>& createdCurves() const
   {
     return _created_curves;
   }

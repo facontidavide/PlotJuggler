@@ -116,6 +116,7 @@ private:
   std::map<QString, DataLoaderPtr> _data_loader;
   std::map<QString, StatePublisherPtr> _state_publisher;
   std::map<QString, DataStreamerPtr> _data_streamer;
+  std::map<QString, ToolboxPluginPtr> _toolboxes;
 
   QString _default_streamer;
 
@@ -208,6 +209,8 @@ private:
   void loadStyleSheet(QString file_path);
 
   void updateDerivedSeries();
+
+  void updateReactivePlots();
 
 signals:
   void dataSourceRemoved(const std::string& name);

@@ -33,6 +33,10 @@ public:
 
   std::pair<QWidget*, WidgetType> providedWidget() const override;
 
+  bool xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const override;
+
+  bool xmlLoadState(const QDomElement& parent_element) override;
+
 public slots:
 
   bool onShowWidget() override;
@@ -56,30 +60,29 @@ private:
   PJ::PlotDataMapRef* _plot_data = nullptr;
   PJ::TransformsMap* _transforms = nullptr;
 
-  std::map<QString, std::shared_ptr<PJ::ReactiveLuaFunction>> _lua_functions;
 
-   bool eventFilter(QObject *obj, QEvent *event) override;
-   QStringList _dragging_curves;
+  bool eventFilter(QObject *obj, QEvent *event) override;
+  QStringList _dragging_curves;
 
-   LuaHighlighter* _global_highlighter;
-   LuaHighlighter* _function_highlighter;
-   LuaHighlighter* _helper_highlighter;
+  LuaHighlighter* _global_highlighter;
+  LuaHighlighter* _function_highlighter;
+  LuaHighlighter* _helper_highlighter;
 
-   int _font_size;
-   DelayedCallback _delay_library_check;
+  int _font_size;
+  DelayedCallback _delay_library_check;
 
-   QString _previous_library;
+  QString _previous_library;
 
-   struct SavedData
-   {
-     QString name;
-     QString global_code;
-     QString function_code;
-   };
+  struct SavedData
+  {
+    QString name;
+    QString global_code;
+    QString function_code;
+  };
 
-   SavedData getItemData(const QListWidgetItem* item);
+  SavedData getItemData(const QListWidgetItem* item) const;
 
-   void setItemData(QListWidgetItem* item, QString name, QString global_code, QString function_code);
+  void setItemData(QListWidgetItem* item, QString name, QString global_code, QString function_code);
 };
 
 #endif // LUA_EDITOR_H

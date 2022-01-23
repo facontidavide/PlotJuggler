@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>945</width>
-    <height>589</height>
+    <width>1084</width>
+    <height>627</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -42,7 +42,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -75,7 +75,7 @@
            <item>
             <widget class="QLabel" name="label_4">
              <property name="text">
-              <string>The following function is called every time the time tracker is moved or new data is received. It is up to you to avoid redundant calculations, if possible.</string>
+              <string>The following function is called every time the time tracker is moved or new data is received.</string>
              </property>
              <property name="wordWrap">
               <bool>true</bool>
@@ -143,7 +143,7 @@
              <item>
               <widget class="QLabel" name="label_3">
                <property name="text">
-                <string>Active Functions:</string>
+                <string>Active Scripts:</string>
                </property>
               </widget>
              </item>
@@ -163,6 +163,9 @@
                  <width>28</width>
                  <height>28</height>
                 </size>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Remove selected script&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string/>
@@ -186,7 +189,10 @@
            <item>
             <widget class="QLabel" name="label_5">
              <property name="text">
-              <string>Recently created functions:</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Recent scripts (double-click to load):&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -294,7 +300,7 @@
           </font>
          </property>
          <property name="plainText">
-          <string>--[[ Helper function to create a series from arrays
+          <string>--[[ Helper function to create a ScatterXY series from arrays.
 
  series_name: name of the created ScatterXY series
  prefix:      prefix of the timeseries, before the index of the array

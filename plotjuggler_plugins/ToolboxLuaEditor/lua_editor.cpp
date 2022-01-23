@@ -6,6 +6,7 @@
 #include <QSettings>
 #include <memory>
 #include <QWheelEvent>
+#include <QMessageBox>
 
 #include "PlotJuggler/reactive_function.h"
 #include "PlotJuggler/svg_util.h"
@@ -105,7 +106,7 @@ ToolboxLuaEditor::~ToolboxLuaEditor()
 
 const char *ToolboxLuaEditor::name() const
 {
-  return "Advanced Lua Functions";
+  return "Reactive Script Editor";
 }
 
 void ToolboxLuaEditor::init(PlotDataMapRef &src_data,
@@ -122,10 +123,82 @@ ToolboxLuaEditor::providedWidget() const
   return { _widget, PJ::ToolboxPlugin::FIXED };
 }
 
+bool ToolboxLuaEditor::xmlSaveState(QDomDocument &doc, QDomElement &parent_element) const
+{
+  if( ui->listWidgetFunctions->count() > 0 )
+  {
+    QString msg = "Do you want to save the current active scripts?\n\n";
+
+    for(int row = 0; row < ui->listWidgetFunctions->count(); row++)
+    {
+      auto item = ui->listWidgetFunctions->item(row);
+      msg += QString("  - %1\n").arg(item->text());
+    }
+
+    auto ret = QMessageBox::question(nullptr, this->name(), msg);
+    if( ret == QMessageBox::No )
+    {
+      return false;
+    }
+  }
+
+  auto library_elem = doc.createElement("library");
+  library_elem.setAttribute("code", ui->textLibrary->toPlainText());
+  parent_element.appendChild(library_elem);
+
+  auto scripts_elem = doc.createElement("scripts");
+
+  for(int row = 0; row < ui->listWidgetFunctions->count(); row++)
+  {
+    auto item = ui->listWidgetFunctions->item(row);
+    auto fields = getItemData(item);
+    auto elem = doc.createElement("script");
+    elem.setAttribute("name", fields.name);
+    elem.setAttribute("function", fields.function_code);
+    elem.setAttribute("global", fields.global_code);
+    scripts_elem.appendChild(elem);
+  }
+  parent_element.appendChild(scripts_elem);
+
+  return true;
+}
+
+bool ToolboxLuaEditor::xmlLoadState(const QDomElement &parent_element)
+{
+  auto library_elem = parent_element.firstChildElement("library");
+  if(!library_elem.isNull())
+  {
+    ui->textLibrary->setPlainText( library_elem.attribute("code") );
+  }
+
+  auto scripts_elem = parent_element.firstChildElement("scripts");
+  if(!scripts_elem.isNull())
+  {
+    for (auto elem = scripts_elem.firstChildElement("script");
+         elem.isNull() == false; elem = elem.nextSiblingElement("script"))
+    {
+      ui->listWidgetFunctions->clear();
+      QString name = elem.attribute("name");
+      QString function = elem.attribute("function");
+      QString global = elem.attribute("global");
+      auto item = new QListWidgetItem(name);
+      setItemData(item, name, global, function);
+      ui->listWidgetFunctions->addItem(item);
+
+      auto lua_function = std::make_shared<ReactiveLuaFunction>(
+          _plot_data, global, function, ui->textLibrary->toPlainText() );
+
+      (*_transforms)[name.toStdString()] = lua_function;
+    }
+    ui->listWidgetFunctions->sortItems();
+  }
+
+  return true;
+}
+
 bool ToolboxLuaEditor::onShowWidget()
 {
   ui->listWidgetFunctions->clear();
-  _lua_functions.clear();
 
   // check the already existing functions.
   for(auto it : *_transforms)
@@ -133,11 +206,11 @@ bool ToolboxLuaEditor::onShowWidget()
     if( auto lua_function = std::dynamic_pointer_cast<ReactiveLuaFunction>( it.second ))
     {
       QString name = QString::fromStdString(it.first);
-      _lua_functions.insert( {name, lua_function} );
       auto item = new QListWidgetItem(name);
       setItemData(item, name, lua_function->getGlobalCode(), lua_function->getFunctionCode());
       ui->listWidgetFunctions->addItem(item);
     }
+    ui->listWidgetFunctions->sortItems();
   }
 
   QSettings settings;
@@ -186,16 +259,16 @@ void ToolboxLuaEditor::onSave()
 
     (*_transforms)[name.toStdString()] = lua_function;
 
-    _lua_functions.insert( {name, lua_function} );
     if( ui->listWidgetFunctions->findItems(name, Qt::MatchExactly).empty() )
     {
       ui->listWidgetFunctions->addItem(name);
+      ui->listWidgetFunctions->sortItems();
     }
 
     auto item = ui->listWidgetFunctions->findItems(name, Qt::MatchExactly).first();
     setItemData(item, name, ui->textGlobal->toPlainText(), ui->textFunction->toPlainText());
 
-    for( auto& new_name: lua_function->createdCuves() )
+    for( auto& new_name: lua_function->createdCurves() )
     {
       emit plotCreated(new_name);
     }
@@ -416,7 +489,7 @@ bool ToolboxLuaEditor::eventFilter(QObject *obj, QEvent *ev)
   return false;
 }
 
-ToolboxLuaEditor::SavedData ToolboxLuaEditor::getItemData(const QListWidgetItem *item)
+ToolboxLuaEditor::SavedData ToolboxLuaEditor::getItemData(const QListWidgetItem *item) const
 {
   auto fields = item->data(Qt::UserRole).toStringList();
   SavedData data;

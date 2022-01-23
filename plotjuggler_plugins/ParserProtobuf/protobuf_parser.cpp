@@ -257,7 +257,6 @@ void ProtobufParserCreator::saveSettings()
 
 ProtobufParserCreator::~ProtobufParserCreator()
 {
-  saveSettings();
   delete ui;
 }
 

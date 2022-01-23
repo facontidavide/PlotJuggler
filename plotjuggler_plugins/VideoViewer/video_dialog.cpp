@@ -56,8 +56,6 @@ void ImageLabel::paintEvent(QPaintEvent *event)
   painter.drawPixmap(corner, scaled_pix);
 }
 
-
-
 VideoDialog::VideoDialog(QWidget *parent) :
   QDialog(parent),
   ui(new Ui::VideoDialog)
@@ -86,7 +84,7 @@ VideoDialog::VideoDialog(QWidget *parent) :
   QString theme = settings.value("Preferences::theme", "light").toString();
   ui->clearButton->setIcon(LoadSvg(":/resources/svg/trash.svg", theme));
 
-  _label = new ImageLabel;
+  _label = new ImageLabel(this);
   ui->verticalLayoutMain->addWidget(_label, 1.0);
   _label->setHidden(true);
 }

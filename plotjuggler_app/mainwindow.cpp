@@ -462,36 +462,10 @@ void MainWindow::onTrackerTimeUpdated(double absolute_time, bool do_replot)
     it.second->updateState(absolute_time);
   }
 
-  std::unordered_set<std::string> update_curves;
-
-  for (auto& it : _transform_functions)
-  {
-    if( auto reactive_function = std::dynamic_pointer_cast<PJ::ReactiveLuaFunction>(it.second))
-    {
-      reactive_function->setTimeTracker(_tracker_time);
-      reactive_function->calculate();
-
-      for(auto& name: reactive_function->createdCuves())
-      {
-        // do this just in case, because a curve might be created
-        // inside the LUA function
-        _curvelist_widget->addCurve(name);
-
-        update_curves.insert(name);
-      }
-    }
-  }
+  updateReactivePlots();
 
   forEachWidget([&](PlotWidget* plot) {
     plot->setTrackerPosition(_tracker_time);
-
-    for(auto& curve: plot->curveList())
-    {
-      if( update_curves.count(curve.src_name) != 0)
-      {
-        plot->zoomOut(false);
-      }
-    }
     if (do_replot)
     {
       plot->replot();
@@ -796,6 +770,8 @@ QStringList MainWindow::initializePlugins(QString directory_name)
       {
         toolbox->init(_mapped_plot_data, _transform_functions);
 
+        _toolboxes.insert(std::make_pair(plugin_name, toolbox));
+
         auto action = ui->menuTools->addAction(toolbox->name());
 
         int new_index = ui->widgetStack->count();
@@ -812,7 +788,11 @@ QStringList MainWindow::initializePlugins(QString directory_name)
                 [=]() { ui->widgetStack->setCurrentIndex(0); });
 
         connect(toolbox, &ToolboxPlugin::plotCreated, this,
-                [=](std::string name) { _curvelist_widget->addCurve(name); });
+                [=](std::string name) {
+                  _curvelist_widget->addCurve(name);
+                  _curvelist_widget->updateAppearance();
+                }
+                );
       }
     }
     else
@@ -1005,8 +985,7 @@ void MainWindow::checkAllCurvesFromLayout(const QDomElement& root)
   std::set<std::string> curves;
 
   for (QDomElement tw = root.firstChildElement("tabbed_widget"); !tw.isNull();
-       tw = tw.nextSiblingElement("tabbed_"
-                                  "widget"))
+       tw = tw.nextSiblingElement("tabbed_widget"))
   {
     for (QDomElement pm = tw.firstChildElement("plotmatrix"); !pm.isNull();
          pm = pm.nextSiblingElement("plotmatrix"))
@@ -1746,7 +1725,7 @@ void MainWindow::loadStyleSheet(QString file_path)
 
     forEachWidget([&](PlotWidget* plot) { plot->replot(); });
 
-    _curvelist_widget->updateColors();
+    _curvelist_widget->updateAppearance();
     emit stylesheetChanged(theme);
   }
   catch (std::runtime_error& err)
@@ -1761,6 +1740,41 @@ void MainWindow::updateDerivedSeries()
   {
 
   }
+}
+
+void MainWindow::updateReactivePlots()
+{
+  std::unordered_set<std::string> updated_curves;
+
+  bool curve_added = false;
+  for (auto& it : _transform_functions)
+  {
+    if( auto reactive_function = std::dynamic_pointer_cast<PJ::ReactiveLuaFunction>(it.second))
+    {
+      reactive_function->setTimeTracker(_tracker_time);
+      reactive_function->calculate();
+
+      for(auto& name: reactive_function->createdCurves())
+      {
+        curve_added |= _curvelist_widget->addCurve(name);
+        updated_curves.insert(name);
+      }
+    }
+  }
+  if(curve_added)
+  {
+    _curvelist_widget->refreshColumns();
+  }
+
+  forEachWidget([&](PlotWidget* plot) {
+    for(auto& curve: plot->curveList())
+    {
+      if( updated_curves.count(curve.src_name) != 0)
+      {
+        plot->zoomOut(false);
+      }
+    }
+  });
 }
 
 void MainWindow::on_stylesheetChanged(QString theme)
@@ -1821,6 +1835,10 @@ void MainWindow::loadPluginState(const QDomElement& root)
     {
       _data_streamer[plugin_name]->xmlLoadState(plugin_elem);
     }
+    if (_toolboxes.find(plugin_name) != _toolboxes.end())
+    {
+      _toolboxes[plugin_name]->xmlLoadState(plugin_elem);
+    }
     if (_state_publisher.find(plugin_name) != _state_publisher.end())
     {
       StatePublisherPtr publisher = _state_publisher[plugin_name];
@@ -1838,51 +1856,27 @@ QDomElement MainWindow::savePluginState(QDomDocument& doc)
 {
   QDomElement list_plugins = doc.createElement("Plugins");
 
-  auto CheckValidFormat = [this](const QString& expected_name, const QDomElement& elem) {
-    if (elem.nodeName() != "plugin" || elem.attribute("ID") != expected_name)
+  auto AddPlugins = [&](auto& plugins)
+  {
+    for (auto& [name, plugin] : plugins)
     {
-      QMessageBox::warning(this, tr("Error saving Plugin State to Layout"),
-                           tr("The method xmlSaveState() returned\n<plugin "
-                              "ID=\"%1\">\ninstead of\n<plugin ID=\"%2\">")
-                               .arg(elem.attribute("ID"))
-                               .arg(expected_name));
+      QDomElement elem = plugin->xmlSaveState(doc);
+      list_plugins.appendChild(elem);
     }
   };
 
-  for (auto& it : _data_loader)
-  {
-    const DataLoaderPtr dataloader = it.second;
-    QDomElement plugin_elem = dataloader->xmlSaveState(doc);
-    if (!plugin_elem.isNull())
-    {
-      list_plugins.appendChild(plugin_elem);
-      CheckValidFormat(it.first, plugin_elem);
-    }
-  }
-
-  for (auto& it : _data_streamer)
-  {
-    const DataStreamerPtr datastreamer = it.second;
-    QDomElement plugin_elem = datastreamer->xmlSaveState(doc);
-    if (!plugin_elem.isNull())
-    {
-      list_plugins.appendChild(plugin_elem);
-      CheckValidFormat(it.first, plugin_elem);
-    }
-  }
+  AddPlugins(_data_loader);
+  AddPlugins(_data_streamer);
+  AddPlugins(_toolboxes);
+  AddPlugins(_state_publisher);
 
   for (auto& it : _state_publisher)
   {
-    const StatePublisherPtr state_publisher = it.second;
+    const auto& state_publisher = it.second;
     QDomElement plugin_elem = state_publisher->xmlSaveState(doc);
-    if (!plugin_elem.isNull())
-    {
-      list_plugins.appendChild(plugin_elem);
-      CheckValidFormat(it.first, plugin_elem);
-    }
-
     plugin_elem.setAttribute("status", state_publisher->enabled() ? "active" : "idle");
   }
+
   return list_plugins;
 }
 
@@ -2283,9 +2277,16 @@ void MainWindow::updateDataAndReplot(bool replot_hidden_tabs)
               return a->order() < b->order();
             });
 
+  // Update the reactive plots
+  updateReactivePlots();
+
+  // update all transforms, but not the ReactiveLuaFunction
   for (auto& function : transforms)
   {
-    function->calculate();
+    if( dynamic_cast<ReactiveLuaFunction*>(function) == nullptr)
+    {
+      function->calculate();
+    }
   }
 
   forEachWidget([](PlotWidget* plot)

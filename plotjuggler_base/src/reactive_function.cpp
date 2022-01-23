@@ -67,21 +67,13 @@ void ReactiveLuaFunction::calculate()
   _lua_function(_tracker_value);
 }
 
-bool ReactiveLuaFunction::xmlSaveState(QDomDocument &doc, QDomElement &parent_element) const
+bool ReactiveLuaFunction::xmlSaveState(QDomDocument &, QDomElement &) const
 {
-  auto elem = doc.createElement("ReactiveLuaFunction");
-  elem.setAttribute("global", QString::fromStdString(_global_code));
-  elem.setAttribute("function", QString::fromStdString(_function_code));
-  parent_element.appendChild(elem);
   return false;
 }
 
-bool ReactiveLuaFunction::xmlLoadState(const QDomElement &parent_element)
+bool ReactiveLuaFunction::xmlLoadState(const QDomElement &)
 {
-  auto elem = parent_element.firstChildElement("ReactiveLuaFunction");
-  _global_code = elem.attribute("global").toStdString();
-  _function_code = elem.attribute("function").toStdString();
-  init();
   return false;
 }
 
@@ -140,6 +132,7 @@ void ReactiveLuaFunction::prepareLua()
     }
     auto str_name = name.as<std::string>();
     auto series = CreatedSeries(plotData(), str_name, false);
+    series.clear();
     _created_curves.push_back( str_name );
     return sol::object(_lua_engine, sol::in_place, series);
   };

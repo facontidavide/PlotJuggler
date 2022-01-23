@@ -32,7 +32,7 @@ public:
 
   void clear();
 
-  void addCurve(const std::string& plot_name);
+  bool addCurve(const std::string& plot_name);
 
   void addCustom(const QString& item_name);
 
@@ -52,7 +52,7 @@ public:
 
   virtual void keyPressEvent(QKeyEvent* event) override;
 
-  void updateColors();
+  void updateAppearance();
 
 private slots:
 

@@ -83,12 +83,12 @@ void CurveListPanel::clear()
   ui->labelNumberDisplayed->setText("0 of 0");
 }
 
-void CurveListPanel::addCurve(const std::string& plot_name)
+bool CurveListPanel::addCurve(const std::string& plot_name)
 {
   QString plot_id = QString::fromStdString(plot_name);
   if( _tree_view_items.count(plot_name) > 0 )
   {
-    return;
+    return false;
   }
 
   QString group_name;
@@ -113,13 +113,14 @@ void CurveListPanel::addCurve(const std::string& plot_name)
 
   if (!found)
   {
-    return;
+    return false;
   }
 
   _tree_view->addItem(group_name, getTreeName(plot_id), plot_id);
   _tree_view_items.insert(plot_name);
 
   _column_width_dirty = true;
+  return true;
 }
 
 void CurveListPanel::addCustom(const QString& item_name)
@@ -128,7 +129,7 @@ void CurveListPanel::addCustom(const QString& item_name)
   _column_width_dirty = true;
 }
 
-void CurveListPanel::updateColors()
+void CurveListPanel::updateAppearance()
 {
   QColor default_color = _tree_view->palette().color(QPalette::Text);
   //------------------------------------------
@@ -234,8 +235,7 @@ void CurveListPanel::refreshColumns()
   _column_width_dirty = false;
 
   updateFilter();
-
-  updateColors();
+  updateAppearance();
 }
 
 void CurveListPanel::updateFilter()
