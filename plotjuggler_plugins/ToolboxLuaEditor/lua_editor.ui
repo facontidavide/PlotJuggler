@@ -22,7 +22,7 @@
       </font>
      </property>
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The &lt;span style=&quot; font-weight:600;&quot;&gt;Script Editor &lt;/span&gt;is an advanced Lua editor that allows the user to create new series (scatteXY or timeseries) which are updated any time that the timetracker slider is moved or new data is received.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The &lt;span style=&quot; font-weight:600;&quot;&gt;Script Editor &lt;/span&gt;is an advanced Lua editor that allows the user to create new series (scatteXY or timeseries) which are updated when the timetracker slider is moved or new data is received. &lt;a href=&quot;https://slides.com/davidefaconti/plotjuggler-reactive-scripts/fullscreen&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Open Tutorial&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -103,7 +103,7 @@
               </font>
              </property>
              <property name="placeholderText">
-              <string>body of the function</string>
+              <string>body of the function. tracker_time is the value of the time slider at the bottom.</string>
              </property>
             </widget>
            </item>
