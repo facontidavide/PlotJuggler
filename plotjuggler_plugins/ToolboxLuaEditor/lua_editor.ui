@@ -313,8 +313,8 @@
  
  Assuming we have multiple series in the form:
  
-   /trajectory/node.{X}/position/x
-   /trajectory/node.{X}/position/y
+   /trajectory/node.{N}/position/x
+   /trajectory/node.{N}/position/y
    
  where {N} is the index of the array (integer). We can create a reactive series from the array with:
  
