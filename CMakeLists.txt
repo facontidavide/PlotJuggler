@@ -244,7 +244,7 @@ add_subdirectory( plotjuggler_plugins/DataStreamSample )
 add_subdirectory( plotjuggler_plugins/DataStreamWebsocket )
 add_subdirectory( plotjuggler_plugins/DataStreamUDP )
 add_subdirectory( plotjuggler_plugins/DataStreamMQTT )
-#add_subdirectory( plotjuggler_plugins/DataStreamZMQ )
+add_subdirectory( plotjuggler_plugins/DataStreamZMQ )
 
 add_subdirectory( plotjuggler_plugins/StatePublisherCSV )
 add_subdirectory( plotjuggler_plugins/VideoViewer )

@@ -17,7 +17,6 @@ if(ZeroMQ_FOUND)
         ${Qt5Widgets_LIBRARIES}
         plotjuggler_base
         ${ZeroMQ_LIBRARY}
-        ${ZeroMQ_STATIC_LIBRARY}
         )
 
     install(TARGETS DataStreamZMQ DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
