@@ -7,6 +7,7 @@
 #include "qwt_plot_zoomer.h"
 #include "qwt_scale_map.h"
 #include "qwt_plot.h"
+#include "PlotJuggler/svg_util.h"
 
 PlotZoomer::PlotZoomer(QWidget* canvas)
   : QwtPlotZoomer(canvas, false)
@@ -51,7 +52,7 @@ void PlotZoomer::widgetMouseMoveEvent(QMouseEvent* me)
         {
           QSettings settings;
           QString theme = settings.value("Preferences::theme", "light").toString();
-          QPixmap pixmap(tr(":/style_%1/zoom_in.png").arg(theme));
+          const QPixmap& pixmap = LoadSvg(":/resources/svg/zoom_in.svg", theme);
           QCursor zoom_cursor(pixmap.scaled(24, 24));
 
           _zoom_enabled = true;

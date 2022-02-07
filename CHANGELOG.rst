@@ -2,6 +2,20 @@
 Changelog for package plotjuggler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.4.1 (2022-02-06)
+------------------
+* add flip axis
+* fix zoom in icon
+* Fix typo in toolbox Lua (`#598 <https://github.com/facontidavide/PlotJuggler/issues/598>`_)
+* Fix MutableTimeseries shadowed by MutableScatterXY (`#597 <https://github.com/facontidavide/PlotJuggler/issues/597>`_)
+  * Fix MutableTimeseries shadowed by MutableScatterXY
+  * add math library
+  Co-authored-by: Simon CHANU <simon.chanu@cmdl.pro>
+* MQTT upgraded
+* Update README.md
+* Installer and readme updates
+* Contributors: Davide Faconti, SebasAlmagro, Simon CHANU
+
 3.4.0 (2022-01-29)
 ------------------
 * fix `#585 <https://github.com/facontidavide/PlotJuggler/issues/585>`_

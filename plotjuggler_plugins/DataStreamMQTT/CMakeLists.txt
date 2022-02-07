@@ -15,7 +15,14 @@ if(MOSQUITTO_FOUND)
 
     QT5_WRAP_UI ( UI_SRC  datastream_mqtt.ui  )
 
-    SET( SRC datastream_mqtt.cpp)
+    SET( SRC
+        datastream_mqtt.h
+        datastream_mqtt.cpp
+        mqtt_dialog.h
+        mqtt_dialog.cpp
+        mqtt_client.h
+        mqtt_client.cpp
+        )
 
     add_library(DataStreamMQTT_Mosquitto SHARED ${SRC} ${UI_SRC}  )
 

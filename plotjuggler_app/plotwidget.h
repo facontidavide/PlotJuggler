@@ -122,6 +122,8 @@ public slots:
 
   void on_changeCurveColor(const QString& curve_name, QColor new_color);
 
+  void onFlipAxis();
+
 private slots:
 
   // void on_changeToBuiltinTransforms(QString new_transform);
@@ -156,6 +158,9 @@ private:
   QAction* _action_copy;
   QAction* _action_paste;
   QAction* _action_image_to_clipboard;
+
+  QAction* _flip_x;
+  QAction* _flip_y;
 
   CurveTracker* _tracker;
   QwtPlotGrid* _grid;
@@ -200,6 +205,9 @@ private:
   // void updateMaximumZoomArea();
   void rescaleEqualAxisScaling();
   void overrideCursonMove();
+
+  void setAxisScale(QwtAxisId axisId, double min, double max);
+
 };
 
 #endif

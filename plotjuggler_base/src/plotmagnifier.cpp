@@ -88,8 +88,11 @@ void PlotMagnifier::rescale(double factor, AxisMode axis)
       v1 = center - width * temp_factor * (1 - ratio);
       v2 = center + width * temp_factor * (ratio);
 
-      if (v1 > v2)
+      bool reversed_axis = false;
+      if (v1 > v2){
+        reversed_axis = true;
         std::swap(v1, v2);
+      }
 
       if (scaleMap.transformation())
       {
@@ -97,12 +100,16 @@ void PlotMagnifier::rescale(double factor, AxisMode axis)
         v2 = scaleMap.invTransform(v2);
       }
 
-      if (v1 < _lower_bounds[axisId])
-        v1 = _lower_bounds[axisId];
-      if (v2 > _upper_bounds[axisId])
-        v2 = _upper_bounds[axisId];
+      v1 = std::max(v1, _lower_bounds[axisId]);
+      v2 = std::min(v2, _upper_bounds[axisId]);
 
-      plt->setAxisScale(axisId, v1, v2);
+      if( reversed_axis )
+      {
+        plt->setAxisScale(axisId, v2, v1);
+      }
+      else{
+        plt->setAxisScale(axisId, v1, v2);
+      }
 
       if (axisId == QwtPlot::xBottom)
       {

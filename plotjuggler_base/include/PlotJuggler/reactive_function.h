@@ -5,7 +5,9 @@
 #include <sol/sol.hpp>
 
 class TimeseriesRef;
-class CreatedSeries;
+class CreatedSeriesBase;
+class CreatedSeriesTime;
+class CreatedSeriesXY;
 
 namespace PJ {
 
@@ -24,9 +26,9 @@ struct TimeseriesRef
 
 //-----------------------
 
-struct CreatedSeries
+struct CreatedSeriesBase
 {
-  CreatedSeries(PlotDataMapRef* data_map, const std::string& name, bool timeseries);
+  CreatedSeriesBase(PlotDataMapRef* data_map, const std::string& name, bool timeseries);
 
   std::pair<double, double> at(unsigned i) const;
 
@@ -37,6 +39,16 @@ struct CreatedSeries
   unsigned size() const;
 
   PJ::PlotDataXY* _plot_data = nullptr;
+};
+
+struct CreatedSeriesTime : public CreatedSeriesBase
+{
+  CreatedSeriesTime(PlotDataMapRef* data_map, const std::string& name);
+};
+
+struct CreatedSeriesXY : public CreatedSeriesBase
+{
+  CreatedSeriesXY(PlotDataMapRef* data_map, const std::string& name);
 };
 
 //-----------------------
@@ -104,7 +116,8 @@ protected:
   sol::protected_function _lua_function;
 
   sol::usertype<TimeseriesRef> _timeseries_ref;
-  sol::usertype<CreatedSeries> _created_timeseries;
+  sol::usertype<CreatedSeriesTime> _created_timeseries;
+  sol::usertype<CreatedSeriesXY> _created_scatter;
 private:
   void init();
 };

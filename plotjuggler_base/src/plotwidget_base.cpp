@@ -127,6 +127,7 @@ public:
   {
     QwtPlot::resizeEvent(ev);
     resized_callback(canvasBoundingRect());
+    emit parent->widgetResized();
   }
 
   std::list<CurveInfo> curve_list;

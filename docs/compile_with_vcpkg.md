@@ -55,7 +55,7 @@ And compile in Release mode with:
 
 # Final app deployment
 
-Move to the volder where `plotjuggler.exe` is located (should be `C:\dev\build_pj\bin\release`) and use `windeployqt.exe` to copy the needed
+Move to the folder where `plotjuggler.exe` is located (should be `C:\dev\build_pj\bin\release`) and use `windeployqt.exe` to copy the needed
 Qt libraries.
 
 For instance, if you have Qt 5.12.2 installed and compiled witg MSVC 2019.

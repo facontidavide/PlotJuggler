@@ -114,6 +114,7 @@ signals:
 
   void legendSizeChanged(int new_size);
 
+  void widgetResized();
 
 protected:
   class QwtPlotPimpl;

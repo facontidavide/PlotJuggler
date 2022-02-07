@@ -294,5 +294,6 @@
         <file>resources/memes/meme_69.jpg</file>
         <file>resources/memes/meme_70.jpg</file>
         <file>resources/memes/meme_71.jpg</file>
+        <file>resources/svg/zoom_in.svg</file>
     </qresource>
 </RCC>

@@ -12,6 +12,7 @@ void ReactiveLuaFunction::init()
 
   _lua_engine.open_libraries(sol::lib::base);
   _lua_engine.open_libraries(sol::lib::string);
+  _lua_engine.open_libraries(sol::lib::math);
 
   _lua_engine.script(_library_code);
 
@@ -100,7 +101,7 @@ void ReactiveLuaFunction::prepareLua()
   _timeseries_ref["atTime"] = &TimeseriesRef::atTime;
 
   //---------------------------------------
-  _created_timeseries = _lua_engine.new_usertype<CreatedSeries>("MutableTimeseries");
+  _created_timeseries = _lua_engine.new_usertype<CreatedSeriesTime>("MutableTimeseries");
 
   _created_timeseries["new"] = [&](sol::object name)
   {
@@ -109,38 +110,39 @@ void ReactiveLuaFunction::prepareLua()
       return sol::make_object(_lua_engine, sol::lua_nil);
     }
     auto str_name = name.as<std::string>();
-    auto series = CreatedSeries(plotData(), str_name, true);
+    auto series = CreatedSeriesTime(plotData(), str_name);
     series.clear();
     _created_curves.push_back( str_name );
     return sol::object(_lua_engine, sol::in_place, series);
   };
 
-  _created_timeseries["at"] = &CreatedSeries::at;
-  _created_timeseries["size"] = &CreatedSeries::size;
-  _created_timeseries["clear"] = &CreatedSeries::clear;
-  _created_timeseries["push_back"] = &CreatedSeries::push_back;
+  _created_timeseries["at"] = &CreatedSeriesTime::at;
+  _created_timeseries["size"] = &CreatedSeriesTime::size;
+  _created_timeseries["clear"] = &CreatedSeriesTime::clear;
+  _created_timeseries["push_back"] = &CreatedSeriesTime::push_back;
 
   //---------------------------------------
-  sol::usertype<CreatedSeries> created_scatter =
-      _lua_engine.new_usertype<CreatedSeries>("MutableScatterXY");
+  _created_scatter = _lua_engine.new_usertype<CreatedSeriesXY>("MutableScatterXY");
 
-  created_scatter["new"] = [&](sol::object name)
+  _created_scatter["new"] = [&](sol::object name)
   {
     if (name.is<std::string>() == false)
     {
       return sol::make_object(_lua_engine, sol::lua_nil);
     }
     auto str_name = name.as<std::string>();
-    auto series = CreatedSeries(plotData(), str_name, false);
+    auto series = CreatedSeriesXY(plotData(), str_name);
     series.clear();
     _created_curves.push_back( str_name );
     return sol::object(_lua_engine, sol::in_place, series);
   };
 
-  created_scatter["at"] = &CreatedSeries::at;
-  created_scatter["size"] = &CreatedSeries::size;
-  created_scatter["clear"] = &CreatedSeries::clear;
-  created_scatter["push_back"] = &CreatedSeries::push_back;
+  _created_scatter["at"] = &CreatedSeriesXY::at;
+  _created_scatter["size"] = &CreatedSeriesXY::size;
+  _created_scatter["clear"] = &CreatedSeriesXY::clear;
+  _created_scatter["push_back"] = &CreatedSeriesXY::push_back;
+
+  //---------------------------------------
 }
 
 TimeseriesRef::TimeseriesRef(PlotData *data): _plot_data(data)
@@ -163,37 +165,48 @@ unsigned TimeseriesRef::size() const
   return _plot_data->size();
 }
 
-CreatedSeries::CreatedSeries(PlotDataMapRef *data_map, const std::string &name, bool timeseries)
+CreatedSeriesBase::CreatedSeriesBase(PlotDataMapRef *data_map, const std::string &name, bool timeseries)
 {
   if( timeseries )
   {
+    std::cout << "[DEBUG] Create timeserie, bool timeseries=" << timeseries << "\n";
     _plot_data = &(data_map->getOrCreateNumeric(name));
   }
   else
   {
+    std::cout << "[DEBUG] Create scatterplot, bool timeseries=" << timeseries << "\n";
     _plot_data = &(data_map->getOrCreateScatterXY(name));
   }
 }
 
-std::pair<double, double> CreatedSeries::at(unsigned i) const
+std::pair<double, double> CreatedSeriesBase::at(unsigned i) const
 {
   const auto& p = _plot_data->at(i);
   return {p.x, p.y};
 }
 
-void CreatedSeries::clear()
+void CreatedSeriesBase::clear()
 {
   _plot_data->clear();
 }
 
-void CreatedSeries::push_back(double x, double y)
+void CreatedSeriesBase::push_back(double x, double y)
 {
   _plot_data->pushBack( {x,y} );
 }
 
-unsigned CreatedSeries::size() const
+unsigned CreatedSeriesBase::size() const
 {
   return _plot_data->size();
 }
+
+
+CreatedSeriesTime::CreatedSeriesTime(PlotDataMapRef *data_map, const std::string &name) : 
+  CreatedSeriesBase(data_map, name, true)
+{}
+
+CreatedSeriesXY::CreatedSeriesXY(PlotDataMapRef *data_map, const std::string &name) : 
+  CreatedSeriesBase(data_map, name, false)
+{}
 
 }
