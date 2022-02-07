@@ -3,7 +3,6 @@
 
 #include "nlohmann/json.hpp"
 #include "PlotJuggler/messageparser_base.h"
-#include <QCheckBox>
 #include <QDebug>
 
 using namespace PJ;
@@ -76,17 +75,16 @@ public:
 class QCheckBoxClose : public QGroupBox
 {
 public:
-  QCheckBox *checkbox;
   QLineEdit *lineedit;
   QGroupBox *groupbox;
   QCheckBoxClose(QString text) : QGroupBox(text)
   {
+      QGroupBox::setCheckable(true);
+      QGroupBox::setChecked(false);
       lineedit = new QLineEdit(this);
-      checkbox  = new QCheckBox(text, this);
       QVBoxLayout *vbox = new QVBoxLayout;
-      vbox->addWidget(checkbox);
+      vbox->addSpacing(20);
       vbox->addWidget(lineedit);
-      vbox->addStretch(1);
       QGroupBox::setLayout(vbox);
   }
   ~QCheckBoxClose() override
@@ -94,12 +92,6 @@ public:
     qDebug() << "Destroying QCheckBoxClose";
   }
 
-  void setVisible(bool on) override
-  {
-    QGroupBox::setVisible(on);
-    lineedit->setVisible(on);
-    checkbox->setVisible(on);
-  }
 };
 
 class NlohmannParserCreator : public MessageParserCreator
@@ -127,7 +119,7 @@ public:
                                   PlotDataMapRef& data) override
   {
     return std::make_shared<JSON_Parser>(topic_name, data,
-                                         _checkbox_use_timestamp->checkbox->isChecked(), _checkbox_use_timestamp->lineedit->text().toStdString());
+                                         _checkbox_use_timestamp->isChecked(), _checkbox_use_timestamp->lineedit->text().toStdString());
   }
   const char* name() const override
   {
@@ -142,7 +134,7 @@ public:
                                   PlotDataMapRef& data) override
   {
     return std::make_shared<CBOR_Parser>(topic_name, data,
-                                         _checkbox_use_timestamp->checkbox->isChecked(), _checkbox_use_timestamp->lineedit->text().toStdString());
+                                         _checkbox_use_timestamp->isChecked(), _checkbox_use_timestamp->lineedit->text().toStdString());
   }
   const char* name() const override
   {
@@ -157,7 +149,7 @@ public:
                                   PlotDataMapRef& data) override
   {
     return std::make_shared<BSON_Parser>(topic_name, data,
-                                         _checkbox_use_timestamp->checkbox->isChecked(), _checkbox_use_timestamp->lineedit->text().toStdString());
+                                         _checkbox_use_timestamp->isChecked(), _checkbox_use_timestamp->lineedit->text().toStdString());
   }
   const char* name() const override
   {
@@ -172,7 +164,7 @@ public:
                                   PlotDataMapRef& data) override
   {
     return std::make_shared<MessagePack_Parser>(topic_name, data,
-                                                _checkbox_use_timestamp->checkbox->isChecked(), _checkbox_use_timestamp->lineedit->text().toStdString());
+                                                _checkbox_use_timestamp->isChecked(), _checkbox_use_timestamp->lineedit->text().toStdString());
   }
   const char* name() const override
   {
