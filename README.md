@@ -87,7 +87,7 @@ If you want a simple example to learn how to write your own plugins, have a look
 
 Install the debian packages using: 
 
-     sudo apt install ros-<distro>-plotjuggler-ros
+     sudo apt install ros-$ROS_DISTRO-plotjuggler-ros
 
 ## How to build
 
