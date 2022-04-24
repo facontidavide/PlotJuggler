@@ -54,8 +54,8 @@ message(${catkin_INCLUDE_DIRS})
 elseif( DEFINED ENV{AMENT_PREFIX_PATH})
     set(COMPILING_WITH_AMENT 1)
 
+    find_package(ament_cmake REQUIRED)
     find_package(ament_index_cpp REQUIRED)
-    include_directories(${ament_index_cpp_INCLUDE_DIRS})
 
     message(STATUS "--------------------------------------------------")
     message(STATUS "PlotJuggler is being built using AMENT.")
@@ -182,7 +182,6 @@ if(COMPILING_WITH_CATKIN)
 
 elseif(COMPILING_WITH_AMENT)
 
-    find_package(ament_cmake REQUIRED)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
     set(PJ_PLUGIN_INSTALL_DIRECTORY lib/${PROJECT_NAME} )

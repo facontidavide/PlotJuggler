@@ -118,7 +118,7 @@ if(COMPILING_WITH_CATKIN)
 
 elseif(COMPILING_WITH_AMENT)
 
-    target_link_libraries(plotjuggler ${ament_index_cpp_LIBRARIES} )
+    ament_target_dependencies(plotjuggler ament_index_cpp)
 
     install(TARGETS plotjuggler
         DESTINATION lib/${PROJECT_NAME} )
