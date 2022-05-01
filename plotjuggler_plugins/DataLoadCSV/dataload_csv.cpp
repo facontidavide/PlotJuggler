@@ -11,74 +11,31 @@
 const int TIME_INDEX_NOT_DEFINED = -2;
 const int TIME_INDEX_GENERATED = -1;
 
-void SplitLine(const QString& line, QChar separator, QStringList& parts)
+
+QStringList SplitLine(const QString& line, QChar separator, QChar quote = '"')
 {
-  parts.clear();
+  QStringList parts;
+  QString current_word = "";
   bool inside_quotes = false;
-  bool quoted_word = false;
-  int start_pos = 0;
 
-  int quote_start = 0;
-  int quote_end = 0;
-
-  for (int pos = 0; pos < line.size(); pos++)
+  for (QChar character : line)
   {
-    if (line[pos] == '"')
+    if (character == quote)
     {
-      if (inside_quotes)
-      {
-        quoted_word = true;
-        quote_end = pos - 1;
-      }
-      else
-      {
-        quote_start = pos + 1;
-      }
       inside_quotes = !inside_quotes;
     }
-
-    bool part_completed = false;
-    bool add_empty = false;
-    int end_pos = pos;
-
-    if ((!inside_quotes && line[pos] == separator))
+    else if (character == separator && !inside_quotes)
     {
-      part_completed = true;
+      parts.append(current_word);
+      current_word = "";
     }
-    if (pos + 1 == line.size())
+    else
     {
-      part_completed = true;
-      end_pos = pos + 1;
-      // special case
-      if (line[pos] == separator)
-      {
-        end_pos = pos;
-        add_empty = true;
-      }
-    }
-
-    if (part_completed)
-    {
-      QString part;
-      if (quoted_word)
-      {
-        part = line.mid(quote_start, quote_end - quote_start + 1);
-      }
-      else
-      {
-        part = line.mid(start_pos, end_pos - start_pos);
-      }
-
-      parts.push_back(part.trimmed());
-      start_pos = pos + 1;
-      quoted_word = false;
-      inside_quotes = false;
-    }
-    if (add_empty)
-    {
-      parts.push_back(QString());
+      current_word += character;
     }
   }
+
+  return parts;
 }
 
 DataLoadCSV::DataLoadCSV()
@@ -138,8 +95,7 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
 
   QString preview_lines = first_line + "\n";
 
-  QStringList firstline_items;
-  SplitLine(first_line, _delimiter, firstline_items);
+  QStringList firstline_items = SplitLine(first_line, _delimiter);
 
   int is_number_count = 0;
 
@@ -455,7 +411,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   while (!in.atEnd())
   {
     QString line = in.readLine();
-    SplitLine(line, _delimiter, string_items);
+    spring_items = SplitLine(line, _delimiter);
 
     if (string_items.size() != column_names.size())
     {
