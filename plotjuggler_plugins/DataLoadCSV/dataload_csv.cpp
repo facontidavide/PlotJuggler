@@ -411,7 +411,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   while (!in.atEnd())
   {
     QString line = in.readLine();
-    spring_items = SplitLine(line, _delimiter);
+    string_items = SplitLine(line, _delimiter);
 
     if (string_items.size() != column_names.size())
     {
