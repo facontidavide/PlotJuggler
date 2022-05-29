@@ -52,7 +52,7 @@ If you are not familiar with Lua, don't be afraid, you won't need more than 5 mi
 
 ## Tutorials
 
-To learns how to use PlotJuggler, check the tutorials here:
+To learn how to use PlotJuggler, check the tutorials here:
 
 | Tutorial 1   |  Tutorial 2 | Tutorial 3 |
 :-------------------------:|:-------------------------:|:-------------------------:
