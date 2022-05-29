@@ -146,6 +146,9 @@
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Visit &lt;a href=&quot;https://doc.qt.io/qt-5/qtime.html#toString&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;this link&lt;/span&gt;&lt;/a&gt; to learn more about the Date-Time format.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
+         <property name="openExternalLinks">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
        <item>
