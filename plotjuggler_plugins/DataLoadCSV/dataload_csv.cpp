@@ -7,6 +7,7 @@
 #include <QProgressDialog>
 #include <QDateTime>
 #include <QInputDialog>
+#include <QPushButton>
 
 const int TIME_INDEX_NOT_DEFINED = -2;
 const int TIME_INDEX_GENERATED = -1;
@@ -91,16 +92,18 @@ DataLoadCSV::DataLoadCSV()
   _ui = new Ui::DialogCSV();
   _ui->setupUi(_dialog);
 
+  _ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+
   connect(_ui->radioButtonSelect, &QRadioButton::toggled, this, [this](bool checked) {
     _ui->listWidgetSeries->setEnabled(checked);
     auto selected = _ui->listWidgetSeries->selectionModel()->selectedIndexes();
     bool box_enabled = !checked || selected.size() == 1;
-    _ui->buttonBox->setEnabled(box_enabled);
+    _ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(box_enabled);
   });
   connect(_ui->listWidgetSeries, &QListWidget::itemSelectionChanged, this, [this]() {
     auto selected = _ui->listWidgetSeries->selectionModel()->selectedIndexes();
     bool box_enabled = _ui->radioButtonIndex->isChecked() || selected.size() == 1;
-    _ui->buttonBox->setEnabled(box_enabled);
+    _ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(box_enabled);
   });
 
   connect(_ui->listWidgetSeries, &QListWidget::itemDoubleClicked, this,
