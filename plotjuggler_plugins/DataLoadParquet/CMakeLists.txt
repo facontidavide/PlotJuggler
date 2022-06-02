@@ -5,8 +5,8 @@ set(CMAKE_MODULE_PATH  "${CMAKE_CONFIG_PATH} ${CMAKE_MODULE_PATH}")
 find_package(Zstd REQUIRED)
 set (ZSTD_LIB ${Zstd_LIBRARIES})
 
-find_package(Arrow REQUIRED)
-find_package(Parquet REQUIRED)
+find_package(Arrow QUIET)
+find_package(Parquet QUIET)
 
 if(ARROW_FOUND AND PARQUET_FOUND)
 
@@ -26,8 +26,8 @@ if(ARROW_FOUND AND PARQUET_FOUND)
     target_link_libraries(DataLoadParquet
         ${Qt5Widgets_LIBRARIES}
         ${Qt5Xml_LIBRARIES}
-        ${ARROW_STATIC_LIB}
-        ${PARQUET_STATIC_LIB}
+        arrow
+        parquet
         plotjuggler_base)
 
     install(TARGETS DataLoadParquet DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )

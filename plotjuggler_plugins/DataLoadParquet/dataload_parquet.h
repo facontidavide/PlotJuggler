@@ -5,6 +5,10 @@
 #include "PlotJuggler/dataloader_base.h"
 #include "ui_dataload_parquet.h"
 
+#define QT_NO_KEYWORDS
+#undef signals
+#include <parquet/stream_reader.h>
+
 using namespace PJ;
 
 class DataLoadParquet : public DataLoader
@@ -20,12 +24,14 @@ public:
   virtual bool readDataFromFile(PJ::FileLoadInfo* fileload_info,
                                 PlotDataMapRef& destination) override;
 
-  virtual ~DataLoadParquet();
+  ~DataLoadParquet() override;
 
   virtual const char* name() const override
   {
     return "DataLoad Parquet";
   }
+
+  QString selectedSeries() const;
 
   virtual bool xmlSaveState(QDomDocument& doc,
                             QDomElement& parent_element) const override;
@@ -34,10 +40,12 @@ public:
 
 
 private:
+
   std::vector<const char*> _extensions;
 
   std::string _default_time_axis;
 
-  Ui::DialogParquet* _ui;
+  std::unique_ptr<parquet::ParquetFileReader> parquet_reader_;
 
+  void setupDialog(QDialog* dialog, Ui::DialogParquet *ui);
 };
