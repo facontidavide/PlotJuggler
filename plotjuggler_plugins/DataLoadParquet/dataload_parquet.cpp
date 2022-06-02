@@ -11,10 +11,12 @@
 
 DataLoadParquet::DataLoadParquet()
 {
+  ui = new Ui::DialogParquet();
 }
 
 DataLoadParquet::~DataLoadParquet()
 {
+  delete ui;
 }
 
 const std::vector<const char*>& DataLoadParquet::compatibleFileExtensions() const
@@ -23,8 +25,10 @@ const std::vector<const char*>& DataLoadParquet::compatibleFileExtensions() cons
   return extensions;
 }
 
-void DataLoadParquet::setupDialog(QDialog* dialog, Ui::DialogParquet* ui)
+void DataLoadParquet::setupDialog(QDialog* dialog)
 {
+  ui->setupUi(dialog);
+
   connect(ui->checkBoxDateFormat, &QCheckBox::toggled, this,
           [=](bool checked){
             ui->lineEditDateFormat->setEnabled(checked);
@@ -76,10 +80,8 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
   const auto schema = file_metadata->schema();
   const size_t num_columns = file_metadata->num_columns();
 
-  Ui::DialogParquet* ui = new Ui::DialogParquet();
   auto dialog = new QDialog();
-  ui->setupUi(dialog);
-  setupDialog(dialog, ui);
+  setupDialog(dialog);
 
   std::vector<parquet::Type::type> column_type;
   std::vector<bool> valid_column( num_columns, true );
@@ -101,7 +103,7 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
 
   {
     QSettings settings;
-    auto prev_series = settings.value("DataLoadParquet::prev_series", {}).toString();
+    auto prev_series = settings.value("DataLoadParquet::prevTimestamp", {}).toString();
 
     if (prev_series.isEmpty() == false)
     {
@@ -131,7 +133,7 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
   }
 
   QSettings settings;
-  settings.setValue("DataLoadParquet::prev_series", selected_stamp);
+  settings.setValue("DataLoadParquet::prevTimestamp", selected_stamp);
   settings.setValue("DataLoadParquet::radioIndexChecked", ui->radioButtonIndex->isChecked());
   settings.setValue("DataLoadParquet::parseDateTime", ui->checkBoxDateFormat->isChecked());
   settings.setValue("DataLoadParquet::dateFromat", ui->lineEditDateFormat->text());
@@ -229,16 +231,46 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
       }
     }
   }
-
+  _default_time_axis = prev_series;
   return true;
 }
 
 bool DataLoadParquet::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const
 {
+  QDomElement elem = doc.createElement("default");
+  elem.setAttribute("prevTimestamp", _default_time_axis);
+  elem.setAttribute("radioIndexChecked", ui->radioButtonIndex->isChecked());
+  elem.setAttribute("parseDateTime", ui->checkBoxDateFormat->isChecked());
+  elem.setAttribute("dateFromat", ui->lineEditDateFormat->text());
+
+  parent_element.appendChild(elem);
   return true;
 }
 
 bool DataLoadParquet::xmlLoadState(const QDomElement& parent_element)
 {
+  QDomElement elem = parent_element.firstChildElement("default");
+  if (!elem.isNull())
+  {
+    if (elem.hasAttribute("prevTimestamp"))
+    {
+      _default_time_axis = elem.attribute("prevTimestamp");
+    }
+    if (elem.hasAttribute("radioIndexChecked"))
+    {
+      bool checked = elem.attribute("radioIndexChecked").toInt();
+      ui->radioButtonIndex->setChecked(checked);
+    }
+    if (elem.hasAttribute("parseDateTime"))
+    {
+      bool checked = elem.attribute("parseDateTime").toInt();
+      ui->checkBoxDateFormat->setChecked(checked);
+    }
+    if (elem.hasAttribute("dateFromat"))
+    {
+      ui->lineEditDateFormat->setText( elem.attribute("dateFromat") );
+    }
+  }
+
   return true;
 }

@@ -41,11 +41,13 @@ public:
 
 private:
 
+  Ui::DialogParquet* ui = nullptr;
+
   std::vector<const char*> _extensions;
 
-  std::string _default_time_axis;
+  QString _default_time_axis;
 
   std::unique_ptr<parquet::ParquetFileReader> parquet_reader_;
 
-  void setupDialog(QDialog* dialog, Ui::DialogParquet *ui);
+  void setupDialog(QDialog* dialog);
 };
