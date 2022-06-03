@@ -103,11 +103,14 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
 
   {
     QSettings settings;
-    auto prev_series = settings.value("DataLoadParquet::prevTimestamp", {}).toString();
-
-    if (prev_series.isEmpty() == false)
+    if( _default_time_axis.isEmpty() )
     {
-      auto items = ui->listWidgetSeries->findItems(prev_series, Qt::MatchExactly);
+      _default_time_axis = settings.value("DataLoadParquet::prevTimestamp", {}).toString();
+    }
+
+    if (_default_time_axis.isEmpty() == false)
+    {
+      auto items = ui->listWidgetSeries->findItems(_default_time_axis, Qt::MatchExactly);
       if( items.size() > 0 )
       {
         ui->listWidgetSeries->setCurrentItem(items.front());
@@ -231,7 +234,6 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
       }
     }
   }
-  _default_time_axis = prev_series;
   return true;
 }
 

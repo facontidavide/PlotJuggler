@@ -2,9 +2,8 @@
 set(CMAKE_CONFIG_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake" ${CMAKE_MODULE_PATH}  )
 set(CMAKE_MODULE_PATH  "${CMAKE_CONFIG_PATH} ${CMAKE_MODULE_PATH}")
 
-find_package(Zstd REQUIRED)
+find_package(Zstd QUIET)
 set (ZSTD_LIB ${Zstd_LIBRARIES})
-
 find_package(Arrow QUIET)
 find_package(Parquet QUIET)
 
