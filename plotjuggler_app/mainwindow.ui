@@ -1367,7 +1367,7 @@
                      <string>tt</string>
                     </property>
                     <property name="icon">
-                     <iconset>
+                     <iconset resource="resource.qrc">
                       <normaloff>:/style_light/line_tracker_1.png</normaloff>:/style_light/line_tracker_1.png</iconset>
                     </property>
                     <property name="iconSize">
@@ -1838,6 +1838,7 @@
     <addaction name="actionShare_the_love"/>
     <addaction name="actionReportBug"/>
     <addaction name="separator"/>
+    <addaction name="actionQt_License_Info"/>
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuTools">
@@ -1866,7 +1867,7 @@
   </action>
   <action name="actionReportBug">
    <property name="icon">
-    <iconset>
+    <iconset resource="resource.qrc">
      <normaloff>:/resources/github.png</normaloff>:/resources/github.png</iconset>
    </property>
    <property name="text">
@@ -1927,7 +1928,7 @@
   </action>
   <action name="actionShare_the_love">
    <property name="icon">
-    <iconset>
+    <iconset resource="resource.qrc">
      <normaloff>:/resources/twitter.png</normaloff>:/resources/twitter.png</iconset>
    </property>
    <property name="text">
@@ -1937,6 +1938,11 @@
   <action name="actionLoadStyleSheet">
    <property name="text">
     <string>Load StyleSheet</string>
+   </property>
+  </action>
+  <action name="actionQt_License_Info">
+   <property name="text">
+    <string>Qt License Info</string>
    </property>
   </action>
  </widget>
@@ -1953,6 +1959,8 @@
    <header location="global">menubar.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

@@ -238,6 +238,7 @@ public slots:
   // TODO ?  void on_actionSaveAllPlotTabs_triggered();
 
   void on_actionAbout_triggered();
+  void on_actionQt_License_Info_triggered();
   void on_actionExit_triggered();
 
   void on_pushButtonActivateGrid_toggled(bool checked);

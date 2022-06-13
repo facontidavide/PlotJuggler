@@ -555,7 +555,7 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QPlainTextEdit" name="globalVarsText">
+                <widget class="ScriptEditor" name="globalVarsText">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                    <horstretch>0</horstretch>
@@ -584,7 +584,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QPlainTextEdit" name="functionText">
+                <widget class="ScriptEditor" name="functionText">
                  <property name="minimumSize">
                   <size>
                    <width>0</width>
@@ -622,7 +622,7 @@
          <property name="childrenCollapsible">
           <bool>false</bool>
          </property>
-         <widget class="QWidget" name="">
+         <widget class="QWidget" name="layoutWidget">
           <layout class="QVBoxLayout" name="verticalLayout_6">
            <property name="rightMargin">
             <number>10</number>
@@ -871,7 +871,7 @@
                <number>0</number>
               </property>
               <item>
-               <widget class="QPlainTextEdit" name="globalVarsTextBatch">
+               <widget class="ScriptEditor" name="globalVarsTextBatch">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                   <horstretch>0</horstretch>
@@ -900,7 +900,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QPlainTextEdit" name="functionTextBatch">
+               <widget class="ScriptEditor" name="functionTextBatch">
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
@@ -974,6 +974,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScriptEditor</class>
+   <extends>QPlainTextEdit</extends>
+   <header>PlotJuggler/script_editor.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
