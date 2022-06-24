@@ -253,6 +253,26 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
               row_values[col] = static_cast<double>(tmp);
               break;
             }
+            default: {
+              //Fallback in case no converted type is provided
+              switch(type)
+              {
+                case Type::INT32: 
+                {
+                  int32_t tmp;
+                  os >> tmp;
+                  row_values[col] = static_cast<double>(tmp);
+                  break;
+                }
+                case Type::INT64:
+                {
+                  int64_t tmp;
+                  os >> tmp;
+                  row_values[col] = static_cast<double>(tmp);
+                  break;
+                }
+              }
+            }
           }
           break;
         }
