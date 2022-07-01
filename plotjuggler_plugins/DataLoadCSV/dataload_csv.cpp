@@ -8,6 +8,7 @@
 #include <QDateTime>
 #include <QInputDialog>
 #include <QPushButton>
+#include "QSyntaxStyle"
 
 const int TIME_INDEX_NOT_DEFINED = -2;
 const int TIME_INDEX_GENERATED = -1;
@@ -284,6 +285,21 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
       _delimiter = ' ';
     }
     file.close();
+  }
+
+
+  QString theme = settings.value("StyleSheet::theme", "light").toString();
+  auto style_path = (theme == "light" ) ? ":/resources/lua_style_light.xml" :
+                                          ":/resources/lua_style_dark.xml";
+
+  QFile fl(style_path);
+  if (fl.open(QIODevice::ReadOnly))
+  {
+    auto style = new QSyntaxStyle(this);
+    if (style->load(fl.readAll()))
+    {
+      _ui->rawText->setSyntaxStyle( style );
+    }
   }
 
   // temporary connection
