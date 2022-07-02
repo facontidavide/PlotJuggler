@@ -4,6 +4,7 @@
 #include <QtPlugin>
 #include "PlotJuggler/dataloader_base.h"
 #include "ui_dataload_csv.h"
+#include "QCSVHighlighter"
 
 using namespace PJ;
 
@@ -43,6 +44,8 @@ private:
   std::string _default_time_axis;
 
   QChar _delimiter;
+
+  QCSVHighlighter _csvHighlighter;
 
   QDialog* _dialog;
   Ui::DialogCSV* _ui;

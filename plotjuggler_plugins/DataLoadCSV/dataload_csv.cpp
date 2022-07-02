@@ -10,6 +10,9 @@
 #include <QPushButton>
 #include "QSyntaxStyle"
 
+
+#include <QStandardItemModel>
+
 const int TIME_INDEX_NOT_DEFINED = -2;
 const int TIME_INDEX_GENERATED = -1;
 
@@ -132,6 +135,14 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
 {
   file.open(QFile::ReadOnly);
 
+  QStandardItemModel *model = new QStandardItemModel;
+  _ui->tableView->setModel(model);
+  model->clear();
+
+
+  _csvHighlighter.delimiter = _delimiter;
+  _ui->rawText->setHighlighter(&_csvHighlighter);
+
   column_names.clear();
   _ui->listWidgetSeries->clear();
 
@@ -222,10 +233,16 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
     }
   }
 
+  int x = 0;
   for (const auto& name : column_names)
   {
     _ui->listWidgetSeries->addItem(QString::fromStdString(name));
+
+    QStandardItem *item = new QStandardItem(QString::fromStdString(name));
+    model->setItem(0, x, item);
+    x +=1;
   }
+
 
   int linecount = 1;
   while (!inA.atEnd())
@@ -234,6 +251,15 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
     if (linecount++ < 100)
     {
       preview_lines += line + "\n";
+
+      // parse the read line into separate pieces(tokens) with "," as the delimiter
+      QStringList lineToken = line.split(_delimiter);
+      // load parsed data to model accordingly
+      for (int j = 0; j < lineToken.size(); j++) {
+          QString value = lineToken.at(j);
+          QStandardItem *item = new QStandardItem(value);
+          model->setItem(linecount-1, j, item);
+      }
     }
     else
     {

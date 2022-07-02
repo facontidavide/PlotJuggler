@@ -28,6 +28,7 @@ set(INCLUDE_FILES
     include/internal/QHighlightBlockRule.hpp
     include/internal/QCodeEditor.hpp
     include/internal/QCXXHighlighter.hpp
+    include/internal/QCSVHighlighter.hpp
     include/internal/QLineNumberArea.hpp
     include/internal/QStyleSyntaxHighlighter.hpp
     include/internal/QSyntaxStyle.hpp
@@ -47,6 +48,7 @@ set(SOURCE_FILES
     src/internal/QCodeEditor.cpp
     src/internal/QLineNumberArea.cpp
     src/internal/QCXXHighlighter.cpp
+    src/internal/QCSVHighlighter.cpp
     src/internal/QSyntaxStyle.cpp
     src/internal/QStyleSyntaxHighlighter.cpp
     src/internal/QGLSLCompleter.cpp
