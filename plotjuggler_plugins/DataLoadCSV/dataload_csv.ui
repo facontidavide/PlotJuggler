@@ -176,6 +176,16 @@
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_9">
            <item>
+            <widget class="QCheckBox" name="checkBoxSyntaxHilighting">
+             <property name="toolTip">
+              <string>Enable syntax highlighting for csv preview. May be slow for large files with many fields</string>
+             </property>
+             <property name="text">
+              <string>Enable Syntax Highlighting</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QCodeEditor" name="rawText">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -198,6 +208,19 @@
            <string>Table View</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_7">
+           <item>
+            <widget class="QCheckBox" name="checkBoxTableView">
+             <property name="toolTip">
+              <string>Enable the table view. May be slow for files with many fields</string>
+             </property>
+             <property name="layoutDirection">
+              <enum>Qt::LeftToRight</enum>
+             </property>
+             <property name="text">
+              <string>Enable Table View</string>
+             </property>
+            </widget>
+           </item>
            <item>
             <widget class="QTableView" name="tableView">
              <property name="sizePolicy">

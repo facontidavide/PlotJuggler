@@ -90,6 +90,7 @@ DataLoadCSV::DataLoadCSV()
 {
   _extensions.push_back("csv");
   _delimiter = ',';
+  _csvHighlighter.delimiter = _delimiter;
   // setup the dialog
 
   _dialog = new QDialog();
@@ -116,6 +117,23 @@ DataLoadCSV::DataLoadCSV()
   connect(_ui->checkBoxDateFormat, &QCheckBox::toggled, this,
           [this](bool checked) { _ui->lineEditDateFormat->setEnabled(checked); });
 
+  connect(_ui->checkBoxSyntaxHilighting,&QCheckBox::toggled, this,
+          [this](bool checked) {
+            if(checked){
+              _ui->rawText->setHighlighter(&_csvHighlighter);
+            }
+            else{
+                _ui->rawText->setHighlighter(nullptr);//method for clearing the syntax highlighter as given in QCodeEditor example
+            }
+            });
+  _ui->tableView->setVisible(false);
+
+
+  QSizePolicy sp_retain = _ui->tableView->sizePolicy();
+  sp_retain.setRetainSizeWhenHidden(true);
+  _ui->tableView->setSizePolicy(sp_retain);
+
+
   _ui->splitter->setStretchFactor(0, 1);
   _ui->splitter->setStretchFactor(1, 2);
 }
@@ -139,9 +157,13 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
   _ui->tableView->setModel(model);
   model->clear();
 
-
   _csvHighlighter.delimiter = _delimiter;
-  _ui->rawText->setHighlighter(&_csvHighlighter);
+  //if(_ui->checkBoxSyntaxHilighting->isChecked()){
+  //  _ui->rawText->setHighlighter(&_csvHighlighter);
+  //}
+  //else{
+  //    _ui->rawText->setHighlighter(nullptr);//method for clearing the syntax highlighter as given in QCodeEditor example
+  //}
 
   column_names.clear();
   _ui->listWidgetSeries->clear();
@@ -238,9 +260,11 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
   {
     _ui->listWidgetSeries->addItem(QString::fromStdString(name));
 
-    QStandardItem *item = new QStandardItem(QString::fromStdString(name));
-    model->setItem(0, x, item);
-    x +=1;
+    if(_ui->checkBoxTableView->isChecked()){
+        QStandardItem *item = new QStandardItem(QString::fromStdString(name));
+        model->setItem(0, x, item);
+        x +=1;
+    }
   }
 
 
@@ -251,14 +275,15 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
     if (linecount++ < 100)
     {
       preview_lines += line + "\n";
-
-      // parse the read line into separate pieces(tokens) with "," as the delimiter
-      QStringList lineToken = line.split(_delimiter);
-      // load parsed data to model accordingly
-      for (int j = 0; j < lineToken.size(); j++) {
-          QString value = lineToken.at(j);
-          QStandardItem *item = new QStandardItem(value);
-          model->setItem(linecount-1, j, item);
+      if(_ui->checkBoxTableView->isChecked()){
+        // parse the read line into separate pieces(tokens) with "," as the delimiter
+        QStringList lineToken = line.split(_delimiter);
+        // load parsed data to model accordingly
+        for (int j = 0; j < lineToken.size(); j++) {
+            QString value = lineToken.at(j);
+            QStandardItem *item = new QStandardItem(value);
+            model->setItem(linecount-1, j, item);
+        }
       }
     }
     else
@@ -274,6 +299,9 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
 int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_names)
 {
   column_names->clear();
+  _ui->checkBoxSyntaxHilighting->setChecked(false);
+  _ui->checkBoxTableView->setChecked(false);
+  _ui->tabWidget->setCurrentIndex(0);
 
   QSettings settings;
   _dialog->restoreGeometry(settings.value("DataLoadCSV.geometry").toByteArray());
@@ -345,8 +373,15 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
                          _delimiter = ' ';
                          break;
                      }
+                     _csvHighlighter.delimiter = _delimiter;
                      parseHeader(file, *column_names);
                    });
+  QObject::connect(_ui->checkBoxTableView, &QCheckBox::toggled, context,
+          [&](bool checked) {
+            _ui->tableView->setVisible(checked);
+            parseHeader(file, *column_names);
+
+          });
 
   // parse the header once and launch the dialog
   parseHeader(file, *column_names);
