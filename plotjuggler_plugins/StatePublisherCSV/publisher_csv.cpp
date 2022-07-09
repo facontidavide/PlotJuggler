@@ -49,12 +49,16 @@ void StatePublisherCSV::setEnabled(bool enabled)
     //--------------------
     connect(_ui->buttonGetStart, &QPushButton::clicked, this, [this]() {
       _start_time = _previous_time;
+      _ui->checkBoxFirst->setChecked(false);
+      _ui->lineEditStart->setEnabled(true);
       _ui->lineEditStart->setText(QString::number(_previous_time, 'f', 3));
       updateButtonsState();
     });
     //--------------------
     connect(_ui->buttonGetEnd, &QPushButton::clicked, this, [this]() {
       _end_time = _previous_time;
+      _ui->checkBoxLast->setChecked(false);
+      _ui->lineEditEnd->setEnabled(true);
       _ui->lineEditEnd->setText(QString::number(_previous_time, 'f', 3));
       updateButtonsState();
     });
