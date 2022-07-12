@@ -1,4 +1,4 @@
-name: cmake
+name: ubuntu
 
 on: [push, pull_request]
 
