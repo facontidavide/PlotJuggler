@@ -1,0 +1,34 @@
+name: cmake
+
+on: [push, pull_request]
+
+jobs:
+
+  windows-build:
+    runs-on: ${{ matrix.windows-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        windows-version:
+          - 'windows-2019'
+          - 'windows-latest'
+    env:
+      CXXFLAGS: /MP
+
+    steps:
+      - name: Sync repository
+        uses: actions/checkout@v2
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2.13.0
+        with:
+          version: '5.15.2'
+          arch: 'win64_msvc2019_64'
+          dir: '${{ github.workspace }}/qt_installation/'
+
+      - name: Build Plotjuggler
+        shell: pwsh
+        run: >
+          cmake -Ax64 -T host=x64 -B build -DCMAKE_INSTALL_PREFIX=install PlotJuggler;
+          cmake --build build --target install
+ 
