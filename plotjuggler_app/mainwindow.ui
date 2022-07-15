@@ -1791,6 +1791,9 @@
                     <property name="toolTip">
                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Step size to move the time tracker (use the LEFT/RIGHT arrows)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
+                    <property name="decimals">
+                     <number>3</number>
+                    </property>
                     <property name="maximum">
                      <double>10.000000000000000</double>
                     </property>
