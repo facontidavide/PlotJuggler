@@ -24,7 +24,6 @@ DockToolbar::DockToolbar(ads::CDockWidget* parent)
   ui->buttonSplitVertical->setVisible(false);
   ui->buttonBackground->setVisible(false);
 
-  ui->buttonBackground->setIcon( LoadSvg("://resources/svg/color_background.svg") );
 
   setMouseTracking(true);
   ui->widgetButtons->setMouseTracking(true);

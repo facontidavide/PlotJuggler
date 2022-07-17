@@ -130,6 +130,10 @@
         <property name="text">
          <string/>
         </property>
+        <property name="icon">
+         <iconset>
+         <normaloff>:/resources/svg/color_background.svg</normaloff>:/resources/svg/color_background.svg</iconset>
+        </property>
         <property name="checkable">
          <bool>false</bool>
         </property>
