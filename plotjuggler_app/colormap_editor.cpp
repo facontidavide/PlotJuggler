@@ -78,7 +78,7 @@ void ColorMapEditor::on_buttonSave_clicked()
   {
     auto reply = QMessageBox::question(this, "Confirm overwrite",
                                        "A ColorMap with the same name exist already. "
-                                       "Do you want to ovewrite it?",
+                                       "Do you want to overwrite it?",
                                        QMessageBox::Yes|QMessageBox::No);
     if (reply == QMessageBox::No)
     {
