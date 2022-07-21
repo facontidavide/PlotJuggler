@@ -24,10 +24,6 @@ jobs:
     - run: |
         sudo snap install --dangerous ${{ steps.build-snap.outputs.snap }}
 
-    # @todo Do some testing with the snap
-    - run: |
-        plotjuggler --version
-
     - uses: actions/upload-artifact@v3
       with:
         name: plotjuggler-snap
