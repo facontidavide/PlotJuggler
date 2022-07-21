@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-PROJECT(plotjuggler)
+PROJECT(plotjuggler LANGUAGES C CXX VERSION 3.5.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,9 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 add_definitions(
-    -DPJ_MAJOR_VERSION="3"
-    -DPJ_MINOR_VERSION="5"
-    -DPJ_PATCH_VERSION="0" )
+    -DPJ_MAJOR_VERSION=${PROJECT_VERSION_MAJOR}
+    -DPJ_MINOR_VERSION=${PROJECT_VERSION_MINOR}
+    -DPJ_PATCH_VERSION=${PROJECT_VERSION_PATCH})
 
 # You can add some command line arguments at compilation time
 # Use _0x3b_ instead of semicolon
