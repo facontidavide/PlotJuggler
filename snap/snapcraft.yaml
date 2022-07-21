@@ -1,0 +1,297 @@
+name: plotjuggler
+adopt-info: plotjuggler # parse metadata from the plotjuggler part
+summary: Visualize timeseries like a pro
+description: |
+  QT5 based application to display time series in plots,
+  using an intuitive "drag and drop" interface..
+
+issues: https://github.com/facontidavide/plotjuggler/issues
+source-code: https://github.com/facontidavide/plotjuggler
+license: MPL-2.0
+
+grade: devel
+confinement: strict
+base: core20
+
+package-repositories:
+  # ROS
+  - components: [main]
+    formats: [deb]
+    key-id: C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+    key-server: keyserver.ubuntu.com
+    suites: [focal]
+    type: apt
+    url: http://packages.ros.org/ros/ubuntu
+  # ROS 2
+  - components: [main]
+    formats: [deb]
+    key-id: C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+    key-server: keyserver.ubuntu.com
+    suites: [focal]
+    type: apt
+    url: http://repo.ros2.org/ubuntu/main
+
+apps:
+  plotjuggler:
+    command: usr/local/bin/plotjuggler --plugin_folders $PLUGIN_FOLDERS
+    environment:
+      LD_LIBRARY_PATH: $SNAP/opt/ros/noetic/lib:$SNAP/opt/ros/foxy/lib:$SNAP/opt/ros/snap/lib:$SNAP/opt/ros/foxy/lib/x86_64-linux-gnu:$SNAP/opt/ros/foxy/opt/yaml_cpp_vendor/lib:$SNAP/usr/local/lib
+      # Paths to ROS (2) plugins
+      PLUGIN_FOLDERS: $SNAP/opt/ros/noetic/lib/plotjuggler_ros/;$SNAP/opt/ros/snap/lib/plotjuggler_ros
+      AMENT_PREFIX_PATH: $SNAP/opt/ros/foxy
+      # Disable FastDDS shared-memory
+      FASTRTPS_DEFAULT_PROFILES_FILE: ${SNAP}/usr/share/fastdds_no_shared_memory.xml
+    plugs: [network, network-bind, home]
+    extensions: [kde-neon]
+
+parts:
+  # we need to build zmq so we have the ZeroMQConfig.cmake
+  zmq:
+    plugin: cmake
+    source: https://github.com/zeromq/libzmq.git
+    source-tag: v4.3.4
+    cmake-parameters:
+      - -DCMAKE_BUILD_TYPE=Release
+
+  plotjuggler:
+    after: [zmq]
+    plugin: cmake
+    source: .
+    cmake-parameters:
+      - -DCMAKE_BUILD_TYPE=Release
+      # point to previous zmq part
+      - -DZeroMQ_DIR:PATH=$SNAPCRAFT_STAGE/usr/local/lib/cmake/ZeroMQ
+    build-packages:
+      - distro-info-data
+      - libpulse0
+      - libdw-dev
+      - libbfd-dev
+      - libdwarf-dev
+      - libprotoc-dev
+      - libgl-dev
+      - libmosquitto-dev
+    stage-packages:
+      - libdw1
+      - libmosquitto1
+      - libprotobuf17
+    override-pull: |
+        snapcraftctl pull
+
+        version="$(git describe --always --tags| sed -e 's/^v//;s/-/+git/;y/-/./')"
+        [ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
+        snapcraftctl set-version "$version"
+        snapcraftctl set-grade "$grade"
+
+  plotjuggler-ros:
+    after: [plotjuggler]
+    plugin: catkin
+    source: .
+    build-environment:
+    - ROS_VERSION: '1'
+    - ROS_DISTRO: noetic
+    catkin-cmake-args:
+      - -DCMAKE_BUILD_TYPE=Release
+      # point to previously build plotjuggler
+      - -Dplotjuggler_DIR:PATH=$SNAPCRAFT_STAGE/usr/local/lib/cmake/plotjuggler
+      # necessary to point to kde-neon snap Qt libraries
+      - ${SNAPCRAFT_CMAKE_ARGS}
+    build-packages:
+      - git
+      - python3-vcstool
+      - ros-noetic-ros-environment
+      - ros-noetic-catkin
+    override-pull: |
+      if [ ! -d plotjuggler-ros-plugins ]; then
+
+        vcs import < /root/parts/plotjuggler/src/snap/local/plotjuggler.rosinstall
+
+        # prevent rosdep from installing plotjuggler
+        sed -i "s|<depend>plotjuggler</depend>||" plotjuggler-ros-plugins/package.xml
+
+        # Replace find_package(catkin components plotjuggler)
+        # with    find_package(plotjuggler)
+        sed -i "s|plotjuggler )|)|" plotjuggler-ros-plugins/CMakeLists.txt
+        sed -i "/find_package(catkin/a find_package(plotjuggler REQUIRED)" plotjuggler-ros-plugins/CMakeLists.txt
+
+        # https://github.com/ros/catkin/issues/1170
+        sed -i 's|<build_type condition="\$ROS_VERSION == 2">ament_cmake</build_type>|<build_type condition="\$ROS_VERSION == 1">catkin</build_type>|' plotjuggler_msgs/package.xml
+
+        # add plotjuggler_LIBRARIES link dependency as public
+        sed -i 's/ros_type_introspection_static/ros_type_introspection_static\n PUBLIC\n ${plotjuggler_LIBRARIES}/' plotjuggler-ros-plugins/plugins/CMakeLists.txt
+
+        # Qt dependencies are managed by the kde neon-extension
+        sed -i '/qt/d' plotjuggler-ros-plugins/package.xml
+      fi
+
+  plotjuggler-ros2:
+    after: [plotjuggler]
+    plugin: colcon
+    source: .
+    build-environment:
+    - ROS_VERSION: '2'
+    - ROS_DISTRO: foxy
+    colcon-cmake-args:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DBUILD_TESTING=OFF
+      - -DBUILD_DOCS=OFF
+      # point to previously build plotjuggler
+      - -Dplotjuggler_DIR:PATH=$SNAPCRAFT_STAGE/usr/local/lib/cmake/plotjuggler
+      # Due to https://github.com/ament/ament_cmake/issues/189 implicity OpenSSL link breaks. So we change CMAKE_PREFIX_PATH and not CMAKE_FIND_ROOT_PATH
+      - -DCMAKE_PREFIX_PATH=$(echo $SNAPCRAFT_CMAKE_ARGS | awk -F= '{printf("%s/usr/lib/x86_64-linux-gnu/cmake/Qt5", $2)}')
+      - --event-handlers=console_direct+
+    build-packages:
+      - git
+      - python3-vcstool
+      - ros-foxy-ros-core
+    stage-packages:
+      # ROS 2 plugin need to source messages to plot them
+      # No custom message is going to be support for now
+      - ros-foxy-ackermann-msgs
+      - ros-foxy-action-msgs
+      - ros-foxy-actionlib-msgs
+      - ros-foxy-astuff-sensor-msgs
+      - ros-foxy-automotive-autonomy-msgs
+      - ros-foxy-automotive-navigation-msgs
+      - ros-foxy-automotive-platform-msgs
+      - ros-foxy-autoware-auto-msgs
+      - ros-foxy-can-msgs
+      - ros-foxy-carla-msgs
+      - ros-foxy-cartographer-ros-msgs
+      - ros-foxy-cascade-lifecycle-msgs
+      - ros-foxy-clober-msgs
+      - ros-foxy-clpe-ros-msgs
+      - ros-foxy-control-msgs
+      - ros-foxy-controller-manager-msgs
+      - ros-foxy-dataspeed-dbw-msgs
+      - ros-foxy-dataspeed-ulc-msgs
+      - ros-foxy-dbw-fca-msgs
+      - ros-foxy-dbw-ford-msgs
+      - ros-foxy-dbw-polaris-msgs
+      - ros-foxy-delphi-esr-msgs
+      - ros-foxy-delphi-mrr-msgs
+      - ros-foxy-delphi-srr-msgs
+      - ros-foxy-depthai-ros-msgs
+      - ros-foxy-derived-object-msgs
+      - ros-foxy-diagnostic-msgs
+      - ros-foxy-dwb-msgs
+      - ros-foxy-four-wheel-steering-msgs
+      - ros-foxy-foxglove-msgs
+      - ros-foxy-gazebo-msgs
+      - ros-foxy-geographic-msgs
+      - ros-foxy-geometry-msgs
+      - ros-foxy-gps-msgs
+      - ros-foxy-graph-msgs
+      - ros-foxy-grasping-msgs
+      - ros-foxy-grbl-msgs
+      - ros-foxy-husky-msgs
+      - ros-foxy-ibeo-msgs
+      - ros-foxy-kartech-linear-actuator-msgs
+      - ros-foxy-leo-msgs
+      - ros-foxy-lgsvl-msgs
+      - ros-foxy-lifecycle-msgs
+      - ros-foxy-map-msgs
+      - ros-foxy-marti-can-msgs
+      - ros-foxy-marti-common-msgs
+      - ros-foxy-marti-dbw-msgs
+      - ros-foxy-marti-introspection-msgs
+      - ros-foxy-marti-nav-msgs
+      - ros-foxy-marti-perception-msgs
+      - ros-foxy-marti-sensor-msgs
+      - ros-foxy-marti-status-msgs
+      - ros-foxy-marti-visualization-msgs
+      - ros-foxy-mavros-msgs
+      - ros-foxy-micro-ros-diagnostic-msgs
+      - ros-foxy-micro-ros-msgs
+      - ros-foxy-microstrain-inertial-msgs
+      - ros-foxy-mobileye-560-660-msgs
+      - ros-foxy-mocap-msgs
+      - ros-foxy-move-base-msgs
+      - ros-foxy-moveit-msgs
+      - ros-foxy-mrpt-msgs
+      - ros-foxy-nav-2d-msgs
+      - ros-foxy-nav-msgs
+      - ros-foxy-nav2-msgs
+      - ros-foxy-neobotix-usboard-msgs
+      - ros-foxy-nmea-msgs
+      - ros-foxy-novatel-gps-msgs
+      - ros-foxy-object-recognition-msgs
+      - ros-foxy-octomap-msgs
+      - ros-foxy-ouster-msgs
+      - ros-foxy-pacmod-msgs
+      - ros-foxy-pcl-msgs
+      - ros-foxy-pendulum-msgs
+      - ros-foxy-phidgets-msgs
+      - ros-foxy-plansys2-msgs
+      - ros-foxy-radar-msgs
+      - ros-foxy-raptor-dbw-msgs
+      - ros-foxy-raptor-pdu-msgs
+      - ros-foxy-raspimouse-msgs
+      - ros-foxy-rc-common-msgs
+      - ros-foxy-rc-reason-msgs
+      - ros-foxy-realsense-msgs
+      - ros-foxy-realsense2-camera-msgs
+      - ros-foxy-rmf-building-map-msgs
+      - ros-foxy-rmf-charger-msgs
+      - ros-foxy-rmf-dispenser-msgs
+      - ros-foxy-rmf-door-msgs
+      - ros-foxy-rmf-fleet-msgs
+      - ros-foxy-rmf-ingestor-msgs
+      - ros-foxy-rmf-lift-msgs
+      - ros-foxy-rmf-task-msgs
+      - ros-foxy-rmf-traffic-msgs
+      - ros-foxy-rmf-visualization-msgs
+      - ros-foxy-rmf-workcell-msgs
+      - ros-foxy-robot-controllers-msgs
+      - ros-foxy-rosapi-msgs
+      - ros-foxy-rosbridge-msgs
+      - ros-foxy-rosbridge-test-msgs
+      - ros-foxy-rosgraph-msgs
+      - ros-foxy-rover-msgs
+      - ros-foxy-sensor-msgs
+      - ros-foxy-shape-msgs
+      - ros-foxy-smacc2-msgs
+      - ros-foxy-soccer-object-msgs
+      - ros-foxy-statistics-msgs
+      - ros-foxy-std-msgs
+      - ros-foxy-stereo-msgs
+      - ros-foxy-stubborn-buddies-msgs
+      - ros-foxy-system-modes-msgs
+      - ros-foxy-teleop-tools-msgs
+      - ros-foxy-test-msgs
+      - ros-foxy-tf2-geometry-msgs
+      - ros-foxy-tf2-msgs
+      - ros-foxy-tf2-sensor-msgs
+      - ros-foxy-trajectory-msgs
+      - ros-foxy-turtlebot3-msgs
+      - ros-foxy-ublox-msgs
+      - ros-foxy-udp-msgs
+      - ros-foxy-unique-identifier-msgs
+      - ros-foxy-ur-msgs
+      - ros-foxy-urg-node-msgs
+      - ros-foxy-velodyne-msgs
+      - ros-foxy-vision-msgs
+      - ros-foxy-visualization-msgs
+      - ros-foxy-vrxperience-msgs
+      - ros-foxy-webots-ros2-msgs
+      - ros-foxy-wiimote-msgs
+    override-pull: |
+      if [ ! -d plotjuggler-ros-plugins ]; then
+
+        vcs import < /root/parts/plotjuggler/src/snap/local/plotjuggler.rosinstall
+
+        # prevent rosdep from installing plotjuggler
+        sed -i "s|<depend>plotjuggler</depend>||" plotjuggler-ros-plugins/package.xml
+
+        # add plotjuggler_LIBRARIES link
+        sed -i '/\${Qt5Xml_LIBRARIES}/a ${plotjuggler_LIBRARIES}' plotjuggler-ros-plugins/plugins/CMakeLists.txt
+
+        # Qt dependencies are managed by the kde neon-extension
+        sed -i '/qt/d' plotjuggler-ros-plugins/package.xml
+      fi
+
+  fastdds-no-shared-memory:
+    plugin: dump
+    source: snap/local/
+    organize:
+      'fastdds_no_shared_memory.xml': usr/share/
+

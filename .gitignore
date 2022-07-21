@@ -27,6 +27,7 @@
 *.exe
 *.out
 *.app
+*.snap
 
 /build*
 /*.user
