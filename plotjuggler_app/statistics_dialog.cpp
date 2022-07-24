@@ -16,7 +16,7 @@ StatisticsDialog::StatisticsDialog(PlotWidget *parent) :
 {
   ui->setupUi(this);
 
-  setWindowTitle(QString("Statistics: %1").arg(_parent->windowTitle()));
+  setWindowTitle(QString("Statistics | %1").arg(_parent->windowTitle()));
   setWindowFlag(Qt::Tool);
 
   ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
@@ -91,6 +91,13 @@ void StatisticsDialog::update(PJ::Range range)
     }
     row++;
   }
+}
+
+void StatisticsDialog::setTitle(QString title){
+    if(title == "..."){
+        title = "";
+    }
+    setWindowTitle(QString("Statistics | %1").arg(title));
 }
 
 void StatisticsDialog::closeEvent(QCloseEvent *event)

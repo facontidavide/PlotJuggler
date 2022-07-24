@@ -103,6 +103,7 @@ bool DockToolbar::eventFilter(QObject* object, QEvent* event)
     if (ok)
     {
       ui->label->setText(newName);
+      emit titleChanged(newName);
     }
     return true;
   }

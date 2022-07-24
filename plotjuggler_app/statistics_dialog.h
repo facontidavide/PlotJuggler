@@ -36,6 +36,8 @@ public:
 
   void closeEvent(QCloseEvent *event);
 
+  void setTitle(QString title);
+
 private:
   Ui::statistics_dialog *ui;
 

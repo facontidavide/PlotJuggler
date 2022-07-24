@@ -306,6 +306,7 @@ DockWidget::DockWidget(PlotDataMapRef& datamap, QWidget* parent)
 
   connect(_plot_widget, &PlotWidget::splitVertical, this, &DockWidget::splitVertical);
 
+  connect(_toolbar, &DockToolbar::titleChanged,_plot_widget,[=](QString title){_plot_widget->setStatisticsTitle(title);});
 
   auto FullscreenAction = [=]() {
     PlotDocker* parent_docker = static_cast<PlotDocker*>(dockManager());

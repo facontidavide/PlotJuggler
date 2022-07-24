@@ -1218,11 +1218,22 @@ void PlotWidget::onBackgroundColorRequest(QString name)
   }
 }
 
+void PlotWidget::setStatisticsTitle(QString title){
+    _statistics_window_title = title;
+
+    if(_statistics_dialog)
+    {
+      _statistics_dialog->setTitle(_statistics_window_title);
+    }
+}
+
 void PlotWidget::onShowDataStatistics()
 {
   if (!_statistics_dialog) {
     _statistics_dialog = new StatisticsDialog(this);
   }
+
+  setStatisticsTitle(_statistics_window_title);
 
   auto rect = canvasBoundingRect();
   _statistics_dialog->update( {rect.left(), rect.right()} );
