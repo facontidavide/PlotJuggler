@@ -1282,6 +1282,12 @@ void PlotWidget::zoomOut(bool emit_signal)
   updateMaximumZoomArea();
   setZoomRectangle(maxZoomRect(), emit_signal);
   replot();
+
+  if(_statistics_dialog)
+  {
+    auto rect = canvasBoundingRect();
+    _statistics_dialog->update( {rect.left(), rect.right()} );
+  }
 }
 
 void PlotWidget::on_zoomOutHorizontal_triggered(bool emit_signal)
