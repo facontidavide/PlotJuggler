@@ -17,7 +17,7 @@ StatisticsDialog::StatisticsDialog(PlotWidget *parent) :
   ui->setupUi(this);
 
   setWindowTitle(QString("Statistics: %1").arg(_parent->windowTitle()));
-  setWindowFlag(Qt::WindowStaysOnTopHint);
+  setWindowFlag(Qt::Tool);
 
   ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
 }
