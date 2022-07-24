@@ -20,6 +20,12 @@ StatisticsDialog::StatisticsDialog(PlotWidget *parent) :
   setWindowFlag(Qt::Tool);
 
   ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+
+  connect(ui->rangeComboBox,qOverload<int>(&QComboBox::currentIndexChanged),this,[this](){
+                            auto rect = _parent->canvasBoundingRect();
+                            update({rect.left(), rect.right()});
+                            });
+
 }
 
 StatisticsDialog::~StatisticsDialog()
@@ -41,13 +47,15 @@ void StatisticsDialog::update(PJ::Range range)
     for( size_t i=0; i<ts->size(); i++)
     {
       const auto p = ts->sample(i);
-      if( p.x() <  range.min )
-      {
-        continue;
-      }
-      if( p.x() >  range.max )
-      {
-        break;
+      if(ui->rangeComboBox->currentIndex() == 0){
+        if( p.x() <  range.min )
+        {
+          continue;
+        }
+        if( p.x() >  range.max )
+        {
+          break;
+        }
       }
       stat.count++;
       if( first )
