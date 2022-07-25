@@ -13,7 +13,6 @@
 
 namespace PJ
 {
-
 // Simple utility to avoid triggering a certain slot too often
 class DelayedCallback
 {
@@ -30,7 +29,7 @@ public:
   }
 
   template <class Function>
-  void connectCallback(Function callback )
+  void connectCallback(Function callback)
   {
     QObject::connect(_delay_timer, &QTimer::timeout, callback);
   }
@@ -47,6 +46,6 @@ private:
   QTimer* _delay_timer;
 };
 
-}
+}  // namespace PJ
 
-#endif // PJ_DELAYED_CALLBACK_HPP
+#endif  // PJ_DELAYED_CALLBACK_HPP

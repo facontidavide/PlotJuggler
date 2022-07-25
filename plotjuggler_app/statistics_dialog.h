@@ -12,34 +12,39 @@
 #include "PlotJuggler/plotdata.h"
 #include "plotwidget.h"
 
-namespace Ui {
+namespace Ui
+{
 class statistics_dialog;
 }
 
-struct Statistics{
+struct Statistics
+{
   size_t count = 0;
   double min = 0;
   double max = 0;
   double mean_tot = 0;
 };
 
-
 class StatisticsDialog : public QDialog
 {
   Q_OBJECT
 
 public:
-  explicit StatisticsDialog(PlotWidget *parent = nullptr);
+  explicit StatisticsDialog(PlotWidget* parent = nullptr);
   ~StatisticsDialog();
 
   void update(Range range);
 
-  void closeEvent(QCloseEvent *event);
+  void closeEvent(QCloseEvent* event);
+
+  void setTitle(QString title);
+
+  bool calcVisibleRange();
 
 private:
-  Ui::statistics_dialog *ui;
+  Ui::statistics_dialog* ui;
 
-  PlotWidget *_parent;
+  PlotWidget* _parent;
 };
 
-#endif // STATISTICS_DIALOG_H
+#endif  // STATISTICS_DIALOG_H

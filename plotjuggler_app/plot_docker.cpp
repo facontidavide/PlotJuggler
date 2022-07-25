@@ -217,8 +217,9 @@ bool PlotDocker::xmlLoadState(QDomElement& tab_element)
   }
 
   for (auto container_elem = tab_element.firstChildElement("Container");
-       !container_elem.isNull();
-       container_elem = container_elem.nextSiblingElement("Container"))
+       !container_elem.isNull(); container_elem = container_elem.nextSiblingElement("Cont"
+                                                                                    "aine"
+                                                                                    "r"))
   {
     auto splitter_elem = container_elem.firstChildElement("DockSplitter");
     if (!splitter_elem.isNull())
@@ -299,13 +300,15 @@ DockWidget::DockWidget(PlotDataMapRef& datamap, QWidget* parent)
   connect(_toolbar->buttonSplitVertical(), &QPushButton::clicked, this,
           &DockWidget::splitVertical);
 
-  connect(_toolbar, &DockToolbar::backgroundColorRequest,
-          _plot_widget, &PlotWidget::onBackgroundColorRequest);
+  connect(_toolbar, &DockToolbar::backgroundColorRequest, _plot_widget,
+          &PlotWidget::onBackgroundColorRequest);
 
   connect(_plot_widget, &PlotWidget::splitHorizontal, this, &DockWidget::splitHorizontal);
 
   connect(_plot_widget, &PlotWidget::splitVertical, this, &DockWidget::splitVertical);
 
+  connect(_toolbar, &DockToolbar::titleChanged, _plot_widget,
+          [=](QString title) { _plot_widget->setStatisticsTitle(title); });
 
   auto FullscreenAction = [=]() {
     PlotDocker* parent_docker = static_cast<PlotDocker*>(dockManager());
@@ -389,5 +392,3 @@ DockToolbar* DockWidget::toolBar()
 {
   return _toolbar;
 }
-
-

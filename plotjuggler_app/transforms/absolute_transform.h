@@ -20,7 +20,6 @@ public:
 
 private:
   std::optional<PlotData::Point> calculateNextPoint(size_t index) override;
-
 };
 
 #endif  // ABSOLUTE_TRANSFORM_H

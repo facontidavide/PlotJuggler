@@ -70,16 +70,15 @@ CurveTreeView::CurveTreeView(CurveListPanel* parent)
   });
 }
 
-void CurveTreeView::addItem(const QString& group_name,
-                            const QString& tree_name,
+void CurveTreeView::addItem(const QString& group_name, const QString& tree_name,
                             const QString& plot_ID)
 {
-  QSettings settings;/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
+  QSettings settings; /*
+                       * This Source Code Form is subject to the terms of the Mozilla
+                       * Public License, v. 2.0. If a copy of the MPL was not distributed
+                       * with this file, You can obtain one at
+                       * https://mozilla.org/MPL/2.0/.
+                       */
 
   bool use_separator = settings.value("Preferences::use_separator", true).toBool();
 
@@ -363,15 +362,15 @@ void CurveTreeView::treeVisitor(std::function<void(QTreeWidgetItem*)> visitor)
   }
 }
 
-void CurveTreeView::keyPressEvent(QKeyEvent *event)
+void CurveTreeView::keyPressEvent(QKeyEvent* event)
 {
-  if(event->matches(QKeySequence::Copy))
+  if (event->matches(QKeySequence::Copy))
   {
     auto selected = selectedItems();
     if (selected.size() > 0)
     {
-      QClipboard *clipboard = QApplication::clipboard();
-      clipboard->setText( selected.front()->data(0, Name).toString() );
+      QClipboard* clipboard = QApplication::clipboard();
+      clipboard->setText(selected.front()->data(0, Name).toString());
     }
   }
 }
@@ -383,7 +382,7 @@ void CurveTreeView::expandChildren(bool expanded, QTreeWidgetItem* item)
   {
     const auto child = item->child(i);
     // Recursively call the function for each child node.
-    if( child->childCount() > 0 )
+    if (child->childCount() > 0)
     {
       child->setExpanded(expanded);
       expandChildren(expanded, child);

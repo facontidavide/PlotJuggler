@@ -11,12 +11,11 @@
 #include <QPushButton>
 #include <QString>
 
-
 RangeOpt QwtSeriesWrapper::getVisualizationRangeY(Range range_x)
 {
-  if(range_x.min <= std::numeric_limits<double>::lowest() &&
-     range_x.min <= std::numeric_limits<double>::max())
-  return _data->rangeY();
+  if (range_x.min <= std::numeric_limits<double>::lowest() &&
+      range_x.min <= std::numeric_limits<double>::max())
+    return _data->rangeY();
 
   double min_y = (std::numeric_limits<double>::max());
   double max_y = (std::numeric_limits<double>::lowest());
@@ -28,7 +27,6 @@ RangeOpt QwtSeriesWrapper::getVisualizationRangeY(Range range_x)
     max_y = std::max(max_y, Y);
   }
   return Range{ min_y, max_y };
-
 }
 
 RangeOpt QwtTimeseries::getVisualizationRangeY(Range range_X)

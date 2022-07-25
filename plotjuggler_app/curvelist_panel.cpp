@@ -92,7 +92,7 @@ void CurveListPanel::clear()
 bool CurveListPanel::addCurve(const std::string& plot_name)
 {
   QString plot_id = QString::fromStdString(plot_name);
-  if( _tree_view_items.count(plot_name) > 0 )
+  if (_tree_view_items.count(plot_name) > 0)
   {
     return false;
   }
@@ -137,7 +137,7 @@ void CurveListPanel::addCustom(const QString& item_name)
 
 void CurveListPanel::updateAppearance()
 {
-  for(CurveTreeView* view: {_tree_view, _custom_view})
+  for (CurveTreeView* view : { _tree_view, _custom_view })
   {
     QColor default_color = view->palette().color(QPalette::Text);
     //------------------------------------------
@@ -218,7 +218,7 @@ void CurveListPanel::updateAppearance()
               font.setItalic(italic);
               cell->setFont(0, font);
             }
-            if( series.isTimeseries() == false )
+            if (series.isTimeseries() == false)
             {
               cell->setIcon(0, LoadSvg("://resources/svg/xy.svg", _style_dir));
             }
@@ -525,15 +525,14 @@ void CurveListPanel::on_stylesheetChanged(QString theme)
   ui->buttonEditCustom->setIcon(LoadSvg(":/resources/svg/pencil-edit.svg", theme));
   ui->pushButtonTrash->setIcon(LoadSvg(":/resources/svg/trash.svg", theme));
 
-  auto ChangeIconVisitor = [&](QTreeWidgetItem* cell)
-  {
+  auto ChangeIconVisitor = [&](QTreeWidgetItem* cell) {
     const auto& curve_name = cell->data(0, CustomRoles::Name).toString().toStdString();
 
     auto it = _plot_data.scatter_xy.find(curve_name);
     if (it != _plot_data.scatter_xy.end())
     {
       auto& series = it->second;
-      if( series.isTimeseries() == false )
+      if (series.isTimeseries() == false)
       {
         cell->setIcon(0, LoadSvg("://resources/svg/xy.svg", _style_dir));
       }

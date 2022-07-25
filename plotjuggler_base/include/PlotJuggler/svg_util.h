@@ -23,7 +23,7 @@
 // Useful function to change the color of SVG icons programmatically.
 // Useful to switch between dark view and light view.
 // To work, the SVG file must use the color #ffffff and #000000 only.
-inline const QPixmap & LoadSvg(QString filename, QString style_name = "light")
+inline const QPixmap& LoadSvg(QString filename, QString style_name = "light")
 {
   static std::map<QString, QPixmap> light_images;
   static std::map<QString, QPixmap> dark_images;
@@ -32,7 +32,7 @@ inline const QPixmap & LoadSvg(QString filename, QString style_name = "light")
   auto* stored_images = light_theme ? &light_images : &dark_images;
 
   auto it = stored_images->find(filename);
-  if( it == stored_images->end() )
+  if (it == stored_images->end())
   {
     QFile file(filename);
     file.open(QFile::ReadOnly | QFile::Text);
@@ -57,7 +57,7 @@ inline const QPixmap & LoadSvg(QString filename, QString style_name = "light")
     image.fill(Qt::transparent);
     rr.render(&painter);
 
-    it = stored_images->insert( {filename, QPixmap::fromImage(image)} ).first;
+    it = stored_images->insert({ filename, QPixmap::fromImage(image) }).first;
   }
   return it->second;
 }

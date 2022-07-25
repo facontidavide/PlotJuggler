@@ -137,8 +137,7 @@ PlotDocker* TabbedPlotWidget::addTab(QString tab_name)
   }
 
   auto docker = new PlotDocker(tab_name, _mapped_data, this);
-  connect(docker, &PlotDocker::undoableChange,
-          this, &TabbedPlotWidget::undoableChange);
+  connect(docker, &PlotDocker::undoableChange, this, &TabbedPlotWidget::undoableChange);
 
   tabWidget()->addTab(docker, tab_name);
 

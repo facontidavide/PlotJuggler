@@ -652,6 +652,29 @@ QHeaderView::section {
     border: 1px solid #6c6c6c;
 }
 
+QHeaderView::text{
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+QHeaderView::up-arrow { 
+    subcontrol-position: center right;
+    image: url(":/style_${theme}/arrow_up.png");
+    height: 12px;
+    width: 12px;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+QHeaderView::down-arrow { 
+    subcontrol-position: center right;
+    image: url(":/style_${theme}/arrow_down.png");
+    height: 12px;
+    width: 12px;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
 QTreeView:branch {
     background-color: transparent;
 }

@@ -6,18 +6,18 @@ LuaCustomFunction::LuaCustomFunction(SnippetData snippet) : CustomFunction(snipp
   initEngine();
   {
     QTextStream in(&snippet.global_vars);
-    while( !in.atEnd())
+    while (!in.atEnd())
     {
-        in.readLine();
-        global_lines_++;
+      in.readLine();
+      global_lines_++;
     }
   }
   {
     QTextStream in(&snippet.function);
-    while( !in.atEnd())
+    while (!in.atEnd())
     {
-        in.readLine();
-        function_lines_++;
+      in.readLine();
+      function_lines_++;
     }
   }
 }
@@ -33,7 +33,7 @@ void LuaCustomFunction::initEngine()
   if (!result.valid())
   {
     sol::error err = result;
-    throw std::runtime_error( getError(err) );
+    throw std::runtime_error(getError(err));
   }
 
   auto calcMethodStr = QString("function calc(time, value");
@@ -47,7 +47,7 @@ void LuaCustomFunction::initEngine()
   if (!result.valid())
   {
     sol::error err = result;
-    throw std::runtime_error( getError(err) );
+    throw std::runtime_error(getError(err));
   }
   _lua_function = _lua_engine["calc"];
 }
@@ -112,13 +112,14 @@ void LuaCustomFunction::calculatePoints(const std::vector<const PlotData*>& src_
                              v[8]);
       break;
     default:
-      throw std::runtime_error("Lua Engine: maximum number of additional data sources is 8");
+      throw std::runtime_error("Lua Engine: maximum number of additional data sources is "
+                               "8");
   }
 
   if (!result.valid())
   {
     sol::error err = result;
-    throw std::runtime_error( getError(err) );
+    throw std::runtime_error(getError(err));
   }
 
   if (result.return_count() == 2)
@@ -170,7 +171,7 @@ std::string LuaCustomFunction::getError(sol::error err)
   std::string out;
   auto parts = QString(err.what()).split(":");
 
-  if( parts.size() < 3 )
+  if (parts.size() < 3)
   {
     return err.what();
   }
@@ -179,7 +180,7 @@ std::string LuaCustomFunction::getError(sol::error err)
   out = is_function ? "[Function]: line " : "[Global]: line ";
 
   int line_num = parts[1].toInt();
-  if( is_function )
+  if (is_function)
   {
     line_num -= 1;
   }

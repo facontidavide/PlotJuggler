@@ -9,17 +9,21 @@
 #include <QTableWidgetItem>
 #include "qwt_text.h"
 
-StatisticsDialog::StatisticsDialog(PlotWidget *parent) :
-  QDialog(parent),
-  ui(new Ui::statistics_dialog),
-  _parent(parent)
+StatisticsDialog::StatisticsDialog(PlotWidget* parent)
+  : QDialog(parent), ui(new Ui::statistics_dialog), _parent(parent)
 {
   ui->setupUi(this);
 
-  setWindowTitle(QString("Statistics: %1").arg(_parent->windowTitle()));
-  setWindowFlag(Qt::WindowStaysOnTopHint);
+  setWindowTitle(QString("Statistics | %1").arg(_parent->windowTitle()));
+  setWindowFlag(Qt::Tool);
 
   ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+
+  connect(ui->rangeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this,
+          [this]() {
+            auto rect = _parent->currentBoundingRect();
+            update({ rect.left(), rect.right() });
+          });
 }
 
 StatisticsDialog::~StatisticsDialog()
@@ -27,47 +31,56 @@ StatisticsDialog::~StatisticsDialog()
   delete ui;
 }
 
+bool StatisticsDialog::calcVisibleRange()
+{
+  return (ui->rangeComboBox->currentIndex() == 0);
+}
+
 void StatisticsDialog::update(PJ::Range range)
 {
   std::map<QString, Statistics> statistics;
 
-  for( const auto& info: _parent->curveList() )
+  for (const auto& info : _parent->curveList())
   {
     Statistics stat;
     const auto ts = info.curve->data();
 
     bool first = true;
 
-    for( size_t i=0; i<ts->size(); i++)
+    for (size_t i = 0; i < ts->size(); i++)
     {
       const auto p = ts->sample(i);
-      if( p.x() <  range.min )
+      if (calcVisibleRange())
       {
-        continue;
-      }
-      if( p.x() >  range.max )
-      {
-        break;
+        if (p.x() < range.min)
+        {
+          continue;
+        }
+        if (p.x() > range.max)
+        {
+          break;
+        }
       }
       stat.count++;
-      if( first )
+      if (first)
       {
         stat.min = p.y();
         stat.max = p.y();
         first = false;
       }
-      else{
-        stat.min = std::min( stat.min, p.y() );
-        stat.max = std::max( stat.max, p.y() );
+      else
+      {
+        stat.min = std::min(stat.min, p.y());
+        stat.max = std::max(stat.max, p.y());
       }
       stat.mean_tot += p.y();
     }
     statistics[info.curve->title().text()] = stat;
   }
 
-  ui->tableWidget->setRowCount( statistics.size() );
+  ui->tableWidget->setRowCount(statistics.size());
   int row = 0;
-  for(const auto& it: statistics )
+  for (const auto& it : statistics)
   {
     const auto& stat = it.second;
 
@@ -79,21 +92,31 @@ void StatisticsDialog::update(PJ::Range range)
     double mean = stat.mean_tot / double(stat.count);
     row_values[4] = QString::number(mean, 'f');
 
-    for(size_t col=0; col<row_values.size(); col++)
+    for (size_t col = 0; col < row_values.size(); col++)
     {
-      if(auto item = ui->tableWidget->item(row, col))
+      if (auto item = ui->tableWidget->item(row, col))
       {
         item->setText(row_values[col]);
       }
-      else {
-        ui->tableWidget->setItem( row, col, new QTableWidgetItem(row_values[col]) );
+      else
+      {
+        ui->tableWidget->setItem(row, col, new QTableWidgetItem(row_values[col]));
       }
     }
     row++;
   }
 }
 
-void StatisticsDialog::closeEvent(QCloseEvent *event)
+void StatisticsDialog::setTitle(QString title)
+{
+  if (title == "...")
+  {
+    title = "";
+  }
+  setWindowTitle(QString("Statistics | %1").arg(title));
+}
+
+void StatisticsDialog::closeEvent(QCloseEvent* event)
 {
   QWidget::closeEvent(event);
   emit rejected();

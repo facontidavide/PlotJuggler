@@ -37,7 +37,8 @@ public:
   virtual RangeOpt getVisualizationRangeY(Range range_X);
 
   virtual void updateCache(bool reset_old_data)
-  {}
+  {
+  }
 };
 
 class QwtTimeseries : public QwtSeriesWrapper
@@ -59,7 +60,9 @@ public:
 
   virtual std::optional<QPointF> sampleFromTime(double t);
 
-  void updateCache(bool) override {}
+  void updateCache(bool) override
+  {
+  }
 
 protected:
   const PlotData* _ts_data;

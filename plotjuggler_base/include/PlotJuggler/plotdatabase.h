@@ -56,7 +56,7 @@ enum PlotAttribute
 
 using Attributes = std::unordered_map<PlotAttribute, QVariant>;
 
-inline bool CheckType(PlotAttribute attr, const QVariant& value )
+inline bool CheckType(PlotAttribute attr, const QVariant& value)
 {
   switch (attr)
   {
@@ -120,7 +120,6 @@ private:
 template <typename TypeX, typename Value>
 class PlotDataBase
 {
-
 public:
   class Point
   {
@@ -230,7 +229,7 @@ public:
   void setAttribute(PlotAttribute id, const QVariant& value)
   {
     _attributes[id] = value;
-    if(!CheckType(id, value))
+    if (!CheckType(id, value))
     {
       throw std::runtime_error("PlotDataBase::setAttribute : wrong type");
     }

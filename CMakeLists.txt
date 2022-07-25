@@ -10,7 +10,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  "${CMAKE_CURRENT_LIST_DIR}/cmake")
 add_definitions(
     -DPJ_MAJOR_VERSION=${PROJECT_VERSION_MAJOR}
     -DPJ_MINOR_VERSION=${PROJECT_VERSION_MINOR}
-    -DPJ_PATCH_VERSION=${PROJECT_VERSION_PATCH})
+    -DPJ_PATCH_VERSION=${PROJECT_VERSION_PATCH} )
 
 # You can add some command line arguments at compilation time
 # Use _0x3b_ instead of semicolon
@@ -170,12 +170,17 @@ add_library( plotjuggler_base
      plotjuggler_base/src/timeseries_qwt.cpp
      plotjuggler_base/src/reactive_function.cpp
      )
+
 # target_link_libraries(plotjuggler_base plotjuggler_qwt)
 target_include_directories(plotjuggler_base INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include>
 )
 
+target_include_directories(plotjuggler_base INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:include>
+)
 #########################  INSTALL  ####################################
 
 if(COMPILING_WITH_CATKIN)
@@ -217,7 +222,6 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler.svg
 
 add_subdirectory( 3rdparty/qwt/src )
 add_subdirectory( 3rdparty/QCodeEditor )
-
 
 ######################## Main App, Libraries amd Plugins ###################################
 
@@ -297,7 +301,7 @@ if(NOT COMPILING_WITH_AMENT AND NOT COMPILING_WITH_CATKIN)
       FILES
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-	DESTINATION ${PJ_CMAKECONFIG_INSTALL_DIR}
+      DESTINATION ${PJ_CMAKECONFIG_INSTALL_DIR}
     )
 
 endif()

@@ -37,7 +37,4 @@ private:
   int function_lines_ = 0;
 };
 
-
-
-
 #endif  // LUA_CUSTOM_FUNCTION_H

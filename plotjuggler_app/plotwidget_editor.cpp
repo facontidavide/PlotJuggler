@@ -38,7 +38,7 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   _plotwidget->on_changeTimeOffset(plotwidget->timeOffset());
   _plotwidget->setContextMenuEnabled(false);
 
-  _bounding_rect_original = _plotwidget_origin->canvasBoundingRect();
+  _bounding_rect_original = _plotwidget_origin->currentBoundingRect();
 
   auto layout = new QVBoxLayout();
   ui->framePlotPreview->setLayout(layout);

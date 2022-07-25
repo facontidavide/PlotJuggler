@@ -13,16 +13,14 @@
 #include "PlotJuggler/plotdata.h"
 #include "color_map.h"
 
-
-class BackgroundColorItem: public QwtPlotItem
+class BackgroundColorItem : public QwtPlotItem
 {
 public:
-
   BackgroundColorItem(const PJ::PlotData& data, QString colormap_name);
 
   virtual ~BackgroundColorItem() override = default;
 
-  void setTimeOffset( double* time_offset)
+  void setTimeOffset(double* time_offset)
   {
     _time_offset = time_offset;
   }
@@ -32,9 +30,8 @@ public:
     return QwtPlotItem::Rtti_PlotZone;
   }
 
-  virtual void draw( QPainter* painter,
-                    const QwtScaleMap&, const QwtScaleMap&,
-                    const QRectF& canvasRect ) const override;
+  virtual void draw(QPainter* painter, const QwtScaleMap&, const QwtScaleMap&,
+                    const QRectF& canvasRect) const override;
 
   virtual QRectF boundingRect() const override;
 
@@ -49,12 +46,10 @@ public:
   }
 
 private:
-
   const PJ::PlotData& _data;
   QString _data_name;
   QString _colormap_name;
   double* _time_offset = nullptr;
 };
 
-
-#endif // PLOT_BACKGROUND_H
+#endif  // PLOT_BACKGROUND_H

@@ -18,9 +18,7 @@
 #include <qwt_text.h>
 
 DialogTransformEditor::DialogTransformEditor(PlotWidget* plotwidget)
-  : QDialog(plotwidget)
-  , ui(new Ui::plotwidget_transforms)
-  , _plotwidget_origin(plotwidget)
+  : QDialog(plotwidget), ui(new Ui::plotwidget_transforms), _plotwidget_origin(plotwidget)
 {
   ui->setupUi(this);
 
@@ -122,7 +120,7 @@ void DialogTransformEditor::on_listCurves_itemSelectionChanged()
 
   auto curve_it = _plotwidget->curveFromTitle(curve_name);
   int transform_row = 0;
-  if( auto ts = dynamic_cast<TransformedTimeseries*>(curve_it->curve->data()) )
+  if (auto ts = dynamic_cast<TransformedTimeseries*>(curve_it->curve->data()))
   {
     if (ts->transform())
     {
@@ -220,11 +218,12 @@ void DialogTransformEditor::on_listTransforms_itemSelectionChanged()
     {
       connect(ts->transform().get(), &TransformFunction::parametersChanged, this, [=]() {
         ts->updateCache(true);
-        if( ui->checkBoxAutoZoom->isChecked())
+        if (ui->checkBoxAutoZoom->isChecked())
         {
           _plotwidget->zoomOut(false);
         }
-        else{
+        else
+        {
           _plotwidget->replot();
         }
       });

@@ -86,11 +86,9 @@ inline QString SetApplicationStyleSheet(QString style)
   return palette["theme"];
 }
 
-
 inline QSyntaxStyle* GetLuaSyntaxStyle(QString theme)
 {
-  auto loadStyle = [](const char* path) -> QSyntaxStyle*
-  {
+  auto loadStyle = [](const char* path) -> QSyntaxStyle* {
     QFile fl(path);
     QSyntaxStyle* style = nullptr;
     if (fl.open(QIODevice::ReadOnly))
@@ -104,10 +102,8 @@ inline QSyntaxStyle* GetLuaSyntaxStyle(QString theme)
     return style;
   };
 
-  static QSyntaxStyle* style[2] = {
-    loadStyle(":/resources/lua_style_light.xml"),
-    loadStyle(":/resources/lua_style_dark.xml")
-  };
+  static QSyntaxStyle* style[2] = { loadStyle(":/resources/lua_style_light.xml"),
+                                    loadStyle(":/resources/lua_style_dark.xml") };
 
   return theme == "light" ? style[0] : style[1];
 }

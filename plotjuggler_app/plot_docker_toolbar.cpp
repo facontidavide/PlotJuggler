@@ -24,8 +24,6 @@ DockToolbar::DockToolbar(ads::CDockWidget* parent)
   ui->buttonSplitVertical->setVisible(false);
   ui->buttonBackground->setVisible(false);
 
-  ui->buttonBackground->setIcon( LoadSvg("://resources/svg/color_background.svg") );
-
   setMouseTracking(true);
   ui->widgetButtons->setMouseTracking(true);
 
@@ -44,7 +42,6 @@ static void setButtonIcon(QPushButton* button, QIcon icon)
   button->setIcon(icon);
   button->setText("");
 }
-
 
 void DockToolbar::toggleFullscreen()
 {
@@ -99,11 +96,12 @@ bool DockToolbar::eventFilter(QObject* object, QEvent* event)
   {
     bool ok = true;
     QString newName =
-      QInputDialog::getText(this, tr("Change name of the Area"), tr("New name:"),
-                            QLineEdit::Normal, ui->label->text(), &ok);
+        QInputDialog::getText(this, tr("Change name of the Area"), tr("New name:"),
+                              QLineEdit::Normal, ui->label->text(), &ok);
     if (ok)
     {
       ui->label->setText(newName);
+      emit titleChanged(newName);
     }
     return true;
   }
@@ -124,7 +122,7 @@ void DockToolbar::on_stylesheetChanged(QString theme)
   setButtonIcon(ui->buttonSplitVertical, LoadSvg(":/resources/svg/add_row.svg", theme));
 }
 
-void DockToolbar::dragEnterEvent(QDragEnterEvent *event)
+void DockToolbar::dragEnterEvent(QDragEnterEvent* event)
 {
   const QMimeData* mimeData = event->mimeData();
   QStringList mimeFormats = mimeData->formats();
@@ -143,12 +141,13 @@ void DockToolbar::dragEnterEvent(QDragEnterEvent *event)
         stream >> curve_name;
         if (!curve_name.isEmpty())
         {
-          if( !has_curve )
+          if (!has_curve)
           {
             has_curve = true;
             _dragging_curve = curve_name;
           }
-          else{
+          else
+          {
             // multiple curves, discard
             _dragging_curve.clear();
             return;
@@ -157,7 +156,7 @@ void DockToolbar::dragEnterEvent(QDragEnterEvent *event)
       }
     }
   }
-  if(has_curve)
+  if (has_curve)
   {
     event->accept();
     ui->buttonFullscreen->setVisible(true);
@@ -167,7 +166,7 @@ void DockToolbar::dragEnterEvent(QDragEnterEvent *event)
   }
 }
 
-void DockToolbar::dragLeaveEvent(QDragLeaveEvent *)
+void DockToolbar::dragLeaveEvent(QDragLeaveEvent*)
 {
   ui->buttonFullscreen->setVisible(false);
   ui->buttonBackground->setVisible(ui->buttonBackground->isChecked());
@@ -175,12 +174,12 @@ void DockToolbar::dragLeaveEvent(QDragLeaveEvent *)
   ui->buttonSplitVertical->setVisible(false);
 }
 
-void DockToolbar::dropEvent(QDropEvent *event)
+void DockToolbar::dropEvent(QDropEvent* event)
 {
   auto global_pos = mapToGlobal(event->pos());
   auto pos = ui->buttonBackground->mapFromGlobal(global_pos);
-  bool on_label = ui->buttonBackground->rect().contains( pos );
-  if( on_label )
+  bool on_label = ui->buttonBackground->rect().contains(pos);
+  if (on_label)
   {
     emit backgroundColorRequest(_dragging_curve);
     _dragging_curve.clear();

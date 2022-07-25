@@ -91,11 +91,11 @@ private slots:
 
   void on_pushButtonHelpTab2_clicked();
 
-  void on_lineEditTab2Filter_textChanged(const QString &arg1);
+  void on_lineEditTab2Filter_textChanged(const QString& arg1);
 
   void on_functionTextBatch_textChanged();
 
-  void on_suffixLineEdit_textChanged(const QString &arg1);
+  void on_suffixLineEdit_textChanged(const QString& arg1);
 
   void on_tabWidget_currentChanged(int index);
 
@@ -105,7 +105,7 @@ private slots:
 
   void on_functionText_textChanged();
 
-  private:
+private:
   void importSnippets(const QByteArray& xml_text);
 
   QByteArray exportSnippets() const;
@@ -114,7 +114,7 @@ private slots:
 
   void updatePreview();
 
-//  QTimer _update_preview_timer;
+  //  QTimer _update_preview_timer;
 
   PlotDataMapRef& _plot_map_data;
   const TransformsMap& _transform_maps;
@@ -139,7 +139,7 @@ private slots:
   DelayedCallback _update_preview_tab1;
   DelayedCallback _update_preview_tab2;
 
-  void setSemaphore(QLabel *semaphore, QString errors);
+  void setSemaphore(QLabel* semaphore, QString errors);
 
 signals:
   void accept(std::vector<CustomPlotPtr> plot);

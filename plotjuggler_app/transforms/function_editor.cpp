@@ -43,39 +43,39 @@ void FunctionEditorWidget::on_stylesheetChanged(QString theme)
 
   auto style = GetLuaSyntaxStyle(theme);
 
-  ui->globalVarsText->setSyntaxStyle( style );
-  ui->globalVarsTextBatch->setSyntaxStyle( style );
+  ui->globalVarsText->setSyntaxStyle(style);
+  ui->globalVarsTextBatch->setSyntaxStyle(style);
 
-  ui->functionText->setSyntaxStyle( style );
-  ui->functionTextBatch->setSyntaxStyle( style );
+  ui->functionText->setSyntaxStyle(style);
+  ui->functionTextBatch->setSyntaxStyle(style);
 }
 
 FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
                                            const TransformsMap& mapped_custom_plots,
                                            QWidget* parent)
-    : QWidget(parent)
-    , _plot_map_data(plotMapData)
-    , _transform_maps(mapped_custom_plots)
-    , ui(new Ui::FunctionEditor)
-    , _v_count(1)
-    , _preview_widget(new PlotWidget(_local_plot_data, this))
+  : QWidget(parent)
+  , _plot_map_data(plotMapData)
+  , _transform_maps(mapped_custom_plots)
+  , ui(new Ui::FunctionEditor)
+  , _v_count(1)
+  , _preview_widget(new PlotWidget(_local_plot_data, this))
 {
   ui->setupUi(this);
 
-  ui->globalVarsText->setHighlighter( new QLuaHighlighter );
-  ui->globalVarsTextBatch->setHighlighter( new QLuaHighlighter );
+  ui->globalVarsText->setHighlighter(new QLuaHighlighter);
+  ui->globalVarsTextBatch->setHighlighter(new QLuaHighlighter);
 
-  ui->functionText->setHighlighter( new QLuaHighlighter );
-  ui->functionTextBatch->setHighlighter( new QLuaHighlighter );
+  ui->functionText->setHighlighter(new QLuaHighlighter);
+  ui->functionTextBatch->setHighlighter(new QLuaHighlighter);
 
   lua_completer_ = new QLuaCompleter(this);
   lua_completer_batch_ = new QLuaCompleter(this);
 
-  ui->globalVarsText->setCompleter( lua_completer_ );
-  ui->globalVarsTextBatch->setCompleter( lua_completer_ );
+  ui->globalVarsText->setCompleter(lua_completer_);
+  ui->globalVarsTextBatch->setCompleter(lua_completer_);
 
-  ui->functionText->setCompleter( lua_completer_batch_ );
-  ui->functionTextBatch->setCompleter( lua_completer_batch_ );
+  ui->functionText->setCompleter(lua_completer_batch_);
+  ui->functionTextBatch->setCompleter(lua_completer_batch_);
 
   QSettings settings;
 
@@ -107,7 +107,8 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
   numericPlotNames.sort(Qt::CaseInsensitive);
 
   QByteArray saved_xml =
-      settings.value("FunctionEditorWidget.recentSnippetsXML", QByteArray()).toByteArray();
+      settings.value("FunctionEditorWidget.recentSnippetsXML", QByteArray())
+          .toByteArray();
   restoreGeometry(settings.value("FunctionEditorWidget.geometry").toByteArray());
 
   if (saved_xml.isEmpty())
@@ -135,7 +136,8 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
   ui->functionText->setPlainText(
       settings.value("FunctionEditorWidget.previousFunction", "return value").toString());
   ui->functionTextBatch->setPlainText(
-      settings.value("FunctionEditorWidget.previousFunctionBatch", "return value").toString());
+      settings.value("FunctionEditorWidget.previousFunctionBatch", "return value")
+          .toString());
 
   ui->lineEditSource->installEventFilter(this);
   ui->listAdditionalSources->installEventFilter(this);
@@ -147,24 +149,30 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
 
   _preview_widget->setContextMenuEnabled(false);
 
-  _update_preview_tab1.connectCallback( [this]() { onUpdatePreview(); } );
+  _update_preview_tab1.connectCallback([this]() { onUpdatePreview(); });
   onUpdatePreview();
-  _update_preview_tab2.connectCallback( [this]() { onUpdatePreviewBatch(); } );
+  _update_preview_tab2.connectCallback([this]() { onUpdatePreviewBatch(); });
   onUpdatePreviewBatch();
 
-  _tab2_filter.connectCallback([this]() { onLineEditTab2FilterChanged(); } );
+  _tab2_filter.connectCallback([this]() { onLineEditTab2FilterChanged(); });
 
   int batch_filter_type = settings.value("FunctionEditorWidget.filterType", 2).toInt();
-  switch(batch_filter_type)
+  switch (batch_filter_type)
   {
-  case 1: ui->radioButtonContains->setChecked(true); break;
-  case 2: ui->radioButtonWildcard->setChecked(true); break;
-  case 3: ui->radioButtonRegExp->setChecked(true); break;
+    case 1:
+      ui->radioButtonContains->setChecked(true);
+      break;
+    case 2:
+      ui->radioButtonWildcard->setChecked(true);
+      break;
+    case 3:
+      ui->radioButtonRegExp->setChecked(true);
+      break;
   }
 
-  bool use_batch_prefix = settings.value("FunctionEditorWidget.batchPrefix", false).toBool();
-  ui->radioButtonPrefix->setChecked( use_batch_prefix );
-
+  bool use_batch_prefix =
+      settings.value("FunctionEditorWidget.batchPrefix", false).toBool();
+  ui->radioButtonPrefix->setChecked(use_batch_prefix);
 }
 
 void FunctionEditorWidget::saveSettings()
@@ -183,21 +191,22 @@ void FunctionEditorWidget::saveSettings()
   settings.setValue("FunctionEditorWidget.previousFunctionBatch",
                     ui->functionTextBatch->toPlainText());
   int batch_filter_type = 0;
-  if( ui->radioButtonContains->isChecked() )
+  if (ui->radioButtonContains->isChecked())
   {
     batch_filter_type = 1;
   }
-  else if( ui->radioButtonWildcard->isChecked() )
+  else if (ui->radioButtonWildcard->isChecked())
   {
     batch_filter_type = 2;
   }
-  if( ui->radioButtonRegExp->isChecked() )
+  if (ui->radioButtonRegExp->isChecked())
   {
     batch_filter_type = 3;
   }
   settings.setValue("FunctionEditorWidget.filterType", batch_filter_type);
 
-  settings.setValue("FunctionEditorWidget.batchPrefix", ui->radioButtonPrefix->isChecked());
+  settings.setValue("FunctionEditorWidget.batchPrefix",
+                    ui->radioButtonPrefix->isChecked());
 }
 
 FunctionEditorWidget::~FunctionEditorWidget()
@@ -609,7 +618,7 @@ void FunctionEditorWidget::on_pushButtonCreate_clicked()
 
   try
   {
-    if( ui->tabWidget->currentIndex() == 0 )
+    if (ui->tabWidget->currentIndex() == 0)
     {
       std::string new_plot_name = ui->nameLineEdit->text().toStdString();
 
@@ -641,24 +650,25 @@ void FunctionEditorWidget::on_pushButtonCreate_clicked()
         snippet.additional_sources.push_back(
             ui->listAdditionalSources->item(row, 1)->text());
       }
-      created_plots.push_back( std::make_unique<LuaCustomFunction>(snippet) );
+      created_plots.push_back(std::make_unique<LuaCustomFunction>(snippet));
     }
     else  // ----------- batch ------
     {
-      for(int row = 0; row < ui->listBatchSources->count(); row++)
+      for (int row = 0; row < ui->listBatchSources->count(); row++)
       {
         SnippetData snippet;
         snippet.function = ui->functionTextBatch->toPlainText();
         snippet.global_vars = ui->globalVarsTextBatch->toPlainText();
         snippet.linked_source = ui->listBatchSources->item(row)->text();
-        if (ui->radioButtonPrefix->isChecked() )
+        if (ui->radioButtonPrefix->isChecked())
         {
           snippet.alias_name = ui->suffixLineEdit->text() + snippet.linked_source;
         }
-        else{
+        else
+        {
           snippet.alias_name = snippet.linked_source + ui->suffixLineEdit->text();
         }
-        created_plots.push_back( std::make_unique<LuaCustomFunction>(snippet) );
+        created_plots.push_back(std::make_unique<LuaCustomFunction>(snippet));
       }
     }
 
@@ -841,19 +851,19 @@ void FunctionEditorWidget::onUpdatePreview()
     }
   }
 
-  setSemaphore( ui->labelSemaphore, errors );
+  setSemaphore(ui->labelSemaphore, errors);
 }
 
 void FunctionEditorWidget::onUpdatePreviewBatch()
 {
   QString errors;
 
-  if( ui->suffixLineEdit->text().isEmpty())
+  if (ui->suffixLineEdit->text().isEmpty())
   {
     errors += "- Missing prefix/suffix.\n";
   }
 
-  if( ui->listBatchSources->count() == 0)
+  if (ui->listBatchSources->count() == 0)
   {
     errors += "- No input series.\n";
   }
@@ -871,7 +881,7 @@ void FunctionEditorWidget::onUpdatePreviewBatch()
     errors += QString("- Error in Lua script: %1").arg(err.what());
   }
 
-  setSemaphore( ui->labelSemaphoreBatch, errors );
+  setSemaphore(ui->labelSemaphoreBatch, errors);
 }
 
 void FunctionEditorWidget::on_pushButtonHelp_clicked()
@@ -889,38 +899,39 @@ void FunctionEditorWidget::onLineEditTab2FilterChanged()
   QString filter_text = ui->lineEditTab2Filter->text();
   ui->listBatchSources->clear();
 
-  if( ui->radioButtonRegExp->isChecked() || ui->radioButtonWildcard->isChecked() )
+  if (ui->radioButtonRegExp->isChecked() || ui->radioButtonWildcard->isChecked())
   {
-    QRegExp rx( filter_text );
-    if( ui->radioButtonWildcard->isChecked() )
+    QRegExp rx(filter_text);
+    if (ui->radioButtonWildcard->isChecked())
     {
       rx.setPatternSyntax(QRegExp::Wildcard);
     }
 
-    for(const auto& [name, plotdata]: _plot_map_data.numeric )
+    for (const auto& [name, plotdata] : _plot_map_data.numeric)
     {
       auto qname = QString::fromStdString(name);
-      if( rx.exactMatch(qname) )
+      if (rx.exactMatch(qname))
       {
         ui->listBatchSources->addItem(qname);
       }
     }
   }
-  else{
+  else
+  {
     QStringList spaced_items = filter_text.split(' ', QString::SkipEmptyParts);
-    for(const auto& [name, plotdata]: _plot_map_data.numeric )
+    for (const auto& [name, plotdata] : _plot_map_data.numeric)
     {
       bool show = true;
       auto qname = QString::fromStdString(name);
-      for(const auto& part: spaced_items )
+      for (const auto& part : spaced_items)
       {
-        if( qname.contains(part) == false)
+        if (qname.contains(part) == false)
         {
           show = false;
           break;
         }
       }
-      if( show )
+      if (show)
       {
         ui->listBatchSources->addItem(qname);
       }
@@ -935,7 +946,7 @@ void FunctionEditorWidget::on_pushButtonHelpTab2_clicked()
   on_pushButtonHelp_clicked();
 }
 
-void FunctionEditorWidget::on_lineEditTab2Filter_textChanged(const QString &arg1)
+void FunctionEditorWidget::on_lineEditTab2Filter_textChanged(const QString& arg1)
 {
   _tab2_filter.triggerSignal(250);
 }
@@ -945,18 +956,19 @@ void FunctionEditorWidget::on_functionTextBatch_textChanged()
   _update_preview_tab2.triggerSignal(250);
 }
 
-void FunctionEditorWidget::on_suffixLineEdit_textChanged(const QString &arg1)
+void FunctionEditorWidget::on_suffixLineEdit_textChanged(const QString& arg1)
 {
   _update_preview_tab2.triggerSignal(250);
 }
 
 void FunctionEditorWidget::on_tabWidget_currentChanged(int index)
 {
-  if( index == 0 )
+  if (index == 0)
   {
     onUpdatePreview();
   }
-  else{
+  else
+  {
     onUpdatePreviewBatch();
   }
 }

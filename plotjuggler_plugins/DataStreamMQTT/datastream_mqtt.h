@@ -4,7 +4,7 @@
 #include <QDialog>
 #include <QtPlugin>
 #include <QTimer>
-#include <QThread>
+#include <thread>
 #include "PlotJuggler/datastreamer_base.h"
 #include "PlotJuggler/messageparser_base.h"
 #include "ui_datastream_mqtt.h"

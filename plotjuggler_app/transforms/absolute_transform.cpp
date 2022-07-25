@@ -8,5 +8,3 @@ std::optional<PlotData::Point> AbsoluteTransform::calculateNextPoint(size_t inde
   PlotData::Point out = { p.x, std::abs(p.y) };
   return out;
 }
-
-

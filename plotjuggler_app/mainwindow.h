@@ -100,6 +100,8 @@ public slots:
 
   void onPlaybackLoop();
 
+  void linkedZoomOut();
+
 private:
   Ui::MainWindow* ui;
 

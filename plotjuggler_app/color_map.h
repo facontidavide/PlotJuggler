@@ -35,11 +35,9 @@ private:
   QString _script;
 };
 
-
 // Storing ColoMaps as a "singleton"
 std::map<QString, ColorMap::Ptr>& ColorMapLibrary();
 void SaveColorMapToSettings();
 void LoadColorMapFromSettings();
 
-
-#endif // COLOR_MAP_H
+#endif  // COLOR_MAP_H

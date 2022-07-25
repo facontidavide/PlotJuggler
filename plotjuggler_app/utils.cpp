@@ -83,9 +83,9 @@ MoveDataRet MoveData(PlotDataMapRef& source, PlotDataMapRef& destination,
         destination_plot.pushBack(source_plot.at(i));
       }
 
-      if constexpr( std::is_same_v<PlotData, decltype (source_plot)> ||
-                    std::is_same_v<StringSeries, decltype (source_plot)> ||
-                    std::is_same_v<PlotDataAny, decltype (source_plot)> )
+      if constexpr (std::is_same_v<PlotData, decltype(source_plot)> ||
+                    std::is_same_v<StringSeries, decltype(source_plot)> ||
+                    std::is_same_v<PlotDataAny, decltype(source_plot)>)
       {
         double max_range_x = source_plot.maximumRangeX();
         destination_plot.setMaximumRangeX(max_range_x);

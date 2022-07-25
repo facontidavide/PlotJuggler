@@ -15,8 +15,8 @@ class CreatedSeriesBase;
 class CreatedSeriesTime;
 class CreatedSeriesXY;
 
-namespace PJ {
-
+namespace PJ
+{
 struct TimeseriesRef
 {
   TimeseriesRef(PlotData* data);
@@ -61,12 +61,10 @@ struct CreatedSeriesXY : public CreatedSeriesBase
 
 //-----------------------
 
-class ReactiveLuaFunction: public PJ::TransformFunction
+class ReactiveLuaFunction : public PJ::TransformFunction
 {
 public:
-  ReactiveLuaFunction(PlotDataMapRef* data_map,
-                      QString lua_global,
-                      QString lua_function,
+  ReactiveLuaFunction(PlotDataMapRef* data_map, QString lua_global, QString lua_function,
                       QString lua_library);
 
   const char* name() const override
@@ -110,7 +108,6 @@ public:
   }
 
 protected:
-
   void prepareLua();
 
   double _tracker_value = 0;
@@ -126,10 +123,11 @@ protected:
   sol::usertype<TimeseriesRef> _timeseries_ref;
   sol::usertype<CreatedSeriesTime> _created_timeseries;
   sol::usertype<CreatedSeriesXY> _created_scatter;
+
 private:
   void init();
 };
 
-}
+}  // namespace PJ
 
-#endif // REACTIVE_FUNCTION_H
+#endif  // REACTIVE_FUNCTION_H

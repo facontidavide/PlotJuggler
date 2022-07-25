@@ -285,7 +285,7 @@ bool PlotWidgetBase::isXYPlot() const
   return _xy_mode;
 }
 
-QRectF PlotWidgetBase::canvasBoundingRect() const
+QRectF PlotWidgetBase::currentBoundingRect() const
 {
   return p->canvasBoundingRect();
 }
@@ -379,8 +379,7 @@ PlotWidgetBase::~PlotWidgetBase()
 }
 
 PlotWidgetBase::CurveInfo* PlotWidgetBase::addCurve(const std::string& name,
-                                                    PlotDataXY& data,
-                                                    QColor color)
+                                                    PlotDataXY& data, QColor color)
 {
   const auto qname = QString::fromStdString(name);
 
@@ -395,11 +394,12 @@ PlotWidgetBase::CurveInfo* PlotWidgetBase::addCurve(const std::string& name,
   try
   {
     QwtSeriesWrapper* plot_qwt = nullptr;
-    if(auto ts_data = dynamic_cast<const PlotData*>(&data) )
+    if (auto ts_data = dynamic_cast<const PlotData*>(&data))
     {
       plot_qwt = createTimeSeries(ts_data);
     }
-    else{
+    else
+    {
       plot_qwt = new QwtSeriesWrapper(&data);
     }
 
@@ -477,7 +477,8 @@ std::list<PlotWidgetBase::CurveInfo>& PlotWidgetBase::curveList()
   return p->curve_list;
 }
 
-QwtSeriesWrapper* PlotWidgetBase::createTimeSeries(const PlotData* data, const QString& transform_ID)
+QwtSeriesWrapper* PlotWidgetBase::createTimeSeries(const PlotData* data,
+                                                   const QString& transform_ID)
 {
   TransformedTimeseries* output = new TransformedTimeseries(data);
   output->setTransform(transform_ID);
