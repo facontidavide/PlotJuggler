@@ -33,6 +33,10 @@ StatisticsDialog::~StatisticsDialog()
   delete ui;
 }
 
+bool StatisticsDialog::calcVisibleRange(){
+    return (ui->rangeComboBox->currentIndex() == 0);
+}
+
 void StatisticsDialog::update(PJ::Range range)
 {
   std::map<QString, Statistics> statistics;
@@ -47,7 +51,7 @@ void StatisticsDialog::update(PJ::Range range)
     for( size_t i=0; i<ts->size(); i++)
     {
       const auto p = ts->sample(i);
-      if(ui->rangeComboBox->currentIndex() == 0){
+      if(calcVisibleRange()){
         if( p.x() <  range.min )
         {
           continue;

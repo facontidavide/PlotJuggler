@@ -81,6 +81,8 @@ public:
 
   void setStatisticsTitle(QString title);
 
+  void updateStatistics(bool forceUpdate = false);
+
 protected:
   PlotDataMapRef& _mapped_data;
 

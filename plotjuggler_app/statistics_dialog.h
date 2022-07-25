@@ -38,6 +38,8 @@ public:
 
   void setTitle(QString title);
 
+  bool calcVisibleRange();
+
 private:
   Ui::statistics_dialog *ui;
 
