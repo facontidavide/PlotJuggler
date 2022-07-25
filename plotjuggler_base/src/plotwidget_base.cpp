@@ -594,7 +594,13 @@ bool PlotWidgetBase::eventFilter(QObject* obj, QEvent* event)
               {
                 it.curve->setVisible(!it.curve->isVisible());
                 //_tracker->redraw();
-                resetZoom();
+
+                QSettings settings;
+                bool autozoom_visibility = settings.value("Preferences::autozoom_visibility",true).toBool();
+                if(autozoom_visibility)
+                {
+                    resetZoom();
+                }
                 replot();
                 return true;
               }

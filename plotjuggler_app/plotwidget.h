@@ -48,7 +48,7 @@ public:
 
   QDomElement xmlSaveState(QDomDocument& doc) const;
 
-  bool xmlLoadState(QDomElement& element);
+  bool xmlLoadState(QDomElement& element, bool autozoom = true);
 
   Range getVisualizationRangeY(Range range_X) const override;
 

@@ -526,6 +526,8 @@ void PlotWidget::onDropEvent(QDropEvent*)
 {
   bool curves_changed = false;
 
+  bool noCurves = curveList().empty();
+
   if (_dragging.mode == DragInfo::CURVES)
   {
     size_t scatter_count = 0;
@@ -603,7 +605,16 @@ void PlotWidget::onDropEvent(QDropEvent*)
   {
     emit curvesDropped();
     emit curveListChanged();
-    zoomOut(true);
+
+    QSettings settings;
+    bool autozoom_curve_added = settings.value("Preferences::autozoom_curve_added",true).toBool();
+    if(autozoom_curve_added || noCurves)
+    {
+        zoomOut(autozoom_curve_added);
+    }
+    else{
+        replot();
+    }
   }
   _dragging.mode = DragInfo::NONE;
   _dragging.curves.clear();
@@ -700,7 +711,7 @@ QDomElement PlotWidget::xmlSaveState(QDomDocument& doc) const
   return plot_el;
 }
 
-bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
+bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
 {
   std::set<std::string> added_curve_names;
 
@@ -823,7 +834,7 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
 
   QDomElement rectangle = plot_widget.firstChildElement("range");
 
-  if (!rectangle.isNull())
+  if (!rectangle.isNull() && autozoom)
   {
     QRectF rect;
     rect.setBottom(rectangle.attribute("bottom").toDouble());
@@ -888,7 +899,10 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget)
     }
   }
 
-  updateMaximumZoomArea();
+  if(autozoom)
+  {
+    updateMaximumZoomArea();
+  }
   replot();
   return true;
 }
