@@ -20,7 +20,7 @@
       <enum>QAbstractItemView::NoSelection</enum>
      </property>
      <property name="sortingEnabled">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <attribute name="verticalHeaderVisible">
       <bool>false</bool>
