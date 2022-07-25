@@ -177,10 +177,6 @@ target_include_directories(plotjuggler_base INTERFACE
   $<INSTALL_INTERFACE:include>
 )
 
-target_include_directories(plotjuggler_base INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include>
-)
 #########################  INSTALL  ####################################
 
 if(COMPILING_WITH_CATKIN)
