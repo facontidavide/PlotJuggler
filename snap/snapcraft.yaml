@@ -41,6 +41,14 @@ apps:
       AMENT_PREFIX_PATH: $SNAP/opt/ros/foxy
       # Disable FastDDS shared-memory
       FASTRTPS_DEFAULT_PROFILES_FILE: ${SNAP}/usr/share/fastdds_no_shared_memory.xml
+      # Set ROS home to a writable path for logging
+      ROS_HOME: ${SNAP_USER_DATA}/.ros
+      # rospack plugins looks for plugin xml export file on ROS_PACKAGE_PATH
+      ROS_PACKAGE_PATH: ${SNAP}/opt/ros/noetic/share
+      # pluginlib relies on catkin_find to search for plugin libs.
+      # The later search on CMAKE_PREFIX_PATH
+      CMAKE_PREFIX_PATH: ${SNAP}/opt/ros/noetic
+      ROSCONSOLE_CONFIG_FILE: ${SNAP_USER_DATA}/rosconsole.config
     plugs: [network, network-bind, home]
     extensions: [kde-neon]
 
