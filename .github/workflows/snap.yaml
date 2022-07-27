@@ -17,6 +17,9 @@ jobs:
       snap-file: ${{ steps.build-snap.outputs.snap }}
     steps:
     - uses: actions/checkout@v2
+      with:
+        # full history for latest tag name
+        fetch-depth: 0
     - uses: snapcore/action-build@v1
       id: build-snap
 
