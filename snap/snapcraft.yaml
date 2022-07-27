@@ -53,22 +53,11 @@ apps:
     extensions: [kde-neon]
 
 parts:
-  # we need to build zmq so we have the ZeroMQConfig.cmake
-  zmq:
-    plugin: cmake
-    source: https://github.com/zeromq/libzmq.git
-    source-tag: v4.3.4
-    cmake-parameters:
-      - -DCMAKE_BUILD_TYPE=Release
-
   plotjuggler:
-    after: [zmq]
     plugin: cmake
     source: .
     cmake-parameters:
       - -DCMAKE_BUILD_TYPE=Release
-      # point to previous zmq part
-      - -DZeroMQ_DIR:PATH=$SNAPCRAFT_STAGE/usr/local/lib/cmake/ZeroMQ
     build-packages:
       - distro-info-data
       - libpulse0
@@ -78,10 +67,12 @@ parts:
       - libprotoc-dev
       - libgl-dev
       - libmosquitto-dev
+      - libzmq3-dev
     stage-packages:
       - libdw1
       - libmosquitto1
       - libprotobuf17
+      - libzmq5
     override-pull: |
         snapcraftctl pull
 
