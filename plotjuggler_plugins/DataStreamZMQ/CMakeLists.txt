@@ -1,12 +1,13 @@
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-
 find_package(ZeroMQ QUIET)
 
-if(ZMQ_FOUND)
+if(NOT ZeroMQ_FOUND)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+    find_package(ZeroMQ QUIET)
+endif()
 
-    message(STATUS "ZMQ_FOUND")
-    message(STATUS "ZMQ_FOUND")
+if(ZeroMQ_FOUND)
+
+    message(STATUS "ZeroMQ_FOUND")
 
     include_directories(../ ${ZeroMQ_INCLUDE_DIR})
 
@@ -22,11 +23,12 @@ if(ZMQ_FOUND)
     target_link_libraries(DataStreamZMQ
         ${Qt5Widgets_LIBRARIES}
         plotjuggler_base
-        ${ZeroMQ_LIBRARY}
+        libzmq
+        libzmq-static
         )
 
     install(TARGETS DataStreamZMQ DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
 else()
-    message("[libzmq-dev] not found. Skipping plugin DataStreamZMQ.")
+    message("ZeroMQ not found. Skipping plugin DataStreamZMQ.")
 endif()
 
