@@ -91,56 +91,9 @@ Install the debian packages using:
 
      sudo apt install ros-$ROS_DISTRO-plotjuggler-ros
 
-## How to build (Linux)
+## How to build and deploy
 
-The only binary dependency that you need installed in your system is Qt5. 
-
-On Ubuntu, the debians can be installed with the the command:
-
-    sudo apt -y install qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq-dev
-    
-On Fedora:
-
-    sudo dnf install qt5-qtbase-devel qt5-qtsvg-devel qt5-websockets-devel qt5-qtopendl-devel qt5-qtx11extras-devel
-
-Clone the repository into **~/plotjuggler_ws*:
-
-```
-git clone https://github.com/facontidavide/PlotJuggler.git ~/plotjuggler_ws/src/PlotJuggler
-cd ~/plotjuggler_ws
-```
-    
-Then compile using cmake (qmake is NOT supported):
-
-```
-cmake -S src/PlotJuggler -B build/PlotJuggler -DCMAKE_INSTALL_PREFIX=install
-cmake --build build/PlotJuggler --config RelWithDebInfo --parallel --target install
-```
- 
-The main executable and the plugins will be installed in **~/plotjuggler_ws/install/bin**.
-
-## How to build (Windows)
-
-You need to install first [Qt](https://www.qt.io/download-open-source), 
-[git](https://desktop.github.com/) and [vcpkg](https://vcpkg.io/en/getting-started.html).
-
-We will further assume that **vcpkg** is installed in **C:\vcpkg**.
-
-Clone the repo into **C:\plotjuggler_ws**:
-
-```
-cd \
-git clone https://github.com/facontidavide/PlotJuggler.git plotjuggler_ws/src/PlotJuggler
-cd ~/plotjuggler_ws
-```
-
-Compile with cmake, using vcpkg to download and compile all the required dependencies:
-
-```
-cmake -S plotjuggler -B build/plotjuggler -DCMAKE_INSTALL_PREFIX="install"
-      -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake 
-cmake --build build/PlotJuggler --config RelWithDebInfo --parallel --target install 
-```
+You can find build and installation instructions in [COMPILE.md](COMPILE.md).
 
 ## Note for ROS users
 

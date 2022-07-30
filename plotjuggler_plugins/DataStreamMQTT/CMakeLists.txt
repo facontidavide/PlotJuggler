@@ -1,8 +1,17 @@
 cmake_minimum_required(VERSION 3.10.2)
 
-find_package(mosquitto)
+find_package(mosquitto QUIET)
 
+# not using mosquitto_FOUND becuase
 if(mosquitto_LIBRARIES)
+
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+    find_package(mosquitto QUIET)
+else()
+    set(mosquitto_FOUND True)
+endif()
+
+if(mosquitto_FOUND)
 
     message(STATUS "[MOSQUITTO] found.")
     add_definitions(${QT_DEFINITIONS})
@@ -25,7 +34,7 @@ if(mosquitto_LIBRARIES)
         ${Qt5Widgets_LIBRARIES}
         Qt5::Network
         Qt5::Svg
-        mosquitto::mosquitto
+        ${mosquitto_LIBRARIES}
         plotjuggler_base
         )
     target_include_directories(DataStreamMQTT_Mosquitto

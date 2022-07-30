@@ -2,7 +2,6 @@
  protobuf/3.21.1
  mosquitto/2.0.14
  zeromq/4.3.4
- arrow/8.0.1
 
  [generators]
  CMakeDeps

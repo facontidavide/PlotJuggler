@@ -1,6 +1,80 @@
+# Compile in Linux
+
+On Ubuntu, the dependencies can be installed with the the command:
+
+    sudo apt -y install qtbase5-dev libqt5svg5-dev libqt5websockets5-dev \
+         libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq-dev
+    
+On Fedora:
+
+    sudo dnf install qt5-qtbase-devel qt5-qtsvg-devel qt5-websockets-devel \
+         qt5-qtopendl-devel qt5-qtx11extras-devel
+
+Clone the repository into **~/plotjuggler_ws*:
+
+```
+git clone https://github.com/facontidavide/PlotJuggler.git ~/plotjuggler_ws/src/PlotJuggler
+cd ~/plotjuggler_ws
+```
+    
+Then compile using cmake (qmake is NOT supported):
+
+```
+cmake -S src/PlotJuggler -B build/PlotJuggler -DCMAKE_INSTALL_PREFIX=install
+cmake --build build/PlotJuggler --config RelWithDebInfo --parallel --target install
+```
+ 
+## Optional: build with Conan
+
+If you want to use [conan](https://conan.io/) to manage the dependencies, 
+follow this instructions instead.
+
+```
+conan install src/PlotJuggler --install-folder build/PlotJuggler \
+      --build=missing -pr:b=default
+
+export CMAKE_TOOLCHAIN=$(pwd)/build/PlotJuggler/conan_toolchain.cmake
+
+cmake -S src/PlotJuggler -B build/PlotJuggler \
+      -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN  \
+      -DCMAKE_INSTALL_PREFIX=install \
+      -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
+
+cmake --build build/PlotJuggler --config RelWithDebInfo --parallel --target install
+```
+
+## Deploy as an AppImage
+
+Compile and install as described earlier.
+
+Download (once) linuxdeploy:
+
+```
+wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+
+wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+
+chmod +x linuxdeploy*.AppImage
+mkdir -p AppDir/usr/bin
+```
+
+Then:
+
+```
+cd src/PlotJuggler;export VERSION=$(git describe --abbrev=0 --tags);cd -
+echo $VERSION
+cp -v install/bin/* AppDir/usr/bin
+
+./linuxdeploy-x86_64.AppImage --appdir=AppDir \
+    -d ./PlotJuggler/PlotJuggler.desktop \
+    -i ./PlotJuggler/plotjuggler.png \ 
+    --plugin qt --output appimage
+```
+
 # Compile in Windows
 
-Dependencies in Windows are managed either using conan or vcpkg
+Dependencies in Windows are managed either using 
+[conan](https://conan.io/) or [vcpkg](https://vcpkg.io/en/index.html)
 
 The rest of this section assumes that you installed
 You need to install first [Qt](https://www.qt.io/download-open-source) and 
@@ -18,7 +92,7 @@ cd plotjuggler_ws
 git clone https://github.com/facontidavide/PlotJuggler.git src/PlotJuggler
 ```
 
-### Build with Conan
+## Build with Conan
 
 ```
 conan install src/PlotJuggler --install-folder build/PlotJuggler ^
@@ -27,7 +101,7 @@ conan install src/PlotJuggler --install-folder build/PlotJuggler ^
 set CMAKE_TOOLCHAIN=%cd%/build/PlotJuggler/conan_toolchain.cmake
 
 cmake -G "Visual Studio 16" ^
-      -S PlotJuggler -B build/PlotJuggler ^
+      -S src/PlotJuggler -B build/PlotJuggler ^
       -DCMAKE_TOOLCHAIN_FILE=%CMAKE_TOOLCHAIN%  ^
       -DCMAKE_INSTALL_PREFIX=%cd%install ^
       -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
@@ -35,7 +109,7 @@ cmake -G "Visual Studio 16" ^
 cmake --build build/PlotJuggler --config Release --parallel --target install
 ```
 
-### Build with vcpkg
+## Build with vcpkg
 
 Change the path where **vcpkg.cmake** can be found as needed.
 

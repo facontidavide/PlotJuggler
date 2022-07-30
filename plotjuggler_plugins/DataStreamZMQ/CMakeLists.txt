@@ -1,5 +1,12 @@
-find_package(ZeroMQ REQUIRED)
+find_package(ZeroMQ QUIET)
 
+# not using mosquitto_FOUND becuase
+if(NOT ZeroMQ_FOUND)
+
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+    find_package(ZeroMQ QUIET)
+
+endif()
 
 if(ZeroMQ_FOUND )
 
@@ -19,7 +26,7 @@ if(ZeroMQ_FOUND )
     target_link_libraries(DataStreamZMQ
         ${Qt5Widgets_LIBRARIES}
         plotjuggler_base
-        libzmq-static
+        ${ZeroMQ_LIBRARIES}
         )
 
     install(TARGETS DataStreamZMQ DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
