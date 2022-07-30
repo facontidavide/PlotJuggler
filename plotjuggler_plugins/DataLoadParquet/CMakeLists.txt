@@ -1,5 +1,21 @@
+if(BUILDING_WITH_VCPKG)
+    message(STATUS "Finding Parquet with vcpkg")
+    set(PARQUET_LIBRARIES 
+        re2::re2 
+        arrow_shared 
+        parquet_shared 
+        arrow_bundled_dependencies)
 
-find_package(arrow CONFIG QUIET)
+    find_package(arrow CONFIG QUIET)
+
+else()
+    message(STATUS "Finding Parquet without package managers")
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+
+    find_package(Arrow CONFIG QUIET)
+    find_package(Parquet CONFIG QUIET)
+endif()
+
 
 if(Arrow_FOUND)
     message(STATUS "[Parquet] found")
@@ -19,9 +35,9 @@ if(Arrow_FOUND)
     target_link_libraries(DataLoadParquet
         ${Qt5Widgets_LIBRARIES}
         ${Qt5Xml_LIBRARIES}
+        ${PARQUET_LIBRARIES}
         plotjuggler_base)
-    target_link_libraries(DataLoadParquet PRIVATE 
-       re2::re2 arrow_shared parquet_shared arrow_bundled_dependencies)
+
 
     install(TARGETS DataLoadParquet DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
 

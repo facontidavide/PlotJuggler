@@ -5,11 +5,11 @@ elseif(BUILDING_WITH_CONAN)
     message(STATUS "Finding ZeroMQ with conan")
     set(ZeroMQ_LIBRARIES libzmq-static)
 else()
-    message(STATUS "Finding ZeroMQ with embedded FindZeroMQ")
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+    message(STATUS "Finding ZeroMQ without package managers")
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 endif()
 
-find_package(ZeroMQ CONFIG REQUIRED)
+find_package(ZeroMQ REQUIRED)
 
 if(ZeroMQ_FOUND)
 

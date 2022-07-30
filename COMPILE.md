@@ -31,7 +31,7 @@ follow this instructions instead.
 
 ```
 conan install src/PlotJuggler --install-folder build/PlotJuggler \
-      --build=missing -pr:b=default
+      --build missing -pr:b=default
 
 export CMAKE_TOOLCHAIN=$(pwd)/build/PlotJuggler/conan_toolchain.cmake
 
