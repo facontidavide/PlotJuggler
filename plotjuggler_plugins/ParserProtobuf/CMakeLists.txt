@@ -7,7 +7,7 @@ add_definitions(-DQT_PLUGIN)
 find_package(Protobuf QUIET)
 
 if( Protobuf_FOUND)
-
+    message(STATUS "[Protobuf] found")
     QT5_WRAP_UI ( UI_SRC
         protobuf_parser.ui
         )
@@ -28,5 +28,5 @@ if( Protobuf_FOUND)
 
     install(TARGETS ProtobufParser DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
 else()
-    message("Protobuf not found: skipping compilatiopn of plugin ProtobufParser")
+    message("[Protobuf] not found: skipping compilatiopn of plugin ProtobufParser")
 endif()

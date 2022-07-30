@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
+
+
 add_definitions(
     -DPJ_MAJOR_VERSION=${PROJECT_VERSION_MAJOR}
     -DPJ_MINOR_VERSION=${PROJECT_VERSION_MINOR}
@@ -30,8 +32,11 @@ include_directories( plotjuggler_base/src )
 
 add_definitions( -DFMT_HEADER_ONLY )
 
-set(VCPKG_CRT_LINKAGE static)
-set(VCPKG_LIBRARY_LINKAGE static)
+if (EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+    conan_basic_setup()
+endif()
+
 
 # http://answers.ros.org/question/230877/optionally-build-a-package-with-catkin/
 if( CATKIN_DEVEL_PREFIX OR catkin_FOUND OR CATKIN_BUILD_BINARY_PACKAGE)
@@ -297,6 +302,8 @@ if(NOT COMPILING_WITH_AMENT AND NOT COMPILING_WITH_CATKIN)
      VERSION ${PROJECT_VERSION}
      COMPATIBILITY SameMajorVersion
     )
+
+    message (STATUS "CMAKE_CURRENT_BINARY_DIR = ${CMAKE_CURRENT_BINARY_DIR}")
 
     install(
       FILES

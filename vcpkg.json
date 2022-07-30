@@ -4,6 +4,7 @@
   "dependencies": [
     "protobuf",
     "mosquitto",
-    "zeromq"
+    "zeromq",
+    "parquet"
   ]
 }

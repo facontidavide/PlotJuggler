@@ -1,15 +1,10 @@
 cmake_minimum_required(VERSION 3.10.2)
 
+find_package(mosquitto)
 
-find_path(MOSQUITTO_INCLUDE_DIR mosquitto.h)
-find_library(MOSQUITTO_LIBRARY NAMES libmosquitto mosquitto)
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(MOSQUITTO DEFAULT_MSG MOSQUITTO_LIBRARY MOSQUITTO_INCLUDE_DIR)
+if(mosquitto_LIBRARIES)
 
-if(MOSQUITTO_FOUND)
-
-    set(MOSQUITTO_LIBRARIES ${MOSQUITTO_LIBRARY})
-
+    message(STATUS "[MOSQUITTO] found.")
     add_definitions(${QT_DEFINITIONS})
     add_definitions(-DQT_PLUGIN)
 
@@ -28,9 +23,9 @@ if(MOSQUITTO_FOUND)
 
     target_link_libraries(DataStreamMQTT_Mosquitto
         ${Qt5Widgets_LIBRARIES}
-        ${MOSQUITTO_LIBRARIES}
         Qt5::Network
         Qt5::Svg
+        mosquitto::mosquitto
         plotjuggler_base
         )
     target_include_directories(DataStreamMQTT_Mosquitto
@@ -40,7 +35,7 @@ if(MOSQUITTO_FOUND)
         DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
 
 else()
-    message("[libmosquitto-dev] not found. Skipping plugin DataStreamMQTT.")
+    message("[MOSQUITTO] not found. Skipping plugin DataStreamMQTT.")
 endif()
 
 
