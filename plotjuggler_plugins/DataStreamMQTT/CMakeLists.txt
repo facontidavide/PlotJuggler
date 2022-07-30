@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.10.2)
 
 find_package(mosquitto QUIET)
 
-# not using mosquitto_FOUND becuase
 if(mosquitto_LIBRARIES)
 
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
@@ -34,7 +33,7 @@ if(mosquitto_FOUND)
         ${Qt5Widgets_LIBRARIES}
         Qt5::Network
         Qt5::Svg
-        ${mosquitto_LIBRARIES}
+        ${MOSQUITTO_LIBRARIES}
         plotjuggler_base
         )
     target_include_directories(DataStreamMQTT_Mosquitto

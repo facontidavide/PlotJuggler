@@ -32,11 +32,15 @@ include_directories( plotjuggler_base/src )
 
 add_definitions( -DFMT_HEADER_ONLY )
 
-if (EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-    conan_basic_setup()
+if (EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.txt)
+    set(BUILDING_WITH_CONAN ON)
+    message(STATUS "BUILDING_WITH_CONAN")
 endif()
 
+if(VCPKG_TOOLCHAIN)
+    set(BUILDING_WITH_VCPKG ON)
+    message(STATUS "BUILDING_WITH_VCPKG")
+endif()
 
 # http://answers.ros.org/question/230877/optionally-build-a-package-with-catkin/
 if( CATKIN_DEVEL_PREFIX OR catkin_FOUND OR CATKIN_BUILD_BINARY_PACKAGE)

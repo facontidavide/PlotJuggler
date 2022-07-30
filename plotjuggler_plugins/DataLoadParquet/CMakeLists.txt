@@ -1,14 +1,8 @@
 
-set(CMAKE_CONFIG_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake" ${CMAKE_MODULE_PATH}  )
-set(CMAKE_MODULE_PATH  "${CMAKE_CONFIG_PATH} ${CMAKE_MODULE_PATH}")
+find_package(arrow CONFIG QUIET)
 
-find_package(Zstd QUIET)
-set (ZSTD_LIB ${Zstd_LIBRARIES})
-find_package(Arrow QUIET)
-find_package(Parquet QUIET)
-
-if(ARROW_FOUND AND PARQUET_FOUND)
-
+if(Arrow_FOUND)
+    message(STATUS "[Parquet] found")
     include_directories(  ../
         ${ARROW_INCLUDE_DIR}
         ${PARQUET_INCLUDE_DIR} )
@@ -25,14 +19,14 @@ if(ARROW_FOUND AND PARQUET_FOUND)
     target_link_libraries(DataLoadParquet
         ${Qt5Widgets_LIBRARIES}
         ${Qt5Xml_LIBRARIES}
-        arrow
-        parquet
         plotjuggler_base)
+    target_link_libraries(DataLoadParquet PRIVATE 
+       re2::re2 arrow_shared parquet_shared arrow_bundled_dependencies)
 
     install(TARGETS DataLoadParquet DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
 
 else()
-    message("[libparquet-dev] not found. Skipping plugin DataLoadParquet.")
+    message("[Parquet] not found. Skipping plugin DataLoadParquet.")
 endif()
 
 

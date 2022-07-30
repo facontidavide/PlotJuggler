@@ -1,14 +1,17 @@
-find_package(ZeroMQ QUIET)
-
-# not using mosquitto_FOUND becuase
-if(NOT ZeroMQ_FOUND)
-
+if(BUILDING_WITH_VCPKG)
+    message(STATUS "Finding ZeroMQ with vcpkg")
+    set(ZeroMQ_LIBRARIES libzmq libzmq-static)
+elseif(BUILDING_WITH_CONAN)
+    message(STATUS "Finding ZeroMQ with conan")
+    set(ZeroMQ_LIBRARIES libzmq-static)
+else()
+    message(STATUS "Finding ZeroMQ with embedded FindZeroMQ")
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-    find_package(ZeroMQ QUIET)
-
 endif()
 
-if(ZeroMQ_FOUND )
+find_package(ZeroMQ CONFIG REQUIRED)
+
+if(ZeroMQ_FOUND)
 
     message(STATUS "[ZeroMQ] found")
 

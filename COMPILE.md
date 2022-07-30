@@ -94,6 +94,9 @@ git clone https://github.com/facontidavide/PlotJuggler.git src/PlotJuggler
 
 ## Build with Conan
 
+Note: the Arrow/Parque plugin is not supported in Conan. Use vcpkg instead, if you need
+that specific plugin.
+
 ```
 conan install src/PlotJuggler --install-folder build/PlotJuggler ^
       --build=missing -pr:b=default
@@ -103,8 +106,9 @@ set CMAKE_TOOLCHAIN=%cd%/build/PlotJuggler/conan_toolchain.cmake
 cmake -G "Visual Studio 16" ^
       -S src/PlotJuggler -B build/PlotJuggler ^
       -DCMAKE_TOOLCHAIN_FILE=%CMAKE_TOOLCHAIN%  ^
-      -DCMAKE_INSTALL_PREFIX=%cd%install ^
+      -DCMAKE_INSTALL_PREFIX=%cd%/install ^
       -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
+      -D
 
 cmake --build build/PlotJuggler --config Release --parallel --target install
 ```
@@ -119,8 +123,7 @@ set CMAKE_TOOLCHAIN=/path/vcpkg/scripts/buildsystems/vcpkg.cmake
 cmake -G "Visual Studio 16" ^
       -S src/PlotJuggler -B build/PlotJuggler ^
       -DCMAKE_TOOLCHAIN_FILE=%CMAKE_TOOLCHAIN%  ^
-      -DCMAKE_INSTALL_PREFIX=%cd%install
+      -DCMAKE_INSTALL_PREFIX=%cd%/install
 
 cmake --build build/PlotJuggler --config Release --parallel --target install
 ```
-

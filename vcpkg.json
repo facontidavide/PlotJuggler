@@ -5,6 +5,9 @@
     "protobuf",
     "mosquitto",
     "zeromq",
-    "parquet"
+    {
+      "name": "arrow",
+      "features": [ "parquet" ]
+    }
   ]
 }
