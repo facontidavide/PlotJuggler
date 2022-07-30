@@ -9,7 +9,7 @@ else()
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 endif()
 
-find_package(ZeroMQ REQUIRED)
+find_package(ZeroMQ QUIET)
 
 if(ZeroMQ_FOUND)
 
