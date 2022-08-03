@@ -5,6 +5,22 @@ description: |
   QT5 based application to display time series in plots,
   using an intuitive "drag and drop" interface.
 
+  The snap comes with ROS and ROS 2 plugins.
+  You can launch them respectively with
+
+    $ plotjuggler.ros
+    $ plotjuggler.ros2
+
+  For convenience a third command is provided,
+
+    $ plotjuggler
+
+  launching PlotJuggler with ROS plugins by default.
+
+  You can change to ROS 2 plugin with
+
+    $ sudo snap set plotjuggler ros-plugin-version=2
+
 issues: https://github.com/facontidavide/plotjuggler/issues
 source-code: https://github.com/facontidavide/plotjuggler
 license: MPL-2.0
@@ -33,31 +49,17 @@ package-repositories:
 
 apps:
   plotjuggler:
-    command: usr/local/bin/plotjuggler --plugin_folders $PLUGIN_FOLDERS
-    environment:
-      LD_LIBRARY_PATH: $SNAP/opt/ros/noetic/lib:$SNAP/usr/local/lib
-      # Paths to ROS plugins
-      PLUGIN_FOLDERS: $SNAP/opt/ros/noetic/lib/plotjuggler_ros/
-      # Set ROS home to a writable path for logging
-      ROS_HOME: ${SNAP_USER_DATA}/.ros
-      # rospack plugins looks for plugin xml export file on ROS_PACKAGE_PATH
-      ROS_PACKAGE_PATH: ${SNAP}/opt/ros/noetic/share
-      # pluginlib relies on catkin_find to search for plugin libs.
-      # The later search on CMAKE_PREFIX_PATH
-      CMAKE_PREFIX_PATH: ${SNAP}/opt/ros/noetic
-      ROSCONSOLE_CONFIG_FILE: ${SNAP_USER_DATA}/rosconsole.config
-    plugs: [network, network-bind, home]
+    command: usr/bin/launcher-plotjuggler
+    plugs: [network, network-bind, home, removable-media]
     extensions: [kde-neon]
 
-  plotjuggler-ros2:
-    command: usr/local/bin/plotjuggler --plugin_folders $PLUGIN_FOLDERS
-    environment:
-      LD_LIBRARY_PATH: $SNAP/opt/ros/foxy/lib:$SNAP/opt/ros/snap/lib:$SNAP/opt/ros/foxy/lib/x86_64-linux-gnu:$SNAP/opt/ros/foxy/opt/yaml_cpp_vendor/lib:$SNAP/usr/local/lib
-      # Paths to ROS 2 plugins
-      PLUGIN_FOLDERS: $SNAP/opt/ros/snap/lib/plotjuggler_ros
-      AMENT_PREFIX_PATH: $SNAP/opt/ros/foxy
-      # Disable FastDDS shared-memory
-      FASTRTPS_DEFAULT_PROFILES_FILE: ${SNAP}/usr/share/fastdds_no_shared_memory.xml
+  ros:
+    command: usr/bin/launcher-plotjuggler-ros
+    plugs: [network, network-bind, home, removable-media]
+    extensions: [kde-neon]
+
+  ros2:
+    command: usr/bin/launcher-plotjuggler-ros2
     plugs: [network, network-bind, home, removable-media]
     extensions: [kde-neon]
 
@@ -90,6 +92,7 @@ parts:
         snapcraftctl set-version "$version"
         snapcraftctl set-grade "$grade"
 
+        # Necessary to bypass XDG desktop portals because ROS 2 bags metadata.yaml are refering db3 files relatively
         sed -i '/QApplication app(new_argc, new_argv.data());/a QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs);' plotjuggler_app/main.cpp
 
   plotjuggler-ros:
@@ -305,4 +308,5 @@ parts:
     source: snap/local/
     organize:
       'fastdds_no_shared_memory.xml': usr/share/
+      'launcher-plotjuggler*': usr/bin/
 

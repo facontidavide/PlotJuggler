@@ -1,0 +1,11 @@
+#!/bin/bash
+
+export LD_LIBRARY_PATH=$SNAP/opt/ros/foxy/lib:$SNAP/opt/ros/snap/lib:$SNAP/opt/ros/foxy/lib/x86_64-linux-gnu:$SNAP/opt/ros/foxy/opt/yaml_cpp_vendor/lib:$SNAP/usr/local/lib:$LD_LIBRARY_PATH
+# Paths to ROS 2 plugins
+export PLUGIN_FOLDERS=$SNAP/opt/ros/snap/lib/plotjuggler_ros
+export AMENT_PREFIX_PATH=$SNAP/opt/ros/foxy
+# Disable FastDDS shared-memory
+export FASTRTPS_DEFAULT_PROFILES_FILE=${SNAP}/usr/share/fastdds_no_shared_memory.xml
+
+${SNAP}/usr/local/bin/plotjuggler --plugin_folders $PLUGIN_FOLDERS $@
+

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+export LD_LIBRARY_PATH=$SNAP/opt/ros/noetic/lib:$SNAP/usr/local/lib:$LD_LIBRARY_PATH
+# Paths to ROS plugins
+export PLUGIN_FOLDERS=$SNAP/opt/ros/noetic/lib/plotjuggler_ros/
+# Set ROS home to a writable path for logging
+export ROS_HOME=${SNAP_USER_DATA}/.ros
+# rospack plugins looks for plugin xml export file on ROS_PACKAGE_PATH
+export ROS_PACKAGE_PATH=${SNAP}/opt/ros/noetic/share
+# pluginlib relies on catkin_find to search for plugin libs.
+# The later search on CMAKE_PREFIX_PATH
+export CMAKE_PREFIX_PATH=${SNAP}/opt/ros/noetic
+export ROSCONSOLE_CONFIG_FILE=${SNAP_USER_DATA}/rosconsole.config
+
+${SNAP}/usr/local/bin/plotjuggler --plugin_folders $PLUGIN_FOLDERS $@
+

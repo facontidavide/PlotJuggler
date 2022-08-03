@@ -1,0 +1,12 @@
+#!/bin/sh -e
+
+ROS_PLUGIN_VERSION="$(snapctl get ros-plugin-version)"
+case "$ROS_PLUGIN_VERSION" in
+    1) ;;
+    2) ;;
+    *)
+        echo "'$ROS_PLUGIN_VERSION' is not a supported ros-plugin-version. Setting 1 by default" >&2
+	snapctl set ros-plugin-version=1
+        ;;
+esac
+

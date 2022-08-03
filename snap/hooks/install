@@ -1,0 +1,5 @@
+#!/bin/sh -e
+
+# Set default ros-plugin-version to ROS
+snapctl set ros-plugin-version=1
+

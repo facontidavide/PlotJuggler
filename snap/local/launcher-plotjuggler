@@ -1,0 +1,15 @@
+#!/bin/bash
+
+ROS_PLUGIN_VERSION="$(snapctl get ros-plugin-version)"
+
+if [ "$ROS_PLUGIN_VERSION" == "1" ]; then
+    echo "Running plotjuggler with ROS plugin"
+    exec launcher-plotjuggler-ros $@
+elif [ "$ROS_PLUGIN_VERSION" == "2" ]; then
+    echo "Running plotjuggler with ROS 2 plugin"
+    exec launcher-plotjuggler-ros2 $@
+else
+    echo "ros-plugin-version is $ROS_PLUGIN_VERSION which is not valid. Must be \"1\" or \"2\""
+    echo "Run: snap set plotjuggler ros-plugin-version=\"1\""
+fi
+
