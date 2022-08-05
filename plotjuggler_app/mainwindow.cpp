@@ -121,11 +121,15 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
       _skin_path = path.absolutePath();
     }
   }
-  QFile fileTitle(_skin_path + "/mainwindow_title.txt");
-  if (fileTitle.open(QIODevice::ReadOnly))
-  {
-    QString title = fileTitle.readAll().trimmed();
-    setWindowTitle(title);
+  if (commandline_parser.isSet("window_title")){
+    setWindowTitle(commandline_parser.value("window_title"));
+  } else {
+    QFile fileTitle(_skin_path + "/mainwindow_title.txt");
+    if (fileTitle.open(QIODevice::ReadOnly))
+    {
+      QString title = fileTitle.readAll().trimmed();
+      setWindowTitle(title);
+    }
   }
 
   QSettings settings;
