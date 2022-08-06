@@ -124,7 +124,7 @@ PlotDocker* TabbedPlotWidget::addTab(QString tab_name)
 {
   static int tab_suffix_count = 1;
 
-  // this must be done before ant PlotDocker is created
+  // this must be done before any PlotDocker is created
   ads::CDockManager::setConfigFlag(ads::CDockManager::DockAreaHasTabsMenuButton, false);
   ads::CDockManager::setConfigFlag(ads::CDockManager::DockAreaHasUndockButton, false);
   ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);

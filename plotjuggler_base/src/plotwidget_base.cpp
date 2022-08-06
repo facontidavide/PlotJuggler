@@ -156,6 +156,11 @@ public:
     event_callback(event);
   }
 
+  void dragLeaveEvent(QDragLeaveEvent* event) override
+  {
+      event_callback(event);
+  }
+
   void dropEvent(QDropEvent* event) override
   {
     event_callback(event);
@@ -319,6 +324,10 @@ PlotWidgetBase::PlotWidgetBase(QWidget* parent)
     if (auto ev = dynamic_cast<QDragEnterEvent*>(event))
     {
       emit dragEnterSignal(ev);
+    }
+    else if(auto ev = dynamic_cast<QDragLeaveEvent*>(event))
+    {
+        emit dragLeaveSignal(ev);
     }
     else if (auto ev = dynamic_cast<QDropEvent*>(event))
     {

@@ -87,6 +87,7 @@ protected:
 
   bool eventFilter(QObject* obj, QEvent* event) override;
   void onDragEnterEvent(QDragEnterEvent* event);
+  void onDragLeaveEvent(QDragLeaveEvent* event);
   void onDropEvent(QDropEvent* event);
 
   bool canvasEventFilter(QEvent* event);

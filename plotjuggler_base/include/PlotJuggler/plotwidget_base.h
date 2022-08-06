@@ -110,6 +110,7 @@ signals:
   void viewResized(const QRectF&);
 
   void dragEnterSignal(QDragEnterEvent* event);
+  void dragLeaveSignal(QDragLeaveEvent* event);
 
   void dropSignal(QDropEvent* event);
 

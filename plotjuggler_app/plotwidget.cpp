@@ -95,6 +95,7 @@ PlotWidget::PlotWidget(PlotDataMapRef& datamap, QWidget* parent)
   connect(this, &PlotWidgetBase::viewResized, this, &PlotWidget::on_externallyResized);
 
   connect(this, &PlotWidgetBase::dragEnterSignal, this, &PlotWidget::onDragEnterEvent);
+  connect(this, &PlotWidgetBase::dragLeaveSignal, this, &PlotWidget::onDragLeaveEvent);
 
   connect(this, &PlotWidgetBase::dropSignal, this, &PlotWidget::onDropEvent);
 
@@ -520,6 +521,11 @@ void PlotWidget::onDragEnterEvent(QDragEnterEvent* event)
       event->acceptProposedAction();
     }
   }
+}
+
+void PlotWidget::onDragLeaveEvent(QDragLeaveEvent* event){
+    _dragging.mode = DragInfo::NONE;
+    _dragging.curves.clear();
 }
 
 void PlotWidget::onDropEvent(QDropEvent*)
@@ -1587,7 +1593,7 @@ bool PlotWidget::canvasEventFilter(QEvent* event)
     case QEvent::MouseButtonPress: {
       if (_dragging.mode != DragInfo::NONE)
       {
-        return true;  // don't pass to canvas().
+          return true;  // don't pass to canvas().
       }
 
       QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
