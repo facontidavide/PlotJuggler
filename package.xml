@@ -29,7 +29,8 @@
     <depend>binutils</depend>
     <depend>boost</depend>
     <depend>libzmq3-dev</depend>
-
+    <depend>lz4</depend>
+    <depend>libzstd-dev</depend>
 
     <!-- The export tag contains other, unspecified, tags -->
     <export>
