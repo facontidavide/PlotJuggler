@@ -9,7 +9,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-
 find_package(fastcdr QUIET)
 
 if(NOT fastcdr_FOUND )
@@ -32,7 +31,7 @@ add_library(rosx_introspection
     src/deserializer.cpp
     )
 target_link_libraries(rosx_introspection
-    fastcdr)
+    fastcdr )
 
 target_include_directories(rosx_introspection PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

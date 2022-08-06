@@ -57,8 +57,9 @@ public:
   void changeType(const ROSType& type) { _type = type; }
 
   /// True if field is a constant in message definition
-  bool isConstant() const {
-    return _value.size() != 0;
+  bool isConstant() const
+  {
+    return _is_constant;
   }
 
   /// If constant, value of field, else undefined
@@ -80,6 +81,7 @@ protected:
   ROSType     _type;
   std::string _value;
   bool _is_array;
+  bool _is_constant = false;
   int _array_size;
 
   mutable const RosMessageLibrary* _cache_library = nullptr;

@@ -26,6 +26,86 @@ DataLoadMCAP::~DataLoadMCAP()
 
 }
 
+void DataLoadMCAP::appendRollPitchYaw(const RosMsgParser::FlatMessage &flat,
+                                      double timestamp,
+                                      PlotDataMapRef &plot_data)
+{
+  static RosMsgParser::ROSType quaternion_type("geometry_msgs/Quaternion");
+  const double RAD_TO_DEG = 180.0 / M_PI;
+
+  double qx = 0, qy = 0, qz = 0, qw = 0;
+  std::string prefix;
+  bool quaternion_found = false;
+
+  for(size_t i=0; i<flat.value.size(); i++ )
+  {
+    const auto& [key, val] = flat.value[i];
+    if( key.fields.size() > 2 )
+    {
+      size_t last = key.fields.size() - 1;
+      if(key.fields[last-1]->type() == quaternion_type)
+      {
+        if(key.fields[last]->type().typeID() == RosMsgParser::FLOAT64 &&
+            key.fields[last]->name() == "x")
+        {
+          qx = val.convert<double>();
+          qy = flat.value[i+1].second.convert<double>();
+          qz = flat.value[i+2].second.convert<double>();
+          qw = flat.value[i+3].second.convert<double>();
+          quaternion_found = true;
+
+          prefix = key.toStdString();
+          prefix.pop_back();
+          break;
+        }
+      }
+    }
+  }
+  if( quaternion_found )
+  {
+    double quat_norm2 = (qw * qw) + (qx * qx) + (qy * qy) + (qz * qz);
+    if (std::abs(quat_norm2 - 1.0) > std::numeric_limits<double>::epsilon())
+    {
+      double mult = 1.0 / std::sqrt(quat_norm2);
+      qx *= mult;
+      qy *= mult;
+      qz *= mult;
+      qw *= mult;
+    }
+
+    double roll, pitch, yaw;
+    // roll (x-axis rotation)
+    double sinr_cosp = 2 * (qw * qx + qy * qz);
+    double cosr_cosp = 1 - 2 * (qx * qx + qy * qy);
+    roll = std::atan2(sinr_cosp, cosr_cosp);
+
+    // pitch (y-axis rotation)
+    double sinp = 2 * (qw * qy - qz * qx);
+    if (std::abs(sinp) >= 1)
+    {
+      pitch = std::copysign(M_PI_2, sinp);  // use 90 degrees if out of range
+    }
+    else
+    {
+      pitch = std::asin(sinp);
+    }
+
+    // yaw (z-axis rotation)
+    double siny_cosp = 2 * (qw * qz + qx * qy);
+    double cosy_cosp = 1 - 2 * (qy * qy + qz * qz);
+    yaw = std::atan2(siny_cosp, cosy_cosp);
+
+    PlotData& roll_data = plot_data.getOrCreateNumeric(prefix + "roll");
+    roll_data.pushBack( {timestamp, RAD_TO_DEG*roll } );
+
+    PlotData& pitch_data = plot_data.getOrCreateNumeric(prefix + "pitch");
+    pitch_data.pushBack( {timestamp, RAD_TO_DEG*pitch } );
+
+    PlotData& yaw_data = plot_data.getOrCreateNumeric(prefix + "yaw");
+    yaw_data.pushBack( {timestamp, RAD_TO_DEG*yaw } );
+  }
+}
+
 const std::vector<const char*>& DataLoadMCAP::compatibleFileExtensions() const
 {
   static std::vector<const char*> ext = {"mcap", "MCAP"};
@@ -69,6 +149,8 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
                            schema->data.size());
 
     std::string type_name = QString::fromStdString(schema->name).replace("/msg/", "/").toStdString();
+
+    std::cout  << definition << std::endl;
 
     auto ros_type = RosMsgParser::ROSType(type_name);
     auto parser = std::make_shared<RosMsgParser::Parser>(topic, ros_type, definition);
@@ -171,6 +253,9 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
       PlotData& data = plot_data.getOrCreateNumeric(series_name);
       data.pushBack( {timestamp_sec, value.convert<double>() } );
     }
+
+    appendRollPitchYaw(flat_output, timestamp_sec, plot_data);
+
     for(const auto& [key, str]: flat_output.name)
     {
       key.toStr(series_name);

@@ -56,7 +56,8 @@ ROSField::ROSField(const std::string &definition):
 
   //-------------------------------
   // Find type, field and array size
-  if( std::regex_search(begin, end, what, type_regex)) {
+  if( std::regex_search(begin, end, what, type_regex))
+  {
     type = what[0];
     begin = what[0].second;
   }
@@ -106,7 +107,8 @@ ROSField::ROSField(const std::string &definition):
       if (type == "string") {
         value.assign(begin, end);
       }
-      else {
+      else
+      {
         if (regex_search(begin, end, what, std::regex("\\s*#")))
         {
           value.assign(begin, what[0].first);
@@ -114,19 +116,28 @@ ROSField::ROSField(const std::string &definition):
         else {
           value.assign(begin, end);
         }
-        // TODO: Raise error if string is not numeric
       }
 
       TrimString(value);
-    } else if (what[0] == "#") {
+      _is_constant = true;
+    }
+    else if (what[0] == "#")
+    {
       // Ignore comment
-    } else {
-      // Error
-      throw std::runtime_error("Unexpected character after type and field:  " +
-                               definition);
+    }
+    else // default value, not constant ?
+    {
+      if (regex_search(begin, end, what, std::regex("\\s*#")))
+      {
+        value.assign(begin, what[0].first);
+      }
+      else {
+        value.assign(begin, end);
+      }
     }
   }
   _type  = ROSType( type );
+  // TODO: Raise error if string is not numeric ?
   _value = value;
 }
 
