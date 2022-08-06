@@ -12,8 +12,8 @@ if(BUILDING_WITH_CONAN)
 else()
 
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-    find_package(LZ4 REQUIRED)
-    find_package(Zstd REQUIRED)
+    find_package(LZ4 QUIET)
+    find_package(Zstd QUIET)
 
     if(LZ4_FOUND AND Zstd_FOUND)
         set(MCAP_DEPENDENCIES_FOUND ON)
