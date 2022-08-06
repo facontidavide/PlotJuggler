@@ -1,0 +1,123 @@
+# Copyright 2016 Proyectos y Sistemas de Mantenimiento SL (eProsima).
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+!include nsDialogs.nsh
+!include LogicLib.nsh
+!include EnvVarUpdate.nsh
+
+Var Dialog
+Var FirstTime
+
+Var Label
+
+Var CheckboxHOME
+Var CheckboxHOME_State
+
+Var CheckboxRadioButtons
+Var CheckboxRadioButtons_State
+
+LangString PAGE_TITLE ${LANG_ENGLISH} "Environment variables setting"
+LangString PAGE_SUBTITLE ${LANG_ENGLISH} "Choose which environment variables you want to set."
+
+Function VariablesEntornoPage
+
+    !insertmacro MUI_HEADER_TEXT $(PAGE_TITLE) $(PAGE_SUBTITLE)
+
+    nsDialogs::Create 1018
+    
+    Pop $Dialog
+
+    ${If} $Dialog == error
+        Abort
+    ${EndIf}
+       
+    ### Creación de los elementos gráficos    
+    ${NSD_CreateLabel} 0 0 100% 20u "Check the environment variables you want to set and uncheck the environment variables you don't want to set. Click Next to continue."
+    Pop $Label
+
+    ${NSD_CreateCheckbox} 10 20u 100% 12u "Set the @PROJECT_NAME_UPPER@HOME environment variable."
+    Pop $CheckboxHOME
+    ${If} $CheckboxHOME_State == ${BST_CHECKED}
+        ${NSD_Check} $CheckboxHOME
+    ${EndIf}
+        
+	${NSD_CreateCheckbox} 10 40u 100% 15u "&Add to the PATH the location of eProsima @PROJECT_NAME_LARGE@ libraries for platform @MSVC_ARCH@."
+    Pop $CheckboxRadioButtons
+    ${If} $CheckboxRadioButtons_State == ${BST_CHECKED}
+        ${NSD_Check} $CheckboxRadioButtons
+    ${EndIf}
+
+    ### La primera vez que lanzamos el instalador, el checkbox de HOME
+    ### y el de SCRIPTS deben estar marcados. 
+    StrCmp $FirstTime "FirstTime" jumpfirsttime 0 ### Si son iguales las cadenas, GOTO +5, si no, GOTO 0
+        ${NSD_Check} $CheckboxHOME
+		${NSD_Check} $CheckboxRadioButtons
+        ${NSD_GetState} $CheckboxHOME $CheckboxHOME_State
+		${NSD_GetState} $CheckboxRadioButtons $CheckboxRadioButtons_State
+        StrCpy $FirstTime "FirstTime"
+
+    jumpfirsttime:
+
+    ${If} ${SectionIsSelected} ${libraries_@MSVC_ARCH@}
+      EnableWindow $CheckboxRadioButtons 1	
+    ${Else}
+      EnableWindow $CheckboxRadioButtons 0
+      ${EndIf}
+
+    ### Fijamos los callbacks para cuando se haga click en los CheckBoxes
+    ${NSD_OnClick} $CheckboxHOME ClickHOME 
+	${NSD_OnClick} $CheckboxRadioButtons ClickCheckboxRadioButtons
+	
+    nsDialogs::Show
+FunctionEnd
+
+### Callback invocado cuando se pulsa el CheckBox HOME
+### Guardamos el estado en la variable _state
+Function ClickHOME
+    ${NSD_GetState} $CheckboxHOME $CheckboxHOME_State
+FunctionEnd
+
+Function ClickCheckboxRadioButtons
+    ${NSD_GetState} $CheckboxRadioButtons $CheckboxRadioButtons_State
+FunctionEnd
+
+Function InstallVarEnvs
+    ### Actualizamos las variables de entorno que se hayan marcado
+    ${If} $CheckboxHOME_State == ${BST_CHECKED}
+       ${EnvVarUpdate} $0 "@PROJECT_NAME_UPPER@HOME" "P" "HKLM" "$INSTDIR"
+       WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "@PROJECT_NAME_UPPER@HOME" 1
+    ${EndIf}
+    ${If} ${SectionIsSelected} ${libraries_@MSVC_ARCH@}
+      ${If} $CheckboxRadioButtons_State == ${BST_CHECKED}
+         ${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR\lib@MSVC_ARCH_DIR@"
+         WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "@MSVC_ARCH@ libraries location" 1
+      ${EndIf}
+    ${EndIf}
+FunctionEnd
+
+Var RegKeyCheck
+
+!macro UninstallVarEnvs
+  ReadRegStr $RegKeyCheck HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "@PROJECT_NAME_UPPER@HOME"
+  ${If} $RegKeyCheck == 1
+    DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "@PROJECT_NAME_UPPER@HOME"
+    ${un.EnvVarUpdate} $0 "@PROJECT_NAME_UPPER@HOME" "R" "HKLM" "$INSTDIR"
+  ${EndIf}
+  ReadRegStr $RegKeyCheck HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "@MSVC_ARCH@ libraries location"
+  ${If} $RegKeyCheck == 1
+    DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "@MSVC_ARCH@ libraries location"
+    ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR\lib@MSVC_ARCH_DIR@"
+  ${EndIf}
+!macroend
+

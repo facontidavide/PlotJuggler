@@ -1,0 +1,38 @@
+# Copyright 2016 Proyectos y Sistemas de Mantenimiento SL (eProsima).
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+macro(generate_sources_for_autotools)
+    set(@PROJECT_NAME@_SOURCES_TMP @@PROJECT_NAME@_SOURCES@)
+    set(@PROJECT_NAME@_SOURCES_AUTOTOOLS "")
+    foreach(@PROJECT_NAME@_SOURCE ${@PROJECT_NAME@_SOURCES_TMP})
+        set(@PROJECT_NAME@_SOURCES_AUTOTOOLS "${@PROJECT_NAME@_SOURCES_AUTOTOOLS} ${@PROJECT_NAME@_SOURCE}")
+    endforeach()
+endmacro()
+
+macro(generate_public_headers_for_autotools)
+    set(@PROJECT_NAME@_PUBLIC_HEADERS_DIRECTORIES_TMP @@PROJECT_NAME@_PUBLIC_HEADERS_DIRECTORIES@)
+    set(@PROJECT_NAME@_PUBLIC_HEADERS_AUTOTOOLS "")
+    foreach(directory ${@PROJECT_NAME@_PUBLIC_HEADERS_DIRECTORIES_TMP})
+        file(GLOB_RECURSE @PROJECT_NAME@_PUBLIC_HEADERS_TMP RELATIVE ${directory} ${directory}/*.h)
+        foreach(@PROJECT_NAME@_PUBLIC_HEADER ${@PROJECT_NAME@_PUBLIC_HEADERS_TMP})
+            set(@PROJECT_NAME@_PUBLIC_HEADERS_AUTOTOOLS "${@PROJECT_NAME@_PUBLIC_HEADERS_AUTOTOOLS} ${@PROJECT_NAME@_PUBLIC_HEADER}")
+        endforeach()
+    endforeach()
+
+    set(@PROJECT_NAME@_PUBLIC_HEADERS_FILES_TMP @@PROJECT_NAME@_PUBLIC_HEADERS_FILES@)
+    foreach(file ${@PROJECT_NAME@_PUBLIC_HEADERS_FILES_TMP})
+        set(@PROJECT_NAME@_PUBLIC_HEADERS_AUTOTOOLS "${@PROJECT_NAME@_PUBLIC_HEADERS_AUTOTOOLS} ${file}")
+    endforeach()
+endmacro()
+

@@ -1,0 +1,40 @@
+# Copyright 2016 Proyectos y Sistemas de Mantenimiento SL (eProsima).
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set(PROJECT_NAME_LARGE "@PROJECT_NAME_LARGE@")
+set(MSVC_ARCH @MSVC_ARCH@)
+
+if(${CPACK_GENERATOR} STREQUAL "NSIS" )
+    cmake_policy(SET CMP0012 NEW)
+
+    if(@EPROSIMA_INSTALLER@)
+        # Define name of the NSIS file
+        set(CPACK_PACKAGE_FILE_NAME eProsima_@PROJECT_NAME_STYLED@-@PROJECT_VERSION@-Windows)
+    else()
+        # Define name of the NSIS file
+        set(CPACK_PACKAGE_FILE_NAME eProsima_@PROJECT_NAME_STYLED@-@PROJECT_VERSION@-${MSVC_ARCH})
+    endif()
+
+    set(CPACK_NSIS_DISPLAY_NAME "@PROJECT_NAME_LARGE@ @PROJECT_VERSION@")
+    set(CPACK_NSIS_PACKAGE_NAME "eProsima @PROJECT_NAME_LARGE@ @PROJECT_VERSION@")
+    set(CPACK_NSIS_URL_INFO_ABOUT "www.eprosima.com")
+    set(CPACK_NSIS_CONTACT "support@eprosima.com")
+    set(CPACK_NSIS_MUI_ICON "@PROJECT_SOURCE_DIR@\\utils\\images\\icon\\eprosima_icon.ico")
+    set(CPACK_PACKAGE_ICON "@PROJECT_SOURCE_DIR@\\utils\\images\\icon\\eprosima_icon.bmp")
+    set(CPACK_NSIS_INSTALL_ROOT "$VARPROGRAMFILES\\eProsima")
+    
+    # Define cmake script to copy images files and prepare auxiliary NSIS scripts.
+    set(CPACK_INSTALL_SCRIPT "@PROJECT_BINARY_DIR@/cmake/packaging/windows/NSISPackaging.cmake")
+endif()
+

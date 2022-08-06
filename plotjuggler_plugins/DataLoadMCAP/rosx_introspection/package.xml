@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>rosx_introspection</name>
+  <version>1.0.0</version>
+  <description>Successor of ros_type_introspection</description>
+
+  <maintainer email="davide.faconti@gmail.com">Davide Faconti</maintainer>
+  <license>MIT</license>
+
+  <url>http://www.ros.org/wiki/ros_type_introspection</url>
+  <author email="davide.faconti@gmail.com">Davide Faconti</author>
+
+  <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
+  <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
+
+  <depend condition="$ROS_VERSION == 1">roscpp</depend>
+  <depend condition="$ROS_VERSION == 1">roscpp_serialization</depend>
+
+  <depend condition="$ROS_VERSION == 2">rclcpp</depend>
+  <depend condition="$ROS_VERSION == 2">rosbag2_cpp</depend>
+  <depend condition="$ROS_VERSION == 2">rosidl_typesupport_cpp</depend>
+
+  <depend>sensor_msgs</depend>
+
+  <export>
+       <build_type condition="$ROS_VERSION == 1">catkin</build_type>
+       <build_type condition="$ROS_VERSION == 2">ament_cmake</build_type>
+   </export>
+</package>

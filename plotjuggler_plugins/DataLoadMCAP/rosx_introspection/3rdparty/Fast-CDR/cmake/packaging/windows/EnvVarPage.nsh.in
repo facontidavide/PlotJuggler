@@ -1,0 +1,427 @@
+# Copyright 2016 Proyectos y Sistemas de Mantenimiento SL (eProsima).
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+!include nsDialogs.nsh
+!include LogicLib.nsh
+!include EnvVarUpdate.nsh
+
+Var Dialog
+Var FirstTime
+
+Var Label
+
+Var CheckboxHOME
+Var CheckboxHOME_State
+
+Var CheckboxRadioButtons
+Var CheckboxRadioButtons_State
+
+Var GroupBoxRadioButton
+
+Var RadioButtonX64_VS2010
+Var RadioButtonX64_VS2010_State
+
+Var RadioButtonI86_VS2010
+Var RadioButtonI86_VS2010_State
+
+Var RadioButtonX64_VS2013
+Var RadioButtonX64_VS2013_State
+
+Var RadioButtonI86_VS2013
+Var RadioButtonI86_VS2013_State
+
+Var RadioButtonX64_VS2015
+Var RadioButtonX64_VS2015_State
+
+Var RadioButtonI86_VS2015
+Var RadioButtonI86_VS2015_State
+
+LangString PAGE_TITLE ${LANG_ENGLISH} "Environment variables setting"
+LangString PAGE_SUBTITLE ${LANG_ENGLISH} "Choose which environment variables you want to set."
+
+Function VariablesEntornoPage
+
+    !insertmacro MUI_HEADER_TEXT $(PAGE_TITLE) $(PAGE_SUBTITLE)
+
+    nsDialogs::Create 1018
+    Pop $Dialog
+
+    ${If} $Dialog == error
+        Abort
+    ${EndIf}
+       
+    ### Creación de los elementos gráficos    
+    ${NSD_CreateLabel} 0 0 100% 20u "Check the environment variables you want to set and uncheck the environment variables you don't want to set. Click Next to continue."
+    Pop $Label
+
+    ${NSD_CreateCheckbox} 10 20u 100% 12u "Set the @PROJECT_NAME_UPPER@HOME environment variable."
+    Pop $CheckboxHOME
+    ${If} $CheckboxHOME_State == ${BST_CHECKED}
+        ${NSD_Check} $CheckboxHOME
+    ${EndIf}
+        
+	${NSD_CreateCheckbox} 10 32u 100% 12u "&Add to the PATH the location of eProsima @PROJECT_NAME_LARGE@ libraries."
+    Pop $CheckboxRadioButtons
+
+    ### La primera vez que lanzamos el instalador, el checkbox de HOME
+    ### y el de SCRIPTS deben estar marcados. 
+    StrCmp $FirstTime "FirstTime" jumpfirsttime 0 ### Si son iguales las cadenas, GOTO +5, si no, GOTO 0
+        ${NSD_Check} $CheckboxHOME
+		${NSD_Check} $CheckboxRadioButtons
+        ${NSD_GetState} $CheckboxHOME $CheckboxHOME_State
+		${NSD_GetState} $CheckboxRadioButtons $CheckboxRadioButtons_State
+        StrCpy $FirstTime "FirstTime"
+
+    jumpfirsttime:
+
+    Call CheckRadioButtons
+
+	!define lib_radio_x 30
+	!define lib_radio_height 15u
+	!define lib_radio_y_0 52u
+	!define lib_radio_y_1 67u
+	!define lib_radio_y_2 82u
+	!define lib_radio_y_3 97u
+	!define lib_radio_y_4 112u
+	!define lib_radio_y_5 127u
+
+	; GroupBox 1     
+	${NSD_CreateGroupBox} 20 44u 90% 97u "Select the configuration:" 
+	Pop $GroupBoxRadioButton   
+	#Pop $GB_Ar1 
+
+    ${If} ${RunningX64}
+		 ${NSD_CreateRadioButton} ${lib_radio_x} ${lib_radio_y_0} 50% ${lib_radio_height} "&x64 VS2015 platforms."
+        Pop $RadioButtonX64_VS2015  
+        ### Fijamos los callbacks para cuando se haga click en los RadioButtones
+		${NSD_OnClick} $RadioButtonX64_VS2015 ClickX64_VS2015  
+
+		 ${NSD_CreateRadioButton} ${lib_radio_x} ${lib_radio_y_1} 50% ${lib_radio_height} "&x64 VS2013 platforms."
+        Pop $RadioButtonX64_VS2013  
+        ### Fijamos los callbacks para cuando se haga click en los RadioButtones
+		${NSD_OnClick} $RadioButtonX64_VS2013 ClickX64_VS2013  
+	
+        ${NSD_CreateRadioButton} ${lib_radio_x} ${lib_radio_y_2} 50% ${lib_radio_height} "&x64 VS2010 platforms."
+        Pop $RadioButtonX64_VS2010  
+        ### Fijamos los callbacks para cuando se haga click en los RadioButtones
+		${NSD_OnClick} $RadioButtonX64_VS2010 ClickX64_VS2010  
+
+		${NSD_CreateRadioButton} ${lib_radio_x} ${lib_radio_y_3} 50% ${lib_radio_height} "&i86 VS2015 platforms."
+        Pop $RadioButtonI86_VS2015
+		${NSD_CreateRadioButton} ${lib_radio_x} ${lib_radio_y_4} 50% ${lib_radio_height} "&i86 VS2013 platforms."
+        Pop $RadioButtonI86_VS2013
+        ${NSD_CreateRadioButton} ${lib_radio_x} ${lib_radio_y_5} 50% ${lib_radio_height} "&i86 VS2010 platforms."
+        Pop $RadioButtonI86_VS2010
+		
+		Call EnableRadioX64
+		Call EnableRadioI86	
+    ${Else}
+		${NSD_CreateRadioButton} ${lib_radio_x} ${lib_radio_y_0} 50% ${lib_radio_height} "&i86 VS2015 platforms."
+		Pop $RadioButtonI86_VS2015
+		${NSD_CreateRadioButton} ${lib_radio_x} ${lib_radio_y_1} 50% ${lib_radio_height} "&i86 VS2013 platforms."
+		Pop $RadioButtonI86_VS2013
+        ${NSD_CreateRadioButton} ${lib_radio_x} ${lib_radio_y_2} 50% ${lib_radio_height} "&i86 VS2010 platforms."
+        Pop $RadioButtonI86_VS2010
+		
+		Call EnableRadioI86	
+    ${EndIf}
+        
+    ### Fijamos los callbacks para cuando se haga click en los CheckBoxes
+    ${NSD_OnClick} $CheckboxHOME ClickHOME 
+	${NSD_OnClick} $CheckboxRadioButtons ClickCheckboxRadioButtons
+	${NSD_OnClick} $RadioButtonI86_VS2015 ClickI86_VS2015 
+	${NSD_OnClick} $RadioButtonI86_VS2013 ClickI86_VS2013 
+    ${NSD_OnClick} $RadioButtonI86_VS2010 ClickI86_VS2010  
+	
+	Call SelectDefaultBestConfiguration
+
+    nsDialogs::Show
+FunctionEnd
+
+### Callback invocado cuando se pulsa el CheckBox HOME
+### Guardamos el estado en la variable _state
+Function ClickHOME
+    ${NSD_GetState} $CheckboxHOME $CheckboxHOME_State
+FunctionEnd
+
+Function ClickCheckboxRadioButtons
+    ${NSD_GetState} $CheckboxRadioButtons $CheckboxRadioButtons_State
+	${If} $CheckboxRadioButtons_State == 0
+		 EnableWindow $RadioButtonX64_VS2010 0
+		 EnableWindow $RadioButtonI86_VS2010 0
+		 EnableWindow $RadioButtonX64_VS2013 0
+		 EnableWindow $RadioButtonI86_VS2013 0
+		 EnableWindow $RadioButtonX64_VS2015 0
+		 EnableWindow $RadioButtonI86_VS2015 0
+		 
+		 ${NSD_SetState} $RadioButtonX64_VS2010 0
+		 ${NSD_SetState} $RadioButtonI86_VS2010 0
+		 ${NSD_SetState} $RadioButtonX64_VS2013 0
+		 ${NSD_SetState} $RadioButtonI86_VS2013 0
+		 ${NSD_SetState} $RadioButtonX64_VS2015 0
+		 ${NSD_SetState} $RadioButtonI86_VS2015 0
+
+		 ${NSD_GetState} $RadioButtonI86_VS2010 $RadioButtonI86_VS2010_State
+		 ${NSD_GetState} $RadioButtonX64_VS2010 $RadioButtonX64_VS2010_State
+		 ${NSD_GetState} $RadioButtonX64_VS2013 $RadioButtonX64_VS2013_State
+		 ${NSD_GetState} $RadioButtonI86_VS2013 $RadioButtonI86_VS2013_State
+		 ${NSD_GetState} $RadioButtonI86_VS2015 $RadioButtonI86_VS2015_State
+		 ${NSD_GetState} $RadioButtonX64_VS2015 $RadioButtonX64_VS2015_State
+	${ElseIf} $CheckboxRadioButtons_State == 1
+		Call EnableRadioX64
+		Call EnableRadioI86
+		Call SelectDefaultBestConfiguration
+	${EndIf}
+FunctionEnd
+
+### Callback invocado cuando se pulsa el CheckBox x64
+### Sirve para deshabilitar el i86, pues no pueden aparecer a la vez
+### Tambien guardamos el estado en la variable _state
+Function ClickX64_VS2010
+    Call ResetStates
+    Pop $RadioButtonX64_VS2010
+    ${NSD_GetState} $RadioButtonX64_VS2010 $RadioButtonX64_VS2010_State
+FunctionEnd
+
+### Callback invocado cuando se pulsa el CheckBox i86
+### Sirve para deshabilitar el x64, pues no pueden aparecer a la vez
+### Tambien guardamos el estado en la variable _state
+Function ClickI86_VS2010
+    Call ResetStates
+    Pop $RadioButtonI86_VS2010
+    ${NSD_GetState} $RadioButtonI86_VS2010 $RadioButtonI86_VS2010_State
+FunctionEnd
+
+### Callback invocado cuando se pulsa el CheckBox x64 VS2013
+### Sirve para deshabilitar el i86 2013, pues no pueden aparecer a la vez
+### Tambien guardamos el estado en la variable _state
+Function ClickX64_VS2013
+    Call ResetStates
+    Pop $RadioButtonX64_VS2013
+    ${NSD_GetState} $RadioButtonX64_VS2013 $RadioButtonX64_VS2013_State
+FunctionEnd
+
+### Callback invocado cuando se pulsa el CheckBox i86
+### Sirve para deshabilitar el x64, pues no pueden aparecer a la vez
+### Tambien guardamos el estado en la variable _state
+Function ClickI86_VS2013
+    Call ResetStates
+    Pop $RadioButtonI86_VS2013
+    ${NSD_GetState} $RadioButtonI86_VS2013 $RadioButtonI86_VS2013_State
+FunctionEnd
+
+### Callback invocado cuando se pulsa el CheckBox x64
+### Sirve para deshabilitar el i86, pues no pueden aparecer a la vez
+### Tambien guardamos el estado en la variable _state
+Function ClickX64_VS2015
+    Call ResetStates
+    Pop $RadioButtonX64_VS2015
+    ${NSD_GetState} $RadioButtonX64_VS2015 $RadioButtonX64_VS2015_State
+FunctionEnd
+
+### Callback invocado cuando se pulsa el CheckBox i86
+### Sirve para deshabilitar el x64, pues no pueden aparecer a la vez
+### Tambien guardamos el estado en la variable _state
+Function ClickI86_VS2015
+    Call ResetStates
+    Pop $RadioButtonI86_VS2015
+    ${NSD_GetState} $RadioButtonI86_VS2015 $RadioButtonI86_VS2015_State
+FunctionEnd
+
+Function ResetStates
+    Push  0
+    Pop $RadioButtonX64_VS2010_State
+    Push  0
+    Pop $RadioButtonI86_VS2010_State
+    Push  0
+    Pop $RadioButtonX64_VS2013_State
+    Push  0
+    Pop $RadioButtonI86_VS2013_State
+    Push  0
+    Pop $RadioButtonX64_VS2015_State
+    Push  0
+    Pop $RadioButtonI86_VS2015_State
+FunctionEnd
+
+Function SelectDefaultBestConfiguration
+	${If} $CheckboxRadioButtons_State == 1
+		${If} ${SectionIsSelected} ${libraries_x64Win64VS2015}
+			${NSD_SetState} $RadioButtonX64_VS2015 1
+			${NSD_GetState} $RadioButtonX64_VS2015 $RadioButtonX64_VS2015_State
+		${ElseIf} ${SectionIsSelected} ${libraries_x64Win64VS2013}
+			${NSD_SetState} $RadioButtonX64_VS2013 1
+			${NSD_GetState} $RadioButtonX64_VS2013 $RadioButtonX64_VS2013_State
+		${ElseIf} ${SectionIsSelected} ${libraries_x64Win64VS2010}	
+			${NSD_SetState} $RadioButtonX64_VS2010 1
+			${NSD_GetState} $RadioButtonX64_VS2010 $RadioButtonX64_VS2010_State
+		${ElseIf} ${SectionIsSelected} ${libraries_i86Win32VS2015}	
+			${NSD_SetState} $RadioButtonI86_VS2015 1
+			${NSD_GetState} $RadioButtonI86_VS2015 $RadioButtonI86_VS2015_State		
+		${ElseIf} ${SectionIsSelected} ${libraries_i86Win32VS2013}	
+			${NSD_SetState} $RadioButtonI86_VS2013 1
+			${NSD_GetState} $RadioButtonI86_VS2013 $RadioButtonI86_VS2013_State
+		${ElseIf} ${SectionIsSelected} ${libraries_i86Win32VS2010}	
+			${NSD_SetState} $RadioButtonI86_VS2010 1
+			${NSD_GetState} $RadioButtonI86_VS2010 $RadioButtonI86_VS2010_State		
+		${EndIf}
+	${EndIf}
+FunctionEnd
+
+Function CheckRadioButtons
+   ${If} ${SectionIsSelected} ${libraries}
+   ${OrIf} ${SectionIsPartiallySelected} ${libraries}
+        EnableWindow $CheckboxRadioButtons 1
+        ${If} $CheckboxRadioButtons_State == 1
+            ${NSD_Check} $CheckboxRadioButtons
+        ${EndIf}
+    ${Else}
+        EnableWindow $CheckboxRadioButtons 0
+		${NSD_SetState} $CheckboxRadioButtons 0
+    ${EndIf}
+       
+FunctionEnd
+
+Function EnableRadioX64
+	${If} ${RunningX64}
+		${If} $CheckboxRadioButtons_State == 1
+			${If} ${SectionIsSelected} ${libraries_x64Win64VS2015}
+				EnableWindow $RadioButtonX64_VS2015 1	
+			${Else}
+				EnableWindow $RadioButtonX64_VS2015 0
+			${EndIf}
+			${If} ${SectionIsSelected} ${libraries_x64Win64VS2013}
+				EnableWindow $RadioButtonX64_VS2013 1	
+			${Else}
+				EnableWindow $RadioButtonX64_VS2013 0
+			${EndIf}
+			${If} ${SectionIsSelected} ${libraries_x64Win64VS2010}
+				EnableWindow $RadioButtonX64_VS2010 1	
+			${Else}
+				EnableWindow $RadioButtonX64_VS2010 0
+			${EndIf}
+		${Else}
+			EnableWindow $RadioButtonX64_VS2015 0
+			EnableWindow $RadioButtonX64_VS2013 0
+			EnableWindow $RadioButtonX64_VS2010 0
+		${EndIf}
+	${EndIf}
+FunctionEnd
+
+Function EnableRadioI86
+	${If} $CheckboxRadioButtons_State == 1
+		${If} ${SectionIsSelected} ${libraries_i86Win32VS2015}
+			EnableWindow $RadioButtonI86_VS2015 1
+		${Else}
+			EnableWindow $RadioButtonI86_VS2015 0
+		${EndIf}
+		${If} ${SectionIsSelected} ${libraries_i86Win32VS2013}
+			EnableWindow $RadioButtonI86_VS2013 1	
+		${Else}
+			EnableWindow $RadioButtonI86_VS2013 0
+		${EndIf}
+		${If} ${SectionIsSelected} ${libraries_i86Win32VS2010}
+			EnableWindow $RadioButtonI86_VS2010 1	
+		${Else}
+			EnableWindow $RadioButtonI86_VS2010 0
+		${EndIf}
+	${Else}
+		EnableWindow $RadioButtonI86_VS2015 0
+		EnableWindow $RadioButtonI86_VS2013 0
+		EnableWindow $RadioButtonI86_VS2010 0
+	${EndIf}
+FunctionEnd
+
+Function InstallVarEnvs
+    ### Actualizamos las variables de entorno que se hayan marcado
+    ${If} $CheckboxHOME_State == ${BST_CHECKED}
+       ${EnvVarUpdate} $0 "@PROJECT_NAME_UPPER@HOME" "P" "HKLM" "$INSTDIR"
+       WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "@PROJECT_NAME_UPPER@HOME" 1
+    ${EndIf}
+    ${If} ${SectionIsSelected} ${libraries_x64Win64VS2010}
+        ${If} $RadioButtonX64_VS2010_State == ${BST_CHECKED}
+             ${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR\bin\x64Win64VS2010"
+             WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "x64Win64VS2010 libraries location" 1
+        ${EndIf}
+    ${EndIf}
+    ${If} ${SectionIsSelected} ${libraries_i86Win32VS2010}
+        ${If} $RadioButtonI86_VS2010_State == ${BST_CHECKED}
+             ${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR\bin\i86Win32VS2010"
+             WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "i86Win32VS2010 libraries location" 1
+        ${EndIf}
+    ${EndIf}
+    ${If} ${SectionIsSelected} ${libraries_x64Win64VS2013}
+        ${If} $RadioButtonX64_VS2013_State == ${BST_CHECKED}
+             ${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR\bin\x64Win64VS2013"
+             WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "x64Win64VS2013 libraries location" 1
+        ${EndIf}
+    ${EndIf}
+    ${If} ${SectionIsSelected} ${libraries_i86Win32VS2013}
+        ${If} $RadioButtonI86_VS2013_State == ${BST_CHECKED}
+             ${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR\bin\i86Win32VS2013"
+             WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "i86Win32VS2013 libraries location" 1
+        ${EndIf}
+    ${EndIf}
+    ${If} ${SectionIsSelected} ${libraries_x64Win64VS2015}
+        ${If} $RadioButtonX64_VS2015_State == ${BST_CHECKED}
+             ${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR\bin\x64Win64VS2015"
+             WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "x64Win64VS2015 libraries location" 1
+        ${EndIf}
+    ${EndIf}
+    ${If} ${SectionIsSelected} ${libraries_i86Win32VS2015}
+        ${If} $RadioButtonI86_VS2015_State == ${BST_CHECKED}
+             ${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR\bin\i86Win32VS2015"
+             WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "i86Win32VS2015 libraries location" 1
+        ${EndIf}
+    ${EndIf}
+FunctionEnd
+
+Var RegKeyCheck
+
+!macro UninstallVarEnvs
+  ReadRegStr $RegKeyCheck HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "@PROJECT_NAME_UPPER@HOME"
+  ${If} $RegKeyCheck == 1
+    DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "@PROJECT_NAME_UPPER@HOME"
+    ${un.EnvVarUpdate} $0 "@PROJECT_NAME_UPPER@HOME" "R" "HKLM" "$INSTDIR"
+  ${EndIf}
+  ReadRegStr $RegKeyCheck HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "x64Win64VS2010 libraries location"
+  ${If} $RegKeyCheck == 1
+    DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "x64Win64VS2010 libraries location"
+    ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR\bin\x64Win64VS2010"
+  ${EndIf}
+  ReadRegStr $RegKeyCheck HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "i86Win32VS2010 libraries location"
+  ${If} $RegKeyCheck == 1
+    DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "i86Win32VS2010 libraries location"
+    ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR\bin\i86Win32VS2010"
+  ${EndIf}
+  ReadRegStr $RegKeyCheck HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "x64Win64VS2013 libraries location"
+  ${If} $RegKeyCheck == 1
+    DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "x64Win64VS2013 libraries location"
+    ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR\bin\x64Win64VS2013"
+  ${EndIf}
+  ReadRegStr $RegKeyCheck HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "i86Win32VS2013 libraries location"
+  ${If} $RegKeyCheck == 1
+    DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "i86Win32VS2013 libraries location"
+    ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR\bin\i86Win32VS2013"
+  ${EndIf}
+  ReadRegStr $RegKeyCheck HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "x64Win64VS2015 libraries location"
+  ${If} $RegKeyCheck == 1
+    DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "x64Win64VS2015 libraries location"
+    ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR\bin\x64Win64VS2015"
+  ${EndIf}
+  ReadRegStr $RegKeyCheck HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "i86Win32VS2015 libraries location"
+  ${If} $RegKeyCheck == 1
+    DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "i86Win32VS2015 libraries location"
+    ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR\bin\i86Win32VS2015"
+  ${EndIf}
+!macroend

@@ -1,0 +1,6 @@
+ [requires]
+ fast-cdr/1.0.23
+
+ [generators]
+ CMakeDeps
+ CMakeToolchain
