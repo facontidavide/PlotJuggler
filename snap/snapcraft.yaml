@@ -25,7 +25,6 @@ issues: https://github.com/facontidavide/plotjuggler/issues
 source-code: https://github.com/facontidavide/plotjuggler
 license: MPL-2.0
 
-grade: devel
 confinement: strict
 base: core20
 
