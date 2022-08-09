@@ -48,6 +48,8 @@ private:
 
   QCSVHighlighter _csvHighlighter;
 
+  FileLoadInfo* _fileInfo;
+
   QDialog* _dialog;
   Ui::DialogCSV* _ui;
 

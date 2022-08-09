@@ -405,6 +405,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   bool use_provided_configuration = false;
   multiple_columns_warning_ = true;
 
+  _fileInfo = info;
   _default_time_axis.clear();
 
   if (info->plugin_config.hasChildNodes())
@@ -476,6 +477,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
 
   std::vector<PlotData*> plots_vector;
   std::vector<StringSeries*> string_vector;
+  bool sortRequired = false;
 
   for (unsigned i = 0; i < column_names.size(); i++)
   {
@@ -516,9 +518,14 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   file.open(QFile::ReadOnly);
   QTextStream in(&file);
   // remove first line (header)
-  in.readLine();
-
+  QString header_str = in.readLine();
   QStringList string_items;
+  QStringList header_string_items;
+
+  SplitLine(header_str, _delimiter, header_string_items);
+  QString time_header_str;
+  QString t_str;
+  QString prev_t_str;
 
   while (!in.atEnd())
   {
@@ -533,14 +540,31 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
 
     if (string_items.size() != column_names.size())
     {
-      auto err_msg = QString("The number of values at line %1 is %2,\n"
+        QMessageBox msgBox;
+        msgBox.setWindowTitle(tr("Error reading file"));
+        msgBox.setText(tr("The number of values at line %1 is %2,\n"
                              "but the expected number of columns is %3.\n"
                              "Aborting...")
-                         .arg(linecount + 1)
+                         .arg(linecount + 2)
                          .arg(string_items.size())
-                         .arg(column_names.size());
+                         .arg(column_names.size()).arg(linecount+2).arg(t_str));
 
-      QMessageBox::warning(nullptr, "Error reading file", err_msg);
+        msgBox.setDetailedText(tr("File: \"%1\" \n\n"
+                        "Error reading file | Mismatched field count\n"
+                        "Delimiter: [%2]\n"
+                        "Header fields: %6\n"
+                        "Fields on line [%4]: %7\n\n"
+                        "File Preview:\n"
+                        "[1]%3\n"
+                        "[...]\n"
+                        "[%4]%5\n").arg(_fileInfo->filename).arg(_delimiter).arg(header_str).arg(linecount+2).arg(line).arg(column_names.size()).arg(string_items.size()));
+
+        QPushButton *abortButton = msgBox.addButton(QMessageBox::Ok);
+
+        msgBox.setIcon(QMessageBox::Warning);
+
+        msgBox.exec();
+
       return false;
     }
 
@@ -549,28 +573,67 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
     if (time_index >= 0)
     {
       bool is_number = false;
-      QString str = string_items[time_index];
-      t = ParseNumber(str, is_number);
+      t_str = string_items[time_index];
+      t = ParseNumber(t_str, is_number);
+      time_header_str = header_string_items[time_index];
 
       if (!is_number)
       {
-        QMessageBox::StandardButton reply;
-        reply = QMessageBox::warning(
-            nullptr, tr("Error reading file"),
-            tr("Couldn't parse timestamp with string \"%1\" . Aborting.\n").arg(str));
+        QMessageBox msgBox;
+        msgBox.setWindowTitle(tr("Error reading file"));
+        msgBox.setText(tr("Couldn't parse timestamp on line %1 with string \"%2\" . Aborting.\n").arg(linecount+1).arg(t_str));
+
+        msgBox.setDetailedText(tr("File: \"%1\" \n\n"
+                                "Error reading file | Couldn't parse timestamp\n"
+                                "Parsing format: [%4]\n"
+                               "Time at line %2 : [%3]\n").arg(_fileInfo->filename).arg(linecount + 1).arg(t_str).arg((parse_date_format && !format_string.isEmpty())? format_string: "None"));
+
+        QPushButton *abortButton = msgBox.addButton(QMessageBox::Ok);
+
+        msgBox.setIcon(QMessageBox::Warning);
+
+        msgBox.exec();
+
         return false;
       }
 
-      if (prev_time > t)
+      if (prev_time > t && !sortRequired)
       {
-        QMessageBox::StandardButton reply;
-        reply = QMessageBox::warning(nullptr, tr("Error reading file"),
-                                     tr("Selected time in not strictly monotonic. "
-                                        "Loading will be aborted\n"));
-        return false;
+        QMessageBox msgBox;
+        QString timeName;
+             timeName = time_header_str;
+
+        msgBox.setWindowTitle(tr("Selected time is not monotonic"));
+        msgBox.setText(tr("PlotJuggler detected that the time in this file is non-monotonic. This may indicate an issue with the input data. Continue? (Input file will not be modified but data will be sorted by PlotJuggler)"));
+        msgBox.setDetailedText(tr("File: \"%1\" \n\n"
+                                    "Selected time is not monotonic\n"
+                                    "Time Index: %6 [%7]\n"
+                                    "Time at line %2 : %3\n"
+                                    "Time at line %4 : %5").arg(_fileInfo->filename).arg(linecount + 1).arg(prev_t_str).arg(linecount + 2).arg(t_str).arg(time_index).arg(timeName));
+
+        QPushButton *sortButton = msgBox.addButton(tr("Continue"), QMessageBox::ActionRole);
+        QPushButton *abortButton = msgBox.addButton(QMessageBox::Abort);
+        msgBox.setIcon(QMessageBox::Warning);
+        msgBox.exec();
+
+        if(msgBox.clickedButton() == abortButton)
+        {
+            return false;
+        }
+        else if (msgBox.clickedButton() == sortButton)
+        {
+            sortRequired = true;
+        }
+        else
+        {
+            return false;
+        }
+
       }
 
       prev_time = t;
+      prev_t_str = t_str;
+
     }
 
     for (unsigned i = 0; i < string_items.size(); i++)
@@ -626,11 +689,11 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
     }
     if (is_numeric)
     {
-      plot_data.strings.erase(plot_data.strings.find(name));
+      plot_data.strings.erase(plot_data.strings.find(name));      
     }
     else
     {
-      plot_data.numeric.erase(plot_data.numeric.find(name));
+      plot_data.numeric.erase(plot_data.numeric.find(name));      
     }
   }
   return true;
