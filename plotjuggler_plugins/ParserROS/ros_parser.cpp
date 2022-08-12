@@ -37,6 +37,14 @@ bool ParserROS::parseMessage(const PJ::MessageRef serialized_msg, double &timest
   return true;
 }
 
+void ParserROS::setLargeArraysPolicy(bool clamp, unsigned max_size)
+{
+  auto policy = clamp ? RosMsgParser::Parser::KEEP_LARGE_ARRAYS :
+                        RosMsgParser::Parser::DISCARD_LARGE_ARRAYS;
+
+  _parser.setMaxArrayPolicy( policy, max_size );
+}
+
 //void ParserROS::appendRollPitchYaw(const RosMsgParser::FlatMessage &flat,
 //                                      double timestamp,
 //                                      PlotDataMapRef &plot_data)

@@ -15,6 +15,8 @@ public:
 
   bool parseMessage(const PJ::MessageRef serialized_msg, double& timestamp) override;
 
+  void setLargeArraysPolicy(bool clamp, unsigned max_size) override;
+
 protected:
   RosMsgParser::Parser _parser;
   std::shared_ptr<RosMsgParser::Deserializer> _deserializer;

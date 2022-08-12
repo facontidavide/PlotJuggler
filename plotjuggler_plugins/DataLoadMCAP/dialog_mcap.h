@@ -18,7 +18,7 @@ public:
   struct Params
   {
     QStringList selected_topics;
-    int max_array_size;
+    unsigned max_array_size;
     bool clamp_large_arrays;
   };
 

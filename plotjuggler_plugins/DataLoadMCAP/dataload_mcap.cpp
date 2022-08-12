@@ -121,6 +121,9 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
 
   for (const auto& [channel_id, parser] : parsers_by_channel)
   {
+    parser->setLargeArraysPolicy(dialog_params.clamp_large_arrays,
+                                 dialog_params.max_array_size);
+
     QString topic_name = QString::fromStdString(channels[channel_id]->topic);
     if( dialog_params.selected_topics.contains(topic_name) )
     {

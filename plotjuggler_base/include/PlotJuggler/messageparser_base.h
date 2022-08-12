@@ -89,6 +89,12 @@ public:
 
   virtual bool parseMessage(const MessageRef serialized_msg, double& timestamp) = 0;
 
+  // Decide what to do if an array is particularly large (size > max_size):
+  //
+  // if clamp == true, then keep the first max_size elements,
+  // otherwise, skip the entire array.
+  virtual void setLargeArraysPolicy(bool clamp, unsigned max_size) {}
+
 protected:
   PlotDataMapRef& _plot_data;
   std::string _topic_name;
