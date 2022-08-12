@@ -15,8 +15,9 @@ endif()
 
 if(Zstd_FOUND)
 
-    include_directories(  ../
+    include_directories(
         ${Zstd_INCLUDE_DIRS}
+        lz4
         )
 
     add_subdirectory(lz4)

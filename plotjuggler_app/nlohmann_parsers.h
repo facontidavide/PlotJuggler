@@ -119,12 +119,9 @@ public:
   MessageParserPtr createParserImpl(const std::string& topic_name,
                                     PlotDataMapRef& data)
   {
-    {
-      std::string timestamp_name = _checkbox_use_timestamp->lineedit->text().toStdString();
-      return std::make_shared<ParserT>(
-        topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
-    }
-    return ParserFactoryPlugin::createParser(topic_name, {}, {}, data);
+    std::string timestamp_name = _checkbox_use_timestamp->lineedit->text().toStdString();
+    return std::make_shared<ParserT>(
+      topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
   }
 
   virtual QWidget* optionsWidget()
