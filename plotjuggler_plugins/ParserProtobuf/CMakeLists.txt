@@ -17,6 +17,7 @@ if( Protobuf_FOUND)
     add_library(ProtobufParser SHARED
         error_collectors.cpp
         protobuf_parser.cpp
+        protobuf_factory.cpp
         protobuf_parser.h
         ${UI_SRC}  )
 
