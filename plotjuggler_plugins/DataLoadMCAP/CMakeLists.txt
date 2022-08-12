@@ -1,33 +1,25 @@
 
 if(BUILDING_WITH_CONAN)
 
-    find_package(lz4 CONFIG REQUIRED)
     find_package(zstd CONFIG REQUIRED)
+    set(Zstd_LIBRARIES zstd::libzstd_static)
+    set(Zstd_FOUND ON)
 
-    set(MCAP_DEPENDENCIES
-        lz4::lz4
-        zstd::libzstd_static)
-
-    set(MCAP_DEPENDENCIES_FOUND ON)
 else()
 
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-    find_package(LZ4 QUIET)
     find_package(Zstd QUIET)
 
-    if(LZ4_FOUND AND Zstd_FOUND)
-        set(MCAP_DEPENDENCIES_FOUND ON)
-
-        set(MCAP_DEPENDENCIES
-            ${Zstd_LIBRARIES}
-            ${LZ4_LIBRARIES})
-    endif()
 endif()
 ###########################################
 
-if(MCAP_DEPENDENCIES_FOUND)
+if(Zstd_FOUND)
 
-    include_directories(  ../ )
+    include_directories(  ../
+        ${Zstd_INCLUDE_DIRS}
+        )
+
+    add_subdirectory(lz4)
 
     add_definitions(${QT_DEFINITIONS})
     add_definitions(-DQT_PLUGIN)
@@ -44,11 +36,12 @@ if(MCAP_DEPENDENCIES_FOUND)
     target_link_libraries(DataLoadMCAP
         ${Qt5Widgets_LIBRARIES}
         ${Qt5Xml_LIBRARIES}
-        ${MCAP_DEPENDENCIES}
+        ${Zstd_LIBRARIES}
+        lz4_static
         plotjuggler_base )
 
     install(TARGETS DataLoadMCAP DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
 
 else()
-    message("MCAP dependencies not found")
+    message("MCAP dependencies (Zstd) not found")
 endif()
