@@ -547,7 +547,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
                              "Aborting...")
                          .arg(linecount + 2)
                          .arg(string_items.size())
-                         .arg(column_names.size()).arg(linecount+2).arg(t_str));
+                         .arg(column_names.size()));
 
         msgBox.setDetailedText(tr("File: \"%1\" \n\n"
                         "Error reading file | Mismatched field count\n"
