@@ -115,6 +115,18 @@ public:
     _checkbox_use_timestamp = new QCheckBoxClose("use field as timestamp if available");
   }
 
+  template <typename ParserT>
+  MessageParserPtr createParserImpl(const std::string& topic_name,
+                                    PlotDataMapRef& data)
+  {
+    {
+      std::string timestamp_name = _checkbox_use_timestamp->lineedit->text().toStdString();
+      return std::make_shared<ParserT>(
+        topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
+    }
+    return ParserFactoryPlugin::createParser(topic_name, {}, {}, data);
+  }
+
   virtual QWidget* optionsWidget()
   {
     return _checkbox_use_timestamp;
@@ -128,12 +140,11 @@ class JSON_ParserFactory : public NlohmannParserCreator
 {
 public:
   MessageParserPtr createParser(const std::string& topic_name,
-                                const std::string&,
+                                const std::string& /*type_name*/,
+                                const std::string& /*schema*/,
                                 PlotDataMapRef& data) override
   {
-    std::string timestamp_name = _checkbox_use_timestamp->lineedit->text().toStdString();
-    return std::make_shared<JSON_Parser>(
-      topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
+    return createParserImpl<JSON_Parser>(topic_name, data);
   }
   const char* name() const override
   {
@@ -150,11 +161,10 @@ class CBOR_ParserFactory : public NlohmannParserCreator
 public:
   MessageParserPtr createParser(const std::string& topic_name,
                                 const std::string&,
+                                const std::string&,
                                 PlotDataMapRef& data) override
   {
-    std::string timestamp_name = _checkbox_use_timestamp->lineedit->text().toStdString();
-    return std::make_shared<CBOR_Parser>(
-      topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
+    return createParserImpl<CBOR_Parser>(topic_name, data);
   }
   const char* name() const override
   {
@@ -171,11 +181,10 @@ class BSON_ParserFactory : public NlohmannParserCreator
 public:
   MessageParserPtr createParser(const std::string& topic_name,
                                 const std::string&,
+                                const std::string&,
                                 PlotDataMapRef& data) override
   {
-    std::string timestamp_name = _checkbox_use_timestamp->lineedit->text().toStdString();
-    return std::make_shared<BSON_Parser>(
-      topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
+    return createParserImpl<BSON_Parser>(topic_name, data);
   }
   const char* name() const override
   {
@@ -192,11 +201,10 @@ class MessagePack_ParserFactory : public NlohmannParserCreator
 public:
   MessageParserPtr createParser(const std::string& topic_name,
                                 const std::string& ,
+                                const std::string& ,
                                 PlotDataMapRef& data) override
   {
-    std::string timestamp_name = _checkbox_use_timestamp->lineedit->text().toStdString();
-    return std::make_shared<MessagePack_Parser>(
-      topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
+    return createParserImpl<MessagePack_Parser>(topic_name, data);
   }
   const char* name() const override
   {

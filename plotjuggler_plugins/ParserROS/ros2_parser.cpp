@@ -7,6 +7,7 @@
 
 
 MessageParserPtr ParserFactoryROS2::createParser(const std::string& topic_name,
+                                                 const std::string &type_name,
                                                  const std::string& schema,
                                                  PlotDataMapRef& data)
 {
@@ -16,6 +17,7 @@ MessageParserPtr ParserFactoryROS2::createParser(const std::string& topic_name,
   }
 
   return std::make_shared<ParserROS>(topic_name,
+                                     type_name,
                                      schema,
                                      new RosMsgParser::ROS2_Deserializer,
                                      data);

@@ -136,7 +136,7 @@ bool WebsocketServer::start(QStringList*)
   protocol = dialog->ui->comboBoxProtocol->currentText();
   dialog->deleteLater();
 
-  _parser = parser_creator->createParser({}, {}, dataMap());
+  _parser = parser_creator->createParser({}, {}, {}, dataMap());
 
   // save back to service
   settings.setValue("WebsocketServer::protocol", protocol);

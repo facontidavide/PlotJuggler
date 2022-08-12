@@ -29,6 +29,7 @@ public:
   }
 
   MessageParserPtr createParser(const std::string& topic_name,
+                                const std::string& type_name,
                                 const std::string& schema,
                                 PlotDataMapRef& data) override;
 };

@@ -111,7 +111,7 @@ bool DataStreamZMQ::start(QStringList*)
   port = dialog->ui->lineEditPort->text().toUShort(&ok);
   protocol = dialog->ui->comboBoxProtocol->currentText();
 
-  _parser = parser_creator->createParser({}, {}, dataMap());
+  _parser = parser_creator->createParser({}, {}, {}, dataMap());
 
   // save back to service
   settings.setValue("ZMQ_Subscriber::address", address);

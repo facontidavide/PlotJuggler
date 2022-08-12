@@ -3,11 +3,12 @@
 using namespace PJ;
 
 ParserROS::ParserROS(const std::string& topic_name,
+                     const std::string &type_name,
                      const std::string& schema,
                      RosMsgParser::Deserializer* deserializer,
                      PlotDataMapRef& data)
   : MessageParser(topic_name, data)
-  ,_parser(topic_name, {}, schema)
+  ,_parser(topic_name, type_name, schema)
   ,_deserializer(deserializer)
 {
 }

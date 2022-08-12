@@ -67,16 +67,14 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
     std::string definition(reinterpret_cast<const char*>(schema->data.data()),
                            schema->data.size());
 
-    std::string type_name = QString::fromStdString(schema->name).replace("/msg/", "/").toStdString();
-    std::string schema_str = fmt::format("MSG: {}\n{}", type_name, definition);
+    QString encoding = QString::fromStdString(recordPtr->messageEncoding);
 
-    QString encoding_A = QString::fromStdString(recordPtr->messageEncoding);
-    QString encoding_B = QString::fromStdString(schema->encoding);
-    auto it = parserFactories()->find( encoding_A );
+    auto it = parserFactories()->find( encoding );
 
     if(it == parserFactories()->end() )
     {
-      it = parserFactories()->find( encoding_B );
+      encoding = QString::fromStdString(schema->encoding);
+      it = parserFactories()->find( encoding );
     }
 
     if(it == parserFactories()->end() )
@@ -86,8 +84,13 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
                     schema->encoding, recordPtr->messageEncoding) );
     }
 
+    std::string type_name = QString::fromStdString(schema->name).replace("/msg/", "/").toStdString();
+
     auto& parser_factory = it->second;
-    auto parser = parser_factory->createParser(topic_name, schema_str, plot_data);
+    auto parser = parser_factory->createParser(topic_name,
+                                               type_name,
+                                               definition,
+                                               plot_data);
 
     parsers_by_channel.insert( {recordPtr->id, parser} );
   };

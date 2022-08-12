@@ -5,6 +5,7 @@
 #include "PlotJuggler/fmt/format.h"
 
 MessageParserPtr ParserFactoryROS1::createParser(const std::string& topic_name,
+                                                 const std::string &type_name,
                                                  const std::string& schema,
                                                  PlotDataMapRef& data)
 {
@@ -14,6 +15,7 @@ MessageParserPtr ParserFactoryROS1::createParser(const std::string& topic_name,
   }
 
   return std::make_shared<ParserROS>(topic_name,
+                                     type_name,
                                      schema,
                                      new RosMsgParser::ROS_Deserializer(),
                                      data);

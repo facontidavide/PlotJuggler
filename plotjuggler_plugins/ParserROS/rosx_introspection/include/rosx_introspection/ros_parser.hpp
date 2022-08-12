@@ -60,7 +60,9 @@ public:
    *                       - rosbag::MessageInstance::getMessageDefinition()
    *                       - ros::message_traits::Definition< __your_type__ >::value()
    * */
-  Parser(const std::string& topic_name, const ROSType& msg_type, const std::string& definition);
+  Parser(const std::string& topic_name,
+         const ROSType& msg_type,
+         const std::string& definition);
 
   enum MaxArrayPolicy: bool {
     DISCARD_LARGE_ARRAYS = true,

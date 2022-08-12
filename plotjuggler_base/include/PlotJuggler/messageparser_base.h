@@ -119,6 +119,7 @@ public:
   // create an instance of MessageParser, already configured to
   // decode a specific schema.
   virtual MessageParserPtr createParser(const std::string& topic_name,
+                                        const std::string& type_name,
                                         const std::string& schema,
                                         PlotDataMapRef& data) = 0;
 };
