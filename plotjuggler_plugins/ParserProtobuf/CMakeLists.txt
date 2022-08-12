@@ -15,6 +15,7 @@ if( Protobuf_FOUND)
     include_directories(${Protobuf_INCLUDE_DIRS})
 
     add_library(ProtobufParser SHARED
+        error_collectors.cpp
         protobuf_parser.cpp
         protobuf_parser.h
         ${UI_SRC}  )

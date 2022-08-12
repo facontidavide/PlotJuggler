@@ -13,7 +13,7 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg,
                                   double &timestamp)
 {
   const google::protobuf::Message* prototype_msg =
-      _msg_factory.GetPrototype(_msg_descriptor);
+    _msg_factory.GetPrototype(_msg_descriptor);
 
   google::protobuf::Message* mutable_msg = prototype_msg->New();
   if (!mutable_msg->ParseFromArray(serialized_msg.data(),
@@ -28,16 +28,16 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg,
   {
     const Reflection* reflection = msg.GetReflection();
     const Descriptor* descriptor = msg.GetDescriptor();
-//    std::vector<const FieldDescriptor*> reflection_fields;
-//    reflection->ListFields(msg, &reflection_fields);
+    //    std::vector<const FieldDescriptor*> reflection_fields;
+    //    reflection->ListFields(msg, &reflection_fields);
 
     for (int index=0; index < descriptor->field_count(); index++)
     {
       auto field = descriptor->field(index);
 
       std::string key = prefix.empty() ?
-                            field->name():
-                            fmt::format("{}/{}", prefix, field->name() );
+                          field->name():
+                          fmt::format("{}/{}", prefix, field->name() );
       std::string suffix;
 
       if (!field)
@@ -194,12 +194,19 @@ void ParserFactoryProtobuf::importFile(QString filename)
   _source_tree.MapPath("", file_basename.toStdString());
   _source_tree.MapPath("", fileinfo.absolutePath().toStdString());
 
-  _importer.reset( new Importer(&_source_tree, &_error_collector) );
+  FileErrorCollector error_collector;
+
+  _importer.reset( new Importer(&_source_tree, &error_collector) );
   info.file_descriptor = _importer->Import(file_basename.toStdString());
 
   if( !info.file_descriptor )
   {
-    _error_collector.showErrors();
+    if(error_collector.errors().size() > 0)
+    {
+      QMessageBox::warning(nullptr, "Error parsing Proto file",
+                           error_collector.errors().front(),
+                           QMessageBox::Cancel);
+    }
     return;
   }
 
@@ -265,15 +272,64 @@ MessageParserPtr ParserFactoryProtobuf::createParser(const std::string& topic_na
                                                      const std::string& schema,
                                                      PlotDataMapRef& data)
 {
-  onComboChanged(ui->comboBox->currentText());
-  return std::make_shared<ProtobufParser>(topic_name, data, _selected_descriptor);
+  QString descriptor_name = type_name.empty() ?
+                              ui->comboBox->currentText() :
+                              QString::fromStdString(type_name);
+  if( schema.empty() )
+  {
+    auto descr_it = _loaded_file.descriptors.find(descriptor_name);
+    if( descr_it == _loaded_file.descriptors.end())
+    {
+      throw std::runtime_error("ParserFactoryProtobuf: can't find the descriptor");
+    }
+    auto selected_descriptor = descr_it->second;
+    return std::make_shared<ProtobufParser>(topic_name, data, selected_descriptor);
+  }
+  else
+  {
+    ArrayInputStream raw_input(schema.data(), schema.size());
+    IoErrorCollector error_collector;
+    Tokenizer input(&raw_input, &error_collector);
+
+    if( error_collector.errors().size() > 0 )
+    {
+      throw std::runtime_error(error_collector.errors().front().toStdString());
+    }
+
+    FileDescriptorProto file_desc_proto;
+    Parser parser;
+    if (!parser.Parse(&input, &file_desc_proto))
+    {
+      throw std::runtime_error("Failed to parse the proto schema");
+    }
+    if (!file_desc_proto.has_name())
+    {
+      file_desc_proto.set_name(type_name);
+    }
+
+    google::protobuf::DescriptorPool pool;
+    auto file_desc = pool.BuildFile(file_desc_proto);
+    if (file_desc == nullptr)
+    {
+      throw std::runtime_error("Cannot get file descriptor from file descriptor proto");
+    }
+
+    // As a .proto definition can contain more than one message Type,
+    // select the message type that we are interested in
+    auto descriptor = file_desc->FindMessageTypeByName(type_name);
+    if (descriptor == nullptr)
+    {
+      throw std::runtime_error("Cannot get message descriptor");
+    }
+    return std::make_shared<ProtobufParser>(topic_name, data, descriptor);
+  }
 }
 
 void ParserFactoryProtobuf::onIncludeDirectory()
 {
   QSettings settings;
   QString directory_path =
-      settings.value("ProtobufParserCreator.loadDirectory", QDir::currentPath()).toString();
+    settings.value("ProtobufParserCreator.loadDirectory", QDir::currentPath()).toString();
 
   QString dirname = QFileDialog::getExistingDirectory(_widget, tr("Load StyleSheet"), directory_path);
   if (dirname.isEmpty())
@@ -293,10 +349,10 @@ void ParserFactoryProtobuf::onLoadFile()
   QSettings settings;
 
   QString directory_path =
-      settings.value("ProtobufParserCreator.loadDirectory", QDir::currentPath()).toString();
+    settings.value("ProtobufParserCreator.loadDirectory", QDir::currentPath()).toString();
 
   QString filename = QFileDialog::getOpenFileName(_widget, tr("Load StyleSheet"),
-                                                   directory_path, tr("(*.proto)"));
+                                                  directory_path, tr("(*.proto)"));
   if (filename.isEmpty())
   {
     return;
@@ -330,35 +386,8 @@ void ParserFactoryProtobuf::onComboChanged(const QString& text)
   auto descr_it = _loaded_file.descriptors.find(text);
   if( descr_it != _loaded_file.descriptors.end())
   {
-    _selected_descriptor = descr_it->second;
     QSettings settings;
     settings.setValue("ProtobufParserCreator.lastType", text);
   }
 }
 
-void ProtoErrorCollector::AddError(const std::string &filename, int line, int, const std::string &message)
-{
-  auto msg = QString("Error parsing file: \"%1\"\n"
-                     "Line: %2\n"
-                     "Message: %3\n\n")
-      .arg(QString::fromStdString(filename))
-      .arg(line)
-      .arg(QString::fromStdString(message));
-
-  _error_msg.append(msg);
-}
-
-void ProtoErrorCollector::AddWarning(const std::string &filename, int line, int, const std::string &message)
-{
-  auto msg = QString("Warning [%1] line %2: %3")
-      .arg(QString::fromStdString(filename))
-      .arg(line)
-      .arg(QString::fromStdString(message));
-  qDebug() << msg;
-}
-
-void ProtoErrorCollector::showErrors()
-{
-  QMessageBox::warning(nullptr, "Error parsing Proto file", _error_msg, QMessageBox::Cancel);
-  _error_msg.clear();
-}

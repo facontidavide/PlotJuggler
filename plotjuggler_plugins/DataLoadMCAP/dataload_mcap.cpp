@@ -67,6 +67,8 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
     std::string definition(reinterpret_cast<const char*>(schema->data.data()),
                            schema->data.size());
 
+    std::cout << definition << std::endl;
+
     QString encoding = QString::fromStdString(recordPtr->messageEncoding);
 
     auto it = parserFactories()->find( encoding );
@@ -84,14 +86,11 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
                     schema->encoding, recordPtr->messageEncoding) );
     }
 
-    std::string type_name = QString::fromStdString(schema->name).replace("/msg/", "/").toStdString();
-
     auto& parser_factory = it->second;
     auto parser = parser_factory->createParser(topic_name,
-                                               type_name,
+                                               schema->name,
                                                definition,
                                                plot_data);
-
     parsers_by_channel.insert( {recordPtr->id, parser} );
   };
 

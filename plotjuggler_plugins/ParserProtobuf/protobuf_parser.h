@@ -15,20 +15,9 @@
 #include <string>
 
 #include "ui_protobuf_parser.h"
+#include "error_collectors.h"
 
 using namespace PJ;
-
-class ProtoErrorCollector: public google::protobuf::compiler::MultiFileErrorCollector
-{
-public:
-  void AddError(const std::string& filename, int line, int, const std::string& message) override;
-
-  void AddWarning(const std::string& filename, int line, int, const std::string& message) override;
-
-  void showErrors();
-private:
-  QString _error_msg;
-};
 
 class ProtobufParser : public MessageParser
 {
@@ -86,7 +75,6 @@ protected:
   QWidget* _widget;
 
   google::protobuf::compiler::DiskSourceTree _source_tree;
-  ProtoErrorCollector _error_collector;
   std::unique_ptr<google::protobuf::compiler::Importer> _importer;
 
   struct Info
@@ -97,8 +85,6 @@ protected:
     std::map<QString,const google::protobuf::Descriptor*> descriptors;
   };
   Info _loaded_file;
-
-  const google::protobuf::Descriptor* _selected_descriptor = nullptr;
 
   bool updateUI();
 
