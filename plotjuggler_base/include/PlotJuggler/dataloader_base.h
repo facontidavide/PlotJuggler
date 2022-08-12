@@ -46,6 +46,19 @@ public:
 
   virtual bool readDataFromFile(FileLoadInfo* fileload_info,
                                 PlotDataMapRef& destination) = 0;
+
+  void setParserFactories(ParserFactories *parsers)
+  {
+    _parser_factories = parsers;
+  }
+
+  const ParserFactories* parserFactories() const
+  {
+    return _parser_factories;
+  }
+
+private:
+  ParserFactories* _parser_factories = nullptr;
 };
 
 using DataLoaderPtr = std::shared_ptr<DataLoader>;

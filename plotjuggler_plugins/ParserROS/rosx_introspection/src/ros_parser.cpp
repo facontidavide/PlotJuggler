@@ -38,11 +38,10 @@ Parser::Parser(const std::string &topic_name,
                const std::string &definition)
   : _global_warnings(&std::cerr)
   , _topic_name(topic_name)
-  , _msg_type(msg_type)
   , _discard_large_array(DISCARD_LARGE_ARRAYS)
   , _max_array_size(100)
   , _blob_policy(STORE_BLOB_AS_COPY)
-  , _dummy_root_field( new ROSField(_msg_type, topic_name) )
+  , _dummy_root_field( new ROSField(msg_type, topic_name) )
 {
   auto parsed_msgs = ParseMessageDefinitions(definition, msg_type);
   _schema = BuildMessageSchema(topic_name, parsed_msgs);

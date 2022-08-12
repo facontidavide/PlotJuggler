@@ -87,11 +87,11 @@ public:
 
 protected:
 
-  BuiltinType _id;
+  BuiltinType _id = OTHER;
   std::string _base_name;
   std::string_view _msg_name;
   std::string_view _pkg_name;
-  size_t _hash;
+  size_t _hash = 0;
 
 };
 

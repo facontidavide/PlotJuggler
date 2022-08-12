@@ -33,24 +33,35 @@ namespace PJ
 class MessageRef
 {
 public:
-  explicit MessageRef(uint8_t* first_ptr, size_t size)
-    : _first_ptr(first_ptr), _size(size)
+  explicit MessageRef(const uint8_t* first_ptr, size_t size)
+    : _ptr(first_ptr), _size(size)
   {
   }
 
-  explicit MessageRef(std::vector<uint8_t>& vect)
-    : _first_ptr(vect.data()), _size(vect.size())
+  explicit MessageRef(const std::byte* first_ptr, size_t size)
+    : _ptr(reinterpret_cast<const uint8_t*>(first_ptr)), _size(size)
+  {
+  }
+
+  explicit MessageRef(const int8_t* first_ptr, size_t size)
+    : _ptr(reinterpret_cast<const uint8_t*>(first_ptr)), _size(size)
+  {
+  }
+
+  template <typename T>
+  explicit MessageRef(const std::vector<T>& vect)
+    : MessageRef(vect.data(), vect.size())
   {
   }
 
   const uint8_t* data() const
   {
-    return _first_ptr;
+    return _ptr;
   }
 
-  uint8_t* data()
+  uint8_t* data() // this is bad and will be removed
   {
-    return _first_ptr;
+    return const_cast<uint8_t*>(_ptr);
   }
 
   size_t size() const
@@ -59,17 +70,13 @@ public:
   }
 
 private:
-  uint8_t* _first_ptr;
-  size_t _size;
+  const uint8_t* _ptr = nullptr;
+  size_t _size = 0;
 };
 
 /**
- * @brief The MessageParser is the base class to create plugins that are able to parse one
- * or multiple Message types. Each message type is uniquely identified by a MessageKey
- * (128 bits, sufficiently large to hold a MD5Sum identifier).
- *
- * You push one or more raw messages using the method pushMessageRef()
- * Once you have done, the result can be copied using plotData()
+ * @brief The MessageParser is the base class used to parse
+ * a message with a specific encoding+schema.
  */
 class MessageParser
 {
@@ -100,19 +107,28 @@ protected:
 using MessageParserPtr = std::shared_ptr<MessageParser>;
 
 //------------- This is the actual plugin interface --------------
-class MessageParserCreator : public PlotJugglerPlugin
+class ParserFactoryPlugin : public PlotJugglerPlugin
 {
 public:
-  virtual MessageParserPtr createInstance(const std::string& topic_name,
-                                          PlotDataMapRef& data) = 0;
-};
-//----------------------------------------------------------------
+  using Ptr = std::shared_ptr<ParserFactoryPlugin>;
 
-using MessageParserFactory = std::map<QString, std::shared_ptr<MessageParserCreator>>;
+  // provide an identifier of the provided encoding.
+  // example "ros1", "ros2", "json", "protobuf", etc.
+  virtual const char* encoding() const = 0;
+
+  // create an instance of MessageParser, already configured to
+  // decode a specific schema.
+  virtual MessageParserPtr createParser(const std::string& topic_name,
+                                        const std::string& schema,
+                                        PlotDataMapRef& data) = 0;
+};
+
+using ParserFactories = std::map<QString, std::shared_ptr<ParserFactoryPlugin>>;
+
 
 }  // namespace PJ
 
 QT_BEGIN_NAMESPACE
-#define MessageParserCreator_iid "facontidavide.PlotJuggler3.MessageParserCreator"
-Q_DECLARE_INTERFACE(PJ::MessageParserCreator, MessageParserCreator_iid)
+#define ParserFactoryPlugin_iid "facontidavide.PlotJuggler3.ParserFactoryPlugin"
+Q_DECLARE_INTERFACE(PJ::ParserFactoryPlugin, ParserFactoryPlugin_iid)
 QT_END_NAMESPACE

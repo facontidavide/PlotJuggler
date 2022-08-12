@@ -50,30 +50,29 @@ protected:
 
 //------------------------------------------
 
-class ProtobufParserCreator : public MessageParserCreator
+class ParserFactoryProtobuf : public ParserFactoryPlugin
 {
   Q_OBJECT
-  Q_PLUGIN_METADATA(IID "facontidavide.PlotJuggler3.MessageParserCreator")
-  Q_INTERFACES(PJ::MessageParserCreator)
-
-  void loadSettings();
-
-  void saveSettings();
-
-  void importFile(QString filename);
+  Q_PLUGIN_METADATA(IID "facontidavide.PlotJuggler3.ParserFactoryPlugin")
+  Q_INTERFACES(PJ::ParserFactoryPlugin)
 
 public:
-  ProtobufParserCreator();
+  ParserFactoryProtobuf();
 
-  ~ProtobufParserCreator() override;
+  ~ParserFactoryProtobuf() override;
 
   const char* name() const override
   {
-    return "ProtobufParser";
+    return "ParserFactoryProtobuf";
+  }
+  const char* encoding() const override
+  {
+    return "protobuf";
   }
 
-  MessageParserPtr createInstance(const std::string& topic_name,
-                                  PlotDataMapRef& data) override;
+  MessageParserPtr createParser(const std::string& topic_name,
+                                const std::string& schema,
+                                PlotDataMapRef& data) override;
 
   QWidget* optionsWidget() override
   {
@@ -101,6 +100,12 @@ protected:
   const google::protobuf::Descriptor* _selected_descriptor = nullptr;
 
   bool updateUI();
+
+  void loadSettings();
+
+  void saveSettings();
+
+  void importFile(QString filename);
 
 private slots:
 

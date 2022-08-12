@@ -84,20 +84,32 @@ std::vector<std::string> SplitMultipleMessageDefinitions(const std::string &mult
 
 std::vector<ROSMessage::Ptr> ParseMessageDefinitions(
   const std::string& multi_def,
-  const ROSType& type )
+  const ROSType& root_type )
 {
   auto parts = SplitMultipleMessageDefinitions(multi_def);
   std::vector<ROSType> known_type;
   std::vector<ROSMessage::Ptr> parsed_msgs;
+
+  const ROSType no_type;
 
   // iterating in reverse to fill known_type in the right order
   // i.e. with no missing dependencies
   for( int i = parts.size()-1; i>=0; i--)
   {
     auto msg = std::make_shared<ROSMessage>(parts[i]);
+
     if( i == 0 )
     {
-      msg->setType( type );
+      // type NOT found in the definition, but provided as argument
+      if( msg->type() == no_type && root_type != no_type )
+      {
+        msg->setType( root_type );
+      }
+      else if (msg->type() == no_type && root_type == no_type)
+      {
+        std::cout << multi_def << std::endl;
+        throw std::runtime_error("Message type unspecified");
+      }
     }
 
     // adjust types with undefined package type

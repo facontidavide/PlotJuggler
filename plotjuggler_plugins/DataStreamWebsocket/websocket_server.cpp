@@ -73,7 +73,7 @@ bool WebsocketServer::start(QStringList*)
     return _running;
   }
 
-  if (!availableParsers())
+  if (parserFactories() == nullptr || parserFactories()->empty())
   {
     QMessageBox::warning(nullptr, tr("Websocket Server"),
                          tr("No available MessageParsers"), QMessageBox::Ok);
@@ -85,7 +85,7 @@ bool WebsocketServer::start(QStringList*)
 
   WebsocketDialog* dialog = new WebsocketDialog();
 
-  for (const auto& it : *availableParsers())
+  for (const auto& it : *parserFactories())
   {
     dialog->ui->comboBoxProtocol->addItem(it.first);
 
@@ -103,7 +103,7 @@ bool WebsocketServer::start(QStringList*)
 
   dialog->ui->lineEditPort->setText(QString::number(port));
 
-  std::shared_ptr<MessageParserCreator> parser_creator;
+  ParserFactoryPlugin::Ptr parser_creator;
 
   connect(dialog->ui->comboBoxProtocol,
           qOverload<const QString &>(&QComboBox::currentIndexChanged),
@@ -115,7 +115,7 @@ bool WebsocketServer::start(QStringList*)
                 prev_widget->setVisible(false);
               }
             }
-            parser_creator = availableParsers()->at(selected_protocol);
+            parser_creator = parserFactories()->at(selected_protocol);
 
             if (auto widget = parser_creator->optionsWidget())
             {
@@ -136,7 +136,7 @@ bool WebsocketServer::start(QStringList*)
   protocol = dialog->ui->comboBoxProtocol->currentText();
   dialog->deleteLater();
 
-  _parser = parser_creator->createInstance({}, dataMap());
+  _parser = parser_creator->createParser({}, {}, dataMap());
 
   // save back to service
   settings.setValue("WebsocketServer::protocol", protocol);

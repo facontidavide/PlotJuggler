@@ -15,6 +15,7 @@
 
 namespace PJ
 {
+
 /**
  * @brief The PlotJugglerPlugin is the base class of all the plugins.
  */
@@ -67,6 +68,7 @@ public:
     static std::vector<QAction*> empty;
     return empty;
   }
+
 };
 
 }  // namespace PJ

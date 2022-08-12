@@ -167,7 +167,6 @@ private:
   std::ostream* _global_warnings;
 
   std::string _topic_name;
-  ROSType _msg_type;
 
   std::vector<int> _alias_array_pos;
   std::vector<std::string> _formatted_string;

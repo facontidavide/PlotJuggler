@@ -85,6 +85,7 @@ public:
 #include <QGroupBox>
 #include <QVBoxLayout>
 #include <QLineEdit>
+
 class QCheckBoxClose : public QGroupBox
 {
 public:
@@ -106,7 +107,7 @@ public:
   }
 };
 
-class NlohmannParserCreator : public MessageParserCreator
+class NlohmannParserCreator : public ParserFactoryPlugin
 {
 public:
   NlohmannParserCreator()
@@ -123,67 +124,87 @@ protected:
   QCheckBoxClose* _checkbox_use_timestamp;
 };
 
-class JSON_ParserCreator : public NlohmannParserCreator
+class JSON_ParserFactory : public NlohmannParserCreator
 {
 public:
-  MessageParserPtr createInstance(const std::string& topic_name,
-                                  PlotDataMapRef& data) override
+  MessageParserPtr createParser(const std::string& topic_name,
+                                const std::string&,
+                                PlotDataMapRef& data) override
   {
     std::string timestamp_name = _checkbox_use_timestamp->lineedit->text().toStdString();
     return std::make_shared<JSON_Parser>(
-        topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
+      topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
   }
   const char* name() const override
   {
-    return "JSON";
+    return "JSON_ParserFactory";
+  }
+  const char* encoding() const override
+  {
+    return "json";
   }
 };
 
-class CBOR_ParserCreator : public NlohmannParserCreator
+class CBOR_ParserFactory : public NlohmannParserCreator
 {
 public:
-  MessageParserPtr createInstance(const std::string& topic_name,
-                                  PlotDataMapRef& data) override
+  MessageParserPtr createParser(const std::string& topic_name,
+                                const std::string&,
+                                PlotDataMapRef& data) override
   {
     std::string timestamp_name = _checkbox_use_timestamp->lineedit->text().toStdString();
     return std::make_shared<CBOR_Parser>(
-        topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
+      topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
   }
   const char* name() const override
   {
-    return "CBOR";
+    return "CBOR_ParserFactory";
+  }
+  const char* encoding() const override
+  {
+    return "cbor";
   }
 };
 
-class BSON_ParserCreator : public NlohmannParserCreator
+class BSON_ParserFactory : public NlohmannParserCreator
 {
 public:
-  MessageParserPtr createInstance(const std::string& topic_name,
-                                  PlotDataMapRef& data) override
+  MessageParserPtr createParser(const std::string& topic_name,
+                                const std::string&,
+                                PlotDataMapRef& data) override
   {
     std::string timestamp_name = _checkbox_use_timestamp->lineedit->text().toStdString();
     return std::make_shared<BSON_Parser>(
-        topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
+      topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
   }
   const char* name() const override
   {
-    return "BSON";
+    return "BSON_ParserFactory";
+  }
+  const char* encoding() const override
+  {
+    return "bson";
   }
 };
 
-class MessagePack_ParserCreator : public NlohmannParserCreator
+class MessagePack_ParserFactory : public NlohmannParserCreator
 {
 public:
-  MessageParserPtr createInstance(const std::string& topic_name,
-                                  PlotDataMapRef& data) override
+  MessageParserPtr createParser(const std::string& topic_name,
+                                const std::string& ,
+                                PlotDataMapRef& data) override
   {
     std::string timestamp_name = _checkbox_use_timestamp->lineedit->text().toStdString();
     return std::make_shared<MessagePack_Parser>(
-        topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
+      topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
   }
   const char* name() const override
   {
-    return "MessagePack";
+    return "MessagePack_ParserFactory";
+  }
+  const char* encoding() const override
+  {
+    return "msgpack";
   }
 };
 

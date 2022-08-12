@@ -128,7 +128,7 @@ private:
 
   QString _default_streamer;
 
-  std::shared_ptr<MessageParserFactory> _message_parser_factory;
+  ParserFactories _parser_factories;
 
   std::shared_ptr<DataStreamer> _active_streamer_plugin;
 

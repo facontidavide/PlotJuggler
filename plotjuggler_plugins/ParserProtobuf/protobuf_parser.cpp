@@ -142,7 +142,7 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg,
   return true;
 }
 
-ProtobufParserCreator::ProtobufParserCreator()
+ParserFactoryProtobuf::ParserFactoryProtobuf()
 {
   _widget = new QWidget(nullptr);
   ui = new Ui::ProtobufLoader;
@@ -157,9 +157,9 @@ ProtobufParserCreator::ProtobufParserCreator()
   QString theme = settings.value("Preferences::theme", "light").toString();
   ui->pushButtonRemove->setIcon(LoadSvg(":/resources/svg/trash.svg", theme));
 
-  connect( ui->pushButtonInclude, &QPushButton::clicked, this, &ProtobufParserCreator::onIncludeDirectory);
-  connect( ui->pushButtonLoad, &QPushButton::clicked, this, &ProtobufParserCreator::onLoadFile);
-  connect( ui->pushButtonRemove, &QPushButton::clicked, this, &ProtobufParserCreator::onRemoveInclude);
+  connect( ui->pushButtonInclude, &QPushButton::clicked, this, &ParserFactoryProtobuf::onIncludeDirectory);
+  connect( ui->pushButtonLoad, &QPushButton::clicked, this, &ParserFactoryProtobuf::onLoadFile);
+  connect( ui->pushButtonRemove, &QPushButton::clicked, this, &ParserFactoryProtobuf::onRemoveInclude);
 
   QString last_type = settings.value("ProtobufParserCreator.lastType").toString();
   int combo_index = ui->comboBox->findText(last_type, Qt::MatchExactly);
@@ -170,10 +170,10 @@ ProtobufParserCreator::ProtobufParserCreator()
   }
 
   connect( ui->comboBox, qOverload<const QString&>(&QComboBox::currentIndexChanged),
-          this, &ProtobufParserCreator::onComboChanged );
+          this, &ParserFactoryProtobuf::onComboChanged );
 }
 
-void ProtobufParserCreator::importFile(QString filename)
+void ParserFactoryProtobuf::importFile(QString filename)
 {
   QFile file(filename);
   if( !file.exists() )
@@ -218,7 +218,7 @@ void ProtobufParserCreator::importFile(QString filename)
   _loaded_file = std::move(info);
 }
 
-void ProtobufParserCreator::loadSettings()
+void ParserFactoryProtobuf::loadSettings()
 {
   ui->listWidget->clear();
   ui->protoPreview->clear();
@@ -243,7 +243,7 @@ void ProtobufParserCreator::loadSettings()
   }
 }
 
-void ProtobufParserCreator::saveSettings()
+void ParserFactoryProtobuf::saveSettings()
 {
   QSettings settings;
   QStringList include_list;
@@ -255,19 +255,20 @@ void ProtobufParserCreator::saveSettings()
   settings.setValue("ProtobufParserCreator.protofile", _loaded_file.file_path);
 }
 
-ProtobufParserCreator::~ProtobufParserCreator()
+ParserFactoryProtobuf::~ParserFactoryProtobuf()
 {
   delete ui;
 }
 
-MessageParserPtr ProtobufParserCreator::createInstance(
-    const std::string &topic_name, PlotDataMapRef &data)
+MessageParserPtr ParserFactoryProtobuf::createParser(const std::string& topic_name,
+                                                     const std::string& schema,
+                                                     PlotDataMapRef& data)
 {
   onComboChanged(ui->comboBox->currentText());
   return std::make_shared<ProtobufParser>(topic_name, data, _selected_descriptor);
 }
 
-void ProtobufParserCreator::onIncludeDirectory()
+void ParserFactoryProtobuf::onIncludeDirectory()
 {
   QSettings settings;
   QString directory_path =
@@ -286,7 +287,7 @@ void ProtobufParserCreator::onIncludeDirectory()
   }
 }
 
-void ProtobufParserCreator::onLoadFile()
+void ParserFactoryProtobuf::onLoadFile()
 {
   QSettings settings;
 
@@ -308,7 +309,7 @@ void ProtobufParserCreator::onLoadFile()
   saveSettings();
 }
 
-void ProtobufParserCreator::onRemoveInclude()
+void ParserFactoryProtobuf::onRemoveInclude()
 {
   auto selected = ui->listWidget->selectedItems();
 
@@ -323,7 +324,7 @@ void ProtobufParserCreator::onRemoveInclude()
 }
 
 
-void ProtobufParserCreator::onComboChanged(const QString& text)
+void ParserFactoryProtobuf::onComboChanged(const QString& text)
 {
   auto descr_it = _loaded_file.descriptors.find(text);
   if( descr_it != _loaded_file.descriptors.end())

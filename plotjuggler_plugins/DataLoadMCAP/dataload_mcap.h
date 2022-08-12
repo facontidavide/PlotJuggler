@@ -4,7 +4,7 @@
 #include <QtPlugin>
 #include <QStandardItemModel>
 #include "PlotJuggler/dataloader_base.h"
-#include "rosx_introspection/ros_parser.hpp"
+#include "PlotJuggler/messageparser_base.h"
 
 using namespace PJ;
 
@@ -16,6 +16,7 @@ class DataLoadMCAP : public DataLoader
 
 public:
   DataLoadMCAP();
+
   virtual const std::vector<const char*>& compatibleFileExtensions() const override;
 
   virtual bool readDataFromFile(PJ::FileLoadInfo* fileload_info,
@@ -28,8 +29,4 @@ public:
     return "DataLoad MCAP";
   }
 
-private:
-
-  void appendRollPitchYaw(const RosMsgParser::FlatMessage& flat, double timestamp,
-                          PlotDataMapRef& plot_data);
 };

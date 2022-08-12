@@ -21,3 +21,21 @@ while True:
         }
     }
     sock.sendto( json.dumps(data).encode(), ("127.0.0.1", 9870) )
+    
+    test_str = "{ \
+	  \"1252\": { \
+	    \"timestamp\": { \
+	      \"microsecond\": 0 \
+	    }, \
+	    \"value\": { \
+	      \"current\": { \
+		\"ampere\": null \
+	      }, \
+	      \"voltage\": { \
+		\"volt\": 24.852617263793945 \
+	      }\
+	    }\
+	  } }" 
+   
+    sock.sendto( test_str.encode('utf-8'), ("127.0.0.1", 9870) )
+

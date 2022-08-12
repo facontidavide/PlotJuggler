@@ -44,6 +44,14 @@ public:
     return { _notification_action, _failed_parsing };
   }
 
+private slots:
+
+  void onComboProtocolChanged(const QString &);
+
+  void onMessageReceived(const mosquitto_message* message);
+
+private:
+
   bool _running;
 
   std::unordered_map<std::string, PJ::MessageParserPtr> _parsers;
@@ -59,13 +67,7 @@ public:
   int _failed_parsing = 0;
 
   MQTT_Dialog* _dialog;
-  std::shared_ptr<MessageParserCreator> _current_parser_creator;
-
-private slots:
-
-  void onComboProtocolChanged(const QString &);
-
-  void onMessageReceived(const mosquitto_message* message);
+  ParserFactoryPlugin::Ptr _current_parser_creator;
 };
 
 

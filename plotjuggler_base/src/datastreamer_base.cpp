@@ -8,20 +8,6 @@
 
 namespace PJ
 {
-void DataStreamer::setAvailableParsers(
-    std::shared_ptr<MessageParserFactory> parsers_factory)
-{
-  _available_parsers = parsers_factory;
-}
-
-std::shared_ptr<MessageParserFactory> DataStreamer::availableParsers()
-{
-  if (_available_parsers && _available_parsers->empty())
-  {
-    return {};
-  }
-  return _available_parsers;
-}
 
 void PJ::DataStreamer::setMaximumRangeX(double range)
 {
@@ -38,6 +24,16 @@ void PJ::DataStreamer::setMaximumRangeX(double range)
   {
     it.second.setMaximumRangeX(range);
   }
+}
+
+void DataStreamer::setParserFactories(ParserFactories *parsers)
+{
+  _parser_factories = parsers;
+}
+
+const ParserFactories *DataStreamer::parserFactories() const
+{
+  return _parser_factories;
 }
 
 }  // namespace PJ

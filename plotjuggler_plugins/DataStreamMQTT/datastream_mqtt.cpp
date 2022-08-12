@@ -45,7 +45,7 @@ bool DataStreamMQTT::start(QStringList *)
   _failed_parsing = 0;
   emit notificationsChanged(0);
 
-  if( !availableParsers() )
+  if( parserFactories() == nullptr || parserFactories()->empty() )
   {
     QMessageBox::warning(nullptr,tr("MQTT Client"), tr("No available MessageParsers"),  QMessageBox::Ok);
     _running = false;
@@ -57,7 +57,7 @@ bool DataStreamMQTT::start(QStringList *)
   if( first_start )
   {
     // change the section of the dialog related to protocols
-    for( const auto& it: *availableParsers())
+    for( const auto& it: *parserFactories())
     {
       _dialog->ui->comboBoxProtocol->addItem( it.first );
 
@@ -133,7 +133,7 @@ void DataStreamMQTT::onComboProtocolChanged(const QString& selected_protocol)
       prev_widget->setVisible(false);
     }
   }
-  _current_parser_creator = availableParsers()->at(selected_protocol);
+  _current_parser_creator = parserFactories()->at(selected_protocol);
 
   if (auto widget = _current_parser_creator->optionsWidget())
   {
@@ -148,8 +148,8 @@ void DataStreamMQTT::onMessageReceived(const mosquitto_message *message)
   auto it = _parsers.find(message->topic);
   if( it == _parsers.end() )
   {
-    auto& parser_factory = availableParsers()->at( _protocol );
-    auto parser = parser_factory->createInstance({}, dataMap());
+    auto& parser_factory = parserFactories()->at( _protocol );
+    auto parser = parser_factory->createParser({}, {}, dataMap());
     it = _parsers.insert( {message->topic, parser} ).first;
   }
   auto& parser = it->second;

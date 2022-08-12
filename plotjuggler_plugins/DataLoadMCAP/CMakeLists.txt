@@ -27,10 +27,7 @@ endif()
 
 if(MCAP_DEPENDENCIES_FOUND)
 
-    SET(INTROSPECTION_TESTS OFF CACHE BOOL "Compile the tests")
-    add_subdirectory(rosx_introspection)
-
-    include_directories(  ../  rosx_introspection/include )
+    include_directories(  ../ )
 
     add_definitions(${QT_DEFINITIONS})
     add_definitions(-DQT_PLUGIN)
@@ -48,7 +45,6 @@ if(MCAP_DEPENDENCIES_FOUND)
         ${Qt5Widgets_LIBRARIES}
         ${Qt5Xml_LIBRARIES}
         ${MCAP_DEPENDENCIES}
-        rosx_introspection
         plotjuggler_base )
 
     install(TARGETS DataLoadMCAP DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
