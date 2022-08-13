@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1248</width>
-    <height>798</height>
+    <width>822</width>
+    <height>720</height>
    </rect>
   </property>
   <property name="focusPolicy">
@@ -59,7 +59,7 @@
       <widget class="QFrame" name="leftMainWindowFrame">
        <property name="minimumSize">
         <size>
-         <width>260</width>
+         <width>300</width>
          <height>0</height>
         </size>
        </property>
@@ -111,7 +111,7 @@
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>20</height>
+               <height>16777215</height>
               </size>
              </property>
              <property name="font">
@@ -199,14 +199,14 @@
               <widget class="QPushButton" name="pushButtonLoadDatafile">
                <property name="minimumSize">
                 <size>
-                 <width>24</width>
-                 <height>24</height>
+                 <width>26</width>
+                 <height>26</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>24</width>
-                 <height>24</height>
+                 <width>26</width>
+                 <height>26</height>
                 </size>
                </property>
                <property name="focusPolicy">
@@ -246,14 +246,14 @@
               <widget class="QPushButton" name="buttonRecentData">
                <property name="minimumSize">
                 <size>
-                 <width>24</width>
-                 <height>24</height>
+                 <width>26</width>
+                 <height>26</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>24</width>
-                 <height>24</height>
+                 <width>26</width>
+                 <height>26</height>
                 </size>
                </property>
                <property name="toolTip">
@@ -291,14 +291,14 @@
               <widget class="QPushButton" name="pushButtonLoadLayout">
                <property name="minimumSize">
                 <size>
-                 <width>24</width>
-                 <height>24</height>
+                 <width>26</width>
+                 <height>26</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>24</width>
-                 <height>24</height>
+                 <width>26</width>
+                 <height>26</height>
                 </size>
                </property>
                <property name="focusPolicy">
@@ -325,14 +325,14 @@
               <widget class="QPushButton" name="pushButtonSaveLayout">
                <property name="minimumSize">
                 <size>
-                 <width>24</width>
-                 <height>24</height>
+                 <width>26</width>
+                 <height>26</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>24</width>
-                 <height>24</height>
+                 <width>26</width>
+                 <height>26</height>
                 </size>
                </property>
                <property name="focusPolicy">
@@ -378,14 +378,14 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>24</width>
-                 <height>24</height>
+                 <width>26</width>
+                 <height>26</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>24</width>
-                 <height>24</height>
+                 <width>26</width>
+                 <height>26</height>
                 </size>
                </property>
                <property name="toolTip">
@@ -445,7 +445,7 @@
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>20</height>
+               <height>16777215</height>
               </size>
              </property>
              <property name="font">
@@ -567,14 +567,14 @@
                 </property>
                 <property name="minimumSize">
                  <size>
-                  <width>24</width>
-                  <height>24</height>
+                  <width>26</width>
+                  <height>26</height>
                  </size>
                 </property>
                 <property name="maximumSize">
                  <size>
-                  <width>24</width>
-                  <height>24</height>
+                  <width>26</width>
+                  <height>26</height>
                  </size>
                 </property>
                 <property name="toolTip">
@@ -598,7 +598,7 @@
             </widget>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="0,0,0,0,0,0,0">
+            <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="0,0,0,0,1,0">
              <property name="spacing">
               <number>4</number>
              </property>
@@ -621,14 +621,14 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>50</width>
+                 <width>60</width>
                  <height>30</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>50</width>
-                 <height>30</height>
+                 <width>16777215</width>
+                 <height>16777215</height>
                 </size>
                </property>
                <property name="font">
@@ -759,19 +759,6 @@
               </widget>
              </item>
              <item>
-              <spacer name="horizontalSpacer_2">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
               <widget class="QLabel" name="label_3">
                <property name="minimumSize">
                 <size>
@@ -782,7 +769,7 @@
                <property name="maximumSize">
                 <size>
                  <width>16777215</width>
-                 <height>30</height>
+                 <height>16777215</height>
                 </size>
                </property>
                <property name="font">
@@ -799,14 +786,14 @@
               <widget class="QSpinBox" name="streamingSpinBox">
                <property name="minimumSize">
                 <size>
-                 <width>0</width>
-                 <height>26</height>
+                 <width>60</width>
+                 <height>30</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
                  <width>16777215</width>
-                 <height>26</height>
+                 <height>16777215</height>
                 </size>
                </property>
                <property name="focusPolicy">
@@ -831,7 +818,7 @@
                 <number>5</number>
                </property>
                <property name="maximum">
-                <number>100</number>
+                <number>999</number>
                </property>
                <property name="value">
                 <number>30</number>
@@ -1824,7 +1811,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1248</width>
+     <width>822</width>
      <height>26</height>
     </rect>
    </property>

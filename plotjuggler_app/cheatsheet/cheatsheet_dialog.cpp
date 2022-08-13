@@ -40,6 +40,9 @@ CheatsheetDialog::CheatsheetDialog(QWidget* parent)
 
   pixmap.load(":/cheatsheet/img/tutorial_layout.png");
   ui->labelImage_10->setPixmap(pixmap);
+
+  pixmap.load(":/cheatsheet/img/tutorial_colormap.png");
+  ui->labelImage_11->setPixmap(pixmap);
 }
 
 CheatsheetDialog::~CheatsheetDialog()

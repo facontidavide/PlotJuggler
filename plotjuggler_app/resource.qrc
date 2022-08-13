@@ -298,5 +298,21 @@
         <file>resources/lua_style_dark.xml</file>
         <file>resources/lua_style_light.xml</file>
         <file>resources/svg/color_background.svg</file>
+        <file>resources/update_plotjuggler_2.jpg</file>
+        <file>resources/memes/meme_72.jpg</file>
+        <file>resources/memes/meme_75.jpg</file>
+        <file>resources/memes/meme_76.jpg</file>
+        <file>resources/memes/meme_77.jpg</file>
+        <file>resources/memes/meme_78.jpg</file>
+        <file>resources/memes/meme_79.jpg</file>
+        <file>resources/memes/meme_80.jpg</file>
+        <file>resources/memes/meme_81.jpg</file>
+        <file>resources/memes/meme_82.jpg</file>
+        <file>resources/memes/meme_84.jpg</file>
+        <file>resources/memes/meme_85.jpg</file>
+        <file>resources/memes/meme_86.jpg</file>
+        <file>resources/memes/meme_87.jpg</file>
+        <file>resources/memes/meme_88.jpg</file>
+        <file>cheatsheet/img/tutorial_colormap.png</file>
     </qresource>
 </RCC>
