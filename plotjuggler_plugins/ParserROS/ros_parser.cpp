@@ -3,7 +3,9 @@
 
 using namespace PJ;
 using namespace RosMsgParser;
+
 static ROSType quaternion_type( Msg::Quaternion::id() );
+constexpr double RAD_TO_DEG = 180.0 / M_PI;
 
 ParserROS::ParserROS(const std::string& topic_name,
                      const std::string& type_name,
@@ -48,6 +50,11 @@ bool ParserROS::parseMessage(const PJ::MessageRef serialized_msg, double &timest
     parseJointStateMsg(serialized_msg, timestamp);
     return true;
   }
+  if( _is_tf2_msg )
+  {
+    parseTF2Msg(serialized_msg, timestamp);
+    return true;
+  }
 
   _parser.deserialize(serialized_msg, &_flat_msg, _deserializer.get());
 
@@ -85,7 +92,6 @@ void ParserROS::setLargeArraysPolicy(bool clamp, unsigned max_size)
 
 void ParserROS::appendRollPitchYaw(double stamp)
 {
-  const double RAD_TO_DEG = 180.0 / M_PI;
 
   for(size_t i=0; i< _flat_msg.value.size(); i++ )
   {
@@ -311,10 +317,20 @@ void ParserROS::parseTF2Msg(const MessageRef msg_buffer, double &stamp)
     getSeries(fmt::format("{}/translation/y", prefix)).pushBack( {stamp, getDouble()} );
     getSeries(fmt::format("{}/translation/z", prefix)).pushBack( {stamp, getDouble()} );
 
-    getSeries(fmt::format("{}/rotation/x", prefix)).pushBack( {stamp, getDouble()} );
-    getSeries(fmt::format("{}/rotation/y", prefix)).pushBack( {stamp, getDouble()} );
-    getSeries(fmt::format("{}/rotation/z", prefix)).pushBack( {stamp, getDouble()} );
-    getSeries(fmt::format("{}/rotation/w", prefix)).pushBack( {stamp, getDouble()} );
+    Msg::Quaternion quat = { getDouble(), getDouble(), getDouble(), getDouble() };
+    auto RPY = Msg::QuaternionToRPY(quat);
+
+    getSeries(fmt::format("{}/rotation/x", prefix)).pushBack( {stamp, quat.x} );
+    getSeries(fmt::format("{}/rotation/y", prefix)).pushBack( {stamp, quat.y} );
+    getSeries(fmt::format("{}/rotation/z", prefix)).pushBack( {stamp, quat.z} );
+    getSeries(fmt::format("{}/rotation/w", prefix)).pushBack( {stamp, quat.w} );
+
+    getSeries(fmt::format("{}/rotation/roll_deg", prefix)).pushBack(
+      {stamp, RPY.roll * RAD_TO_DEG} );
+    getSeries(fmt::format("{}/rotation/pitch_deg", prefix)).pushBack(
+      {stamp, RPY.roll * RAD_TO_DEG} );
+    getSeries(fmt::format("{}/rotation/yaw_deg", prefix)).pushBack(
+      {stamp, RPY.yaw * RAD_TO_DEG} );
   }
 
 }
