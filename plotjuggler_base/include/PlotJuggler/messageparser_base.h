@@ -93,7 +93,21 @@ public:
   //
   // if clamp == true, then keep the first max_size elements,
   // otherwise, skip the entire array.
-  virtual void setLargeArraysPolicy(bool clamp, unsigned max_size) {}
+  virtual void setLargeArraysPolicy(bool clamp, unsigned max_size)
+  {
+    _clamp_large_arrays = clamp;
+    _max_array_size = max_size;
+  }
+
+  unsigned maxArraySize() const
+  {
+    return _max_array_size;
+  }
+
+  bool clampLargeArray() const
+  {
+    return _clamp_large_arrays;
+  }
 
 protected:
   PlotDataMapRef& _plot_data;
@@ -108,6 +122,9 @@ protected:
   {
     return _plot_data.getOrCreateStringSeries(key);
   }
+private:
+  bool _clamp_large_arrays = false;
+  unsigned _max_array_size = std::numeric_limits<unsigned>::max();
 };
 
 using MessageParserPtr = std::shared_ptr<MessageParser>;

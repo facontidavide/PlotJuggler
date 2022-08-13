@@ -105,6 +105,16 @@ public:
     return os;
   }
 
+  template <class Functor>
+  void visit(Functor& func, const TreeNode<T>* node) const
+  {
+    func(node);
+    for(auto child: node->children())
+    {
+      visit(func, &child);
+    }
+  }
+
 private:
 
   void print_impl(std::ostream& os, const TreeNode<T> *node, int indent ) const;

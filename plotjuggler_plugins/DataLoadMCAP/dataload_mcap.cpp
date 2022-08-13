@@ -38,7 +38,6 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
   if( !parserFactories() )
   {
     throw std::runtime_error("No parsing available");
-    return false;
   }
   // open file
   std::ifstream input(info->filename.toStdString(), std::ios::binary);
@@ -66,8 +65,6 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
     const auto& topic_name = recordPtr->topic;
     std::string definition(reinterpret_cast<const char*>(schema->data.data()),
                            schema->data.size());
-
-    std::cout << definition << std::endl;
 
     QString encoding = QString::fromStdString(recordPtr->messageEncoding);
 

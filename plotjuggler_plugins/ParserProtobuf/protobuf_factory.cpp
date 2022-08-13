@@ -6,9 +6,7 @@
 #include "PlotJuggler/fmt/format.h"
 #include "PlotJuggler/svg_util.h"
 
-using namespace google::protobuf;
-using namespace google::protobuf::io;
-using namespace google::protobuf::compiler;
+namespace gp = google::protobuf;
 
 
 ParserFactoryProtobuf::ParserFactoryProtobuf()
@@ -53,7 +51,7 @@ void ParserFactoryProtobuf::importFile(QString filename)
     return;
   }
   file.open(QIODevice::ReadOnly);
-  Info info;
+  FileInfo info;
   QFileInfo fileinfo(filename);
   QString file_basename = fileinfo.fileName();
   info.file_path = filename;
@@ -65,7 +63,7 @@ void ParserFactoryProtobuf::importFile(QString filename)
 
   FileErrorCollector error_collector;
 
-  _importer.reset( new Importer(&_source_tree, &error_collector) );
+  _importer.reset( new gp::compiler::Importer(&_source_tree, &error_collector) );
   info.file_descriptor = _importer->Import(file_basename.toStdString());
 
   if( !info.file_descriptor )
@@ -152,45 +150,17 @@ MessageParserPtr ParserFactoryProtobuf::createParser(const std::string& topic_na
       throw std::runtime_error("ParserFactoryProtobuf: can't find the descriptor");
     }
     auto selected_descriptor = descr_it->second;
-    return std::make_shared<ProtobufParser>(topic_name, data, selected_descriptor);
+    return std::make_shared<ProtobufParser>(topic_name, selected_descriptor, data );
   }
   else
   {
-    ArrayInputStream raw_input(schema.data(), schema.size());
-    IoErrorCollector error_collector;
-    Tokenizer input(&raw_input, &error_collector);
-
-    if( error_collector.errors().size() > 0 )
+    gp::FileDescriptorSet field_set;
+    if (!field_set.ParseFromArray(schema.data(), schema.size()))
     {
-      throw std::runtime_error(error_collector.errors().front().toStdString());
+      throw std::runtime_error("failed to parse schema data");
     }
 
-    FileDescriptorProto file_desc_proto;
-    Parser parser;
-    if (!parser.Parse(&input, &file_desc_proto))
-    {
-      throw std::runtime_error("Failed to parse the proto schema");
-    }
-    if (!file_desc_proto.has_name())
-    {
-      file_desc_proto.set_name(type_name);
-    }
-
-    google::protobuf::DescriptorPool pool;
-    auto file_desc = pool.BuildFile(file_desc_proto);
-    if (file_desc == nullptr)
-    {
-      throw std::runtime_error("Cannot get file descriptor from file descriptor proto");
-    }
-
-    // As a .proto definition can contain more than one message Type,
-    // select the message type that we are interested in
-    auto descriptor = file_desc->FindMessageTypeByName(type_name);
-    if (descriptor == nullptr)
-    {
-      throw std::runtime_error("Cannot get message descriptor");
-    }
-    return std::make_shared<ProtobufParser>(topic_name, data, descriptor);
+    return std::make_shared<ProtobufParser>(topic_name, type_name, field_set, data );
   }
 }
 

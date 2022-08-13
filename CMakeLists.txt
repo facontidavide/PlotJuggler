@@ -158,6 +158,7 @@ include_directories(
     ./3rdparty/sol
     ./3rdparty/lua-5.4.3/src
     ./3rdparty/QCodeEditor/include
+    ./3rdparty/lz4
 )
 
 #########################  BASE library  ####################################
@@ -182,6 +183,7 @@ add_library( plotjuggler_base
      plotjuggler_base/src/plotpanner.cpp
      plotjuggler_base/src/timeseries_qwt.cpp
      plotjuggler_base/src/reactive_function.cpp
+     plotjuggler_base/src/special_messages.cpp
      )
 
 # target_link_libraries(plotjuggler_base plotjuggler_qwt)
@@ -228,19 +230,18 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/PlotJuggler.desktop
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler.svg
         DESTINATION ${DESKTOP_ICON_DIR}  )
 
+######################## Main App, Libraries amd Plugins ###################################
 
 add_subdirectory( 3rdparty/qwt/src )
+add_subdirectory( 3rdparty/lz4 )
 add_subdirectory( 3rdparty/QCodeEditor )
-
-######################## Main App, Libraries amd Plugins ###################################
+add_subdirectory( 3rdparty/color_widgets )
+add_subdirectory( 3rdparty/Qt-Advanced-Docking )
+add_subdirectory( 3rdparty/lua-5.4.3 )
 
 if (NOT WIN32)
   add_subdirectory( 3rdparty/backward-cpp )
 endif()
-
-add_subdirectory( 3rdparty/color_widgets )
-add_subdirectory( 3rdparty/Qt-Advanced-Docking )
-add_subdirectory( 3rdparty/lua-5.4.3 )
 
 add_subdirectory( plotjuggler_app )
 

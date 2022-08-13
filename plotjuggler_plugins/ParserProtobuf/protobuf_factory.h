@@ -44,14 +44,14 @@ protected:
   google::protobuf::compiler::DiskSourceTree _source_tree;
   std::unique_ptr<google::protobuf::compiler::Importer> _importer;
 
-  struct Info
+  struct FileInfo
   {
     QString file_path;
     QByteArray proto_text;
     const google::protobuf::FileDescriptor* file_descriptor = nullptr;
     std::map<QString,const google::protobuf::Descriptor*> descriptors;
   };
-  Info _loaded_file;
+  FileInfo _loaded_file;
 
   bool updateUI();
 
