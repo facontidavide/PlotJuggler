@@ -124,7 +124,7 @@ protected:
   }
 private:
   bool _clamp_large_arrays = false;
-  unsigned _max_array_size = std::numeric_limits<unsigned>::max();
+  unsigned _max_array_size = 10000;
 };
 
 using MessageParserPtr = std::shared_ptr<MessageParser>;

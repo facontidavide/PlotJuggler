@@ -26,7 +26,13 @@ protected:
 
   void appendRollPitchYaw(double timestamp);
 
+  void parseHeader(PJ::Msg::Header& header);
+
   void parseDiagnosticMsg(const PJ::MessageRef serialized_msg, double &timestamp);
+
+  void parseJointStateMsg(const PJ::MessageRef serialized_msg, double &timestamp);
+
+  void parseTF2Msg(const PJ::MessageRef serialized_msg, double &timestamp);
 
   bool _contains_quaternion = false;
   bool _is_diangostic_msg = false;

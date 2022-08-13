@@ -101,7 +101,7 @@ struct TFMessage
 };
 //--------------------
 
-struct JointStates
+struct JointState
 {
   Header header;
   std::vector<std::string> name;
@@ -109,7 +109,7 @@ struct JointStates
   std::vector<double> velocity;
   std::vector<double> effort;
 
-  static const char* id() { return "sensor_msgs/JointStates"; }
+  static const char* id() { return "sensor_msgs/JointState"; }
 };
 
 }
