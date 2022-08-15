@@ -79,7 +79,7 @@ If you want a simple example to learn how to write your own plugins, have a look
 
 ### Binary installers
 
-Bote that these installed do __not__ include ROS plugins.
+Note that these installers do __not__ include ROS plugins.
 
 **Linux AppImage** (compatible with Ubuntu 20.04 or later): 
 [PlotJuggler-3.6.0-x86_64.AppImage](https://github.com/facontidavide/PlotJuggler/releases/download/3.6.0/PlotJuggler-3.6.0-x86_64.AppImage)
