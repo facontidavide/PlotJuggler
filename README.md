@@ -125,6 +125,12 @@ When launching you have two options available:
 - `plotjuggler.ros` to load the ROS1 plugins
 - `plotjuggler.ros2` to load the ROS2 plugins
 
+In addition, the command `plotjuggler` is an alias to `plotjuggler.ros`.
+If you'd prefer to alias `plotjuggler.ros2` instead,
+you can do so with the command `sudo snap set plotjuggler ros-plugin-version=2`.
+Revert it simply replacing `2` with `1`.
+Note that this also affect the desktop launcher.
+
 ## Compile from source
 
 You can find find the detailed instructions here: [COMPILE.md](COMPILE.md).
