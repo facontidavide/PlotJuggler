@@ -43,6 +43,12 @@ debian
 .idea
 cmake-build-*
 
+# VSCode
+.vscode
+
 installer/io.plotjuggler.application/data
 *.pyc
 *.swp
+
+# OS X
+.DS_Store

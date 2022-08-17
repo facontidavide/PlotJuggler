@@ -220,6 +220,10 @@ private:
 
   void updateReactivePlots();
 
+  void dragEnterEvent(QDragEnterEvent* event);
+
+  void dropEvent(QDropEvent* event);
+
 signals:
   void dataSourceRemoved(const std::string& name);
   void dataSourceUpdated(const std::string& name);

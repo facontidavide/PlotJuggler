@@ -85,6 +85,7 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   , _recent_layout_files(new QMenu())
 {
   QLocale::setDefault(QLocale::c());  // set as default
+  setAcceptDrops(true);
 
   _test_option = commandline_parser.isSet("test");
   _autostart_publishers = commandline_parser.isSet("publish");
@@ -120,9 +121,12 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
       _skin_path = path.absolutePath();
     }
   }
-  if (commandline_parser.isSet("window_title")){
+  if (commandline_parser.isSet("window_title"))
+  {
     setWindowTitle(commandline_parser.value("window_title"));
-  } else {
+  }
+  else
+  {
     QFile fileTitle(_skin_path + "/mainwindow_title.txt");
     if (fileTitle.open(QIODevice::ReadOnly))
     {
@@ -747,7 +751,8 @@ QStringList MainWindow::initializePlugins(QString directory_name)
       }
       else if (message_parser)
       {
-        _parser_factories.insert(std::make_pair(message_parser->encoding(), message_parser));
+        _parser_factories.insert(
+            std::make_pair(message_parser->encoding(), message_parser));
       }
       else if (streamer)
       {
@@ -820,14 +825,14 @@ QStringList MainWindow::initializePlugins(QString directory_name)
     }
   }
 
-  for(auto& [name, streamer] : _data_streamer)
+  for (auto& [name, streamer] : _data_streamer)
   {
-    streamer->setParserFactories( &_parser_factories );
+    streamer->setParserFactories(&_parser_factories);
   }
 
-  for(auto& [name, loader] : _data_loader)
+  for (auto& [name, loader] : _data_loader)
   {
-    loader->setParserFactories( &_parser_factories );
+    loader->setParserFactories(&_parser_factories);
   }
 
   if (!_data_streamer.empty())
@@ -1468,7 +1473,7 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
     QString plugin_name =
         QInputDialog::getItem(this, tr("QInputDialog::getItem()"),
                               tr("Select the loader to use:"), names, 0, false, &ok);
-    if (ok && !plugin_name.isEmpty())
+    if (ok && !plugin_name.isEmpty() && _enabled_plugins.contains(plugin_name))
     {
       dataloader = _data_loader[plugin_name];
       last_plugin_name_used = plugin_name;
@@ -1799,6 +1804,27 @@ void MainWindow::updateReactivePlots()
       }
     }
   });
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent* event)
+{
+  if (event->mimeData()->hasUrls())
+  {
+    event->acceptProposedAction();
+  }
+}
+
+void MainWindow::dropEvent(QDropEvent* event)
+{
+  QStringList file_names;
+  const auto urls = event->mimeData()->urls();
+
+  for (const auto& url : urls)
+  {
+    file_names << QDir::toNativeSeparators(url.toLocalFile());
+  }
+
+  loadDataFromFiles(file_names);
 }
 
 void MainWindow::on_stylesheetChanged(QString theme)
