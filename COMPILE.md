@@ -1,6 +1,6 @@
 # Compile in Linux
 
-On Ubuntu, the dependencies can be installed with the the command:
+On Ubuntu, the dependencies can be installed with the command:
 
     sudo apt -y install qtbase5-dev libqt5svg5-dev libqt5websockets5-dev \
          libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq-dev
@@ -10,7 +10,7 @@ On Fedora:
     sudo dnf install qt5-qtbase-devel qt5-qtsvg-devel qt5-websockets-devel \
          qt5-qtopendl-devel qt5-qtx11extras-devel
 
-Clone the repository into **~/plotjuggler_ws*:
+Clone the repository into **~/plotjuggler_ws**:
 
 ```
 git clone https://github.com/facontidavide/PlotJuggler.git ~/plotjuggler_ws/src/PlotJuggler
@@ -71,6 +71,26 @@ cp -v install/bin/* AppDir/usr/bin
     --plugin qt --output appimage
 ```
 
+# Compile in Mac
+
+On Mac, the dependencies can be installed using [brew](https://brew.sh/) with the following command:
+
+    brew install qt@5 protobuf mosquitto zeromq zstd
+
+Clone the repository into **~/plotjuggler_ws**:
+
+```
+git clone https://github.com/facontidavide/PlotJuggler.git ~/plotjuggler_ws/src/PlotJuggler
+cd ~/plotjuggler_ws
+```
+    
+Then compile using cmake:
+
+```
+cmake -S src/PlotJuggler -B build/PlotJuggler -DCMAKE_INSTALL_PREFIX=install
+cmake --build build/PlotJuggler --config RelWithDebInfo --parallel --target install
+```
+ 
 # Compile in Windows
 
 Dependencies in Windows are managed either using 
