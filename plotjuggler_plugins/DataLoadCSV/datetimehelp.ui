@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DateTimeHelp</class>
+ <widget class="QDialog" name="DateTimeHelp">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>984</width>
+    <height>652</height>
+   </rect>
+  </property>
+  <property name="acceptDrops">
+   <bool>false</bool>
+  </property>
+  <property name="windowTitle">
+   <string>Date-Time Format</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="font">
+        <font>
+         <family>Ubuntu</family>
+         <pointsize>10</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="title">
+        <string>Date-Time Example</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <layout class="QFormLayout" name="formLayout">
+          <item row="0" column="0">
+           <widget class="QLabel" name="exampleDateTimeLabel">
+            <property name="text">
+             <string>Example Date-Time (Format: M/d/yyyy h:mm:ss.zzz AP):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QDateTimeEdit" name="exampleDateTimeDateTimeEdit">
+            <property name="displayFormat">
+             <string>M/d/yyyy h:mm:ss.zzz AP</string>
+            </property>
+            <property name="calendarPopup">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="exampleFormatStringLabel">
+            <property name="text">
+             <string>Example Format String</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="exampleFormatStringLineEdit">
+            <property name="text">
+             <string>d-MM-yyyy h:mm:ss</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="resultLabel">
+            <property name="text">
+             <string>Result</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="resultLineEdit">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QScrollArea" name="scrollArea">
+       <property name="verticalScrollBarPolicy">
+        <enum>Qt::ScrollBarAsNeeded</enum>
+       </property>
+       <property name="horizontalScrollBarPolicy">
+        <enum>Qt::ScrollBarAsNeeded</enum>
+       </property>
+       <property name="sizeAdjustPolicy">
+        <enum>QAbstractScrollArea::AdjustToContents</enum>
+       </property>
+       <property name="widgetResizable">
+        <bool>true</bool>
+       </property>
+       <widget class="QWidget" name="scrollAreaWidgetContents">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>937</width>
+          <height>1084</height>
+         </rect>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_7">
+           <item>
+            <widget class="QGroupBox" name="groupBox_2">
+             <property name="font">
+              <font>
+               <family>Ubuntu</family>
+               <pointsize>10</pointsize>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="title">
+              <string/>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_6">
+              <item>
+               <widget class="QLabel" name="label_5">
+                <property name="text">
+                 <string>All other input characters will be treated as text. Any non-empty sequence of characters enclosed in single quotes will also be treated (stripped of the quotes) as text and not be interpreted as expressions.</string>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_5">
+                <item>
+                 <widget class="QLabel" name="label_4">
+                  <property name="text">
+                   <string>Date Format</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QTableWidget" name="dateFormatTable">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                    <horstretch>1</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="verticalScrollBarPolicy">
+                   <enum>Qt::ScrollBarAlwaysOff</enum>
+                  </property>
+                  <property name="sizeAdjustPolicy">
+                   <enum>QAbstractScrollArea::AdjustToContents</enum>
+                  </property>
+                  <property name="editTriggers">
+                   <set>QAbstractItemView::NoEditTriggers</set>
+                  </property>
+                  <property name="showDropIndicator" stdset="0">
+                   <bool>false</bool>
+                  </property>
+                  <property name="alternatingRowColors">
+                   <bool>true</bool>
+                  </property>
+                  <attribute name="horizontalHeaderStretchLastSection">
+                   <bool>true</bool>
+                  </attribute>
+                  <attribute name="verticalHeaderVisible">
+                   <bool>false</bool>
+                  </attribute>
+                  <row>
+                   <property name="text">
+                    <string>row1</string>
+                   </property>
+                  </row>
+                  <row>
+                   <property name="text">
+                    <string>row2</string>
+                   </property>
+                  </row>
+                  <row>
+                   <property name="text">
+                    <string>row3</string>
+                   </property>
+                  </row>
+                  <row>
+                   <property name="text">
+                    <string>row4</string>
+                   </property>
+                  </row>
+                  <row>
+                   <property name="text">
+                    <string>row5</string>
+                   </property>
+                  </row>
+                  <row>
+                   <property name="text">
+                    <string>row6</string>
+                   </property>
+                  </row>
+                  <row>
+                   <property name="text">
+                    <string>row7</string>
+                   </property>
+                  </row>
+                  <row>
+                   <property name="text">
+                    <string>row8</string>
+                   </property>
+                  </row>
+                  <row>
+                   <property name="text">
+                    <string>row9</string>
+                   </property>
+                  </row>
+                  <row>
+                   <property name="text">
+                    <string>row10</string>
+                   </property>
+                  </row>
+                  <column>
+                   <property name="text">
+                    <string>Expression</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Output</string>
+                   </property>
+                  </column>
+                  <item row="0" column="0">
+                   <property name="text">
+                    <string>d</string>
+                   </property>
+                  </item>
+                  <item row="0" column="1">
+                   <property name="text">
+                    <string>The day as a number without a leading zero (1 to 31)</string>
+                   </property>
+                  </item>
+                  <item row="1" column="0">
+                   <property name="text">
+                    <string>dd</string>
+                   </property>
+                  </item>
+                  <item row="1" column="1">
+                   <property name="text">
+                    <string>The day as a number with a leading zero (01 to 31)</string>
+                   </property>
+                  </item>
+                  <item row="2" column="0">
+                   <property name="text">
+                    <string>ddd</string>
+                   </property>
+                  </item>
+                  <item row="2" column="1">
+                   <property name="text">
+                    <string>The abbreviated localized day name (e.g. 'Mon' to 'Sun')</string>
+                   </property>
+                  </item>
+                  <item row="3" column="0">
+                   <property name="text">
+                    <string>dddd</string>
+                   </property>
+                  </item>
+                  <item row="3" column="1">
+                   <property name="text">
+                    <string>The long localized day name (e.g. 'Monday' to 'Sunday').</string>
+                   </property>
+                  </item>
+                  <item row="4" column="0">
+                   <property name="text">
+                    <string>M</string>
+                   </property>
+                  </item>
+                  <item row="4" column="1">
+                   <property name="text">
+                    <string>The month as a number without a leading zero (1 to 12)</string>
+                   </property>
+                  </item>
+                  <item row="5" column="0">
+                   <property name="text">
+                    <string>MM</string>
+                   </property>
+                  </item>
+                  <item row="5" column="1">
+                   <property name="text">
+                    <string>The month as a number with a leading zero (01 to 12)</string>
+                   </property>
+                  </item>
+                  <item row="6" column="0">
+                   <property name="text">
+                    <string>MMM</string>
+                   </property>
+                  </item>
+                  <item row="6" column="1">
+                   <property name="text">
+                    <string>The abbreviated localized month name (e.g. 'Jan' to 'Dec')</string>
+                   </property>
+                  </item>
+                  <item row="7" column="0">
+                   <property name="text">
+                    <string>MMMM</string>
+                   </property>
+                  </item>
+                  <item row="7" column="1">
+                   <property name="text">
+                    <string>The long localized month name (e.g. 'January' to 'December')</string>
+                   </property>
+                  </item>
+                  <item row="8" column="0">
+                   <property name="text">
+                    <string>yy</string>
+                   </property>
+                  </item>
+                  <item row="8" column="1">
+                   <property name="text">
+                    <string>The year as a two digit number (00 to 99)</string>
+                   </property>
+                  </item>
+                  <item row="9" column="0">
+                   <property name="text">
+                    <string>yyyy</string>
+                   </property>
+                  </item>
+                  <item row="9" column="1">
+                   <property name="text">
+                    <string>The year as a four digit number, possibly plus a leading minus sign for negative years.</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_3">
+                <property name="text">
+                 <string>Time Format</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QTableWidget" name="timeFormatTable">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="verticalScrollBarPolicy">
+                 <enum>Qt::ScrollBarAlwaysOff</enum>
+                </property>
+                <property name="horizontalScrollBarPolicy">
+                 <enum>Qt::ScrollBarAsNeeded</enum>
+                </property>
+                <property name="sizeAdjustPolicy">
+                 <enum>QAbstractScrollArea::AdjustToContents</enum>
+                </property>
+                <property name="editTriggers">
+                 <set>QAbstractItemView::NoEditTriggers</set>
+                </property>
+                <property name="alternatingRowColors">
+                 <bool>true</bool>
+                </property>
+                <attribute name="horizontalHeaderStretchLastSection">
+                 <bool>true</bool>
+                </attribute>
+                <attribute name="verticalHeaderVisible">
+                 <bool>false</bool>
+                </attribute>
+                <row>
+                 <property name="text">
+                  <string>row1</string>
+                 </property>
+                </row>
+                <row>
+                 <property name="text">
+                  <string>row2</string>
+                 </property>
+                </row>
+                <row>
+                 <property name="text">
+                  <string>row3</string>
+                 </property>
+                </row>
+                <row>
+                 <property name="text">
+                  <string>row4</string>
+                 </property>
+                </row>
+                <row>
+                 <property name="text">
+                  <string>row5</string>
+                 </property>
+                </row>
+                <row>
+                 <property name="text">
+                  <string>row6</string>
+                 </property>
+                </row>
+                <row>
+                 <property name="text">
+                  <string>row7</string>
+                 </property>
+                </row>
+                <row>
+                 <property name="text">
+                  <string>row8</string>
+                 </property>
+                </row>
+                <row>
+                 <property name="text">
+                  <string>row9</string>
+                 </property>
+                </row>
+                <row>
+                 <property name="text">
+                  <string>row10</string>
+                 </property>
+                </row>
+                <row>
+                 <property name="text">
+                  <string>row11</string>
+                 </property>
+                </row>
+                <row>
+                 <property name="text">
+                  <string>row12</string>
+                 </property>
+                </row>
+                <column>
+                 <property name="text">
+                  <string>Expression</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Output</string>
+                 </property>
+                </column>
+                <item row="0" column="0">
+                 <property name="text">
+                  <string>h</string>
+                 </property>
+                </item>
+                <item row="0" column="1">
+                 <property name="text">
+                  <string>The hour without a leading zero (0 to 23 or 1 to 12 if AM/PM display)</string>
+                 </property>
+                </item>
+                <item row="1" column="0">
+                 <property name="text">
+                  <string>hh</string>
+                 </property>
+                </item>
+                <item row="1" column="1">
+                 <property name="text">
+                  <string>The hour with a leading zero (00 to 23 or 01 to 12 if AM/PM display)</string>
+                 </property>
+                </item>
+                <item row="2" column="0">
+                 <property name="text">
+                  <string>H</string>
+                 </property>
+                </item>
+                <item row="2" column="1">
+                 <property name="text">
+                  <string>The hour without a leading zero (0 to 23, even with AM/PM display)</string>
+                 </property>
+                </item>
+                <item row="3" column="0">
+                 <property name="text">
+                  <string>HH</string>
+                 </property>
+                </item>
+                <item row="3" column="1">
+                 <property name="text">
+                  <string>The hour with a leading zero (00 to 23, even with AM/PM display)</string>
+                 </property>
+                </item>
+                <item row="4" column="0">
+                 <property name="text">
+                  <string>m</string>
+                 </property>
+                </item>
+                <item row="4" column="1">
+                 <property name="text">
+                  <string>The minute without a leading zero (0 to 59)</string>
+                 </property>
+                </item>
+                <item row="5" column="0">
+                 <property name="text">
+                  <string>mm</string>
+                 </property>
+                </item>
+                <item row="5" column="1">
+                 <property name="text">
+                  <string>The minute with a leading zero (00 to 59)</string>
+                 </property>
+                </item>
+                <item row="6" column="0">
+                 <property name="text">
+                  <string>s</string>
+                 </property>
+                </item>
+                <item row="6" column="1">
+                 <property name="text">
+                  <string>The whole second, without any leading zero (0 to 59)</string>
+                 </property>
+                </item>
+                <item row="7" column="0">
+                 <property name="text">
+                  <string>ss</string>
+                 </property>
+                </item>
+                <item row="7" column="1">
+                 <property name="text">
+                  <string>The whole second, with a leading zero where applicable (00 to 59)</string>
+                 </property>
+                </item>
+                <item row="8" column="0">
+                 <property name="text">
+                  <string>z</string>
+                 </property>
+                </item>
+                <item row="8" column="1">
+                 <property name="text">
+                  <string>The fractional part of the second, to go after a decimal point, without trailing zeroes (0 to 999). Thus &quot;s.z&quot; reports the seconds to full available (millisecond) precision without trailing zeroes.</string>
+                 </property>
+                </item>
+                <item row="9" column="0">
+                 <property name="text">
+                  <string>zzz</string>
+                 </property>
+                </item>
+                <item row="9" column="1">
+                 <property name="text">
+                  <string>The fractional part of the second, to millisecond precision, including trailing zeroes where applicable (000 to 999).</string>
+                 </property>
+                </item>
+                <item row="10" column="0">
+                 <property name="text">
+                  <string>AP or A</string>
+                 </property>
+                </item>
+                <item row="10" column="1">
+                 <property name="text">
+                  <string>Interpret as an AM/PM time. A/AP will match an upper-case version of either QLocale::amText() or QLocale::pmText().</string>
+                 </property>
+                </item>
+                <item row="11" column="0">
+                 <property name="text">
+                  <string>ap or a</string>
+                 </property>
+                </item>
+                <item row="11" column="1">
+                 <property name="text">
+                  <string>Interpret as an am/pm time. a/ap will match a lower-case version of either QLocale::amText() or QLocale::pmText().</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="autoCloseCheckBox">
+       <property name="text">
+        <string>Close window automatically</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

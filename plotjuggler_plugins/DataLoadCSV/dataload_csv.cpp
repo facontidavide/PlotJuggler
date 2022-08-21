@@ -9,6 +9,7 @@
 #include <QInputDialog>
 #include <QPushButton>
 #include "QSyntaxStyle"
+#include "datetimehelp.h"
 
 
 #include <QStandardItemModel>
@@ -97,6 +98,9 @@ DataLoadCSV::DataLoadCSV()
   _ui = new Ui::DialogCSV();
   _ui->setupUi(_dialog);
 
+  _dateTime_dialog = new DateTimeHelp(_dialog);
+
+
   _ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
 
   connect(_ui->radioButtonSelect, &QRadioButton::toggled, this, [this](bool checked) {
@@ -117,6 +121,9 @@ DataLoadCSV::DataLoadCSV()
   connect(_ui->checkBoxDateFormat, &QCheckBox::toggled, this,
           [this](bool checked) { _ui->lineEditDateFormat->setEnabled(checked); });
 
+  connect(_ui->dateTimeHelpButton,&QPushButton::clicked, this, [this](){
+        _dateTime_dialog->show();
+  });
   _ui->rawText->setHighlighter(&_csvHighlighter);
 
   QSizePolicy sp_retain = _ui->tableView->sizePolicy();
@@ -134,6 +141,7 @@ DataLoadCSV::~DataLoadCSV()
 {
   delete _ui;
   delete _dialog;
+  delete _dateTime_dialog;
 }
 
 const std::vector<const char*>& DataLoadCSV::compatibleFileExtensions() const
