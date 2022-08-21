@@ -52,3 +52,19 @@ installer/io.plotjuggler.application/data
 
 # OS X
 .DS_Store
+
+# Cmake files
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+
+# Clangd
+.cache
