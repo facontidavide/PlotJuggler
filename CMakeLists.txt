@@ -251,6 +251,7 @@ add_subdirectory( plotjuggler_plugins/DataLoadULog )
 
 add_subdirectory( plotjuggler_plugins/DataStreamSample )
 add_subdirectory( plotjuggler_plugins/DataStreamWebsocketServer )
+add_subdirectory( plotjuggler_plugins/DataStreamWebsocketClient )
 add_subdirectory( plotjuggler_plugins/DataStreamUDP )
 add_subdirectory( plotjuggler_plugins/DataStreamMQTT )
 add_subdirectory( plotjuggler_plugins/DataStreamZMQ )
