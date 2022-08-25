@@ -144,18 +144,6 @@ bool WebsocketClient::start(QStringList*)
   settings.setValue("WebsocketClient::url", url);
 
   _socket.open(QUrl(socket_address));
-  // if (_socket.isValid())
-  // {
-  //   qDebug() << "Websocket is ready for reading" << url;
-  //   _running = true;
-  // }
-  // else
-  // {
-  //   QMessageBox::warning(nullptr, tr("Websocket Client"),
-  //                        tr("Websocket with url %1 is invalid.").arg(url),
-  //                        QMessageBox::Ok);
-  //   _running = false;
-  // }
 
   _running = true;
 
