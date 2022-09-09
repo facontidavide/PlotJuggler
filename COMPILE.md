@@ -75,7 +75,7 @@ cp -v install/bin/* AppDir/usr/bin
 
 On Mac, the dependencies can be installed using [brew](https://brew.sh/) with the following command:
 
-    brew install qt@5 protobuf mosquitto zeromq zstd
+    brew install cmake qt@5 protobuf mosquitto zeromq zstd
 
 Clone the repository into **~/plotjuggler_ws**:
 
