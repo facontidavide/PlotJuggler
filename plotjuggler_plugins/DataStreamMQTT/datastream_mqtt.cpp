@@ -149,7 +149,7 @@ void DataStreamMQTT::onMessageReceived(const mosquitto_message *message)
   if( it == _parsers.end() )
   {
     auto& parser_factory = parserFactories()->at( _protocol );
-    auto parser = parser_factory->createParser({}, {}, {}, dataMap());
+    auto parser = parser_factory->createParser({message->topic}, {}, {}, dataMap());
     it = _parsers.insert( {message->topic, parser} ).first;
   }
   auto& parser = it->second;
