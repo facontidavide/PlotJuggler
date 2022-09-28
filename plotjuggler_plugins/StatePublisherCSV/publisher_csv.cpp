@@ -345,7 +345,7 @@ QString StatePublisherCSV::generateRangeCSV(double time_start, double time_end)
     {
       if (!std::isnan(row_values[i]))
       {
-        row_str += QString::number(row_values[i], 'f');
+        row_str += QString::number(row_values[i], 'f', 9);
         // value used, move to the nex index
         indices[i]++;
       }
