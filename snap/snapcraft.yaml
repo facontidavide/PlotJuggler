@@ -287,6 +287,8 @@ parts:
       - ros-foxy-vrxperience-msgs
       - ros-foxy-webots-ros2-msgs
       - ros-foxy-wiimote-msgs
+      # Cyclonedds
+      - ros-foxy-rmw-cyclonedds-cpp
     override-pull: |
       if [ ! -d plotjuggler-ros-plugins ]; then
 
