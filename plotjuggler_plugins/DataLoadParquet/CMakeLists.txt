@@ -12,8 +12,10 @@ else()
     message(STATUS "Finding Parquet without package managers")
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
-    find_package(Arrow CONFIG QUIET)
-    find_package(Parquet CONFIG QUIET)
+    # find_package(Arrow CONFIG)
+    # find_package(Parquet CONFIG)
+    find_package(Arrow REQUIRED)
+    find_package(Parquet REQUIRED)
 endif()
 
 
@@ -33,6 +35,9 @@ if(Arrow_FOUND)
     add_library(DataLoadParquet SHARED ${SRC} ${UI_SRC}  )
 
     target_link_libraries(DataLoadParquet
+        arrow_shared
+        parquet_shared 
+        arrow_bundled_dependencies
         ${Qt5Widgets_LIBRARIES}
         ${Qt5Xml_LIBRARIES}
         ${PARQUET_LIBRARIES}
@@ -44,5 +49,3 @@ if(Arrow_FOUND)
 else()
     message("[Parquet] not found. Skipping plugin DataLoadParquet.")
 endif()
-
-
