@@ -1,1 +1,4 @@
 
+[submodule "plotjuggler_plugins/ParserMAVLink/mavlink"]
+	path = plotjuggler_plugins/ParserMAVLink/mavlink
+	url = https://github.com/mavlink/c_library_v2.git
