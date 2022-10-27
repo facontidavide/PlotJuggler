@@ -157,6 +157,24 @@ bool MAVLinkParser::parseMessage(const MessageRef serialized_msg,
                   value = static_cast<double>(nums[index]);
                   series.pushBack({timestamp, value});
                 }
+
+                if (array_length == 4 && msgInfo->fields[i].name == "q") {
+                    Msg::Quaternion quat;
+
+                    quat.x = static_cast<double>(nums[1]);
+                    quat.y = static_cast<double>(nums[2]);
+                    quat.z = static_cast<double>(nums[3]);
+                    quat.w = static_cast<double>(nums[0]);
+
+                    auto rpy = Msg::QuaternionToRPY( quat );
+
+                    std::string prefix = fmt::format("{}/{}/", msgInfo->name,msgInfo->fields[i].name);
+
+                    this->getSeries(prefix + "roll_deg").pushBack( {timestamp, RAD_TO_DEG * rpy.roll } );
+                    this->getSeries(prefix + "pitch_deg").pushBack( {timestamp, RAD_TO_DEG * rpy.pitch } );
+                    this->getSeries(prefix + "yaw_deg").pushBack( {timestamp, RAD_TO_DEG * rpy.yaw } );
+                }
+
               } else {
                 // Single value
                 float n;
@@ -164,6 +182,24 @@ bool MAVLinkParser::parseMessage(const MessageRef serialized_msg,
                 value = static_cast<double>(n);
                 auto& series = this->getSeries(key);
                 series.pushBack({timestamp, value});
+
+                if (msgInfo->fields[i].name == "q1") {
+                    Msg::Quaternion quat;
+                    float data[4];
+                    memcpy(data, m + offset, 4 * sizeof(float));
+
+                    quat.x = static_cast<double>(data[1]);
+                    quat.y = static_cast<double>(data[2]);
+                    quat.z = static_cast<double>(data[3]);
+                    quat.w = static_cast<double>(data[0]);
+
+                    auto rpy = Msg::QuaternionToRPY( quat );
+                    std::string prefix = fmt::format("{}/{}/", msgInfo->name,"quaternion");
+
+                    this->getSeries(prefix + "roll_deg").pushBack( {timestamp, RAD_TO_DEG * rpy.roll } );
+                    this->getSeries(prefix + "pitch_deg").pushBack( {timestamp, RAD_TO_DEG * rpy.pitch } );
+                    this->getSeries(prefix + "yaw_deg").pushBack( {timestamp, RAD_TO_DEG * rpy.yaw } );
+                }
               }
               break;
             case MAVLINK_TYPE_DOUBLE:

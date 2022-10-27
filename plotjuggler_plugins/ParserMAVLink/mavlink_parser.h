@@ -7,6 +7,8 @@
 #define MAVLINK_USE_MESSAGE_INFO
 #include <mavlink_types.h>
 #include <mavlink.h>
+#include "PlotJuggler/special_messages.h"
+constexpr double RAD_TO_DEG = 180.0 / M_PI;
 
 using namespace PJ;
 
