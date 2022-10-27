@@ -40,7 +40,7 @@ bool MAVLinkParser::parseMessage(const MessageRef serialized_msg,
             case MAVLINK_TYPE_UINT8_T:
               if (array_length > 0) {
                 uint8_t* nums = m + offset;
-                for (unsigned int index = 0; index < array_length - 1; ++index) {
+                for (unsigned int index = 0; index < array_length; ++index) {
                   suffix = fmt::format("[{}]", index);
                   auto& series = this->getSeries(key + suffix);
                   value = static_cast<double>(nums[index]);
@@ -57,7 +57,7 @@ bool MAVLinkParser::parseMessage(const MessageRef serialized_msg,
             case MAVLINK_TYPE_INT8_T:
               if (array_length > 0) {
                 int8_t* nums = reinterpret_cast<int8_t*>(m + offset);
-                for (unsigned int index = 0; index < array_length - 1; ++index) {
+                for (unsigned int index = 0; index < array_length; ++index) {
                   suffix = fmt::format("[{}]", index);
                   auto& series = this->getSeries(key + suffix);
                   value = static_cast<double>(nums[index]);
@@ -75,7 +75,7 @@ bool MAVLinkParser::parseMessage(const MessageRef serialized_msg,
               if (array_length > 0) {
                 uint16_t nums[array_buffer_length / sizeof(uint16_t)];
                 memcpy(nums, m + offset,  sizeof(uint16_t) * array_length);
-                for (unsigned int index = 0; index < array_length - 1; ++index) {
+                for (unsigned int index = 0; index < array_length; ++index) {
                   suffix = fmt::format("[{}]", index);
                   auto& series = this->getSeries(key + suffix);
                   value = static_cast<double>(nums[index]);
@@ -94,7 +94,7 @@ bool MAVLinkParser::parseMessage(const MessageRef serialized_msg,
               if (array_length > 0) {
                 int16_t nums[array_buffer_length / sizeof(int16_t)];
                 memcpy(nums, m + offset,  sizeof(int16_t) * array_length);
-                for (unsigned int index = 0; index < array_length - 1; ++index) {
+                for (unsigned int index = 0; index < array_length; ++index) {
                   suffix = fmt::format("[{}]", index);
                   auto& series = this->getSeries(key + suffix);
                   value = static_cast<double>(nums[index]);
@@ -113,7 +113,7 @@ bool MAVLinkParser::parseMessage(const MessageRef serialized_msg,
               if (array_length > 0) {
                 uint32_t nums[array_buffer_length / sizeof(uint32_t)];
                 memcpy(nums, m + offset,  sizeof(uint32_t) * array_length);
-                for (unsigned int index = 0; index < array_length - 1; ++index) {
+                for (unsigned int index = 0; index < array_length; ++index) {
                   suffix = fmt::format("[{}]", index);
                   auto& series = this->getSeries(key + suffix);
                   value = static_cast<double>(nums[index]);
@@ -132,7 +132,7 @@ bool MAVLinkParser::parseMessage(const MessageRef serialized_msg,
               if (array_length > 0) {
                 int32_t nums[array_buffer_length / sizeof(int32_t)];
                 memcpy(nums, m + offset,  sizeof(int32_t) * array_length);
-                for (unsigned int index = 0; index < array_length - 1; ++index) {
+                for (unsigned int index = 0; index < array_length; ++index) {
                   suffix = fmt::format("[{}]", index);
                   auto& series = this->getSeries(key + suffix);
                   value = static_cast<double>(nums[index]);
@@ -151,7 +151,7 @@ bool MAVLinkParser::parseMessage(const MessageRef serialized_msg,
               if (array_length > 0) {
                 float nums[array_buffer_length / sizeof(float)];
                 memcpy(nums, m + offset,  sizeof(float) * array_length);
-                for (unsigned int index = 0; index < array_length - 1; ++index) {
+                for (unsigned int index = 0; index < array_length; ++index) {
                   suffix = fmt::format("[{}]", index);
                   auto& series = this->getSeries(key + suffix);
                   value = static_cast<double>(nums[index]);
@@ -170,7 +170,7 @@ bool MAVLinkParser::parseMessage(const MessageRef serialized_msg,
               if (array_length > 0) {
                 double nums[array_buffer_length / sizeof(double)];
                 memcpy(nums, m + offset,  sizeof(double) * array_length);
-                for (unsigned int index = 0; index < array_length - 1; ++index) {
+                for (unsigned int index = 0; index < array_length; ++index) {
                   suffix = fmt::format("[{}]", index);
                   auto& series = this->getSeries(key + suffix);
                   value = nums[index];
@@ -189,7 +189,7 @@ bool MAVLinkParser::parseMessage(const MessageRef serialized_msg,
               if (array_length > 0) {
                 uint64_t nums[array_buffer_length / sizeof(uint64_t)];
                 memcpy(nums, m + offset,  sizeof(uint64_t) * array_length);
-                for (unsigned int index = 0; index < array_length - 1; ++index) {
+                for (unsigned int index = 0; index < array_length; ++index) {
                   suffix = fmt::format("[{}]", index);
                   auto& series = this->getSeries(key + suffix);
                   value = static_cast<double>(nums[index]);
@@ -208,7 +208,7 @@ bool MAVLinkParser::parseMessage(const MessageRef serialized_msg,
               if (array_length > 0) {
                 int64_t nums[array_buffer_length / sizeof(int64_t)];
                 memcpy(nums, m + offset,  sizeof(int64_t) * array_length);
-                for (unsigned int index = 0; index < array_length - 1; ++index) {
+                for (unsigned int index = 0; index < array_length; ++index) {
                   suffix = fmt::format("[{}]", index);
                   auto& series = this->getSeries(key + suffix);
                   value = static_cast<double>(nums[index]);
