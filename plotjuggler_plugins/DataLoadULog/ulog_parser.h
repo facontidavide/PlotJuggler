@@ -170,4 +170,6 @@ private:
 
   char* parseSimpleDataMessage(Timeseries& timeseries, const Format* format,
                                char* message, size_t* index);
+
+  void addEulerAngleData(Timeseries& timeseries, const ULogParser::Format* format, size_t index);
 };

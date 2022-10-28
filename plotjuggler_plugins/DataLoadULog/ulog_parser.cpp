@@ -1,5 +1,6 @@
 #include "ulog_parser.h"
 #include "ulog_messages.h"
+#include "PlotJuggler/special_messages.h"
 
 #include <fstream>
 #include <string.h>
@@ -146,6 +147,7 @@ void ULogParser::parseDataMessage(const ULogParser::Subscription& sub, char* mes
 
   size_t index = 0;
   parseSimpleDataMessage(timeseries, sub.format, message, &index);
+  addEulerAngleData(timeseries, sub.format, index);
 }
 
 char* ULogParser::parseSimpleDataMessage(Timeseries& timeseries, const Format* format,
@@ -804,4 +806,38 @@ ULogParser::Timeseries ULogParser::createTimeseries(const ULogParser::Format* fo
 
   appendVector(*format, {});
   return timeseries;
+}
+
+void ULogParser::addEulerAngleData(Timeseries& timeseries, const ULogParser::Format* format, size_t index)
+{
+  bool findQ = false;
+  std::string field_name;
+  int i = 0;
+  for (const auto& field : format->fields) {
+    if((field.field_name == "q" || field.field_name == "q_d") && field.array_size == 4) {
+      field_name = field.field_name;
+      findQ = true;
+      break;
+    } else {
+      i += field.array_size;
+    }
+  }
+  if(findQ) {
+    if(index == timeseries.data.size()) {
+      timeseries.data.push_back({ "/" + field_name + "_quaternion/roll", std::vector<double>() });
+      timeseries.data.push_back({ "/" + field_name + "_quaternion/pitch", std::vector<double>() });
+      timeseries.data.push_back({ "/" + field_name + "_quaternion/yaw", std::vector<double>() });
+    }
+    PJ::Msg::Quaternion quat;
+    quat.w = timeseries.data[i++].second.back();
+    quat.x = timeseries.data[i++].second.back();
+    quat.y = timeseries.data[i++].second.back();
+    quat.z = timeseries.data[i++].second.back();
+
+    auto rpy = PJ::Msg::QuaternionToRPY( quat );
+    timeseries.data[index++].second.push_back(57.297 * rpy.roll);
+    timeseries.data[index++].second.push_back(57.297 * rpy.pitch);
+    timeseries.data[index++].second.push_back(57.297 * rpy.yaw);
+  }
+
 }
