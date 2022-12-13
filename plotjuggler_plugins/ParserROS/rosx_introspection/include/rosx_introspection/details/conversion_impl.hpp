@@ -38,6 +38,7 @@
 #include <type_traits>
 #include <limits>
 #include <iostream>
+#include <cmath>
 #include "rosx_introspection/builtin_types.hpp"
 #include "rosx_introspection/details/exceptions.hpp"
 
@@ -225,6 +226,10 @@ template<typename SRC,typename DST,
 inline void convert_impl( const SRC& from, DST& target )
 {
     //std::cout << "float_conversion" << std::endl;
+    if (std::isnan(from)){
+        target = NAN;
+        return;
+    }
     checkTruncation<SRC,DST>(from);
     target = static_cast<DST>( from );
 }
