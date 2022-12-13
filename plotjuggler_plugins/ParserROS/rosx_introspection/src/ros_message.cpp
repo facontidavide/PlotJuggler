@@ -112,25 +112,29 @@ std::vector<ROSMessage::Ptr> ParseMessageDefinitions(
       }
     }
 
-    // adjust types with undefined package type
-    for (ROSField& field: msg->fields())
+    // add to vector
+    parsed_msgs.push_back( msg );
+    known_type.push_back( msg->type() );
+  }
+
+  // adjust types with undefined package type
+  for (auto& msg: parsed_msgs)
+  {
+    for (ROSField& field : msg->fields())
     {
       // if package name is missing, try to find msgName in the list of known_type
-      if( field.type().pkgName().empty() )
+      if (field.type().pkgName().empty())
       {
-        for (const ROSType& known_type: known_type)
+        for (const ROSType& known_type : known_type)
         {
-          if( field.type().msgName() == known_type.msgName()  )
+          if (field.type().msgName() == known_type.msgName())
           {
-            field.changeType( known_type );
+            field.changeType(known_type);
             break;
           }
         }
       }
     }
-    // add to vector
-    parsed_msgs.push_back( msg );
-    known_type.push_back( msg->type() );
   }
 
   std::reverse(parsed_msgs.begin(), parsed_msgs.end());
