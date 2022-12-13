@@ -304,27 +304,27 @@ template<typename DST> inline DST Variant::convert() const
 template<> inline double Variant::convert() const
 {
   using namespace RosMsgParser::details;
-  double target = 0;
+  double long target = 0;
   const auto& raw_data = &_storage.raw_data[0];
   //----------
   switch( _type )
   {
   case CHAR:
-  case INT8:   convert_impl<int8_t,  double>(*reinterpret_cast<const int8_t*>( raw_data), target  ); break;
+  case INT8:   convert_impl<int8_t,  double long>(*reinterpret_cast<const int8_t*>( raw_data), target  ); break;
 
-  case INT16:  convert_impl<int16_t, double>(*reinterpret_cast<const int16_t*>( raw_data), target  ); break;
-  case INT32:  convert_impl<int32_t, double>(*reinterpret_cast<const int32_t*>( raw_data), target  ); break;
-  case INT64:  convert_impl<int64_t, double>(*reinterpret_cast<const int64_t*>( raw_data), target  ); break;
+  case INT16:  convert_impl<int16_t, double long>(*reinterpret_cast<const int16_t*>( raw_data), target  ); break;
+  case INT32:  convert_impl<int32_t, double long>(*reinterpret_cast<const int32_t*>( raw_data), target  ); break;
+  case INT64:  convert_impl<int64_t, double long>(*reinterpret_cast<const int64_t*>( raw_data), target  ); break;
 
   case BOOL:
   case BYTE:
-  case UINT8:   convert_impl<uint8_t,  double>(*reinterpret_cast<const uint8_t*>( raw_data), target  ); break;
+  case UINT8:   convert_impl<uint8_t,  double long>(*reinterpret_cast<const uint8_t*>( raw_data), target  ); break;
 
-  case UINT16:  convert_impl<uint16_t, double>(*reinterpret_cast<const uint16_t*>( raw_data), target  ); break;
-  case UINT32:  convert_impl<uint32_t, double>(*reinterpret_cast<const uint32_t*>( raw_data), target  ); break;
-  case UINT64:  convert_impl<uint64_t, double>(*reinterpret_cast<const uint64_t*>( raw_data), target  ); break;
+  case UINT16:  convert_impl<uint16_t, double long>(*reinterpret_cast<const uint16_t*>( raw_data), target  ); break;
+  case UINT32:  convert_impl<uint32_t, double long>(*reinterpret_cast<const uint32_t*>( raw_data), target  ); break;
+  case UINT64:  convert_impl<uint64_t, double long>(*reinterpret_cast<const uint64_t*>( raw_data), target  ); break;
 
-  case FLOAT32:  convert_impl<float, double>(*reinterpret_cast<const float*>( raw_data), target  ); break;
+  case FLOAT32:  convert_impl<float, double long>(*reinterpret_cast<const float*>( raw_data), target  ); break;
   case FLOAT64:  return extract<double>();
 
   case STRING: {
@@ -340,7 +340,7 @@ template<> inline double Variant::convert() const
   default: throw TypeException("Variant::convert -> cannot convert type" + std::to_string(_type));
 
   }
-  return  target;
+  return  static_cast<double>(target);
 }
 
 template<> inline RosMsgParser::Time Variant::convert() const
