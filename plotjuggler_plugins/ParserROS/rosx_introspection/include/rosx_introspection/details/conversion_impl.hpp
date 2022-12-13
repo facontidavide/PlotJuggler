@@ -302,7 +302,7 @@ inline void convert_impl( const SRC& from, DST& target )
     //std::cout << "floating_to_signed_conversion" << std::endl;
 
     checkLowerLimitFloat<SRC,DST>(from);
-    checkLowerLimitFloat<SRC,DST>(from);
+    checkUpperLimitFloat<SRC,DST>(from);
 
     if( from != static_cast<SRC>(static_cast<DST>( from)))
         throw RangeException("Floating point truncated");
