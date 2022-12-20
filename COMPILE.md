@@ -1,47 +1,69 @@
-# Compile in Linux
+# Compilation
+These instructions are adjusted to fit our usage of PlotJuggler. For the original compilation instructions, see [here](https://github.com/facontidavide/PlotJuggler/blob/main/COMPILE.md).
+## Compile on Ubuntu (tested in 18.04)
+### Dependencies
 
-On Ubuntu, the dependencies can be installed with the command:
+The dependencies can be installed with the command:
 
     sudo apt -y install qtbase5-dev libqt5svg5-dev libqt5websockets5-dev \
-         libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq-dev
+         libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq-dev 
+
+Install the latest version (tested till 10.0.1) of Arrow for C++ and Apache Parquet for C++ according to the install instructions [here](https://arrow.apache.org/install/).
+
+### Build the repository
+
+Clone the repository:
+
+```
+git clone https://github.com/mtan1503/PlotJuggler.git
+cd PlotJuggler
+```
     
-On Fedora:
-
-    sudo dnf install qt5-qtbase-devel qt5-qtsvg-devel qt5-websockets-devel \
-         qt5-qtopendl-devel qt5-qtx11extras-devel
-
-Clone the repository into **~/plotjuggler_ws**:
+Then compile using cmake and install to your computer:
 
 ```
-git clone https://github.com/facontidavide/PlotJuggler.git ~/plotjuggler_ws/src/PlotJuggler
-cd ~/plotjuggler_ws
+mkdir build && cd build
+cmake ..
+make -j8
+sudo make install
 ```
-    
-Then compile using cmake (qmake is NOT supported):
+If you run into issues during compilation, check the *Troubleshooting* chapter below.
+## Run PlotJuggler
+If you installed PlotJuggler, then you can open the app
 
+If you want to run your build, the from your `build/` folder run:
 ```
-cmake -S src/PlotJuggler -B build/PlotJuggler -DCMAKE_INSTALL_PREFIX=install
-cmake --build build/PlotJuggler --config RelWithDebInfo --parallel --target install
+./bin/plotjuggler
 ```
- 
-## Optional: build with Conan
-
-If you want to use [conan](https://conan.io/) to manage the dependencies, 
-follow this instructions instead.
-
+## Troubleshooting
+### Compilation issues
+#### CMake Error: cannot create imported target
+If you get an error similar to the error below, this happens because in an older version of PlotJuggler the CMakeLists used `find_package(Arrow CONFIG)` and `find_package(Parquet CONFIG)`.  
 ```
-conan install src/PlotJuggler --install-folder build/PlotJuggler \
-      --build missing -pr:b=default
-
-export CMAKE_TOOLCHAIN=$(pwd)/build/PlotJuggler/conan_toolchain.cmake
-
-cmake -S src/PlotJuggler -B build/PlotJuggler \
-      -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN  \
-      -DCMAKE_INSTALL_PREFIX=install \
-      -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
-
-cmake --build build/PlotJuggler --config RelWithDebInfo --parallel --target install
+CMake Error at /usr/lib/x86_64-linux-gnu/cmake/Arrow/FindBrotli.cmake:122 (add_library):
+  add_library cannot create imported target "Brotli::brotlicommon" because another target with the same name already exists.
+Call Stack (most recent call first):
+  /usr/share/cmake-3.22/Modules/CMakeFindDependencyMacro.cmake:47 (find_package)
+  /usr/lib/x86_64-linux-gnu/cmake/Arrow/ArrowConfig.cmake:115 (find_dependency)
+  plotjuggler_plugins/DataLoadParquet/cmake/FindArrow.cmake:424 (find_package)
+  plotjuggler_plugins/DataLoadParquet/CMakeLists.txt:17 (find_package)
 ```
+To get rid of this issue, delete the Arrow and Parquet folder in the path that specifies where ArrowConfig.cmake is located within this repository. For example, from the main folder of this repository:
+```
+cd plotjuggler_plugins/DataLoadParquet/
+rm -r cmake/
+```
+### Run time issues
+
+#### Problem: PlotJuggler closes when I open a Parquet file
+It is likely that your Parquet/Arrow version and the version of this branch do not align. 
+
+Make sure that you have the latest Arrow version installed (10.0.1).
+* Check your current Arrow and Parquet version with `dpkg --list | grep arrow` and `dpkg --list | grep parquet`.
+* See instructions above for how to instal the newest version. 
+
+Make sure that you have built this repo with the latest version of Arrow and Parquet.
+* See build instructions above.
 
 ## Deploy as an AppImage
 
@@ -61,106 +83,12 @@ mkdir -p AppDir/usr/bin
 Then:
 
 ```
-cd src/PlotJuggler;export VERSION=$(git describe --abbrev=0 --tags);cd -
+cd PlotJuggler;export VERSION=$(git describe --abbrev=0 --tags);cd -
 echo $VERSION
 cp -v install/bin/* AppDir/usr/bin
 
 ./linuxdeploy-x86_64.AppImage --appdir=AppDir \
-    -d ./src/PlotJuggler/PlotJuggler.desktop \
-    -i ./src/PlotJuggler/plotjuggler.png \
+    -d ./PlotJuggler/PlotJuggler.desktop \
+    -i ./PlotJuggler/plotjuggler.png \
     --plugin qt --output appimage
-```
-
-# Compile in Mac
-
-On Mac, the dependencies can be installed using [brew](https://brew.sh/) with the following command:
-
-    brew install qt@5 protobuf mosquitto zeromq zstd
-
-Clone the repository into **~/plotjuggler_ws**:
-
-```
-git clone https://github.com/facontidavide/PlotJuggler.git ~/plotjuggler_ws/src/PlotJuggler
-cd ~/plotjuggler_ws
-```
-    
-Then compile using cmake:
-
-```
-cmake -S src/PlotJuggler -B build/PlotJuggler -DCMAKE_INSTALL_PREFIX=install
-cmake --build build/PlotJuggler --config RelWithDebInfo --parallel --target install
-```
- 
-# Compile in Windows
-
-Dependencies in Windows are managed either using 
-[conan](https://conan.io/) or [vcpkg](https://vcpkg.io/en/index.html)
-
-The rest of this section assumes that you installed
-You need to install first [Qt](https://www.qt.io/download-open-source) and 
-[git](https://desktop.github.com/).
-
-**Visual studio 2019 (16)**, that is part of the Qt 5.15.x installation,
- will be used to compile PlotJuggler.
-
-Start creating a folder called **plotjuggler_ws** and cloning the repo:
-
-```
-cd \
-mkdir plotjuggler_ws
-cd plotjuggler_ws
-git clone https://github.com/facontidavide/PlotJuggler.git src/PlotJuggler
-```
-
-## Build with Conan
-
-Note: the Arrow/Parque plugin is not supported in Conan. Use vcpkg instead, if you need
-that specific plugin.
-
-```
-conan install src/PlotJuggler --install-folder build/PlotJuggler ^
-      --build=missing -pr:b=default
-
-set CMAKE_TOOLCHAIN=%cd%/build/PlotJuggler/conan_toolchain.cmake
-
-cmake -G "Visual Studio 16" ^
-      -S src/PlotJuggler -B build/PlotJuggler ^
-      -DCMAKE_TOOLCHAIN_FILE=%CMAKE_TOOLCHAIN%  ^
-      -DCMAKE_INSTALL_PREFIX=%cd%/install ^
-      -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
-
-
-cmake --build build/PlotJuggler --config Release --parallel --target install
-```
-
-## Build with vcpkg
-
-Change the path where **vcpkg.cmake** can be found as needed.
-
-```
-set CMAKE_TOOLCHAIN=/path/vcpkg/scripts/buildsystems/vcpkg.cmake
-
-cmake -G "Visual Studio 16" ^
-      -S src/PlotJuggler -B build/PlotJuggler ^
-      -DCMAKE_TOOLCHAIN_FILE=%CMAKE_TOOLCHAIN%  ^
-      -DCMAKE_INSTALL_PREFIX=%cd%/install
-
-cmake --build build/PlotJuggler --config Release --parallel --target install
-```
-
-## Create a Windows installer
-
-Change the **Qt** and **QtInstallerFramework** version as needed.
-
-```
-xcopy src\PlotJuggler\installer installer\ /Y /S /f /z 
-xcopy install\bin\*.* installer\io.plotjuggler.application\data /Y /S /f /z 
-
-C:\Qt\5.15.2\msvc2019_64\bin\windeployqt.exe --release ^
-   installer\io.plotjuggler.application\data\plotjuggler.exe 
-
-C:\Qt\Tools\QtInstallerFramework\4.1\bin\binarycreator.exe ^
-   --offline-only -c installer\config.xml -p installer ^
-   PlotJuggler-Windows-installer.exe
-
 ```

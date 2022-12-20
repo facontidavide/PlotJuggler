@@ -12,18 +12,22 @@ else()
     message(STATUS "Finding Parquet without package managers")
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
-    # find_package(Arrow CONFIG)
-    # find_package(Parquet CONFIG)
-    find_package(Arrow REQUIRED)
-    find_package(Parquet REQUIRED)
+    find_package(Arrow QUIET)
+    if(NOT ${Arrow_FOUND})
+        message(FATAL_ERROR "Apache Arrow not found.")
+    endif()
+
+    find_package(Parquet QUIET)
+    if(NOT ${Parquet_FOUND})
+        message(FATAL_ERROR "Parquet not found.")
+    endif()
+
 endif()
 
 
-if(Arrow_FOUND)
-    message(STATUS "[Parquet] found")
-    include_directories(  ../
-        ${ARROW_INCLUDE_DIR}
-        ${PARQUET_INCLUDE_DIR} )
+if(${Arrow_FOUND} AND ${Parquet_FOUND})
+    message(STATUS "Arrow version: ${ARROW_VERSION}")
+    message(STATUS "Parquet version: ${PARQUET_VERSION}")
 
     add_definitions(${QT_DEFINITIONS})
     add_definitions(-DQT_PLUGIN)
@@ -34,18 +38,16 @@ if(Arrow_FOUND)
 
     add_library(DataLoadParquet SHARED ${SRC} ${UI_SRC}  )
 
-    target_link_libraries(DataLoadParquet
-        arrow_shared
-        parquet_shared 
-        arrow_bundled_dependencies
+    target_link_libraries(DataLoadParquet 
+        Arrow::arrow_shared
+        Parquet::parquet_shared 
         ${Qt5Widgets_LIBRARIES}
         ${Qt5Xml_LIBRARIES}
-        ${PARQUET_LIBRARIES}
         plotjuggler_base)
 
 
     install(TARGETS DataLoadParquet DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
 
 else()
-    message("[Parquet] not found. Skipping plugin DataLoadParquet.")
+    message("Arrow/Parquet not found. Skipping plugin DataLoadParquet.")
 endif()
