@@ -2725,6 +2725,7 @@ void MainWindow::onPlaybackLoop()
   //////////////////
   updatedDisplayTime();
   onUpdateLeftTableValues();
+  updateReactivePlots();
 
   for (auto& it : _state_publisher)
   {
