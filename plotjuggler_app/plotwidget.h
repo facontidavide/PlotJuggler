@@ -95,6 +95,7 @@ public slots:
   void onDataSourceRemoved(const std::string& src_name);
 
   void removeAllCurves() override;
+  void changeLineStyle();
 
   void on_panned(int dx, int dy);
 
@@ -148,6 +149,7 @@ private:
   QAction* _action_removeAllCurves;
   QAction* _action_edit;
   QAction* _action_formula;
+  QAction* _action_changeLineStyle;
   QAction* _action_split_horizontal;
   QAction* _action_split_vertical;
 
@@ -193,6 +195,8 @@ private:
                                      const QString& transform_ID = {}) override;
 
   double _time_offset;
+
+  int _line_style = 0;
 
   Range _custom_Y_limits;
 

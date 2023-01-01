@@ -116,6 +116,7 @@ PlotWidget::~PlotWidget()
 {
   delete _action_split_horizontal;
   delete _action_split_vertical;
+  delete _action_changeLineStyle;
   delete _action_removeAllCurves;
   delete _action_zoomOutMaximum;
   delete _action_zoomOutHorizontally;
@@ -152,6 +153,9 @@ void PlotWidget::buildActions()
       emit undoableChange();
     }
   });
+
+  _action_changeLineStyle = new QAction("&Change line style", this);
+  connect(_action_changeLineStyle, &QAction::triggered, this, &PlotWidget::changeLineStyle);
 
   _action_split_horizontal = new QAction("&Split Horizontally", this);
   connect(_action_split_horizontal, &QAction::triggered, this,
@@ -224,6 +228,7 @@ void PlotWidget::canvasContextMenuTriggered(const QPoint& pos)
   QString theme = settings.value("StyleSheet::theme", "light").toString();
 
   _action_removeAllCurves->setIcon(LoadSvg(":/resources/svg/trash.svg", theme));
+  _action_changeLineStyle->setIcon(LoadSvg(":/resources/svg/plot_image.svg", theme));
   _action_edit->setIcon(LoadSvg(":/resources/svg/pencil-edit.svg", theme));
   _action_formula->setIcon(LoadSvg(":/resources/svg/Fx.svg", theme));
   _action_split_horizontal->setIcon(LoadSvg(":/resources/svg/add_column.svg", theme));
@@ -241,6 +246,7 @@ void PlotWidget::canvasContextMenuTriggered(const QPoint& pos)
 
   menu.addAction(_action_edit);
   menu.addAction(_action_formula);
+  menu.addAction(_action_changeLineStyle);
   menu.addSeparator();
   menu.addAction(_action_split_horizontal);
   menu.addAction(_action_split_vertical);
@@ -437,6 +443,13 @@ void PlotWidget::onDataSourceRemoved(const std::string& src_name)
     _tracker->redraw();
     emit curveListChanged();
   }
+}
+
+void PlotWidget::changeLineStyle()
+{
+  _line_style = (++_line_style) % 4;
+//  std::cout << "######################### line style" << _line_style << " #########################" << std::endl;
+  PlotWidgetBase::changeCurvesStyle(static_cast<PlotWidgetBase::CurveStyle>(_line_style));
 }
 
 void PlotWidget::removeAllCurves()
