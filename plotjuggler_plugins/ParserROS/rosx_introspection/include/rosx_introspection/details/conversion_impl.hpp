@@ -224,7 +224,7 @@ template<typename SRC,typename DST,
           typename details::EnableIf< details::float_conversion<SRC, DST>>* = nullptr >
 inline void convert_impl( const SRC& from, DST& target )
 {
-  if(std::isnan(from)){
+  if(!std::isnan(from)) {
     checkTruncation<SRC,DST>(from);
   }
   target = static_cast<DST>( from );
