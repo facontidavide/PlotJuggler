@@ -140,8 +140,8 @@ DataLoadCSV::DataLoadCSV()
 DataLoadCSV::~DataLoadCSV()
 {
   delete _ui;
-  delete _dialog;
   delete _dateTime_dialog;
+  delete _dialog;
 }
 
 const std::vector<const char*>& DataLoadCSV::compatibleFileExtensions() const
