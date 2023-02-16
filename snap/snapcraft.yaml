@@ -82,6 +82,7 @@ parts:
       - libdw1
       - libmosquitto1
       - libprotobuf17
+      - libprotobuf-dev
       - libzmq5
     override-pull: |
         snapcraftctl pull
