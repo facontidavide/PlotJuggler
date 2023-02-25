@@ -285,6 +285,7 @@ add_subdirectory( plotjuggler_plugins/ParserROS )
 install(
      TARGETS
         plotjuggler_base
+        plotjuggler_qwt
      EXPORT ${PROJECT_NAME}Targets
      LIBRARY DESTINATION lib
      ARCHIVE DESTINATION lib
