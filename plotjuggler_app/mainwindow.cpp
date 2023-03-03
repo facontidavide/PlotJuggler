@@ -3244,7 +3244,7 @@ void MainWindow::on_actionPreferences_triggered()
 
   QString theme = settings.value("Preferences::theme").toString();
 
-  if (theme != prev_style)
+  if (!theme.isEmpty() && theme != prev_style)
   {
     loadStyleSheet(tr(":/resources/stylesheet_%1.qss").arg(theme));
   }
