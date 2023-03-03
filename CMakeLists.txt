@@ -54,7 +54,7 @@ if( CATKIN_DEVEL_PREFIX OR catkin_FOUND OR CATKIN_BUILD_BINARY_PACKAGE)
 
     catkin_package(
         INCLUDE_DIRS  plotjuggler_base/include
-        LIBRARIES  plotjuggler_base
+        LIBRARIES  plotjuggler_base plotjuggler_qwt
         CATKIN_DEPENDS roslib roscpp
     )
 
@@ -286,11 +286,7 @@ install(
      TARGETS
         plotjuggler_base
         plotjuggler_qwt
-     EXPORT ${PROJECT_NAME}Targets
-     LIBRARY DESTINATION lib
-     ARCHIVE DESTINATION lib
-     RUNTIME DESTINATION bin
-     INCLUDES DESTINATION include)
+     EXPORT ${PROJECT_NAME}Targets)
 
 install(DIRECTORY plotjuggler_base/include/ DESTINATION include )
 
