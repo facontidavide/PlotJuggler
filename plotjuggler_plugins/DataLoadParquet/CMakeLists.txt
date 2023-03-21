@@ -35,7 +35,7 @@ if(Arrow_FOUND)
     target_link_libraries(DataLoadParquet
         ${Qt5Widgets_LIBRARIES}
         ${Qt5Xml_LIBRARIES}
-        ${PARQUET_LIBRARIES}
+        ${PARQUET_SHARED_LIB}
         plotjuggler_base)
 
 
