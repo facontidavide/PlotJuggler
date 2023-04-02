@@ -1071,8 +1071,20 @@ void MainWindow::checkAllCurvesFromLayout(const QDomElement& root)
     QPushButton* buttonPlaceholder =
         msgBox.addButton(tr("Create empty placeholders"), QMessageBox::YesRole);
     msgBox.setDefaultButton(buttonPlaceholder);
-    msgBox.exec();
-    if (msgBox.clickedButton() == buttonPlaceholder)
+
+    const char* env_var = std::getenv("PLOTJUGGLER_CHOOSE_EMPTY_PLACEHOLDERS_ON_MISSING_TIMESERIES");
+    bool skip_msg_box = (env_var != nullptr && env_var[0] == '1');
+    if(skip_msg_box){
+      qDebug() << "Environment variable PLOTJUGGLER_CHOOSE_EMPTY_PLACEHOLDERS_ON_MISSING_TIMESERIES set."
+          << " Skipping dialog.\n";
+      // To enable the user to choose manually in the future
+      setenv("PLOTJUGGLER_CHOOSE_EMPTY_PLACEHOLDERS_ON_MISSING_TIMESERIES", "0", 1);
+    }
+    if (!skip_msg_box){
+      msgBox.exec();
+    }
+
+    if (skip_msg_box || msgBox.clickedButton() == buttonPlaceholder)
     {
       for (auto& name : missing_curves)
       {
@@ -2059,9 +2071,18 @@ bool MainWindow::loadLayoutFromFile(QString filename)
     QPushButton* yes = msgBox.addButton(tr("Yes"), QMessageBox::YesRole);
     QPushButton* no = msgBox.addButton(tr("No"), QMessageBox::RejectRole);
     msgBox.setDefaultButton(yes);
-    msgBox.exec();
 
-    if (msgBox.clickedButton() == yes)
+    const char* env_var = std::getenv("PLOTJUGGLER_ACCEPT_PREVIOUSLY_USED_STREAMING_PLUGIN");
+    bool skip_msg_box = (env_var != nullptr && env_var[0] == '1');
+    if (skip_msg_box){
+      qDebug() << "Environment variable PLOTJUGGLER_ACCEPT_PREVIOUSLY_USED_STREAMING_PLUGIN set."
+          << " Skipping dialog.\n";
+    }
+    else{
+      msgBox.exec();
+    }
+
+    if (skip_msg_box || msgBox.clickedButton() == yes)
     {
       if (_data_streamer.count(streamer_name) != 0)
       {

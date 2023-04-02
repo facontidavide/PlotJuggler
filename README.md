@@ -135,6 +135,14 @@ Note that this also affect the desktop launcher.
 
 You can find find the detailed instructions here: [COMPILE.md](COMPILE.md).
 
+## Auto start previously used streaming plugin
+When loading a layout that includes a streaming plugin, PlotJuggler asks `Start the previously used streaming plugin?`, in order to automatically
+click on `Yes`, you can set the environment variable: `PLOTJUGGLER_ACCEPT_PREVIOUSLY_USED_STREAMING_PLUGIN=1` and this dialog will be skipped.
+
+## Automatically choose 'Create empty placeholders' when data from a layout is missing
+When loading a layout some timeseries may be missing, PlotJuggler may ask `One or more timeseries in the layout haven't been loaded yet, What do you want to do?`, with the options: `Remove curves from plots` and `Create empty placeholders`. To automate choosing `Create empty placeholders` you can set the environment variable: `PLOTJUGGLER_CHOOSE_EMPTY_PLACEHOLDERS_ON_MISSING_TIMESERIES=1` and the dialog will be skipped chosing that option.
+
+
 # Sponsorship and commercial support
 
 PlotJuggler required a lot of work to be developed; my goal is to build the most 
