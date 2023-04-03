@@ -1,5 +1,5 @@
 <snippets>
-  <snippet name="1st_derivative">
+  <snippet name="backward_difference_derivative">
     <global>prevX = 0
 prevY = 0
 is_first = true</global>
@@ -17,6 +17,41 @@ prevY = value
 return dy/dx</function>
     <linkedSource></linkedSource>
   </snippet>
+
+  <snippet name="central_difference_derivative">
+    <global>firstX = 0
+firstY = 0
+is_first = true
+secondX = 0
+secondY = 0
+is_second = false</global>
+    <function>-- Wait for initial values
+if (is_first) then
+  is_first = false
+  is_second = true
+  firstX = time
+  firstY = value
+end
+
+if (is_second) then
+  is_second = false
+  secondX = time
+  secondY = value
+end
+
+-- Central derivative: dy/dx ~= f(x+delta_x)-f(x-delta_x)/(2*delta_x)
+dx = time - firstX
+dy = value - firstY
+-- Increment
+firstX = secondX
+firstY = secondY
+secondX = time
+secondY = value
+
+return dy/dx</function>
+    <linkedSource></linkedSource>
+  </snippet>
+
   <snippet name="average_two_curves">
     <global></global>
     <function>return (value+v1)/2</function>
