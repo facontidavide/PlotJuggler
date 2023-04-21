@@ -78,12 +78,14 @@ parts:
       - libgl-dev
       - libmosquitto-dev
       - libzmq3-dev
+      - libzstd-dev
     stage-packages:
       - libdw1
       - libmosquitto1
       - libprotobuf17
       - libprotobuf-dev
       - libzmq5
+      - libzstd1
     override-pull: |
         snapcraftctl pull
 
