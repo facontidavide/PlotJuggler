@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='flr.robot',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x11robot_state.proto\x12\tflr.robot\x1a\nmath.proto\"\x8b\x02\n\nRobotState\x12\r\n\x05query\x18\x01 \x01(\t\x12\x13\n\x0bpage_number\x18\x02 \x01(\x05\x12\x17\n\x0fresult_per_page\x18\x03 \x01(\x05\x12,\n\x06\x63orpus\x18\x04 \x01(\x0e\x32\x1c.flr.robot.RobotState.Corpus\x12\x1d\n\x03pos\x18\x05 \x01(\x0b\x32\x10.flr.math.Vector\x12\x17\n\x0fjoint_positions\x18\x06 \x03(\x01\"Z\n\x06\x43orpus\x12\r\n\tUNIVERSAL\x10\x00\x12\x07\n\x03WEB\x10\x01\x12\n\n\x06IMAGES\x10\x02\x12\t\n\x05LOCAL\x10\x03\x12\x08\n\x04NEWS\x10\x04\x12\x0c\n\x08PRODUCTS\x10\x05\x12\t\n\x05VIDEO\x10\x06\x62\x06proto3')
+  serialized_pb=_b('\n\x11robot_state.proto\x12\tflr.robot\x1a\nmath.proto\"\x83\x03\n\nRobotState\x12\r\n\x05query\x18\x01 \x01(\t\x12\x13\n\x0bpage_number\x18\x02 \x01(\x05\x12\x17\n\x0fresult_per_page\x18\x03 \x01(\x05\x12,\n\x06\x63orpus\x18\x04 \x01(\x0e\x32\x1c.flr.robot.RobotState.Corpus\x12\x1d\n\x03pos\x18\x05 \x01(\x0b\x32\x10.flr.math.Vector\x12\x17\n\x0fjoint_positions\x18\x06 \x03(\x01\x12@\n\x0esensor_reading\x18\x07 \x03(\x0b\x32(.flr.robot.RobotState.SensorReadingEntry\x1a\x34\n\x12SensorReadingEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\"Z\n\x06\x43orpus\x12\r\n\tUNIVERSAL\x10\x00\x12\x07\n\x03WEB\x10\x01\x12\n\n\x06IMAGES\x10\x02\x12\t\n\x05LOCAL\x10\x03\x12\x08\n\x04NEWS\x10\x04\x12\x0c\n\x08PRODUCTS\x10\x05\x12\t\n\x05VIDEO\x10\x06\x62\x06proto3')
   ,
   dependencies=[math__pb2.DESCRIPTOR,])
 
@@ -63,11 +63,48 @@ _ROBOTSTATE_CORPUS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=222,
-  serialized_end=312,
+  serialized_start=342,
+  serialized_end=432,
 )
 _sym_db.RegisterEnumDescriptor(_ROBOTSTATE_CORPUS)
 
+
+_ROBOTSTATE_SENSORREADINGENTRY = _descriptor.Descriptor(
+  name='SensorReadingEntry',
+  full_name='flr.robot.RobotState.SensorReadingEntry',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='flr.robot.RobotState.SensorReadingEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='flr.robot.RobotState.SensorReadingEntry.value', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=_b('8\001'),
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=288,
+  serialized_end=340,
+)
 
 _ROBOTSTATE = _descriptor.Descriptor(
   name='RobotState',
@@ -118,10 +155,17 @@ _ROBOTSTATE = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='sensor_reading', full_name='flr.robot.RobotState.sensor_reading', index=6,
+      number=7, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
-  nested_types=[],
+  nested_types=[_ROBOTSTATE_SENSORREADINGENTRY, ],
   enum_types=[
     _ROBOTSTATE_CORPUS,
   ],
@@ -132,21 +176,32 @@ _ROBOTSTATE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=45,
-  serialized_end=312,
+  serialized_end=432,
 )
 
+_ROBOTSTATE_SENSORREADINGENTRY.containing_type = _ROBOTSTATE
 _ROBOTSTATE.fields_by_name['corpus'].enum_type = _ROBOTSTATE_CORPUS
 _ROBOTSTATE.fields_by_name['pos'].message_type = math__pb2._VECTOR
+_ROBOTSTATE.fields_by_name['sensor_reading'].message_type = _ROBOTSTATE_SENSORREADINGENTRY
 _ROBOTSTATE_CORPUS.containing_type = _ROBOTSTATE
 DESCRIPTOR.message_types_by_name['RobotState'] = _ROBOTSTATE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 RobotState = _reflection.GeneratedProtocolMessageType('RobotState', (_message.Message,), dict(
+
+  SensorReadingEntry = _reflection.GeneratedProtocolMessageType('SensorReadingEntry', (_message.Message,), dict(
+    DESCRIPTOR = _ROBOTSTATE_SENSORREADINGENTRY,
+    __module__ = 'robot_state_pb2'
+    # @@protoc_insertion_point(class_scope:flr.robot.RobotState.SensorReadingEntry)
+    ))
+  ,
   DESCRIPTOR = _ROBOTSTATE,
   __module__ = 'robot_state_pb2'
   # @@protoc_insertion_point(class_scope:flr.robot.RobotState)
   ))
 _sym_db.RegisterMessage(RobotState)
+_sym_db.RegisterMessage(RobotState.SensorReadingEntry)
 
 
+_ROBOTSTATE_SENSORREADINGENTRY._options = None
 # @@protoc_insertion_point(module_scope)

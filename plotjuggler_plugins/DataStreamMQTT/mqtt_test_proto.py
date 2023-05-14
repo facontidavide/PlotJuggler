@@ -16,17 +16,17 @@ client.connect("127.0.0.1", 1883, 60)
 
 time = 0.0
 
-robot_state = robot_state_pb2.RobotState()
 
 page_number = 0;
 
-robot_state.query = "query";
 
 
 while True:
+    robot_state = robot_state_pb2.RobotState()
+    robot_state.query = "query";
     sleep(0.20)
     time += 0.20
-    
+
     page_number = page_number +1
     robot_state.page_number = page_number
     robot_state.result_per_page = page_number*2
@@ -36,6 +36,9 @@ while True:
     robot_state.pos.z = 3.3
 
 #    robot_state.corpus = 3
+
+    robot_state.sensor_reading["sensor1"] = 15;
+    robot_state.sensor_reading["sensor2"] = page_number;
 
     msg = robot_state.SerializeToString()
 

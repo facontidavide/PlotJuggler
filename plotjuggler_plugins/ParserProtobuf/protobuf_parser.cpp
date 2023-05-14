@@ -52,9 +52,9 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg,
     return false;
   }
 
-  std::function<void(const google::protobuf::Message&, const std::string&)> ParseImpl;
+  std::function<void(const google::protobuf::Message&, const std::string&, const bool)> ParseImpl;
 
-  ParseImpl = [&](const google::protobuf::Message& msg, const std::string& prefix)
+  ParseImpl = [&](const google::protobuf::Message& msg, const std::string& prefix, const bool is_map)
   {
     const gp::Reflection* reflection = msg.GetReflection();
     const gp::Descriptor* descriptor = msg.GetDescriptor();
@@ -68,6 +68,17 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg,
       std::string key = prefix.empty() ?
                           field->name():
                           fmt::format("{}/{}", prefix, field->name() );
+      if (is_map) {
+          // Map messages only have 2 fields: key and value. The key will be represented in the
+          // series name so skip it, and don't uselessly append "value" to the series name for
+          // the value.
+          if (field->name() == "key") {
+              continue;
+          } else  {
+              key = prefix;
+          }
+      }
+
       std::string suffix;
 
       if (!field)
@@ -169,8 +180,39 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg,
               reflection->GetRepeatedMessage(msg, field, index) :
               reflection->GetMessage(msg, field);
 #pragma pop_macro("GetMessage")
+            if (field->is_map()) {
+                // A protobuf map looks just like a message but with a "key" and
+                // "value" field, extract the key so we can set a useful suffix.
+                const auto* map_descriptor = new_msg.GetDescriptor();
+                const auto* map_reflection = new_msg.GetReflection();
+                const auto* key_field = map_descriptor->FindFieldByName("key");
+                switch(key_field->cpp_type())
+                {
+                  // A map's key is a scalar type (except floats and bytes) or a string
+                  case gp::FieldDescriptor::CPPTYPE_STRING:{
+                    suffix = fmt::format(
+                            "/{}", map_reflection->GetString(new_msg, key_field));
+                  }break;
+                  case gp::FieldDescriptor::CPPTYPE_INT32:{
+                    suffix = fmt::format(
+                            "/{}", map_reflection->GetInt32(new_msg, key_field));
+                  }break;
+                  case gp::FieldDescriptor::CPPTYPE_INT64:{
+                    suffix = fmt::format(
+                            "/{}", map_reflection->GetInt64(new_msg, key_field));
+                  }break;
+                  case gp::FieldDescriptor::CPPTYPE_UINT32:{
+                    suffix = fmt::format(
+                            "/{}", map_reflection->GetUInt32(new_msg, key_field));
+                  }break;
+                  case gp::FieldDescriptor::CPPTYPE_UINT64:{
+                    suffix = fmt::format(
+                            "/{}", map_reflection->GetUInt64(new_msg, key_field));
+                  }break;
+                }
+            }
+            ParseImpl(new_msg, key + suffix, field->is_map());
 
-            ParseImpl(new_msg, key + suffix);
             is_double = false;
           }break;
         }
@@ -185,7 +227,7 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg,
   };
 
   // start recursion
-  ParseImpl(*mutable_msg, _topic_name);
+  ParseImpl(*mutable_msg, _topic_name, false);
 
   return true;
 }

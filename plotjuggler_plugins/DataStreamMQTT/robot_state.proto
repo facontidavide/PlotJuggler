@@ -21,4 +21,6 @@ message RobotState {
   math.Vector pos = 5;
   repeated double joint_positions = 6;
 
+  map <string, int32> sensor_reading = 7;
+
 }
