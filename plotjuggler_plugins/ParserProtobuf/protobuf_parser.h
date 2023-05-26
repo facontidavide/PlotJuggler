@@ -12,6 +12,7 @@
 
 #include "error_collectors.h"
 #include "PlotJuggler/messageparser_base.h"
+#include <optional>
 
 using namespace PJ;
 
@@ -19,13 +20,7 @@ class ProtobufParser : public MessageParser
 {
 public:
   ProtobufParser(const std::string& topic_name,
-                 const google::protobuf::Descriptor* descriptor,
-                 PlotDataMapRef& data)
-    : MessageParser(topic_name, data)
-    , _proto_pool(&_proto_database)
-    , _msg_descriptor(descriptor)
-  {
-  }
+                 const google::protobuf::Descriptor* descriptor, PlotDataMapRef& data);
 
   ProtobufParser(const std::string& topic_name,
                  const std::string type_name,
@@ -35,14 +30,11 @@ public:
   bool parseMessage(const MessageRef serialized_msg, double& timestamp) override;
 
 protected:
+  std::optional<unsigned int> _timestamp_field_id;
 
   google::protobuf::SimpleDescriptorDatabase _proto_database;
   google::protobuf::DescriptorPool _proto_pool;
 
   google::protobuf::DynamicMessageFactory _msg_factory;
   const google::protobuf::Descriptor* _msg_descriptor = nullptr;
-
 };
-
-
-
