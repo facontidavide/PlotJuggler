@@ -40,6 +40,8 @@ private:
   ConfigZCM* _config_widget;
   Ui::DialogZcm* _ui;
 
+  uint64_t _firstTimestamp;
+
   std::unordered_set<std::string> _all_channels;
   std::string _all_channels_filepath;
 

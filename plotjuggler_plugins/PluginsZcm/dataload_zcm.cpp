@@ -27,6 +27,8 @@ DataLoadZcm::DataLoadZcm()
   _ui = new Ui::DialogZcm();
   _ui->setupUi(_dialog);
 
+  _firstTimestamp = std::numeric_limits<uint64_t>::max();
+
   _config_widget = new ConfigZCM("DataLoadZcm", _dialog);
   _ui->mainLayout->insertWidget(0, _config_widget, 1);
 
@@ -236,15 +238,20 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
                                            evt->data, evt->datalen,
                                            "/",
                                            types, processData, &usr);
+
+    if (_firstTimestamp == std::numeric_limits<uint64_t>::max()) {
+      _firstTimestamp = evt->timestamp;
+    }
+    double timestamp = (evt->timestamp - _firstTimestamp) / 1e6;
     for (auto& n : usr.numerics) {
       auto itr = plot_data.numeric.find(n.first);
       if (itr == plot_data.numeric.end()) itr = plot_data.addNumeric(n.first);
-      itr->second.pushBack({ (double)evt->timestamp / 1e6, n.second });
+      itr->second.pushBack({ timestamp, n.second });
     }
     for (auto& s : usr.strings) {
       auto itr = plot_data.strings.find(s.first);
       if (itr == plot_data.strings.end()) itr = plot_data.addStringSeries(s.first);
-      itr->second.pushBack({ (double)evt->timestamp / 1e6, s.second });
+      itr->second.pushBack({ timestamp, s.second });
     }
 
     usr.numerics.clear();
