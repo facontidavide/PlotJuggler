@@ -232,7 +232,6 @@ parts:
       - ros-foxy-object-recognition-msgs
       - ros-foxy-octomap-msgs
       - ros-foxy-ouster-msgs
-      - ros-foxy-pacmod-msgs
       - ros-foxy-pcl-msgs
       - ros-foxy-pendulum-msgs
       - ros-foxy-phidgets-msgs
