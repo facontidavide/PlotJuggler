@@ -348,6 +348,13 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QRadioButton" name="radioStepsInv">
+              <property name="text">
+               <string>Inverted Steps</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>

@@ -723,6 +723,11 @@ void PlotWidgetBase::setStyle(QwtPlotCurve* curve, CurveStyle style)
       break;
     case STEPS:
       curve->setStyle(QwtPlotCurve::Steps);
+      curve->setCurveAttribute(QwtPlotCurve::Inverted, false);
+      break;
+      case STEPSINV:
+      curve->setStyle(QwtPlotCurve::Steps);
+      curve->setCurveAttribute(QwtPlotCurve::Inverted, true);
       break;
   }
 }

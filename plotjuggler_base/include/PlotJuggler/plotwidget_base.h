@@ -33,7 +33,8 @@ public:
     DOTS,
     LINES_AND_DOTS,
     STICKS,
-    STEPS
+    STEPS,
+    STEPSINV
   };
 
   struct CurveInfo
