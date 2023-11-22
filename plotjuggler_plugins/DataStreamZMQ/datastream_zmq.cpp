@@ -126,7 +126,7 @@ bool DataStreamZMQ::start(QStringList*)
       (dialog->ui->comboBox->currentText() + address + ":" + QString::number(port))
           .toStdString();
 
-  _zmq_socket.connect(_socket_address.c_str());
+  _zmq_socket.bind(_socket_address.c_str());
 
   parseTopicFilters(topics);
   subscribeTopics();
