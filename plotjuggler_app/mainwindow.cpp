@@ -1527,6 +1527,8 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
 
       if (dataloader->readDataFromFile(&new_info, mapped_data))
       {
+        setWindowTitle(info.filename);
+
         AddPrefixToPlotData(info.prefix.toStdString(), mapped_data.numeric);
         AddPrefixToPlotData(info.prefix.toStdString(), mapped_data.strings);
 
