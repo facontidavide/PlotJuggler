@@ -344,14 +344,14 @@
              <item>
              <widget class="QRadioButton" name="radioSteps">
               <property name="text">
-               <string>Steps</string>
+               <string>Steps (pre)</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QRadioButton" name="radioStepsInv">
               <property name="text">
-               <string>Inverted Steps</string>
+               <string>Inverted (post)</string>
               </property>
              </widget>
             </item>
