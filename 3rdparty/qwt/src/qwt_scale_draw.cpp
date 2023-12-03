@@ -731,16 +731,12 @@ QPointF QwtScaleDraw::pos() const
  */
 void QwtScaleDraw::setLength( double length )
 {
-#if 0
     if ( length >= 0 && length < 10 )
         length = 10;
 
-    // why should we accept negative lengths ???
+    // f.e the left/bottom scales of a polar plot
     if ( length < 0 && length > -10 )
         length = -10;
-#else
-    length = qwtMaxF( length, 10.0 );
-#endif
 
     m_data->len = length;
     updateMap();

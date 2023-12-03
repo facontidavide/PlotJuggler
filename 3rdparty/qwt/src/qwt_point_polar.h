@@ -58,7 +58,7 @@ class QWT_EXPORT QwtPointPolar
 };
 
 Q_DECLARE_TYPEINFO( QwtPointPolar, Q_MOVABLE_TYPE );
-Q_DECLARE_METATYPE( QwtPointPolar );
+Q_DECLARE_METATYPE( QwtPointPolar )
 
 #ifndef QT_NO_DEBUG_STREAM
 QWT_EXPORT QDebug operator<<( QDebug, const QwtPointPolar& );

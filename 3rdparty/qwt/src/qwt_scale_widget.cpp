@@ -208,13 +208,14 @@ void QwtScaleWidget::setTitle( const QwtText& title )
  */
 void QwtScaleWidget::setAlignment( QwtScaleDraw::Alignment alignment )
 {
-    if ( m_data->scaleDraw )
-        m_data->scaleDraw->setAlignment( alignment );
+    if ( m_data->scaleDraw == nullptr )
+        return;
+
+    m_data->scaleDraw->setAlignment( alignment );
 
     if ( !testAttribute( Qt::WA_WState_OwnSizePolicy ) )
     {
-        QSizePolicy policy( QSizePolicy::MinimumExpanding,
-            QSizePolicy::Fixed );
+        QSizePolicy policy( QSizePolicy::MinimumExpanding, QSizePolicy::Fixed );
         if ( m_data->scaleDraw->orientation() == Qt::Vertical )
             policy.transpose();
 

@@ -52,7 +52,7 @@ class QWT_EXPORT QwtPoint3D
 };
 
 Q_DECLARE_TYPEINFO( QwtPoint3D, Q_MOVABLE_TYPE );
-Q_DECLARE_METATYPE( QwtPoint3D );
+Q_DECLARE_METATYPE( QwtPoint3D )
 
 #ifndef QT_NO_DEBUG_STREAM
 QWT_EXPORT QDebug operator<<( QDebug, const QwtPoint3D& );

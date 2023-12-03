@@ -46,7 +46,7 @@ class QWT_EXPORT QwtPlotOpenGLCanvas : public QOpenGLWidget, public QwtPlotAbstr
 
   public:
     explicit QwtPlotOpenGLCanvas( QwtPlot* = NULL );
-    explicit QwtPlotOpenGLCanvas( const QSurfaceFormat&, QwtPlot* = NULL);
+    explicit QwtPlotOpenGLCanvas( int samples, QwtPlot* = NULL);
     virtual ~QwtPlotOpenGLCanvas();
 
     Q_INVOKABLE virtual void invalidateBackingStore() QWT_OVERRIDE;
@@ -65,7 +65,7 @@ class QWT_EXPORT QwtPlotOpenGLCanvas : public QOpenGLWidget, public QwtPlotAbstr
     virtual void resizeGL( int width, int height ) QWT_OVERRIDE;
 
   private:
-    void init( const QSurfaceFormat& );
+    void init();
     virtual void clearBackingStore() QWT_OVERRIDE;
 
     class PrivateData;

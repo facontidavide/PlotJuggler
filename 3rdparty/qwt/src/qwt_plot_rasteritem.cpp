@@ -693,10 +693,22 @@ void QwtPlotRasterItem::draw( QPainter* painter,
         // When we have no information about position and size of
         // data pixels we render in resolution of the paint device.
 
+        auto imageSize = paintRect.size();
+
+#if QT_VERSION >= 0x050000
+        const auto pixelRatio = QwtPainter::devicePixelRatio( painter->device() );
+        imageSize *= pixelRatio;
+#endif
+
         image = compose(xxMap, yyMap,
-            area, paintRect, paintRect.size().toSize(), doCache);
+            area, paintRect, imageSize.toSize(), doCache);
+
         if ( image.isNull() )
             return;
+
+#if QT_VERSION >= 0x050000
+        image.setDevicePixelRatio( pixelRatio );
+#endif
 
         // Remove pixels at the boundaries, when explicitly
         // excluded in the intervals

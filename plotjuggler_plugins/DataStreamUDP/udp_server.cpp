@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include <QMessageBox>
 #include <chrono>
 #include <QNetworkDatagram>
+#include <QNetworkInterface>
 
 #include "ui_udp_server.h"
 
@@ -97,8 +98,10 @@ bool UDP_Server::start(QStringList*)
   // load previous values
   QSettings settings;
   QString protocol = settings.value("UDP_Server::protocol", "JSON").toString();
+  QString address_str = settings.value("UDP_Server::address", "127.0.0.1").toString();
   int port = settings.value("UDP_Server::port", 9870).toInt();
 
+  dialog.ui->lineEditAddress->setText(address_str);
   dialog.ui->lineEditPort->setText(QString::number(port));
 
   ParserFactoryPlugin::Ptr parser_creator;
@@ -130,6 +133,7 @@ bool UDP_Server::start(QStringList*)
     return false;
   }
 
+  address_str = dialog.ui->lineEditAddress->text();
   port = dialog.ui->lineEditPort->text().toUShort(&ok);
   protocol = dialog.ui->comboBoxProtocol->currentText();
 
@@ -137,23 +141,52 @@ bool UDP_Server::start(QStringList*)
 
   // save back to service
   settings.setValue("UDP_Server::protocol", protocol);
+  settings.setValue("UDP_Server::address", address_str);
   settings.setValue("UDP_Server::port", port);
 
+  QHostAddress address(address_str);
+
+  bool success = true;
+  success &= !address.isNull();
+
   _udp_socket = new QUdpSocket();
-  _udp_socket->bind(QHostAddress::Any, port);
+
+  if (!address.isMulticast())
+  {
+    success &= _udp_socket->bind(address, port);
+  }
+  else
+  {
+    success &= _udp_socket->bind(
+        address, port, QAbstractSocket::ShareAddress | QAbstractSocket::ReuseAddressHint);
+
+    // Add multicast group membership to all interfaces which support multicast.
+    for (const auto& interface : QNetworkInterface::allInterfaces())
+    {
+      QNetworkInterface::InterfaceFlags iflags = interface.flags();
+      if (interface.isValid() && !iflags.testFlag(QNetworkInterface::IsLoopBack) &&
+          iflags.testFlag(QNetworkInterface::CanMulticast) &&
+          iflags.testFlag(QNetworkInterface::IsRunning))
+      {
+        success &= _udp_socket->joinMulticastGroup(address, interface);
+      }
+    }
+  }
+
+  _running = true;
 
   connect(_udp_socket, &QUdpSocket::readyRead, this, &UDP_Server::processMessage);
 
-  if (_udp_socket)
+  if (success)
   {
-    qDebug() << "UDP listening on port" << port;
-    _running = true;
+    qDebug() << tr("UDP listening on (%1, %2)").arg(address_str).arg(port);
   }
   else
   {
     QMessageBox::warning(nullptr, tr("UDP Server"),
-                         tr("Couldn't bind UDP port %1").arg(port), QMessageBox::Ok);
-    _running = false;
+                         tr("Couldn't bind to UDP (%1, %2)").arg(address_str).arg(port),
+                         QMessageBox::Ok);
+    shutdown();
   }
 
   return _running;

@@ -396,3 +396,7 @@ bool QwtWidgetOverlay::eventFilter( QObject* object, QEvent* event )
 
     return QObject::eventFilter( object, event );
 }
+
+#if QWT_MOC_INCLUDE
+#include "moc_qwt_widget_overlay.cpp"
+#endif

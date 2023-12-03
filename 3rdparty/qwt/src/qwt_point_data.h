@@ -19,7 +19,7 @@
    \brief Interface for iterating over two QVector<T> objects.
  */
 template< typename T >
-class QwtPointArrayData : public QwtPointSeriesData
+class QwtPointArrayData : public QwtSeriesData< QPointF >
 {
   public:
     QwtPointArrayData( const QVector< T >& x, const QVector< T >& y );
@@ -40,7 +40,7 @@ class QwtPointArrayData : public QwtPointSeriesData
    \brief Data class containing two pointers to memory blocks of T.
  */
 template< typename T >
-class QwtCPointerData : public QwtPointSeriesData
+class QwtCPointerData : public QwtSeriesData< QPointF >
 {
   public:
     QwtCPointerData( const T* x, const T* y, size_t size );
@@ -64,7 +64,7 @@ class QwtCPointerData : public QwtPointSeriesData
    interpreted as x coordinate.
  */
 template< typename T >
-class QwtValuePointData : public QwtPointSeriesData
+class QwtValuePointData : public QwtSeriesData< QPointF >
 {
   public:
     QwtValuePointData( const QVector< T >& y );
@@ -86,7 +86,7 @@ class QwtValuePointData : public QwtPointSeriesData
    interpreted as x coordinate.
  */
 template< typename T >
-class QwtCPointerValueData : public QwtPointSeriesData
+class QwtCPointerValueData : public QwtSeriesData< QPointF >
 {
   public:
     QwtCPointerValueData( const T* y, size_t size );
@@ -154,7 +154,7 @@ class QwtCPointerValueData : public QwtPointSeriesData
    }
    \endcode
  */
-class QWT_EXPORT QwtSyntheticPointData : public QwtPointSeriesData
+class QWT_EXPORT QwtSyntheticPointData : public QwtSeriesData< QPointF >
 {
   public:
     QwtSyntheticPointData( size_t size,

@@ -78,7 +78,7 @@ QPolygonF QwtSplineCurveFitter::fitCurve( const QPolygonF& points ) const
 
     const QList< QPolygonF > subPaths = path.toSubpathPolygons();
     if ( subPaths.size() == 1 )
-        subPaths.first();
+        return subPaths.first();
 
     return QPolygonF();
 }

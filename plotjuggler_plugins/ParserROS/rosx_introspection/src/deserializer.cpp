@@ -46,7 +46,7 @@ void ROS_Deserializer::deserializeString(std::string &dst)
 
   if( string_size > _bytes_left )
   {
-    throw std::runtime_error("Buffer overrun in RosMsgParser::ReadFromBuffer");
+    throw std::runtime_error("Buffer overrun in ROS_Deserializer::deserializeString");
   }
 
   if (string_size == 0) {
@@ -64,6 +64,21 @@ void ROS_Deserializer::deserializeString(std::string &dst)
 uint32_t ROS_Deserializer::deserializeUInt32()
 {
   return deserialize<uint32_t>();
+}
+
+Span<const uint8_t>  ROS_Deserializer::deserializeByteSequence()
+{
+  uint32_t vect_size = deserialize<uint32_t>();
+  if( vect_size > _bytes_left )
+  {
+    throw std::runtime_error("Buffer overrun in ROS_Deserializer::deserializeByteSequence");
+  }
+  if (vect_size == 0) {
+    return {};
+  }
+  Span<const uint8_t> out(_ptr, vect_size);
+  jump(vect_size);
+  return out;
 }
 
 const uint8_t *ROS_Deserializer::getCurrentPtr() const
@@ -140,6 +155,25 @@ void FastCDR_Deserializer::deserializeString(std::string &dst)
 uint32_t FastCDR_Deserializer::deserializeUInt32()
 {
   return Deserialize<uint32_t>(*_cdr);
+}
+
+Span<const uint8_t> FastCDR_Deserializer::deserializeByteSequence()
+{
+//  thread_local std::vector<uint8_t> tmp;
+//  _cdr->deserialize(tmp);
+//  return {tmp.data(), tmp.size()};
+
+  uint32_t seqLength = 0;
+  _cdr->deserialize(seqLength);
+
+  // dirty trick to change the internal state of cdr
+  auto* ptr = _cdr->getCurrentPosition();
+
+  uint8_t dummy;
+  _cdr->deserialize(dummy);
+
+  _cdr->jump(seqLength - 1);
+  return {reinterpret_cast<const uint8_t*>(ptr), seqLength};
 }
 
 const uint8_t *FastCDR_Deserializer::getCurrentPtr() const

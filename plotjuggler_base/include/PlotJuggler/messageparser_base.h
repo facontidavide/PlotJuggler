@@ -20,7 +20,7 @@
 namespace PJ
 {
 /*
- * A messgaeParser is a clas that is able to convert a message received by
+ * A messageParser is a class that is able to convert a message received by
  * a DataStreamer plugin into data in PlotDataMapRef.
  *
  * - Each data Source has its own instance of MessageParser

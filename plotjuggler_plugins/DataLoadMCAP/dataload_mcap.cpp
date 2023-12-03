@@ -9,6 +9,8 @@
 #include <QInputDialog>
 #include <QPushButton>
 
+#include "data_tamer_parser/data_tamer_parser.hpp"
+
 #include "mcap/reader.hpp"
 #include "dialog_mcap.h"
 
@@ -61,13 +63,19 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
   }
   auto statistics = reader.statistics();
 
-  std::unordered_map<int, mcap::SchemaPtr> schemas; // schema_id
+  std::unordered_map<int, mcap::SchemaPtr> mcap_schemas; // schema_id
   std::unordered_map<int, mcap::ChannelPtr> channels; // channel_id
   std::unordered_map<int, MessageParserPtr> parsers_by_channel; // channel_id
 
-  for (const auto& [schema_id, shema_ptr] : reader.schemas())
+  std::unordered_map<int, DataTamerParser::Schema> dt_schames;
+  int total_dt_schemas = 0;
+
+  std::unordered_set<mcap::ChannelId> channels_containing_datatamer_schema;
+  std::unordered_set<mcap::ChannelId> channels_containing_datatamer_data;
+
+  for (const auto& [schema_id, schema_ptr] : reader.schemas())
   {
-    schemas.insert( {schema_id, shema_ptr} );
+    mcap_schemas.insert( {schema_id, schema_ptr} );
   }
 
   std::set<QString> notified_encoding_problem;
@@ -75,11 +83,20 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
   for (const auto& [channel_id, channel_ptr] : reader.channels())
   {
     channels.insert( {channel_id, channel_ptr} );
-    const auto& schema = schemas.at(channel_ptr->schemaId);
+    const auto& schema = mcap_schemas.at(channel_ptr->schemaId);
     const auto& topic_name = channel_ptr->topic;
     std::string definition(reinterpret_cast<const char*>(schema->data.data()),
                            schema->data.size());
 
+    if(schema->name == "data_tamer_msgs/msg/Schemas")
+    {
+      channels_containing_datatamer_schema.insert(channel_id);
+      total_dt_schemas += statistics->channelMessageCounts.at(channel_id);
+    }
+    if(schema->name == "data_tamer_msgs/msg/Snapshot")
+    {
+      channels_containing_datatamer_data.insert(channel_id);
+    }
 
     QString channel_encoding = QString::fromStdString(channel_ptr->messageEncoding);
     QString schema_encoding = QString::fromStdString(schema->encoding);
@@ -112,7 +129,7 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
     parsers_by_channel.insert( {channel_ptr->id, parser} );
   };
 
-  DialogMCAP dialog(channels, schemas);
+  DialogMCAP dialog(channels, mcap_schemas);
   auto ret = dialog.exec();
   if (ret != QDialog::Accepted)
   {
@@ -165,7 +182,6 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
 
     // MCAP always represents publishTime in nanoseconds
     double timestamp_sec = double(msg_view.message.publishTime) * 1e-9;
-
     auto parser_it = parsers_by_channel.find(msg_view.channel->id);
     if( parser_it == parsers_by_channel.end() )
     {
@@ -176,6 +192,15 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
     auto parser = parser_it->second;
     MessageRef msg(msg_view.message.data, msg_view.message.dataSize);
     parser->parseMessage(msg, timestamp_sec);
+
+    // data tamer schema
+    if( channels_containing_datatamer_schema.count(msg_view.channel->id) != 0)
+    {
+
+
+    }
+
+    // regular message
 
     if (msg_count++ % 1000 == 0)
     {

@@ -325,6 +325,7 @@ class QWT_EXPORT QwtPicker : public QObject, public QwtEventPattern
     const QwtWidgetOverlay* trackerOverlay() const;
 
     const QPolygon& pickedPoints() const;
+    QRect trackerRect( const QSize& ) const;
 
   private:
     void init( QWidget*, RubberBand rubberBand, DisplayMode trackerMode );

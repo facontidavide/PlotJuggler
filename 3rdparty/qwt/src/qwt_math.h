@@ -85,9 +85,13 @@
 #endif
 
 #if defined( QT_WARNING_PUSH )
-// on earlier Qt versions you will be flooded with warnings anyway
-QT_WARNING_DISABLE_CLANG("-Wdouble-promotion")
-QT_WARNING_DISABLE_GCC("-Wdouble-promotion")
+    /*
+        early Qt versions not having QT_WARNING_PUSH is full of warnings
+        so that we do not care of suppressing those from below
+     */
+    QT_WARNING_PUSH
+    QT_WARNING_DISABLE_CLANG("-Wdouble-promotion")
+    QT_WARNING_DISABLE_GCC("-Wdouble-promotion")
 #endif
 
 /*
@@ -143,8 +147,8 @@ QWT_CONSTEXPR inline qreal qwtMaxF( double a, float b )
     return ( a < b ) ? b : a;
 }
 
-#if defined( QT_WARNING_PUSH )
-QT_WARNING_POP
+#if defined( QT_WARNING_POP )
+    QT_WARNING_POP
 #endif
 
 QWT_EXPORT double qwtNormalizeRadians( double radians );

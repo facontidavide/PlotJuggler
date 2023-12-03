@@ -113,6 +113,26 @@ struct JointState
   static const char* id() { return "sensor_msgs/JointState"; }
 };
 
+//--------------------
+
+struct DataTamerSchemas
+{
+  // no need to save any additional information
+
+  static const char* id() { return "data_tamer_msgs/Schemas"; }
+};
+
+struct DataTamerSnapshot
+{
+  std::string prefix;
+  uint64_t timestamp_nsec;
+  uint64_t schema_hash;
+  std::vector<uint8_t> active_mask;
+  std::vector<uint8_t> payload;
+
+  static const char* id() { return "data_tamer_msgs/Snapshot"; }
+};
+
 }
 
 #endif // SPECIAL_MESSAGES_H

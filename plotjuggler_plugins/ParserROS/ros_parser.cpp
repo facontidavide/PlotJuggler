@@ -1,4 +1,5 @@
 #include "ros_parser.h"
+#include "data_tamer_parser/data_tamer_parser.hpp"
 #include "PlotJuggler/fmt/format.h"
 
 using namespace PJ;
@@ -6,6 +7,8 @@ using namespace RosMsgParser;
 
 static ROSType quaternion_type( Msg::Quaternion::id() );
 constexpr double RAD_TO_DEG = 180.0 / M_PI;
+
+static std::unordered_map<uint64_t, DataTamerParser::Schema> _global_data_tamer_schemas;
 
 ParserROS::ParserROS(const std::string& topic_name,
                      const std::string& type_name,
@@ -22,10 +25,28 @@ ParserROS::ParserROS(const std::string& topic_name,
 
   _parser.setMaxArrayPolicy( policy, maxArraySize() );
 
-
-  _is_diangostic_msg = ( Msg::DiagnosticStatus::id() == type_name);
-  _is_jointstate_msg = ( Msg::JointState::id() == type_name);
-  _is_tf2_msg = ( Msg::TFMessage::id() == type_name);
+  using std::placeholders::_1;
+  using std::placeholders::_2;
+  if( Msg::DiagnosticStatus::id() == type_name)
+  {
+    _customized_parser = std::bind(&ParserROS::parseDiagnosticMsg, this, _1, _2);
+  }
+  else if( Msg::JointState::id() == type_name)
+  {
+    _customized_parser = std::bind(&ParserROS::parseJointStateMsg, this, _1, _2);
+  }
+  else if( Msg::TFMessage::id() == type_name)
+  {
+    _customized_parser = std::bind(&ParserROS::parseTF2Msg, this, _1, _2);
+  }
+  else if( Msg::DataTamerSchemas::id() == type_name)
+  {
+    _customized_parser = std::bind(&ParserROS::parseDataTamerSchemasMsg, this, _1, _2);
+  }
+  else if( Msg::DataTamerSnapshot::id() == type_name)
+  {
+    _customized_parser = std::bind(&ParserROS::parseDataTamerSnapshotMsg, this, _1, _2);
+  }
 
   //---------- detect quaternion in schema --------
   auto hasQuaternion = [this](const auto& node) {
@@ -40,19 +61,9 @@ ParserROS::ParserROS(const std::string& topic_name,
 
 bool ParserROS::parseMessage(const PJ::MessageRef serialized_msg, double &timestamp)
 {
-  if( _is_diangostic_msg )
+  if( _customized_parser )
   {
-    parseDiagnosticMsg(serialized_msg, timestamp);
-    return true;
-  }
-  if( _is_jointstate_msg )
-  {
-    parseJointStateMsg(serialized_msg, timestamp);
-    return true;
-  }
-  if( _is_tf2_msg )
-  {
-    parseTF2Msg(serialized_msg, timestamp);
+    _customized_parser(serialized_msg, timestamp);
     return true;
   }
 
@@ -333,4 +344,62 @@ void ParserROS::parseTF2Msg(const MessageRef msg_buffer, double &stamp)
       {stamp, RPY.yaw * RAD_TO_DEG} );
   }
 
+}
+
+void ParserROS::parseDataTamerSchemasMsg(const PJ::MessageRef msg_buffer, double &timestamp)
+{
+  _deserializer->init( Span<const uint8_t>(msg_buffer.data(), msg_buffer.size()) );
+
+  const size_t vector_size = _deserializer->deserializeUInt32();
+
+  for(size_t i=0; i<vector_size; i++)
+  {
+    DataTamerParser::Schema schema;
+    schema.hash = _deserializer->deserialize(BuiltinType::UINT64).convert<uint64_t>();
+    std::string channel_name;
+    _deserializer->deserializeString(channel_name);
+    std::string schema_text;
+    _deserializer->deserializeString(schema_text);
+
+    auto dt_schema = DataTamerParser::BuilSchemaFromText(schema_text);
+    dt_schema.channel_name = channel_name;
+    _global_data_tamer_schemas.insert({dt_schema.hash, dt_schema});
+  }
+}
+
+void ParserROS::parseDataTamerSnapshotMsg(const PJ::MessageRef msg_buffer, double &timestamp)
+{
+  _deserializer->init( Span<const uint8_t>(msg_buffer.data(), msg_buffer.size()) );
+
+  DataTamerParser::SnapshotView snapshot;
+
+  snapshot.timestamp = _deserializer->deserialize(BuiltinType::UINT64).convert<uint64_t>();
+  snapshot.schema_hash = _deserializer->deserialize(BuiltinType::UINT64).convert<uint64_t>();
+
+  auto active_mask = _deserializer->deserializeByteSequence();
+  snapshot.active_mask = {active_mask.data(), active_mask.size()};
+
+  auto payload = _deserializer->deserializeByteSequence();
+  snapshot.payload = {payload.data(), payload.size()};
+
+  auto it = _global_data_tamer_schemas.find(snapshot.schema_hash);
+  if(it == _global_data_tamer_schemas.end())
+  {
+    return;
+  }
+  const auto& dt_schema = it->second;
+
+  const auto toDouble = [](const auto& value) {
+    return static_cast<double>(value);
+  };
+
+  auto callback = [&](const std::string& name_field,
+                      const DataTamerParser::VarNumber& value)
+  {
+    double timestamp = double(snapshot.timestamp) * 1e-9;
+    auto name = fmt::format("{}/{}/{}",  _topic_name, dt_schema.channel_name, name_field);
+    getSeries(name).pushBack( {timestamp, std::visit(toDouble, value)} );
+  };
+
+  DataTamerParser::ParseSnapshot(dt_schema, snapshot, callback);
 }

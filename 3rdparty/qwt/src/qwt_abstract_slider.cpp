@@ -716,21 +716,26 @@ double QwtAbstractSlider::boundedValue( double value ) const
 
     if ( m_data->wrapping && vmin != vmax )
     {
-        const int fullCircle = 360 * 16;
-
-        const double pd = scaleMap().pDist();
-        if ( int( pd / fullCircle ) * fullCircle == pd )
+        if ( qFuzzyCompare( scaleMap().pDist(), 360.0 ) )
         {
             // full circle scales: min and max are the same
-            const double range = vmax - vmin;
 
-            if ( value < vmin )
+            if ( qFuzzyCompare( value, vmax ) )
             {
-                value += std::ceil( ( vmin - value ) / range ) * range;
+                value = vmin;
             }
-            else if ( value > vmax )
+            else
             {
-                value -= std::ceil( ( value - vmax ) / range ) * range;
+                const double range = vmax - vmin;
+
+                if ( value < vmin )
+                {
+                    value += std::ceil( ( vmin - value ) / range ) * range;
+                }
+                else if ( value > vmax )
+                {
+                    value -= std::ceil( ( value - vmax ) / range ) * range;
+                }
             }
         }
         else

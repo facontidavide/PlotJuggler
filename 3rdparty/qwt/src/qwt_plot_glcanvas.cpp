@@ -174,7 +174,7 @@ void QwtPlotGLCanvas::paintGL()
 
     if ( testPaintAttribute( QwtPlotGLCanvas::BackingStore ) )
     {
-        const qreal pixelRatio = QwtPainter::devicePixelRatio( NULL );
+        const qreal pixelRatio = QwtPainter::devicePixelRatio( this );
         const QRect rect( 0, 0, width() * pixelRatio, height() * pixelRatio );
 
         if ( hasFocusIndicator )

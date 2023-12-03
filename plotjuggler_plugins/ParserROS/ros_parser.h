@@ -28,16 +28,19 @@ protected:
 
   void parseHeader(PJ::Msg::Header& header);
 
-  void parseDiagnosticMsg(const PJ::MessageRef serialized_msg, double &timestamp);
+  void parseDiagnosticMsg(const PJ::MessageRef msg_buffer, double &timestamp);
 
-  void parseJointStateMsg(const PJ::MessageRef serialized_msg, double &timestamp);
+  void parseJointStateMsg(const PJ::MessageRef msg_buffer, double &timestamp);
 
-  void parseTF2Msg(const PJ::MessageRef serialized_msg, double &timestamp);
+  void parseTF2Msg(const PJ::MessageRef msg_buffer, double &timestamp);
+
+  void parseDataTamerSchemasMsg(const PJ::MessageRef msg_buffer, double &timestamp);
+
+  void parseDataTamerSnapshotMsg(const PJ::MessageRef msg_buffer, double &timestamp);
+
+  std::function<void(const PJ::MessageRef, double&)> _customized_parser;
 
   bool _contains_quaternion = false;
-  bool _is_diangostic_msg = false;
-  bool _is_jointstate_msg = false;
-  bool _is_tf2_msg = false;
 };
 
 #endif // ROS_PARSER_H

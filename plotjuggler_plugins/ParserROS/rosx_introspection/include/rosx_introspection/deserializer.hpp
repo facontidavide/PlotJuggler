@@ -35,6 +35,8 @@ public:
   // deserialize the current pointer into a variant (not a string)
   virtual Variant deserialize(BuiltinType type) = 0;
 
+  virtual Span<const uint8_t> deserializeByteSequence() = 0;
+
   // deserialize the current pointer into a string
   virtual void deserializeString(std::string& out) = 0;
 
@@ -61,17 +63,19 @@ class ROS_Deserializer : public Deserializer
 {
 public:
 
-  virtual Variant deserialize(BuiltinType type) override;
+  Variant deserialize(BuiltinType type) override;
 
-  virtual void deserializeString(std::string& dst) override;
+  void deserializeString(std::string& dst) override;
 
-  virtual uint32_t deserializeUInt32() override;
+  uint32_t deserializeUInt32() override;
 
-  virtual const uint8_t* getCurrentPtr() const override;
+  Span<const uint8_t> deserializeByteSequence() override;
+
+  const uint8_t* getCurrentPtr() const override;
 
   void jump(size_t bytes) override;
 
-  virtual void reset() override;
+  void reset() override;
 
 protected:
 
@@ -100,13 +104,15 @@ class FastCDR_Deserializer : public Deserializer
 {
 public:
 
-  virtual Variant deserialize(BuiltinType type) override;
+  Variant deserialize(BuiltinType type) override;
 
-  virtual void deserializeString(std::string& dst) override;
+  void deserializeString(std::string& dst) override;
 
-  virtual uint32_t deserializeUInt32() override;
+  uint32_t deserializeUInt32() override;
 
-  virtual const uint8_t* getCurrentPtr() const override;
+  Span<const uint8_t> deserializeByteSequence() override;
+
+  const uint8_t* getCurrentPtr() const override;
 
   void jump(size_t bytes) override;
 

@@ -816,18 +816,22 @@ QPixmap QwtGraphic::toPixmap( qreal devicePixelRatio ) const
 
     const QSizeF sz = defaultSize();
 
-    const int w = qwtCeil( sz.width() );
-    const int h = qwtCeil( sz.height() );
-
-    QPixmap pixmap( w, h );
-
 #if QT_VERSION >= 0x050000
     if ( devicePixelRatio <= 0.0 )
         devicePixelRatio = qwtDevicePixelRatio();
 
+    const int w = qwtCeil( sz.width() * devicePixelRatio );
+    const int h = qwtCeil( sz.height() * devicePixelRatio );
+
+    QPixmap pixmap( w, h );
     pixmap.setDevicePixelRatio( devicePixelRatio );
 #else
     Q_UNUSED( devicePixelRatio )
+
+    const int w = qwtCeil( sz.width() );
+    const int h = qwtCeil( sz.height() );
+
+    QPixmap pixmap( w, h );
 #endif
 
     pixmap.fill( Qt::transparent );
@@ -859,15 +863,18 @@ QPixmap QwtGraphic::toPixmap( qreal devicePixelRatio ) const
 QPixmap QwtGraphic::toPixmap( const QSize& size,
     Qt::AspectRatioMode aspectRatioMode, qreal devicePixelRatio ) const
 {
-    QPixmap pixmap( size );
-
 #if QT_VERSION >= 0x050000
     if ( devicePixelRatio <= 0.0 )
         devicePixelRatio = qwtDevicePixelRatio();
 
+    const int w = qwtCeil( size.width() * devicePixelRatio );
+    const int h = qwtCeil( size.height() * devicePixelRatio );
+
+    QPixmap pixmap( w, h );
     pixmap.setDevicePixelRatio( devicePixelRatio );
 #else
     Q_UNUSED( devicePixelRatio )
+    QPixmap pixmap( size );
 #endif
     pixmap.fill( Qt::transparent );
 
@@ -904,7 +911,10 @@ QImage QwtGraphic::toImage( const QSize& size,
     if ( devicePixelRatio <= 0.0 )
         devicePixelRatio = qwtDevicePixelRatio();
 
-    QImage image( size* devicePixelRatio, QImage::Format_ARGB32_Premultiplied );
+    const int w = qwtCeil( size.width() * devicePixelRatio );
+    const int h = qwtCeil( size.height() * devicePixelRatio );
+
+    QImage image( w, h, QImage::Format_ARGB32_Premultiplied );
     image.setDevicePixelRatio( devicePixelRatio );
 #else
     Q_UNUSED( devicePixelRatio )
@@ -947,20 +957,21 @@ QImage QwtGraphic::toImage( qreal devicePixelRatio ) const
 
     const QSizeF sz = defaultSize();
 
-    int w = qwtCeil( sz.width() );
-    int h = qwtCeil( sz.height() );
-
 #if QT_VERSION >= 0x050000
     if ( devicePixelRatio <= 0.0 )
         devicePixelRatio = qwtDevicePixelRatio();
 
-    w *= devicePixelRatio;
-    h *= devicePixelRatio;
+    const int w = qwtCeil( sz.width() * devicePixelRatio );
+    const int h = qwtCeil( sz.height() * devicePixelRatio );
 
     QImage image( w, h, QImage::Format_ARGB32 );
     image.setDevicePixelRatio( devicePixelRatio );
 #else
     Q_UNUSED( devicePixelRatio )
+
+    const int w = qwtCeil( sz.width() );
+    const int h = qwtCeil( sz.height() );
+
     QImage image( w, h, QImage::Format_ARGB32 );
 #endif
 

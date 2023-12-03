@@ -10,6 +10,7 @@
 #include "qwt_legend_label.h"
 #include "qwt_legend_data.h"
 #include "qwt_graphic.h"
+#include "qwt_painter.h"
 #include "qwt.h"
 
 #include <qpainter.h>
@@ -164,7 +165,10 @@ void QwtLegendLabel::setIcon( const QPixmap& icon )
 
     int indent = margin() + m_data->spacing;
     if ( icon.width() > 0 )
-        indent += icon.width() + m_data->spacing;
+    {
+        const qreal devicePixelRatio = QwtPainter::devicePixelRatio( &icon );
+        indent += icon.width() / devicePixelRatio + m_data->spacing;
+    }
 
     setIndent( indent );
 }
@@ -311,7 +315,8 @@ void QwtLegendLabel::paintEvent( QPaintEvent* e )
         if ( m_data->itemMode != QwtLegendData::ReadOnly )
             iconRect.setX( iconRect.x() + ButtonFrame );
 
-        iconRect.setSize( m_data->icon.size() );
+        const qreal devicePixelRatio = QwtPainter::devicePixelRatio( &m_data->icon );
+        iconRect.setSize( m_data->icon.size() / devicePixelRatio );
         iconRect.moveCenter( QPoint( iconRect.center().x(), cr.center().y() ) );
 
         painter.drawPixmap( iconRect, m_data->icon );

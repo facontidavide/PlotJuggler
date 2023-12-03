@@ -422,7 +422,7 @@ static QList< double > qwtDstTicks( const QDateTime& dateTime,
     int secondsMajor, int secondsMinor )
 {
     if ( secondsMinor <= 0 )
-        QList< double >();
+        return QList< double >();
 
     QDateTime minDate = dateTime.addSecs( -secondsMajor );
     minDate = QwtDate::floor( minDate, QwtDate::Hour );

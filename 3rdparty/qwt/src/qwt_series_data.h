@@ -67,6 +67,12 @@ class QwtSeriesData
      */
     virtual T sample( size_t i ) const = 0;
 
+#else
+    // Needed for generating the python bindings, but not for using them !
+    virtual size_t size() const { return 0; }
+    virtual T sample( size_t i ) const { return T(); }
+#endif
+
     /*!
        Calculate the bounding rect of all samples
 
@@ -75,18 +81,17 @@ class QwtSeriesData
 
        qwtBoundingRect(...) offers slow implementations iterating
        over the samples. For large sets it is recommended to implement
-       something faster f.e. by caching the bounding rectangle.
+       something faster.
 
        \return Bounding rectangle
      */
-    virtual QRectF boundingRect() const = 0;
+     virtual QRectF boundingRect() const
+     {
+        if ( cachedBoundingRect.width() < 0.0 )
+            cachedBoundingRect = qwtBoundingRect( *this );
 
-#else
-    // Needed for generating the python bindings, but not for using them !
-    virtual size_t size() const { return 0; }
-    virtual T sample( size_t i ) const { return T(); }
-    virtual QRectF boundingRect() const { return cachedBoundingRect; }
-#endif
+        return cachedBoundingRect;
+     }
 
     /*!
        Set a the "rect of interest"
@@ -206,66 +211,22 @@ T QwtArraySeriesData< T >::sample( size_t i ) const
 }
 
 //! Interface for iterating over an array of points
-class QWT_EXPORT QwtPointSeriesData : public QwtArraySeriesData< QPointF >
-{
-  public:
-    QwtPointSeriesData(
-        const QVector< QPointF >& = QVector< QPointF >( ) );
-
-    virtual QRectF boundingRect() const QWT_OVERRIDE;
-};
+typedef QwtArraySeriesData< QPointF > QwtPointSeriesData;
 
 //! Interface for iterating over an array of 3D points
-class QWT_EXPORT QwtPoint3DSeriesData : public QwtArraySeriesData< QwtPoint3D >
-{
-  public:
-    QwtPoint3DSeriesData(
-        const QVector< QwtPoint3D >& = QVector< QwtPoint3D >( ) );
-
-    virtual QRectF boundingRect() const QWT_OVERRIDE;
-};
+typedef QwtArraySeriesData< QwtPoint3D > QwtPoint3DSeriesData;
 
 //! Interface for iterating over an array of intervals
-class QWT_EXPORT QwtIntervalSeriesData : public QwtArraySeriesData< QwtIntervalSample >
-{
-  public:
-    QwtIntervalSeriesData(
-        const QVector< QwtIntervalSample >& = QVector< QwtIntervalSample >( ) );
-
-    virtual QRectF boundingRect() const QWT_OVERRIDE;
-};
+typedef QwtArraySeriesData< QwtIntervalSample > QwtIntervalSeriesData;
 
 //! Interface for iterating over an array of samples
-class QWT_EXPORT QwtSetSeriesData : public QwtArraySeriesData< QwtSetSample >
-{
-  public:
-    QwtSetSeriesData(
-        const QVector< QwtSetSample >& = QVector< QwtSetSample >( ) );
-
-    virtual QRectF boundingRect() const QWT_OVERRIDE;
-};
+typedef QwtArraySeriesData< QwtSetSample > QwtSetSeriesData;
 
 //! Interface for iterating over an array of vector field samples
-class QWT_EXPORT QwtVectorFieldData : public QwtArraySeriesData< QwtVectorFieldSample >
-{
-  public:
-    QwtVectorFieldData(
-        const QVector< QwtVectorFieldSample >& = QVector< QwtVectorFieldSample >( ) );
+typedef QwtArraySeriesData< QwtVectorFieldSample > QwtVectorFieldData;
 
-    virtual QRectF boundingRect() const QWT_OVERRIDE;
-};
-
-/*!
-    Interface for iterating over an array of OHLC samples
- */
-class QWT_EXPORT QwtTradingChartData : public QwtArraySeriesData< QwtOHLCSample >
-{
-  public:
-    QwtTradingChartData(
-        const QVector< QwtOHLCSample >& = QVector< QwtOHLCSample >( ) );
-
-    virtual QRectF boundingRect() const QWT_OVERRIDE;
-};
+//!  Interface for iterating over an array of OHLC samples
+typedef QwtArraySeriesData< QwtOHLCSample > QwtTradingChartData;
 
 QWT_EXPORT QRectF qwtBoundingRect(
     const QwtSeriesData< QPointF >&, int from = 0, int to = -1 );

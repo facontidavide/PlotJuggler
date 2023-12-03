@@ -149,9 +149,8 @@ void QwtPlotZoomer::init( bool doReplot )
     setRubberBand( RectRubberBand );
     setStateMachine( new QwtPickerDragRectMachine() );
 
-    if ( doReplot && plot() ){
-      plot()->replot();
-    }
+    if ( doReplot && plot() )
+        plot()->replot();
 
     setZoomBase( scaleRect() );
 }
