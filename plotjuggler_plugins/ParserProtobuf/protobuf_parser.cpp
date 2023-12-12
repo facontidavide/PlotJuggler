@@ -4,17 +4,29 @@
 #include "PlotJuggler/fmt/format.h"
 #include "PlotJuggler/svg_util.h"
 
-
 namespace gp = google::protobuf;
 
-ProtobufParser::ProtobufParser(const std::string &topic_name,
-                               const std::string type_name,
-                               const gp::FileDescriptorSet &descriptor_set,
-                               PlotDataMapRef &data)
-  : MessageParser(topic_name, data)
-  , _proto_pool(&_proto_database)
-{
+ProtobufParser::ProtobufParser(const std::string& topic_name,
+                 const google::protobuf::Descriptor* descriptor, PlotDataMapRef& data)
+    : MessageParser(topic_name, data)
+    , _proto_pool(&_proto_database)
+    , _msg_descriptor(descriptor)
+  {
+    for (auto i = 0; i < _msg_descriptor->field_count(); ++i)
+    {
+      if ("timestamp" == _msg_descriptor->field(i)->name())
+      {
+        _timestamp_field_id = i;
+        break;
+      }
+    }
+  }
 
+ProtobufParser::ProtobufParser(const std::string& topic_name, const std::string type_name,
+                               const gp::FileDescriptorSet& descriptor_set,
+                               PlotDataMapRef& data)
+  : MessageParser(topic_name, data), _proto_pool(&_proto_database)
+{
   gp::FileDescriptorProto unused;
 
   for (int i = 0; i < descriptor_set.file_size(); ++i)
@@ -37,6 +49,15 @@ ProtobufParser::ProtobufParser(const std::string &topic_name,
   {
     throw std::runtime_error("Cannot get message descriptor");
   }
+
+  for (auto i = 0; i < _msg_descriptor->field_count(); ++i)
+  {
+    if ("timestamp" == _msg_descriptor->field(i)->name())
+    {
+      _timestamp_field_id = i;
+      break;
+    }
+  }
 }
 
 bool ProtobufParser::parseMessage(const MessageRef serialized_msg,
@@ -53,9 +74,18 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg,
   }
 
   std::function<void(const google::protobuf::Message&, const std::string&, const bool)> ParseImpl;
+  
+  double timestamp_updated = timestamp;
 
-  ParseImpl = [&](const google::protobuf::Message& msg, const std::string& prefix, const bool is_map)
+  if (_timestamp_field_id)
   {
+    const gp::Reflection* ref_tmp = mutable_msg->GetReflection();
+    const gp::Descriptor* desc_tmp = mutable_msg->GetDescriptor();
+    timestamp_updated = ref_tmp->GetDouble(*mutable_msg, desc_tmp->field(*_timestamp_field_id));
+  }
+
+  ParseImpl = [&](const google::protobuf::Message& msg, const std::string& prefix,
+                  const bool is_map) {
     const gp::Reflection* reflection = msg.GetReflection();
     const gp::Descriptor* descriptor = msg.GetDescriptor();
     //    std::vector<const FieldDescriptor*> reflection_fields;
@@ -155,7 +185,7 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg,
                                    reflection->GetRepeatedEnum(msg, field, index);
 
             auto& series = this->getStringSeries(key + suffix);
-            series.pushBack({timestamp, tmp->name()});
+            series.pushBack({ timestamp_updated, tmp->name() });
             is_double = false;
           }break;
           case gp::FieldDescriptor::CPPTYPE_STRING:{
@@ -168,7 +198,7 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg,
               continue;
             }
             auto& series = this->getStringSeries(key + suffix);
-            series.pushBack({timestamp, tmp});
+            series.pushBack({ timestamp_updated, tmp });
             is_double = false;
           }break;
           case gp::FieldDescriptor::CPPTYPE_MESSAGE:
@@ -220,7 +250,7 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg,
         if( is_double )
         {
           auto& series = this->getSeries(key + suffix);
-          series.pushBack({timestamp, value});
+          series.pushBack({ timestamp_updated, value });
         }
       }
     }
