@@ -351,7 +351,7 @@
             <item>
              <widget class="QRadioButton" name="radioStepsInv">
               <property name="text">
-               <string>Inverted (post)</string>
+               <string>Step (post)</string>
               </property>
              </widget>
             </item>
