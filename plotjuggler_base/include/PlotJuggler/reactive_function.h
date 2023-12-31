@@ -29,6 +29,8 @@ struct TimeseriesRef
 
   unsigned size() const;
 
+  void clear() const;
+
   PJ::PlotData* _plot_data = nullptr;
 };
 

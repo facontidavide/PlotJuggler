@@ -114,6 +114,7 @@ void ReactiveLuaFunction::prepareLua()
   _timeseries_ref["at"] = &TimeseriesRef::at;
   _timeseries_ref["set"] = &TimeseriesRef::set;
   _timeseries_ref["atTime"] = &TimeseriesRef::atTime;
+  _timeseries_ref["clear"] = &TimeseriesRef::clear;
 
   //---------------------------------------
   _created_timeseries = _lua_engine.new_usertype<CreatedSeriesTime>("Timeseries");
@@ -192,6 +193,11 @@ double TimeseriesRef::atTime(double t) const
 unsigned TimeseriesRef::size() const
 {
   return _plot_data->size();
+}
+
+void TimeseriesRef::clear() const
+{
+  _plot_data->clear();
 }
 
 CreatedSeriesBase::CreatedSeriesBase(PlotDataMapRef* data_map, const std::string& name,
