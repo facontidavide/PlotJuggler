@@ -90,20 +90,29 @@ On Mac, the dependencies can be installed using [brew](https://brew.sh/) with th
 brew install cmake qt@5 protobuf mosquitto zeromq zstd
 ```
 
+If a newer version of qt is installed, you may need to temporarily link to qt5
+
+```shell
+brew link qt@5 --override 
+# brew link qt --override # Run once you are done building to restore the original linking
+```
+
 Add CMake into your env-vars to be detected by cmake
 
 ```shell
-echo "export CPPFLAGS=\"-I/opt/homebrew/opt/qt@5/include\"" >> $HOME/.zshrc
-echo "export PKG_CONFIG_PATH=\"/opt/homebrew/opt/qt@5/lib/pkgconfig\"" >> $HOME/.zshrc
-echo "export LDFLAGS=\"/opt/homebrew/opt/qt@5/lib\"" >> $HOME/.zshrc
+echo  'QT_HOME=$(brew --prefix qt@5) \
+export CPPFLAGS="-I $QT_HOME/include" \
+export PKG_CONFIG_PATH="$QT_HOME/lib/pkgconfig" \
+export LDFLAGS="$QT_HOME/lib"' >> $HOME/.zshrc
 ```
 
 If you don't want to permanently add them into your main file, you can try by just exporting locally in the current terminal with:
 
 ```shell
-export CPPFLAGS="-I/opt/homebrew/opt/qt@5/include"
-export PKG_CONFIG_PATH="/opt/homebrew/opt/qt@5/lib/pkgconfig"
-export LDFLAGS="/opt/homebrew/opt/qt@5/lib"
+QT_HOME=$(brew --prefix qt@5)
+export CPPFLAGS="-I $QT_HOME/include"
+export PKG_CONFIG_PATH="$QT_HOME/lib/pkgconfig"
+export LDFLAGS="$QT_HOME/lib"
 ```
 
 Clone the repository into **~/plotjuggler_ws**:

@@ -21,6 +21,14 @@ if( Protobuf_FOUND)
         protobuf_parser.h
         ${UI_SRC}  )
 
+    if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        find_library(ABSL_SPINLOCK_WAIT_LIB absl_spinlock_wait)
+
+        target_link_libraries(ProtobufParser
+            ${ABSL_SPINLOCK_WAIT_LIB}
+            )
+    endif()
+
     target_link_libraries(ProtobufParser
         ${Qt5Widgets_LIBRARIES}
         ${Qt5Xml_LIBRARIES}
