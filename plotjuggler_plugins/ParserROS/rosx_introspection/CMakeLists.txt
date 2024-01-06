@@ -21,7 +21,7 @@ endif()
 ###############################################
 ## Declare a C++ library
 ###############################################
-add_library(rosx_introspection
+add_library(rosx_introspection STATIC
     ${SRC_FILES}
     src/ros_type.cpp
     src/ros_field.cpp

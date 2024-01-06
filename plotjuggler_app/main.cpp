@@ -23,6 +23,7 @@
 #include "transforms/first_derivative.h"
 #include "transforms/scale_transform.h"
 #include "transforms/moving_average_filter.h"
+#include "transforms/moving_variance.h"
 #include "transforms/moving_rms.h"
 #include "transforms/outlier_removal.h"
 #include "transforms/integral_transform.h"
@@ -217,11 +218,12 @@ int main(int argc, char* argv[])
   TransformFactory::registerTransform<OutlierRemovalFilter>();
   TransformFactory::registerTransform<IntegralTransform>();
   TransformFactory::registerTransform<AbsoluteTransform>();
+  TransformFactory::registerTransform<MovingVarianceFilter>();
   //---------------------------
 
   QCommandLineParser parser;
-  parser.setApplicationDescription("PlotJuggler: the time series visualization tool that "
-                                   "you deserve ");
+  parser.setApplicationDescription("PlotJuggler: the time series visualization"
+                                   " tool that you deserve ");
   parser.addVersionOption();
   parser.addHelpOption();
 
