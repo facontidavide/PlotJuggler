@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>300</height>
+    <height>400</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -162,6 +162,42 @@
    </item>
    <item>
     <widget class="QLineEdit" name="lineEditTopics"/>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_7">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Socket Type:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="radioConnect">
+      <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
+      </property>
+      <property name="text">
+        <string>Connect (Single Publisher / Multiple Subscribers)</string>
+      </property>
+      <property name="checked">
+        <bool>true</bool>
+      </property>
+    </widget>
+   </item>
+   <item>   
+    <widget class="QRadioButton" name="radioBind">
+      <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
+      </property>
+      <property name="text">
+        <string>Bind (Multiple Publisher / Single Subscribers)</string>
+      </property>
+    </widget>
    </item>
    <item>
     <spacer name="verticalSpacer">
