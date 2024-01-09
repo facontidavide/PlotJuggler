@@ -182,7 +182,7 @@
         <enum>Qt::NoFocus</enum>
       </property>
       <property name="text">
-        <string>Connect (Single Publisher / Multiple Subscribers)</string>
+        <string>Connect (Single Data Source / Multiple PlotJugglers)</string>
       </property>
       <property name="checked">
         <bool>true</bool>
@@ -195,7 +195,7 @@
         <enum>Qt::NoFocus</enum>
       </property>
       <property name="text">
-        <string>Bind (Multiple Publisher / Single Subscribers)</string>
+        <string>Bind (Multiple Data Sources / Single PlotJuggler)</string>
       </property>
     </widget>
    </item>
