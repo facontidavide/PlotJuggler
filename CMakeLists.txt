@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.27.2)
 
 PROJECT(plotjuggler LANGUAGES C CXX VERSION 3.8.8)
 
