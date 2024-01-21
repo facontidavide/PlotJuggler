@@ -16,56 +16,50 @@
 
 using namespace eprosima::fastcdr::exception;
 
-const char* const NotEnoughMemoryException::NOT_ENOUGH_MEMORY_MESSAGE_DEFAULT = "Not "
-                                                                                "enough "
-                                                                                "memory "
-                                                                                "in the "
-                                                                                "buffer "
-                                                                                "stream";
+const char* const NotEnoughMemoryException::NOT_ENOUGH_MEMORY_MESSAGE_DEFAULT =
+        "Not enough memory in the buffer stream";
 
-NotEnoughMemoryException::NotEnoughMemoryException(const char* const& message) noexcept
-  : Exception(message)
+NotEnoughMemoryException::NotEnoughMemoryException(
+        const char* const& message) noexcept
+    : Exception(message)
 {
 }
 
 NotEnoughMemoryException::NotEnoughMemoryException(
-    const NotEnoughMemoryException& ex) noexcept
-  : Exception(ex)
+        const NotEnoughMemoryException& ex) noexcept
+    : Exception(ex)
 {
 }
 
-#if HAVE_CXX0X
-NotEnoughMemoryException::NotEnoughMemoryException(NotEnoughMemoryException&& ex) noexcept
-  : Exception(std::move(ex))
+NotEnoughMemoryException::NotEnoughMemoryException(
+        NotEnoughMemoryException&& ex) noexcept
+    : Exception(std::move(ex))
 {
 }
 
-#endif  // if HAVE_CXX0X
-
-NotEnoughMemoryException&
-NotEnoughMemoryException::operator=(const NotEnoughMemoryException& ex) noexcept
+NotEnoughMemoryException& NotEnoughMemoryException::operator =(
+        const NotEnoughMemoryException& ex) noexcept
 {
-  if (this != &ex)
-  {
-    Exception::operator=(ex);
-  }
+    if (this != &ex)
+    {
+        Exception::operator =(
+                ex);
+    }
 
-  return *this;
+    return *this;
 }
 
-#if HAVE_CXX0X
-NotEnoughMemoryException&
-NotEnoughMemoryException::operator=(NotEnoughMemoryException&& ex) noexcept
+NotEnoughMemoryException& NotEnoughMemoryException::operator =(
+        NotEnoughMemoryException&& ex) noexcept
 {
-  if (this != &ex)
-  {
-    Exception::operator=(std::move(ex));
-  }
+    if (this != &ex)
+    {
+        Exception::operator =(
+                std::move(ex));
+    }
 
-  return *this;
+    return *this;
 }
-
-#endif  // if HAVE_CXX0X
 
 NotEnoughMemoryException::~NotEnoughMemoryException() noexcept
 {
@@ -73,5 +67,5 @@ NotEnoughMemoryException::~NotEnoughMemoryException() noexcept
 
 void NotEnoughMemoryException::raise() const
 {
-  throw *this;
+    throw *this;
 }

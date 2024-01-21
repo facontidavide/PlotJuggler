@@ -1,4 +1,4 @@
-// Copyright 2016 Proyectos y Sistemas de Mantenimiento SL (eProsima).
+// Copyright 2023 Proyectos y Sistemas de Mantenimiento SL (eProsima).
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _FASTCDR_EXCEPTIONS_NOTENOUGHMEMORYEXCEPTION_H_
-#define _FASTCDR_EXCEPTIONS_NOTENOUGHMEMORYEXCEPTION_H_
+#ifndef _FASTCDR_EXCEPTIONS_LOCKEDEXTERNALACCESSEXCEPTION_H_
+#define _FASTCDR_EXCEPTIONS_LOCKEDEXTERNALACCESSEXCEPTION_H_
 
 #include "Exception.h"
 
@@ -21,10 +21,10 @@ namespace eprosima {
 namespace fastcdr {
 namespace exception {
 /*!
- * @brief This class is thrown as an exception when the buffer's internal memory reachs its size limit.
+ * @brief This class is thrown as an exception when accessing to set the value of a locked external.
  * @ingroup EXCEPTIONMODULE
  */
-class NotEnoughMemoryException : public Exception
+class LockedExternalAccessException : public Exception
 {
 public:
 
@@ -33,51 +33,51 @@ public:
      *
      * @param message An error message. This message pointer is copied.
      */
-    Cdr_DllAPI NotEnoughMemoryException(
+    Cdr_DllAPI LockedExternalAccessException(
             const char* const& message) noexcept;
 
     /*!
      * @brief Default copy constructor.
      *
-     * @param ex NotEnoughMemoryException that will be copied.
+     * @param ex LockedExternalAccessException that will be copied.
      */
-    Cdr_DllAPI NotEnoughMemoryException(
-            const NotEnoughMemoryException& ex) noexcept;
+    Cdr_DllAPI LockedExternalAccessException(
+            const LockedExternalAccessException& ex) noexcept;
 
     /*!
      * @brief Default move constructor.
      *
-     * @param ex NotEnoughMemoryException that will be moved.
+     * @param ex LockedExternalAccessException that will be moved.
      */
-    Cdr_DllAPI NotEnoughMemoryException(
-            NotEnoughMemoryException&& ex) noexcept;
+    Cdr_DllAPI LockedExternalAccessException(
+            LockedExternalAccessException&& ex) noexcept;
 
     /*!
      * @brief Assigment operation.
      *
-     * @param ex NotEnoughMemoryException that will be copied.
+     * @param ex LockedExternalAccessException that will be copied.
      */
-    Cdr_DllAPI NotEnoughMemoryException& operator =(
-            const NotEnoughMemoryException& ex) noexcept;
+    Cdr_DllAPI LockedExternalAccessException& operator =(
+            const LockedExternalAccessException& ex) noexcept;
 
     /*!
      * @brief Assigment operation.
      *
-     * @param ex NotEnoughMemoryException that will be moved.
+     * @param ex LockedExternalAccessException that will be moved.
      */
-    Cdr_DllAPI NotEnoughMemoryException& operator =(
-            NotEnoughMemoryException&& ex) noexcept;
+    LockedExternalAccessException& operator =(
+            LockedExternalAccessException&& ex) noexcept;
 
     //! @brief Default destructor
-    virtual Cdr_DllAPI ~NotEnoughMemoryException() noexcept;
+    virtual Cdr_DllAPI ~LockedExternalAccessException() noexcept;
 
     //! @brief This function throws the object as exception.
     Cdr_DllAPI void raise() const override;
 
     //! @brief Default message used in the library.
-    static Cdr_DllAPI const char* const NOT_ENOUGH_MEMORY_MESSAGE_DEFAULT;
+    static Cdr_DllAPI const char* const LOCKED_EXTERNAL_ACCESS_MESSAGE_DEFAULT;
 };
 }         //namespace exception
 }     //namespace fastcdr
 } //namespace eprosima
-#endif // _FASTCDR_EXCEPTIONS_NOTENOUGHMEMORYEXCEPTION_H_
+#endif // _FASTCDR_EXCEPTIONS_LOCKEDEXTERNALACCESSEXCEPTION_H_
