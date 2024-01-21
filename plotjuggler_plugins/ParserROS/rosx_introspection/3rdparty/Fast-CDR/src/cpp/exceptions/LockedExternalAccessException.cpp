@@ -1,4 +1,4 @@
-// Copyright 2016 Proyectos y Sistemas de Mantenimiento SL (eProsima).
+// Copyright 2023 Proyectos y Sistemas de Mantenimiento SL (eProsima).
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,32 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <fastcdr/exceptions/BadParamException.h>
+#include <fastcdr/exceptions/LockedExternalAccessException.hpp>
 
 using namespace eprosima::fastcdr::exception;
 
-const char* const BadParamException::BAD_PARAM_MESSAGE_DEFAULT = "Bad parameter";
+const char* const LockedExternalAccessException::LOCKED_EXTERNAL_ACCESS_MESSAGE_DEFAULT =
+        "Locked external: value cannot be set";
 
-BadParamException::BadParamException(
+LockedExternalAccessException::LockedExternalAccessException(
         const char* const& message) noexcept
     : Exception(message)
 {
 }
 
-BadParamException::BadParamException(
-        const BadParamException& ex) noexcept
+LockedExternalAccessException::LockedExternalAccessException(
+        const LockedExternalAccessException& ex) noexcept
     : Exception(ex)
 {
 }
 
-BadParamException::BadParamException(
-        BadParamException&& ex) noexcept
+LockedExternalAccessException::LockedExternalAccessException(
+        LockedExternalAccessException&& ex) noexcept
     : Exception(std::move(ex))
 {
 }
 
-BadParamException& BadParamException::operator =(
-        const BadParamException& ex) noexcept
+LockedExternalAccessException& LockedExternalAccessException::operator =(
+        const LockedExternalAccessException& ex) noexcept
 {
     if (this != &ex)
     {
@@ -48,8 +49,8 @@ BadParamException& BadParamException::operator =(
     return *this;
 }
 
-BadParamException& BadParamException::operator =(
-        BadParamException&& ex) noexcept
+LockedExternalAccessException& LockedExternalAccessException::operator =(
+        LockedExternalAccessException&& ex) noexcept
 {
     if (this != &ex)
     {
@@ -60,11 +61,11 @@ BadParamException& BadParamException::operator =(
     return *this;
 }
 
-BadParamException::~BadParamException() noexcept
+LockedExternalAccessException::~LockedExternalAccessException() noexcept
 {
 }
 
-void BadParamException::raise() const
+void LockedExternalAccessException::raise() const
 {
     throw *this;
 }

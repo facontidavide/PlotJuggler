@@ -18,77 +18,79 @@
 #include <malloc.h>
 #else
 #include <stdlib.h>
-#endif  // if !__APPLE__ && !__FreeBSD__ && !__VXWORKS__
+#endif // if !__APPLE__ && !__FreeBSD__ && !__VXWORKS__
 
 #define BUFFER_START_LENGTH 200
 
 using namespace eprosima::fastcdr;
 
-FastBuffer::FastBuffer() : m_buffer(nullptr), m_bufferSize(0), m_internalBuffer(true)
-{
-}
-
-FastBuffer::FastBuffer(char* const buffer, const size_t bufferSize)
-  : m_buffer(buffer), m_bufferSize(bufferSize), m_internalBuffer(false)
+FastBuffer::FastBuffer(
+        char* const buffer,
+        const size_t bufferSize)
+    : buffer_(buffer)
+    , size_(bufferSize)
+    , m_internalBuffer(false)
 {
 }
 
 FastBuffer::~FastBuffer()
 {
-  if (m_internalBuffer && m_buffer != nullptr)
-  {
-    free(m_buffer);
-  }
+    if (m_internalBuffer && buffer_ != nullptr)
+    {
+        free(buffer_);
+    }
 }
 
-bool FastBuffer::reserve(size_t size)
+bool FastBuffer::reserve(
+        size_t size)
 {
-  if (m_internalBuffer && m_buffer == NULL)
-  {
-    m_buffer = reinterpret_cast<char*>(malloc(size));
-    if (m_buffer)
+    if (m_internalBuffer && buffer_ == NULL)
     {
-      m_bufferSize = size;
-      return true;
+        buffer_ = reinterpret_cast<char*>(malloc(size));
+        if (buffer_)
+        {
+            size_ = size;
+            return true;
+        }
     }
-  }
-  return false;
+    return false;
 }
 
-bool FastBuffer::resize(size_t minSizeInc)
+bool FastBuffer::resize(
+        size_t min_size_inc)
 {
-  size_t incBufferSize = BUFFER_START_LENGTH;
+    size_t incBufferSize = BUFFER_START_LENGTH;
 
-  if (m_internalBuffer)
-  {
-    if (minSizeInc > BUFFER_START_LENGTH)
+    if (m_internalBuffer)
     {
-      incBufferSize = minSizeInc;
+        if (min_size_inc > BUFFER_START_LENGTH)
+        {
+            incBufferSize = min_size_inc;
+        }
+
+        if (buffer_ == NULL)
+        {
+            size_ = incBufferSize;
+
+            buffer_ = reinterpret_cast<char*>(malloc(size_));
+
+            if (buffer_ != NULL)
+            {
+                return true;
+            }
+        }
+        else
+        {
+            size_ += incBufferSize;
+
+            buffer_ = reinterpret_cast<char*>(realloc(buffer_, size_));
+
+            if (buffer_ != NULL)
+            {
+                return true;
+            }
+        }
     }
 
-    if (m_buffer == NULL)
-    {
-      m_bufferSize = incBufferSize;
-
-      m_buffer = reinterpret_cast<char*>(malloc(m_bufferSize));
-
-      if (m_buffer != NULL)
-      {
-        return true;
-      }
-    }
-    else
-    {
-      m_bufferSize += incBufferSize;
-
-      m_buffer = reinterpret_cast<char*>(realloc(m_buffer, m_bufferSize));
-
-      if (m_buffer != NULL)
-      {
-        return true;
-      }
-    }
-  }
-
-  return false;
+    return false;
 }

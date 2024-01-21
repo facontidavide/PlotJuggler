@@ -193,7 +193,7 @@ Span<const uint8_t> FastCDR_Deserializer::deserializeByteSequence()
   _cdr->deserialize(seqLength);
 
   // dirty trick to change the internal state of cdr
-  auto* ptr = _cdr->getCurrentPosition();
+  auto* ptr = _cdr->get_current_position();
 
   uint8_t dummy;
   _cdr->deserialize(dummy);
@@ -204,7 +204,7 @@ Span<const uint8_t> FastCDR_Deserializer::deserializeByteSequence()
 
 const uint8_t* FastCDR_Deserializer::getCurrentPtr() const
 {
-  return reinterpret_cast<const uint8_t*>(_cdr->getBufferPointer());
+  return reinterpret_cast<const uint8_t*>(_cdr->get_buffer_pointer());
 }
 
 void FastCDR_Deserializer::jump(size_t bytes)
@@ -219,7 +219,7 @@ void FastCDR_Deserializer::reset()
   char* buffer_ptr = reinterpret_cast<char*>(const_cast<uint8_t*>(_buffer.data()));
 
   _cdr_buffer = std::make_shared<FastBuffer>(buffer_ptr, _buffer.size());
-  _cdr = std::make_shared<Cdr>(*_cdr_buffer, Cdr::DEFAULT_ENDIAN, Cdr::DDS_CDR);
+  _cdr = std::make_shared<Cdr>(*_cdr_buffer, Cdr::DEFAULT_ENDIAN, CdrVersion::DDS_CDR);
   _cdr->read_encapsulation();
 }
 
