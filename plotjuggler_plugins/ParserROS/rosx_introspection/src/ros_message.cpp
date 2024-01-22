@@ -126,12 +126,34 @@ std::vector<ROSMessage::Ptr> ParseMessageDefinitions(const std::string& multi_de
       // if package name is missing, try to find msgName in the list of known_type
       if (field.type().pkgName().empty())
       {
+        std::vector<ROSType> guessed_type;
+
         for (const ROSType& known_type : known_type)
         {
           if (field.type().msgName() == known_type.msgName())
           {
-            field.changeType(known_type);
-            break;
+            guessed_type.push_back(known_type);
+          }
+        }
+
+        if (!guessed_type.empty())
+        {
+          bool better_match = false;
+
+          // attempt to match ambiguous ros msg within package before
+          // using external known type
+          for (const ROSType& guessed_type : guessed_type) {
+            if (guessed_type.pkgName() == root_type.pkgName()) {
+              field.changeType(guessed_type);
+              better_match = true;
+              break;
+            }
+          }
+
+          // if nothing from the same package, take a guess with the first matching msg name
+          if (!better_match)
+          {
+            field.changeType(guessed_type[0]);
           }
         }
       }
