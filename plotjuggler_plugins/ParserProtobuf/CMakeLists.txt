@@ -24,9 +24,7 @@ if( Protobuf_FOUND)
     if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
         find_library(ABSL_SPINLOCK_WAIT_LIB absl_spinlock_wait)
 
-        target_link_libraries(ProtobufParser
-            ${ABSL_SPINLOCK_WAIT_LIB}
-            )
+        target_link_libraries(ProtobufParser ${ABSL_SPINLOCK_WAIT_LIB} )
     endif()
 
     target_link_libraries(ProtobufParser
