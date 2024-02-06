@@ -1,6 +1,12 @@
 #include "rosx_introspection/deserializer.hpp"
 #include <fastcdr/Cdr.h>
 
+/* make sure to remain compatible with previous version of fastCdr */
+#if ((FASTCDR_VERSION_MAJOR < 2))
+  #define get_buffer_pointer() getBufferPointer()
+  #define get_current_position() getCurrentPosition()
+  #define CdrVersion Cdr
+#endif
 namespace RosMsgParser
 {
 
