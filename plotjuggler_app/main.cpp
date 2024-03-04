@@ -6,6 +6,7 @@
 
 #include "mainwindow.h"
 #include <iostream>
+#include <csignal>
 #include <QApplication>
 #include <QSplashScreen>
 #include <QThread>
@@ -482,6 +483,7 @@ int main(int argc, char* argv[])
   request_message.setUrl(QUrl("https://fastapi-example-7kz3.onrender.com"));
   manager_message.get(request_message);
 
+  signal(SIGINT, SIG_DFL);
 
   return app.exec();
 }
