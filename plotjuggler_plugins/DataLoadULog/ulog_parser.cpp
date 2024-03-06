@@ -656,44 +656,45 @@ bool ULogParser::readInfo(DataStream& datastream, uint16_t msg_size)
   message++;
   std::string raw_key((char*)message, key_len);
   message += key_len;
+  std::string raw_value((char*)message, msg_size - key_len - 1);
 
   auto key_parts = splitString(raw_key, ' ');
 
   std::string key = key_parts[1].to_string();
-
   std::string value;
+  
   if (key_parts[0].starts_with("char["))
   {
-    value = std::string((char*)message, msg_size - key_len - 1);
+    value = raw_value;
   }
   else if (key_parts[0] == StringView("bool"))
   {
-    bool val = *reinterpret_cast<const bool*>(key_parts[0].data());
+    bool val = *reinterpret_cast<const bool*>(raw_value.data());
     value = std::to_string(val);
   }
   else if (key_parts[0] == StringView("uint8_t"))
   {
-    uint8_t val = *reinterpret_cast<const uint8_t*>(key_parts[0].data());
+    uint8_t val = *reinterpret_cast<const uint8_t*>(raw_value.data());
     value = std::to_string(val);
   }
   else if (key_parts[0] == StringView("int8_t"))
   {
-    int8_t val = *reinterpret_cast<const int8_t*>(key_parts[0].data());
+    int8_t val = *reinterpret_cast<const int8_t*>(raw_value.data());
     value = std::to_string(val);
   }
   else if (key_parts[0] == StringView("uint16_t"))
   {
-    uint16_t val = *reinterpret_cast<const uint16_t*>(key_parts[0].data());
+    uint16_t val = *reinterpret_cast<const uint16_t*>(raw_value.data());
     value = std::to_string(val);
   }
   else if (key_parts[0] == StringView("int16_t"))
   {
-    int16_t val = *reinterpret_cast<const int16_t*>(key_parts[0].data());
+    int16_t val = *reinterpret_cast<const int16_t*>(raw_value.data());
     value = std::to_string(val);
   }
   else if (key_parts[0] == StringView("uint32_t"))
   {
-    uint32_t val = *reinterpret_cast<const uint32_t*>(key_parts[0].data());
+    uint32_t val = *reinterpret_cast<const uint32_t*>(raw_value.data());
     if (key_parts[1].starts_with("ver_") && key_parts[1].ends_with("_release"))
     {
       value = int_to_hex(val);
@@ -705,27 +706,27 @@ bool ULogParser::readInfo(DataStream& datastream, uint16_t msg_size)
   }
   else if (key_parts[0] == StringView("int32_t"))
   {
-    int32_t val = *reinterpret_cast<const int32_t*>(key_parts[0].data());
+    int32_t val = *reinterpret_cast<const int32_t*>(raw_value.data());
     value = std::to_string(val);
   }
   else if (key_parts[0] == StringView("float"))
   {
-    float val = *reinterpret_cast<const float*>(key_parts[0].data());
+    float val = *reinterpret_cast<const float*>(raw_value.data());
     value = std::to_string(val);
   }
   else if (key_parts[0] == StringView("double"))
   {
-    double val = *reinterpret_cast<const double*>(key_parts[0].data());
+    double val = *reinterpret_cast<const double*>(raw_value.data());
     value = std::to_string(val);
   }
   else if (key_parts[0] == StringView("uint64_t"))
   {
-    uint64_t val = *reinterpret_cast<const uint64_t*>(key_parts[0].data());
+    uint64_t val = *reinterpret_cast<const uint64_t*>(raw_value.data());
     value = std::to_string(val);
   }
   else if (key_parts[0] == StringView("int64_t"))
   {
-    int64_t val = *reinterpret_cast<const int64_t*>(key_parts[0].data());
+    int64_t val = *reinterpret_cast<const int64_t*>(raw_value.data());
     value = std::to_string(val);
   }
 
