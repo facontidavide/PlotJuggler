@@ -39,6 +39,15 @@ if(VCPKG_TOOLCHAIN)
     message(STATUS "BUILDING_WITH_VCPKG")
 endif()
 
+# Include PkgConfig module
+find_package(PkgConfig REQUIRED)
+
+# Use pkg_check_modules to find ZeroMQ
+pkg_check_modules(ZEROMQ REQUIRED IMPORTED_TARGET libzmq)
+
+# Include ZeroMQ directories
+include_directories(${ZEROMQ_INCLUDE_DIRS})
+
 find_package(ament_cmake QUIET)
 find_package(catkin QUIET)
 

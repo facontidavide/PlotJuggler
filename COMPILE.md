@@ -87,7 +87,7 @@ docker buildx build -o . .
 On Mac, the dependencies can be installed using [brew](https://brew.sh/) with the following command:
 
 ```shell
-brew install cmake qt@5 protobuf mosquitto zeromq zstd
+brew install cmake qt@5 protobuf mosquitto zeromq zstd zmqpp
 ```
 
 If a newer version of qt is installed, you may need to temporarily link to qt5
@@ -103,7 +103,6 @@ Add CMake into your env-vars to be detected by cmake
 echo  'QT_HOME=$(brew --prefix qt@5) \
 export CPPFLAGS="-I $QT_HOME/include" \
 export PKG_CONFIG_PATH="$QT_HOME/lib/pkgconfig" \
-export LDFLAGS="$QT_HOME/lib"' >> $HOME/.zshrc
 ```
 
 If you don't want to permanently add them into your main file, you can try by just exporting locally in the current terminal with:
@@ -112,7 +111,6 @@ If you don't want to permanently add them into your main file, you can try by ju
 QT_HOME=$(brew --prefix qt@5)
 export CPPFLAGS="-I $QT_HOME/include"
 export PKG_CONFIG_PATH="$QT_HOME/lib/pkgconfig"
-export LDFLAGS="$QT_HOME/lib"
 ```
 
 Clone the repository into **~/plotjuggler_ws**:
