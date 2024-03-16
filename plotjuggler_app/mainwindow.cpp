@@ -2422,7 +2422,14 @@ void MainWindow::updateDataAndReplot(bool replot_hidden_tabs)
       _curvelist_widget->refreshColumns();
     }
 
-    _mapped_plot_data.setMaximumRangeX(ui->streamingSpinBox->value());
+    if (ui->streamingSpinBox->value() == ui->streamingSpinBox->maximum())
+    {
+      _mapped_plot_data.setMaximumRangeX(std::numeric_limits<double>::max());
+    }
+    else
+    {
+      _mapped_plot_data.setMaximumRangeX(ui->streamingSpinBox->value());
+    }
   }
 
   const bool is_streaming_active = isStreamingActive();
@@ -2473,6 +2480,18 @@ void MainWindow::updateDataAndReplot(bool replot_hidden_tabs)
 void MainWindow::on_streamingSpinBox_valueChanged(int value)
 {
   double real_value = value;
+
+  if (value == ui->streamingSpinBox->maximum())
+  {
+    real_value = std::numeric_limits<double>::max();
+    ui->streamingSpinBox->setStyleSheet("QSpinBox { color: red; }");
+    ui->streamingSpinBox->setSuffix("=inf");
+  }
+  else
+  {
+    ui->streamingSpinBox->setStyleSheet("QSpinBox { color: black; }");
+    ui->streamingSpinBox->setSuffix(" sec");
+  }
 
   if (isStreamingActive() == false)
   {
