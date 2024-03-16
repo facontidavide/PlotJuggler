@@ -530,9 +530,9 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       static QLocale locale_with_comma(QLocale::German);
       val = locale_with_comma.toDouble(str_trimmed, &is_number);
     }
-    if (!is_number && parse_date_format && !format_string.isEmpty())
+    if (!is_number && parse_date_format)
     {
-      QDateTime ts = QDateTime::fromString(str_trimmed, format_string);
+      QDateTime ts = !format_string.isEmpty() ? QDateTime::fromString(str_trimmed, format_string) : QDateTime::fromString(str_trimmed, Qt::ISODateWithMs);
       is_number = ts.isValid();
       if (is_number)
       {
