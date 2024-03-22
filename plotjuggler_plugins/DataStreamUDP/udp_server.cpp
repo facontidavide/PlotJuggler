@@ -29,6 +29,12 @@ THE SOFTWARE.
 #include <chrono>
 #include <QNetworkDatagram>
 #include <QNetworkInterface>
+#include <QtConcurrent/QtConcurrent>
+#include <functional>
+#include <iostream>
+#include <cstring>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 #include "ui_udp_server.h"
 
@@ -146,47 +152,17 @@ bool UDP_Server::start(QStringList*)
 
   QHostAddress address(address_str);
 
-  bool success = true;
-  success &= !address.isNull();
+  // this->startAsync(address,port,address_str);
+  workerThread = new WorkerThread(this);
+  workerThread->udpServer = this;
+  workerThread->port = port;
+  workerThread->address_str = address_str;
+  workerThread->start();
 
-  _udp_socket = new QUdpSocket();
-
-  if (!address.isMulticast())
+  while (!_threadStarted)
   {
-    success &= _udp_socket->bind(address, port);
-  }
-  else
-  {
-    success &= _udp_socket->bind(
-        address, port, QAbstractSocket::ShareAddress | QAbstractSocket::ReuseAddressHint);
-
-    // Add multicast group membership to all interfaces which support multicast.
-    for (const auto& interface : QNetworkInterface::allInterfaces())
-    {
-      QNetworkInterface::InterfaceFlags iflags = interface.flags();
-      if (interface.isValid() && !iflags.testFlag(QNetworkInterface::IsLoopBack) &&
-          iflags.testFlag(QNetworkInterface::CanMulticast) &&
-          iflags.testFlag(QNetworkInterface::IsRunning))
-      {
-        success &= _udp_socket->joinMulticastGroup(address, interface);
-      }
-    }
-  }
-
-  _running = true;
-
-  connect(_udp_socket, &QUdpSocket::readyRead, this, &UDP_Server::processMessage);
-
-  if (success)
-  {
-    qDebug() << tr("UDP listening on (%1, %2)").arg(address_str).arg(port);
-  }
-  else
-  {
-    QMessageBox::warning(nullptr, tr("UDP Server"),
-                         tr("Couldn't bind to UDP (%1, %2)").arg(address_str).arg(port),
-                         QMessageBox::Ok);
-    shutdown();
+    std::this_thread::sleep_until(std::chrono::high_resolution_clock::now() +
+                                  std::chrono::milliseconds(10));
   }
 
   return _running;
@@ -194,31 +170,98 @@ bool UDP_Server::start(QStringList*)
 
 void UDP_Server::shutdown()
 {
-  if (_running && _udp_socket)
+  if (_running)
   {
-    _udp_socket->deleteLater();
     _running = false;
+    while (!_threadFinished)
+    {
+      std::this_thread::sleep_until(std::chrono::high_resolution_clock::now() +
+                                    std::chrono::milliseconds(10));
+    }
+    workerThread->deleteLater();
+    _threadStarted = false;
   }
 }
 
-void UDP_Server::processMessage()
+int UDP_Server::normal_socket(char* address_str, int port)
 {
-  while (_udp_socket->hasPendingDatagrams())
+  bool success = true;
+
+  // UDP socket setup
+  int sockfd;
+  struct sockaddr_in servaddr;
+
+  // Create socket
+  if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
   {
-    QNetworkDatagram datagram = _udp_socket->receiveDatagram();
+    success = false;
+    perror("socket creation failed");
+  }
+
+  memset(&servaddr, 0, sizeof(servaddr));
+
+  // Server address setup
+  servaddr.sin_family = AF_INET;
+  // network interface
+  if (inet_aton(address_str, &servaddr.sin_addr) == 0)
+  {
+    success = false;
+    perror("Invalid address");
+  }
+  servaddr.sin_port = htons(port);  // Port 9870 (adjust as needed)
+
+  // Bind socket with server address
+  if (bind(sockfd, (const struct sockaddr*)&servaddr, sizeof(servaddr)) < 0)
+  {
+    success = false;
+    perror("bind failed");
+  }
+
+  int n;
+  // Receive data from client
+  _running = true;
+
+  if (success)
+  {
+    qDebug() << tr("UDP listening on (%1, %2)").arg(address_str).arg(port);
+  }
+  else
+  {
+    qDebug() << tr("Couldn't bind to UDP (%1, %2)").arg(address_str).arg(port);
+    QMessageBox::warning(nullptr, tr("UDP Server"),
+                         tr("Couldn't bind to UDP (%1, %2)").arg(address_str).arg(port),
+                         QMessageBox::Ok);
+    close(sockfd);
+    shutdown();
+    return -1;
+  }
+
+  _threadStarted = true;
+  while (_running)
+  {
+    std::vector<unsigned char> data(2048);
+    n = recvfrom(sockfd, data.data(), 2048, 0, NULL, 0);
+    if (n < 0)
+    {
+      perror("recvfrom failed");
+      close(sockfd);
+      shutdown();
+      return -1;
+    }
 
     using namespace std::chrono;
     auto ts = high_resolution_clock::now().time_since_epoch();
     double timestamp = 1e-6 * double(duration_cast<microseconds>(ts).count());
-
-    QByteArray m = datagram.data();
-    MessageRef msg(reinterpret_cast<uint8_t*>(m.data()), m.count());
-
+    MessageRef msg(reinterpret_cast<uint8_t*>(data.data()), n);
+    // printf("%s\n", data.data());
     try
     {
       std::lock_guard<std::mutex> lock(mutex());
       // important use the mutex to protect any access to the data
       _parser->parseMessage(msg, timestamp);
+
+      // notify the GUI
+      emit dataReceived();
     }
     catch (std::exception& err)
     {
@@ -230,10 +273,11 @@ void UDP_Server::processMessage()
       shutdown();
       // notify the GUI
       emit closed();
-      return;
+      return -1;
     }
   }
-  // notify the GUI
-  emit dataReceived();
-  return;
+  qDebug() << tr("Closing UDP thread");
+  close(sockfd);
+  _threadFinished = true;
+  return 1;
 }
