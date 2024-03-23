@@ -23,16 +23,9 @@ THE SOFTWARE.
 #include <QSettings>
 #include <QDialog>
 #include <mutex>
-#include <QWebSocket>
 #include <QIntValidator>
 #include <QMessageBox>
 #include <chrono>
-#include <QNetworkDatagram>
-#include <QNetworkInterface>
-#include <QtConcurrent/QtConcurrent>
-#include <functional>
-#include <iostream>
-#include <cstring>
 #include <arpa/inet.h>
 #include <unistd.h>
 
