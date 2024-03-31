@@ -122,14 +122,14 @@ DataLoadCSV::DataLoadCSV()
           [this](bool checked) {
             _ui->radioCustomDate->setEnabled(checked);
             _ui->radioIso8601Date->setEnabled(checked);
-            _ui->lineEditDateFormat->setEnabled(_ui->radioCustomDate->isChecked());
+            _ui->lineEditDateFormat->setEnabled(checked && _ui->radioCustomDate->isChecked());
           });
 
-  connect(_ui->radioCustomDate, &QRadioButton::clicked, this, [this](bool checked){
+  connect(_ui->radioCustomDate, &QRadioButton::toggled, this, [this](bool checked){
     _ui->lineEditDateFormat->setEnabled(checked);
   });
 
-  connect(_ui->radioIso8601Date, &QRadioButton::clicked, this, [this](bool checked){
+  connect(_ui->radioIso8601Date, &QRadioButton::toggled, this, [this](bool checked){
     _ui->lineEditDateFormat->setEnabled(!checked);
   });
 
@@ -311,6 +311,8 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
       settings.value("DataLoadCSV.useIndex", false).toBool());
   _ui->checkBoxDateFormat->setChecked(
       settings.value("DataLoadCSV.useDateFormat", false).toBool());
+  _ui->radioCustomDate->setChecked(
+      !settings.value("DataLoadCSV.useISO8601", true).toBool());
   _ui->lineEditDateFormat->setText(
       settings.value("DataLoadCSV.dateFormat", "yyyy-MM-dd hh:mm:ss").toString());
 
@@ -391,6 +393,7 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
   settings.setValue("DataLoadCSV.geometry", _dialog->saveGeometry());
   settings.setValue("DataLoadCSV.useIndex", _ui->radioButtonIndex->isChecked());
   settings.setValue("DataLoadCSV.useDateFormat", _ui->checkBoxDateFormat->isChecked());
+  settings.setValue("DataLoadCSV.useISO8601", _ui->radioIso8601Date->isChecked());
   settings.setValue("DataLoadCSV.dateFormat", _ui->lineEditDateFormat->text());
 
   if (res == QDialog::Rejected)

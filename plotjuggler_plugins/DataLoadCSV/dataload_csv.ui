@@ -133,6 +133,9 @@
          </item>
          <item>
           <widget class="QRadioButton" name="radioIso8601Date">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string> ISO 8601</string>
            </property>
@@ -143,6 +146,9 @@
          </item>
          <item>
           <widget class="QRadioButton" name="radioCustomDate">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>Custom</string>
            </property>
