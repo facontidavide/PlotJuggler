@@ -132,6 +132,23 @@
           </widget>
          </item>
          <item>
+          <widget class="QRadioButton" name="radioIso8601Date">
+           <property name="text">
+            <string> ISO 8601</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="radioCustomDate">
+           <property name="text">
+            <string>Custom</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QLineEdit" name="lineEditDateFormat">
            <property name="enabled">
             <bool>false</bool>
