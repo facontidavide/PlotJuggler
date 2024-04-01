@@ -228,6 +228,13 @@
              </attribute>
             </widget>
            </item>
+           <item>
+            <widget class="QCheckBox" name="checkBoxSkipInvalidRows">
+             <property name="text">
+              <string>Skip rows with incorrect column count</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
          <widget class="QWidget" name="tab_3">
