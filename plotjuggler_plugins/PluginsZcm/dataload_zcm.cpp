@@ -275,7 +275,8 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       return;
     }
 
-    if (evt->datalen == 0) {
+    if (evt->datalen == 0)
+    {
       auto itr = plot_data.numeric.find(evt->channel);
       if (itr == plot_data.numeric.end())
         itr = plot_data.addNumeric(evt->channel);
