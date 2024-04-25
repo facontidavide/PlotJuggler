@@ -137,8 +137,9 @@ public:
   virtual void loadSettings()
   {
     QSettings settings;
-    bool checked = settings.value("NlohmannParser.timestampEnabled", false).toBool();
-    QString field = settings.value("NlohmannParser.timestampFieldName", "").toString();
+    QString prefix = QString("NlohmannParser.") + QString(encoding());
+    bool checked = settings.value(prefix + ".timestampEnabled", false).toBool();
+    QString field = settings.value(prefix + ".timestampFieldName", "").toString();
 
     _checkbox_use_timestamp->setChecked(checked);
     _checkbox_use_timestamp->lineedit->setText(field);
@@ -147,8 +148,9 @@ public:
   virtual void saveSettings()
   {
     QSettings settings;
-    settings.setValue("NlohmannParser.timestampEnabled", _checkbox_use_timestamp->isChecked());
-    settings.setValue("NlohmannParser.timestampFieldName", _checkbox_use_timestamp->lineedit->text());
+    QString prefix = QString("NlohmannParser.") + QString(encoding());
+    settings.setValue(prefix + ".timestampEnabled", _checkbox_use_timestamp->isChecked());
+    settings.setValue(prefix + ".timestampFieldName", _checkbox_use_timestamp->lineedit->text());
   }
 
 protected:
