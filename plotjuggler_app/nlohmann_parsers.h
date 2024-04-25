@@ -111,8 +111,9 @@ public:
 class NlohmannParserCreator : public ParserFactoryPlugin
 {
 public:
-  NlohmannParserCreator()
+  NlohmannParserCreator(const char* encoding)
   {
+    _encoding = encoding;
     _checkbox_use_timestamp = new QCheckBoxClose("use field as timestamp if available");
     loadSettings();
   }
@@ -132,6 +133,11 @@ public:
     loadSettings();
 
     return _checkbox_use_timestamp;
+  }
+
+  const char* encoding() const override
+  {
+    return _encoding;
   }
 
   virtual void loadSettings()
@@ -155,11 +161,16 @@ public:
 
 protected:
   QCheckBoxClose* _checkbox_use_timestamp;
+  const char* _encoding;
 };
 
 class JSON_ParserFactory : public NlohmannParserCreator
 {
 public:
+  JSON_ParserFactory() : NlohmannParserCreator("json")
+  {
+  }
+
   MessageParserPtr createParser(const std::string& topic_name,
                                 const std::string& /*type_name*/,
                                 const std::string& /*schema*/,
@@ -171,15 +182,15 @@ public:
   {
     return "JSON_ParserFactory";
   }
-  const char* encoding() const override
-  {
-    return "json";
-  }
 };
 
 class CBOR_ParserFactory : public NlohmannParserCreator
 {
 public:
+  CBOR_ParserFactory() : NlohmannParserCreator("cbor")
+  {
+  }
+
   MessageParserPtr createParser(const std::string& topic_name, const std::string&,
                                 const std::string&, PlotDataMapRef& data) override
   {
@@ -189,15 +200,15 @@ public:
   {
     return "CBOR_ParserFactory";
   }
-  const char* encoding() const override
-  {
-    return "cbor";
-  }
 };
 
 class BSON_ParserFactory : public NlohmannParserCreator
 {
 public:
+  BSON_ParserFactory() : NlohmannParserCreator("bson")
+  {
+  }
+
   MessageParserPtr createParser(const std::string& topic_name, const std::string&,
                                 const std::string&, PlotDataMapRef& data) override
   {
@@ -207,15 +218,15 @@ public:
   {
     return "BSON_ParserFactory";
   }
-  const char* encoding() const override
-  {
-    return "bson";
-  }
 };
 
 class MessagePack_ParserFactory : public NlohmannParserCreator
 {
 public:
+  MessagePack_ParserFactory() : NlohmannParserCreator("msgpack")
+  {
+  }
+
   MessageParserPtr createParser(const std::string& topic_name, const std::string&,
                                 const std::string&, PlotDataMapRef& data) override
   {
@@ -224,10 +235,6 @@ public:
   const char* name() const override
   {
     return "MessagePack_ParserFactory";
-  }
-  const char* encoding() const override
-  {
-    return "msgpack";
   }
 };
 
