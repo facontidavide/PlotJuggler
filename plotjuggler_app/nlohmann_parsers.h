@@ -10,6 +10,7 @@
 #include "nlohmann/json.hpp"
 #include "PlotJuggler/messageparser_base.h"
 #include <QDebug>
+#include <QSettings>
 
 using namespace PJ;
 
@@ -113,11 +114,14 @@ public:
   NlohmannParserCreator()
   {
     _checkbox_use_timestamp = new QCheckBoxClose("use field as timestamp if available");
+    loadSettings();
   }
 
   template <typename ParserT>
   MessageParserPtr createParserImpl(const std::string& topic_name, PlotDataMapRef& data)
   {
+    saveSettings();
+
     std::string timestamp_name = _checkbox_use_timestamp->lineedit->text().toStdString();
     return std::make_shared<ParserT>(
         topic_name, data, _checkbox_use_timestamp->isChecked(), timestamp_name);
@@ -125,7 +129,26 @@ public:
 
   virtual QWidget* optionsWidget()
   {
+    loadSettings();
+
     return _checkbox_use_timestamp;
+  }
+
+  virtual void loadSettings()
+  {
+    QSettings settings;
+    bool checked = settings.value("NlohmannParser.timestampEnabled", false).toBool();
+    QString field = settings.value("NlohmannParser.timestampFieldName", "").toString();
+
+    _checkbox_use_timestamp->setChecked(checked);
+    _checkbox_use_timestamp->lineedit->setText(field);
+  }
+
+  virtual void saveSettings()
+  {
+    QSettings settings;
+    settings.setValue("NlohmannParser.timestampEnabled", _checkbox_use_timestamp->isChecked());
+    settings.setValue("NlohmannParser.timestampFieldName", _checkbox_use_timestamp->lineedit->text());
   }
 
 protected:
