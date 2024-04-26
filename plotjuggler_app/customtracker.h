@@ -29,7 +29,8 @@ public:
   {
     LINE_ONLY,
     VALUE,
-    VALUE_NAME
+    VALUE_NAME,
+    OFF // keep me the last, please
   } Parameter;
 
 public slots:

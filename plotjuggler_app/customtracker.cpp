@@ -55,7 +55,15 @@ void CurveTracker::setParameter(Parameter par)
 
   if (changed)
   {
-    setPosition(_prev_trackerpoint);
+    if (Parameter::OFF == par)
+    {
+      this->setEnabled(false);
+    }
+    else
+    {
+      this->setEnabled(true);
+      setPosition(_prev_trackerpoint);
+    }
   }
 }
 
