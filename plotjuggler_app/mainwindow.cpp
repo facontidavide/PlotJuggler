@@ -982,7 +982,7 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
   plot->on_changeTimeOffset(_time_offset.get());
   plot->on_changeDateTimeScale(ui->buttonUseDateTime->isChecked());
   plot->activateGrid(ui->buttonActivateGrid->isChecked());
-  plot->enableTracker(!isStreamingActive());
+  plot->enableTracker(true);
   plot->setKeepRatioXY(ui->buttonRatio->isChecked());
   plot->configureTracker(_tracker_param);
 }
