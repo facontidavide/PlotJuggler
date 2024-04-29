@@ -156,7 +156,8 @@ public:
     QSettings settings;
     QString prefix = QString("NlohmannParser.") + QString(encoding());
     settings.setValue(prefix + ".timestampEnabled", _checkbox_use_timestamp->isChecked());
-    settings.setValue(prefix + ".timestampFieldName", _checkbox_use_timestamp->lineedit->text());
+    settings.setValue(prefix + ".timestampFieldName",
+                      _checkbox_use_timestamp->lineedit->text());
   }
 
 protected:
