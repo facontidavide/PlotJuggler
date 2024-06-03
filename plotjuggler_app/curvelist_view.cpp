@@ -150,7 +150,10 @@ bool CurveTableView::applyVisibilityFilter(const QString& search_string)
     {
       for (const auto& item : spaced_items)
       {
-        if (name.contains(item, Qt::CaseInsensitive) == false)
+        auto const regexp = QRegularExpression(
+          item,
+          QRegularExpression::PatternOption::CaseInsensitiveOption);
+        if (name.contains(regexp) == false)
         {
           toHide = true;
           break;

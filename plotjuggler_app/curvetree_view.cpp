@@ -248,7 +248,10 @@ bool CurveTreeView::applyVisibilityFilter(const QString& search_string)
     {
       for (const auto& spaced_item : spaced_items)
       {
-        if (name.contains(spaced_item, Qt::CaseInsensitive) == false)
+        auto const regexp = QRegularExpression(
+          spaced_item,
+          QRegularExpression::PatternOption::CaseInsensitiveOption);
+        if (name.contains(regexp) == false)
         {
           toHide = true;
           break;
