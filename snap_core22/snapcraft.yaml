@@ -99,7 +99,6 @@ parts:
       - ros-humble-control-msgs
       - ros-humble-controller-manager-msgs
       - ros-humble-create-msgs
-      - ros-humble-dataspeed-dbw-msgs
       - ros-humble-dataspeed-ulc-msgs
       - ros-humble-dbw-fca-msgs
       - ros-humble-dbw-ford-msgs
