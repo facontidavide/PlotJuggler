@@ -50,6 +50,11 @@
        <string>Average</string>
       </property>
      </column>
+     <column>
+      <property name="text">
+       <string>Avg Interval</string>
+      </property>
+     </column>
     </widget>
    </item>
    <item>
