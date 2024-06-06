@@ -304,6 +304,8 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
       settings.value("DataLoadCSV.useDateFormat", false).toBool());
   _ui->lineEditDateFormat->setText(
       settings.value("DataLoadCSV.dateFormat", "yyyy-MM-dd hh:mm:ss").toString());
+  _ui->checkBoxSkipInvalidRows->setChecked(
+      settings.value("DataLoadCSV.skipInvalidRows", false).toBool());
 
   // suggest separator
   {
@@ -383,6 +385,7 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
   settings.setValue("DataLoadCSV.useIndex", _ui->radioButtonIndex->isChecked());
   settings.setValue("DataLoadCSV.useDateFormat", _ui->checkBoxDateFormat->isChecked());
   settings.setValue("DataLoadCSV.dateFormat", _ui->lineEditDateFormat->text());
+  settings.setValue("DataLoadCSV.skipInvalidRows", _ui->checkBoxSkipInvalidRows->isChecked());
 
   if (res == QDialog::Rejected)
   {
@@ -492,6 +495,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   //-----------------
   double prev_time = std::numeric_limits<double>::lowest();
   bool parse_date_format = _ui->checkBoxDateFormat->isChecked();
+  bool skip_invalid_rows = _ui->checkBoxSkipInvalidRows->isChecked();
   QString format_string = _ui->lineEditDateFormat->text();
 
   auto ParseTimestamp = [&](QString str, bool& is_number) {
@@ -591,6 +595,9 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
 
     if (string_items.size() != column_names.size())
     {
+      if (skip_invalid_rows)
+        continue;
+
       QMessageBox msgBox;
       msgBox.setWindowTitle(tr("Error reading file"));
       msgBox.setText(tr("The number of values at line %1 is %2,\n"
@@ -788,6 +795,10 @@ bool DataLoadCSV::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) c
     elem.setAttribute("date_format", _ui->lineEditDateFormat->text());
   }
 
+  if (_ui->checkBoxSkipInvalidRows->isChecked()) {
+    elem.setAttribute("skip_invalid_rows", "true");
+  }
+
   parent_element.appendChild(elem);
   return true;
 }
@@ -824,6 +835,9 @@ bool DataLoadCSV::xmlLoadState(const QDomElement& parent_element)
   {
     _ui->checkBoxDateFormat->setChecked(true);
     _ui->lineEditDateFormat->setText(elem.attribute("date_format"));
+  }
+  if (elem.hasAttribute("skip_invalid_rows")) {
+    _ui->checkBoxSkipInvalidRows->setChecked(true);
   }
   return true;
 }
