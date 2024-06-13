@@ -122,7 +122,19 @@ DataLoadCSV::DataLoadCSV()
           [this]() { emit _ui->buttonBox->accepted(); });
 
   connect(_ui->checkBoxDateFormat, &QCheckBox::toggled, this,
-          [this](bool checked) { _ui->lineEditDateFormat->setEnabled(checked); });
+          [this](bool checked) {
+            _ui->radioCustomDate->setEnabled(checked);
+            _ui->radioIso8601Date->setEnabled(checked);
+            _ui->lineEditDateFormat->setEnabled(checked && _ui->radioCustomDate->isChecked());
+          });
+
+  connect(_ui->radioCustomDate, &QRadioButton::toggled, this, [this](bool checked){
+    _ui->lineEditDateFormat->setEnabled(checked);
+  });
+
+  connect(_ui->radioIso8601Date, &QRadioButton::toggled, this, [this](bool checked){
+    _ui->lineEditDateFormat->setEnabled(!checked);
+  });
 
   connect(_ui->dateTimeHelpButton, &QPushButton::clicked, this,
           [this]() { _dateTime_dialog->show(); });
@@ -302,6 +314,8 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
       settings.value("DataLoadCSV.useIndex", false).toBool());
   _ui->checkBoxDateFormat->setChecked(
       settings.value("DataLoadCSV.useDateFormat", false).toBool());
+  _ui->radioCustomDate->setChecked(
+      !settings.value("DataLoadCSV.useISO8601", true).toBool());
   _ui->lineEditDateFormat->setText(
       settings.value("DataLoadCSV.dateFormat", "yyyy-MM-dd hh:mm:ss").toString());
 
@@ -382,6 +396,7 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
   settings.setValue("DataLoadCSV.geometry", _dialog->saveGeometry());
   settings.setValue("DataLoadCSV.useIndex", _ui->radioButtonIndex->isChecked());
   settings.setValue("DataLoadCSV.useDateFormat", _ui->checkBoxDateFormat->isChecked());
+  settings.setValue("DataLoadCSV.useISO8601", _ui->radioIso8601Date->isChecked());
   settings.setValue("DataLoadCSV.dateFormat", _ui->lineEditDateFormat->text());
 
   if (res == QDialog::Rejected)
@@ -493,6 +508,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   double prev_time = std::numeric_limits<double>::lowest();
   bool parse_date_format = _ui->checkBoxDateFormat->isChecked();
   QString format_string = _ui->lineEditDateFormat->text();
+  bool parse_iso_8601 = _ui->radioIso8601Date->isChecked();
 
   auto ParseTimestamp = [&](QString str, bool& is_number) {
     QString str_trimmed = str.trimmed();
@@ -533,9 +549,9 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       static QLocale locale_with_comma(QLocale::German);
       val = locale_with_comma.toDouble(str_trimmed, &is_number);
     }
-    if (!is_number && parse_date_format && !format_string.isEmpty())
+    if (!is_number && parse_date_format && (!format_string.isEmpty() || parse_iso_8601))
     {
-      QDateTime ts = QDateTime::fromString(str_trimmed, format_string);
+      QDateTime ts = parse_iso_8601 ? QDateTime::fromString(str_trimmed, Qt::ISODateWithMs) : QDateTime::fromString(str_trimmed, format_string);
       is_number = ts.isValid();
       if (is_number)
       {
@@ -554,9 +570,9 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       static QLocale locale_with_comma(QLocale::German);
       val = locale_with_comma.toDouble(str_trimmed, &is_number);
     }
-    if (!is_number && parse_date_format && !format_string.isEmpty())
+    if (!is_number && parse_date_format && (!format_string.isEmpty() || parse_iso_8601))
     {
-      QDateTime ts = QDateTime::fromString(str_trimmed, format_string);
+      QDateTime ts = parse_iso_8601 ? QDateTime::fromString(str_trimmed, Qt::ISODateWithMs) : QDateTime::fromString(str_trimmed, format_string);
       is_number = ts.isValid();
       if (is_number)
       {
@@ -782,10 +798,14 @@ bool DataLoadCSV::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) c
   elem.setAttribute("time_axis", _default_time_axis.c_str());
   elem.setAttribute("delimiter", _ui->comboBox->currentIndex());
 
-  QString date_format;
   if (_ui->checkBoxDateFormat->isChecked())
   {
     elem.setAttribute("date_format", _ui->lineEditDateFormat->text());
+  }
+
+  if (_ui->radioIso8601Date->isChecked())
+  {
+    elem.setAttribute("date_format_iso", "ISO8601");
   }
 
   parent_element.appendChild(elem);
@@ -824,6 +844,12 @@ bool DataLoadCSV::xmlLoadState(const QDomElement& parent_element)
   {
     _ui->checkBoxDateFormat->setChecked(true);
     _ui->lineEditDateFormat->setText(elem.attribute("date_format"));
+  }
+  if (elem.hasAttribute("date_format_iso"))
+  {
+    _ui->radioIso8601Date->setChecked(true);
+  } else {
+    _ui->radioCustomDate->setChecked(true);
   }
   return true;
 }
