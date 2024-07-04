@@ -104,6 +104,7 @@ private:
   void updateLimits();
   void onDeleteRow(QWidget* w);
   void disableWidgets();
+  void on_widthSpinBox_changed(double width);
 
   std::unordered_map<std::string, std::shared_ptr<TransformFunction>> _transforms;
 };

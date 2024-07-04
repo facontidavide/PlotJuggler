@@ -85,6 +85,8 @@ public:
 
   void changeCurvesStyle(CurveStyle style);
 
+  void changeCurvesWidth(double width);
+
   bool isXYPlot() const;
 
   QRectF currentBoundingRect() const;
@@ -92,6 +94,8 @@ public:
   QRectF maxZoomRect() const;
 
   CurveStyle curveStyle() const;
+
+  double curvesWidth() const;
 
   bool keepRatioXY() const;
 
@@ -125,6 +129,7 @@ protected:
   QwtPlotPimpl* p = nullptr;
 
   static void setStyle(QwtPlotCurve* curve, CurveStyle style);
+  static void setWidth(QwtPlotCurve* curve, double width);
 
   QwtPlot* qwtPlot();
   const QwtPlot* qwtPlot() const;
