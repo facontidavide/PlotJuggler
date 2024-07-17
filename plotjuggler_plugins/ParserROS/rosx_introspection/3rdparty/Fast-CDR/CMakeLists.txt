@@ -126,20 +126,6 @@ set(LICENSE_INSTALL_DIR ${DATA_INSTALL_DIR}/${PROJECT_NAME} CACHE PATH "Installa
 add_subdirectory(src/cpp)
 
 ###############################################################################
-# Testing
-###############################################################################
-enable_testing()
-include(CTest)
-
-if (BUILD_TESTING)
-    if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.22)
-        add_subdirectory(test)
-    else()
-        message(INFO "Tests are disabled because the version of CMake is less than 3.22")
-    endif()
-endif()
-
-###############################################################################
 # Documentation
 ###############################################################################
 # Add an option to toggle the generation of the API documentation.
