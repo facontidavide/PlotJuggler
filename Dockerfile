@@ -37,6 +37,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ocl-icd-opencl-dev \
   opencl-headers
 
+RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
+RUN pyenv install 3.11.4 && \
+    pyenv global 3.11.4 && \
+    pyenv rehash
+
 RUN pip3 install pkgconfig jinja2
 
 # installs scons, pycapnp, cython, etc.
