@@ -47,5 +47,5 @@ RUN pip3 install pkgconfig jinja2
 
 # installs scons, pycapnp, cython, etc.
 ENV PYTHONPATH /tmp/plotjuggler/3rdparty
-COPY 3rdparty/opendbc/requirements.txt /tmp/
+COPY 3rdparty/opendbc_repo/requirements.txt /tmp/
 RUN pip3 install Cython && pip3 install --no-cache-dir -r /tmp/requirements.txt

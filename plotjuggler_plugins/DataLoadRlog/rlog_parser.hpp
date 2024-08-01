@@ -8,6 +8,8 @@
 #endif
 
 #include <capnp/schema-parser.h>
+#include <capnp/dynamic.h>
+#include <capnp/serialize.h>
 
 #include "common.h"
 #include "common_dbc.h"

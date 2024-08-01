@@ -7,7 +7,7 @@ if(Cereal_FOUND AND Rlog_FOUND)
   add_definitions(${QT_DEFINITIONS})
   add_definitions(-DQT_PLUGIN)
   add_definitions(-DDYNAMIC_CAPNP)
-  add_definitions(-DDBC_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/opendbc")
+  add_definitions(-DDBC_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/opendbc/dbc")
 
   QT5_WRAP_UI ( UI_SRC  datastream_cereal.ui  )
 

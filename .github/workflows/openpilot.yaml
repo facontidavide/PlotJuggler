@@ -49,7 +49,7 @@ jobs:
     - name: setup dependencies
       run: |
         brew install cmake bzip2 capnp qt@5 zeromq protobuf@3 gnu-tar
-        sudo pip3 install --no-cache-dir -r 3rdparty/opendbc/requirements.txt
+        sudo pip3 install --no-cache-dir -r 3rdparty/opendbc_repo/requirements.txt
     - name: build
       run: |
         export PYTHONPATH=$PWD/3rdparty

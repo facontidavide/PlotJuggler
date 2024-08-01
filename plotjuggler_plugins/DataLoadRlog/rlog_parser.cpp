@@ -175,6 +175,9 @@ bool RlogMessageParser::parseCanMessage(
   }
 
   std::set<uint8_t> updated_busses;
+  std::vector<CanData> can_data_list;
+  CanData &can_data = can_data_list.emplace_back();
+  can_data.nanos = last_nanos;
   for(auto elem : listValue) {
     auto value = elem.as<capnp::DynamicStruct>();
     uint8_t bus = value.get("src").as<uint8_t>();
@@ -185,12 +188,19 @@ bool RlogMessageParser::parseCanMessage(
 
     updated_busses.insert(bus);
     parsers[bus]->last_nanos = last_nanos;
-    parsers[bus]->UpdateCans(last_nanos, value);
-    parsers[bus]->UpdateValid(last_nanos);
+
+    auto dat = value.get("dat").as<capnp::Data>();
+    if (dat.size() > 64) continue;  // shouldn't ever happen
+
+    auto &frame = can_data.frames.emplace_back();
+    frame.src = bus;
+    frame.address = value.get("address").as<uint32_t>();
+    frame.dat.assign(dat.begin(), dat.end());
   }
+
   for (uint8_t bus : updated_busses) {
     std::vector<SignalValue> signal_values;
-    parsers[bus]->query_latest(signal_values);
+    parsers[bus]->update(can_data_list, signal_values);
     for (auto& sg : signal_values) {
       // TODO: plot all updated values
       PJ::PlotData& _data_series = getSeries(topic_name + '/' + std::to_string(bus) + '/' +
