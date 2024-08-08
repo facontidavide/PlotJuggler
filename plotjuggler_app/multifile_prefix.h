@@ -23,7 +23,7 @@ class DialogMultifilePrefix : public QDialog
 public:
   explicit DialogMultifilePrefix(QStringList filenames, QWidget* parent = nullptr);
 
-  bool mergeFiles;
+  bool mergeFiles, clearExisting;
   std::map<QString, QString> getPrefixes() const;
 
   ~DialogMultifilePrefix();
@@ -35,7 +35,7 @@ private:
   std::map<QString, QLineEdit*> _line_edits;
   std::map<QString, QString> _previous_prefixes;
   std::map<QString, QString> _prefixes;
-  QCheckBox *mergeFilesCheckbox;
+  QCheckBox *mergeFilesCheckbox, *clearExistingCheckbox;
 };
 
 #endif  // MULTIFILE_PREFIX_H
