@@ -10,4 +10,7 @@
     </Licenses>
     <Default>script</Default>
     <Script>installscript.qs</Script>
+    <UserInterfaces>
+        <UserInterface>targetwidget.ui</UserInterface>
+    </UserInterfaces>
 </Package>
