@@ -1373,6 +1373,7 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
 {
   filenames.sort();
   std::map<QString, QString> filename_prefix;
+  bool mergeFiles = false;
 
   if (filenames.size() > 1 || ui->checkBoxAddPrefixAndMerge->isChecked())
   {
@@ -1383,6 +1384,7 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
       return false;
     }
     filename_prefix = dialog.getPrefixes();
+    mergeFiles = dialog.mergeFiles;
   }
 
   std::unordered_set<std::string> previous_names = _mapped_plot_data.getAllNames();
@@ -1398,7 +1400,7 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
     {
       info.prefix = filename_prefix[info.filename];
     }
-    auto added_names = loadDataFromFile(info);
+    auto added_names = loadDataFromFile(info, mergeFiles);
     if (!added_names.empty())
     {
       loaded_filenames.push_back(filenames[i]);
@@ -1453,7 +1455,7 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
   return false;
 }
 
-std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo& info)
+std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo& info, const bool mergeFiles)
 {
   ui->buttonPlay->setChecked(false);
 
@@ -1545,7 +1547,7 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
         AddPrefixToPlotData(info.prefix.toStdString(), mapped_data.strings);
 
         added_names = mapped_data.getAllNames();
-        importPlotDataMap(mapped_data, true);
+        importPlotDataMap(mapped_data, !mergeFiles);
 
         QDomElement plugin_elem = dataloader->xmlSaveState(new_info.plugin_config);
         new_info.plugin_config.appendChild(plugin_elem);
