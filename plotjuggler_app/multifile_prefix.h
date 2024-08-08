@@ -9,6 +9,7 @@
 
 #include <QDialog>
 #include <QLineEdit>
+#include <QCheckBox>
 
 namespace Ui
 {
@@ -22,6 +23,7 @@ class DialogMultifilePrefix : public QDialog
 public:
   explicit DialogMultifilePrefix(QStringList filenames, QWidget* parent = nullptr);
 
+  bool mergeFiles;
   std::map<QString, QString> getPrefixes() const;
 
   ~DialogMultifilePrefix();
@@ -33,6 +35,7 @@ private:
   std::map<QString, QLineEdit*> _line_edits;
   std::map<QString, QString> _previous_prefixes;
   std::map<QString, QString> _prefixes;
+  QCheckBox *mergeFilesCheckbox;
 };
 
 #endif  // MULTIFILE_PREFIX_H

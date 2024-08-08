@@ -29,6 +29,9 @@ DialogMultifilePrefix::DialogMultifilePrefix(QStringList filenames, QWidget* par
     _previous_prefixes.insert({ prev_prefixes[i], prev_prefixes[i + 1] });
   }
 
+  ui->mergeFilesCheckbox->setChecked(
+      settings.value("DialogMultifilePrefix::mergeFiles", false).toBool());
+
   int index = 0;
   for (QString filename : filenames)
   {
@@ -55,12 +58,15 @@ DialogMultifilePrefix::DialogMultifilePrefix(QStringList filenames, QWidget* par
     _prefixes[filename] = line_edit->text();
     _line_edits.insert({ filename, line_edit });
   }
+
+  this->mergeFilesCheckbox = ui->mergeFilesCheckbox;
 }
 
 std::map<QString, QString> DialogMultifilePrefix::getPrefixes() const
 {
   return _prefixes;
 }
+
 
 DialogMultifilePrefix::~DialogMultifilePrefix()
 {
@@ -86,7 +92,10 @@ void DialogMultifilePrefix::accept()
     prev_prefixes.push_back(prefix);
   }
 
+  this->mergeFiles = this->mergeFilesCheckbox->isChecked();
+
   settings.setValue("DialogMultifilePrefix::previous", prev_prefixes);
+  settings.setValue("DialogMultifilePrefix::mergeFiles", this->mergeFiles);
 
   QDialog::accept();
 }
