@@ -1373,7 +1373,7 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
 {
   filenames.sort();
   std::map<QString, QString> filename_prefix;
-  bool mergeFiles = false;
+  bool mergeFiles = false, clearExisting = true;
 
   if (filenames.size() > 1 || ui->checkBoxAddPrefixAndMerge->isChecked())
   {
@@ -1385,6 +1385,7 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
     }
     filename_prefix = dialog.getPrefixes();
     mergeFiles = dialog.mergeFiles;
+    clearExisting = dialog.clearExisting;
   }
 
   std::unordered_set<std::string> previous_names = _mapped_plot_data.getAllNames();
@@ -1400,7 +1401,7 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
     {
       info.prefix = filename_prefix[info.filename];
     }
-    auto added_names = loadDataFromFile(info, mergeFiles);
+    auto added_names = loadDataFromFile(info, mergeFiles && !(i == 0 && clearExisting));
     if (!added_names.empty())
     {
       loaded_filenames.push_back(filenames[i]);

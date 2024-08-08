@@ -65,6 +65,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QCheckBox" name="checkBoxClearExisting">
+       <property name="text">
+        <string>clear already present data</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QDialogButtonBox" name="buttonBox">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
