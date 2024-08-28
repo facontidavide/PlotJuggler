@@ -6,4 +6,4 @@ docker run \
   --rm \
   --volume $PWD:/tmp/plotjuggler \
   --workdir /tmp/plotjuggler plotjuggler:latest \
-  /bin/bash -c "mkdir -p build && cd build && cmake .. && make -j$(nproc)"
+  /bin/bash -c "source /.venv/bin/activate && mkdir -p build && cd build && cmake .. && make -j$(nproc)"

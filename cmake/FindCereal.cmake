@@ -5,8 +5,13 @@ else (Cereal_LIBRARIES AND Cereal_INCLUDE_DIRS)
 
   # build cereal before we search for required Cereal plugin libs below
   execute_process(
-    COMMAND scons -j8 --minimal
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/3rdparty/cereal
+    COMMAND scons -j8 --minimal -u
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/3rdparty/openpilot/cereal
+  )
+
+  execute_process(
+    COMMAND scons -j8 --minimal -u
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/3rdparty/openpilot/msgq
   )
 
   find_path(Cereal_INCLUDE_DIRS
@@ -29,14 +34,14 @@ else (Cereal_LIBRARIES AND Cereal_INCLUDE_DIRS)
     NAMES
       cereal
     PATHS
-      ${CMAKE_SOURCE_DIR}/3rdparty/cereal
+      ${CMAKE_SOURCE_DIR}/3rdparty/openpilot/cereal
   )
 
-  find_library(Cereal_LIBRARY_MESSAGING
+  find_library(Cereal_LIBRARY_MSGQ
     NAMES
-      messaging
+      msgq
     PATHS
-      ${CMAKE_SOURCE_DIR}/3rdparty/cereal
+      ${CMAKE_SOURCE_DIR}/3rdparty/openpilot/msgq_repo
   )
 
   find_library(Cereal_LIBRARY_ZMQ
@@ -47,7 +52,7 @@ else (Cereal_LIBRARIES AND Cereal_INCLUDE_DIRS)
   set(Cereal_LIBRARIES
       ${Cereal_LIBRARIES}
       ${Cereal_LIBRARY_CEREAL}
-      ${Cereal_LIBRARY_MESSAGING}
+      ${Cereal_LIBRARY_MSGQ}
       ${Cereal_LIBRARY_ZMQ}
   )
 

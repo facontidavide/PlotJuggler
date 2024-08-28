@@ -35,17 +35,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libsqlite3-dev \
   clang \
   ocl-icd-opencl-dev \
-  opencl-headers
+  opencl-headers \
+  portaudio19-dev
 
-RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
-RUN pyenv install 3.11.4 && \
-    pyenv global 3.11.4 && \
-    pyenv rehash
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN uv venv --python 3.11.4
+RUN uv pip install pkgconfig jinja2 Cython
 
-RUN pip3 install pkgconfig jinja2
-
-# installs scons, pycapnp, cython, etc.
 ENV PYTHONPATH /tmp/plotjuggler/3rdparty
-COPY 3rdparty/opendbc_repo/requirements.txt /tmp/
-RUN pip3 install Cython && pip3 install --no-cache-dir -r /tmp/requirements.txt
+COPY 3rdparty/openpilot/opendbc_repo/pyproject.toml /tmp/opendbc_repo/pyproject.toml
+COPY 3rdparty/openpilot/pyproject.toml /tmp/openpilot/pyproject.toml
+RUN uv pip install --no-cache-dir /tmp/opendbc_repo
+RUN uv pip install --no-cache-dir /tmp/openpilot

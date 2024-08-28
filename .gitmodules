@@ -1,6 +1,3 @@
-[submodule "3rdparty/cereal"]
-	path = 3rdparty/cereal
-	url = ../../commaai/cereal.git
-[submodule "3rdparty/opendbc"]
-	path = 3rdparty/opendbc_repo
-	url = ../../commaai/opendbc.git
+[submodule "3rdparty/openpilot"]
+	path = 3rdparty/openpilot
+	url = https://github.com/commaai/openpilot
