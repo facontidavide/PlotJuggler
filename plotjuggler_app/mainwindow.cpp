@@ -3015,7 +3015,7 @@ void MainWindow::on_buttonLoadDatafile_clicked()
     DataLoaderPtr loader = it.second;
     for (QString extension : loader->compatibleFileExtensions())
     {
-      extensions.insert(extension.toLower());
+      extensions.insert(extension);
     }
   }
 
