@@ -6,7 +6,7 @@ env:
   ZIP: |
     cd $GITHUB_WORKSPACE/build/bin
     export PATH=/usr/local/opt/gnu-tar/libexec/gnubin:$PATH
-    sudo tar -czf $(uname -s)-$(uname -m).tar.gz plotjuggler libDataLoadRlog.* libDataStreamCereal.*
+    sudo tar -czf $(uname -s)-$(uname -m).tar.gz plotjuggler *.so
 
 jobs:
   build_ubuntu:
@@ -24,6 +24,13 @@ jobs:
         submodules: recursive
     - name: build
       run: ./build.sh
+    - name: download capnp 0.7
+      run: |
+        cd /tmp/
+        mkdir tmp
+        wget http://launchpadlibrarian.net/472650221/libcapnp-0.7.0_0.7.0-6_amd64.deb
+        dpkg-deb -R lib*.deb tmp
+        sudo cp tmp/usr/lib/x86_64-linux-gnu/lib*.so $GITHUB_WORKSPACE/build/bin
     - name: zip plugins
       run: eval "$ZIP"
     - name: upload
