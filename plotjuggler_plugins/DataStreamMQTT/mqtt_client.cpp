@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QString>
+#include <QtGlobal>
 
 #ifdef WIN32
 #include <windows.h>
@@ -52,11 +53,6 @@ void message_callback(struct mosquitto* mosq, void* context,
 MQTTClient::MQTTClient()
 {
   mosquitto_lib_init();
-  _mosq = mosquitto_new(nullptr, true, this);
-
-  mosquitto_connect_v5_callback_set(_mosq, connect_callback);
-  mosquitto_disconnect_callback_set(_mosq, disconnect_callback);
-  mosquitto_message_v5_callback_set(_mosq, message_callback);
 }
 
 MQTTClient::~MQTTClient()
@@ -75,12 +71,41 @@ bool MQTTClient::connect(const MosquittoConfig& config)
     disconnect();
   }
 
-  mosquitto_int_option(_mosq, MOSQ_OPT_PROTOCOL_VERSION, config.protocol_version);
+  // Start with a fresh mosquitto instance.
+  Q_ASSERT(_mosq == nullptr);
+  _mosq = mosquitto_new(nullptr, true, this);
+
+  bool success = configureMosquitto(config);
+  if (!success)
+  {
+    mosquitto_destroy(_mosq);
+    _mosq = nullptr;
+    return false;
+  }
+
+  _connected = true;
+  _config = config;
+  return true;
+}
+
+bool MQTTClient::configureMosquitto(const MosquittoConfig& config)
+{
+  mosquitto_connect_v5_callback_set(_mosq, connect_callback);
+  mosquitto_disconnect_callback_set(_mosq, disconnect_callback);
+  mosquitto_message_v5_callback_set(_mosq, message_callback);
+
+  int rc =
+      mosquitto_int_option(_mosq, MOSQ_OPT_PROTOCOL_VERSION, config.protocol_version);
+  if (rc != MOSQ_ERR_SUCCESS)
+  {
+    return false;
+  }
 
   if ((!config.username.empty() || !config.password.empty()))
   {
-    if (mosquitto_username_pw_set(_mosq, config.username.c_str(),
-                                  config.password.c_str()))
+    rc = mosquitto_username_pw_set(_mosq, config.username.c_str(),
+                                   config.password.c_str());
+    if (rc != MOSQ_ERR_SUCCESS)
     {
       return false;
     }
@@ -91,16 +116,23 @@ bool MQTTClient::connect(const MosquittoConfig& config)
     const char* cafile = config.cafile.c_str();
     const char* certfile = config.certfile.empty() ? nullptr : config.certfile.c_str();
     const char* keyfile = config.keyfile.empty() ? nullptr : config.keyfile.c_str();
-
-    mosquitto_tls_set(_mosq, cafile, nullptr, certfile, keyfile, nullptr);
+    rc = mosquitto_tls_set(_mosq, cafile, nullptr, certfile, keyfile, nullptr);
+    if (rc != MOSQ_ERR_SUCCESS)
+    {
+      return false;
+    }
   }
 
-  mosquitto_max_inflight_messages_set(_mosq, config.max_inflight);
+  rc = mosquitto_max_inflight_messages_set(_mosq, config.max_inflight);
+  if (rc != MOSQ_ERR_SUCCESS)
+  {
+    return false;
+  }
 
   const mosquitto_property* properties = nullptr;  // todo
 
-  int rc = mosquitto_connect_bind_v5(_mosq, config.host.c_str(), config.port,
-                                     config.keepalive, nullptr, properties);
+  rc = mosquitto_connect_bind_v5(_mosq, config.host.c_str(), config.port,
+                                 config.keepalive, nullptr, properties);
   // TODO bind
   if (rc > 0)
   {
@@ -121,13 +153,14 @@ bool MQTTClient::connect(const MosquittoConfig& config)
                            QString("Unable to connect (%1)").arg(mosquitto_strerror(rc)),
                            QMessageBox::Ok);
     }
-    _connected = false;
     return false;
   }
 
-  _connected = true;
-  _config = config;
-  mosquitto_loop_start(_mosq);
+  rc = mosquitto_loop_start(_mosq);
+  if (rc != MOSQ_ERR_SUCCESS)
+  {
+    return false;
+  }
   return true;
 }
 
@@ -137,6 +170,8 @@ void MQTTClient::disconnect()
   {
     mosquitto_disconnect(_mosq);
     mosquitto_loop_stop(_mosq, true);
+    mosquitto_destroy(_mosq);
+    _mosq = nullptr;
   }
   _connected = false;
   _topics_set.clear();
@@ -181,10 +216,16 @@ std::unordered_set<std::string> MQTTClient::getTopicList()
 
 void MQTTClient::subscribe(const std::string& topic, int qos)
 {
-  mosquitto_subscribe(_mosq, nullptr, topic.c_str(), qos);
+  if (_connected)
+  {
+    mosquitto_subscribe(_mosq, nullptr, topic.c_str(), qos);
+  }
 }
 
 void MQTTClient::unsubscribe(const std::string& topic)
 {
-  mosquitto_unsubscribe(_mosq, nullptr, topic.c_str());
+  if (_connected)
+  {
+    mosquitto_unsubscribe(_mosq, nullptr, topic.c_str());
+  }
 }

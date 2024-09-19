@@ -46,6 +46,8 @@ signals:
   void disconnected();
 
 private:
+  bool configureMosquitto(const MosquittoConfig &config);
+
   mosquitto* _mosq = nullptr;
   std::unordered_map<std::string, TopicCallback> _message_callbacks;
   std::unordered_set<std::string> _topics_set;
