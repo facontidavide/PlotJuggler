@@ -3,11 +3,17 @@
 #include <QMessageBox>
 #include <QString>
 #include <QtGlobal>
+#include <QLoggingCategory>
 
 #ifdef WIN32
 #include <windows.h>
 #include <strsafe.h>
 #endif
+
+#define MQTT_DEBUG 0
+#define debug() qCDebug(category)
+
+static const QLoggingCategory category("MQTTClient");
 
 void connect_callback(struct mosquitto* mosq, void* context, int result, int,
                       const mosquitto_property*)
@@ -48,11 +54,39 @@ void message_callback(struct mosquitto* mosq, void* context,
   self->onMessageReceived(message);
 }
 
+void log_callback(struct mosquitto* mosq, void* context, int log_level, const char* msg)
+{
+  const std::pair<int, const char*> log_level_map[] = {
+    { MOSQ_LOG_INFO, "MOSQ_LOG_INFO" },
+    { MOSQ_LOG_NOTICE, "MOSQ_LOG_NOTICE" },
+    { MOSQ_LOG_WARNING, "MOSQ_LOG_WARNING" },
+    { MOSQ_LOG_ERR, "MOSQ_LOG_ERR			" },
+    { MOSQ_LOG_DEBUG, "MOSQ_LOG_DEBUG" },
+    { MOSQ_LOG_SUBSCRIBE, "MOSQ_LOG_SUBSCRIBE" },
+    { MOSQ_LOG_UNSUBSCRIBE, "MOSQ_LOG_UNSUBSCRIBE" },
+    { MOSQ_LOG_WEBSOCKETS, "MOSQ_LOG_WEBSOCKETS" },
+  };
+
+  const auto it =
+      std::find_if(std::begin(log_level_map), std::end(log_level_map),
+                   [log_level](const auto& pair) { return log_level == pair.first; });
+  if (it == std::end(log_level_map))
+    return;
+
+  debug() << it->second << ": " << msg;
+}
+
 //----------------------------
 
 MQTTClient::MQTTClient()
 {
   mosquitto_lib_init();
+
+#if MQTT_DEBUG
+  int major = 0, minor = 0, revision = 0;
+  mosquitto_lib_version(&major, &minor, &revision);
+  debug() << "mosquitto version: " << major << "." << minor << "." << revision;
+#endif // MQTT_DEBUG
 }
 
 MQTTClient::~MQTTClient()
@@ -93,11 +127,17 @@ bool MQTTClient::configureMosquitto(const MosquittoConfig& config)
   mosquitto_connect_v5_callback_set(_mosq, connect_callback);
   mosquitto_disconnect_callback_set(_mosq, disconnect_callback);
   mosquitto_message_v5_callback_set(_mosq, message_callback);
+#if MQTT_DEBUG
+  mosquitto_log_callback_set(_mosq, log_callback);
+#endif
 
   int rc =
       mosquitto_int_option(_mosq, MOSQ_OPT_PROTOCOL_VERSION, config.protocol_version);
   if (rc != MOSQ_ERR_SUCCESS)
   {
+    QMessageBox::warning(nullptr, "MQTT Client", QString("MQTT initialization failed."),
+                         QMessageBox::Ok);
+    debug() << "MQTT initialization failed:" << mosquitto_strerror(rc);
     return false;
   }
 
@@ -107,6 +147,11 @@ bool MQTTClient::configureMosquitto(const MosquittoConfig& config)
                                    config.password.c_str());
     if (rc != MOSQ_ERR_SUCCESS)
     {
+      QMessageBox::warning(nullptr, "MQTT Client",
+                           QString("MQTT initialization failed. Double check username "
+                                   "and password."),
+                           QMessageBox::Ok);
+      debug() << "MQTT username or password error:" << mosquitto_strerror(rc);
       return false;
     }
   }
@@ -119,6 +164,11 @@ bool MQTTClient::configureMosquitto(const MosquittoConfig& config)
     rc = mosquitto_tls_set(_mosq, cafile, nullptr, certfile, keyfile, nullptr);
     if (rc != MOSQ_ERR_SUCCESS)
     {
+      QMessageBox::warning(nullptr, "MQTT Client",
+                           QString("MQTT initialization failed. Double check "
+                                   "certificates."),
+                           QMessageBox::Ok);
+      debug() << "MQTT certificate error:" << mosquitto_strerror(rc);
       return false;
     }
   }
@@ -126,6 +176,9 @@ bool MQTTClient::configureMosquitto(const MosquittoConfig& config)
   rc = mosquitto_max_inflight_messages_set(_mosq, config.max_inflight);
   if (rc != MOSQ_ERR_SUCCESS)
   {
+    QMessageBox::warning(nullptr, "MQTT Client", QString("MQTT initialization failed."),
+                         QMessageBox::Ok);
+    debug() << "MQTT setting max inflight messages failed:" << mosquitto_strerror(rc);
     return false;
   }
 
@@ -153,12 +206,16 @@ bool MQTTClient::configureMosquitto(const MosquittoConfig& config)
                            QString("Unable to connect (%1)").arg(mosquitto_strerror(rc)),
                            QMessageBox::Ok);
     }
+    debug() << "MQTT connect failed:" << mosquitto_strerror(rc);
     return false;
   }
 
   rc = mosquitto_loop_start(_mosq);
   if (rc != MOSQ_ERR_SUCCESS)
   {
+    QMessageBox::warning(nullptr, "MQTT Client", QString("Failed to start MQTT client"),
+                         QMessageBox::Ok);
+    debug() << "MQTT start loot failed:" << mosquitto_strerror(rc);
     return false;
   }
   return true;
