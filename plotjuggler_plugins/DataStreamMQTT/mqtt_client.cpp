@@ -86,7 +86,7 @@ MQTTClient::MQTTClient()
   int major = 0, minor = 0, revision = 0;
   mosquitto_lib_version(&major, &minor, &revision);
   debug() << "mosquitto version: " << major << "." << minor << "." << revision;
-#endif // MQTT_DEBUG
+#endif  // MQTT_DEBUG
 }
 
 MQTTClient::~MQTTClient()
@@ -211,7 +211,27 @@ bool MQTTClient::configureMosquitto(const MosquittoConfig& config)
   }
 
   rc = mosquitto_loop_start(_mosq);
-  if (rc != MOSQ_ERR_SUCCESS)
+  if (rc == MOSQ_ERR_NOT_SUPPORTED)
+  {
+    // Threaded mode may not be supported on windows (libmosquitto < 2.1).
+    // See https://github.com/eclipse/mosquitto/issues/2707
+    Q_ASSERT(_thread == nullptr);
+    _thread = new std::thread([this]() {
+      int rc = mosquitto_loop_forever(this->_mosq, -1, 1);
+      if (rc != MOSQ_ERR_SUCCESS)
+      {
+        debug() << "MQTT loop forever failed:" << mosquitto_strerror(rc);
+      }
+    });
+    if (_thread == nullptr)
+    {
+      QMessageBox::warning(nullptr, "MQTT Client", QString("Failed to start MQTT client"),
+                           QMessageBox::Ok);
+      debug() << "MQTT start failed: could not allocate memory.";
+      return false;
+    }
+  }
+  else if (rc != MOSQ_ERR_SUCCESS)
   {
     QMessageBox::warning(nullptr, "MQTT Client", QString("Failed to start MQTT client"),
                          QMessageBox::Ok);
@@ -227,6 +247,12 @@ void MQTTClient::disconnect()
   {
     mosquitto_disconnect(_mosq);
     mosquitto_loop_stop(_mosq, true);
+    if (_thread != nullptr)
+    {
+      _thread->join();
+      delete _thread;
+      _thread = nullptr;
+    }
     mosquitto_destroy(_mosq);
     _mosq = nullptr;
   }
