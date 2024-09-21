@@ -235,7 +235,7 @@ bool MQTTClient::configureMosquitto(const MosquittoConfig& config)
   {
     QMessageBox::warning(nullptr, "MQTT Client", QString("Failed to start MQTT client"),
                          QMessageBox::Ok);
-    debug() << "MQTT start loot failed:" << mosquitto_strerror(rc);
+    debug() << "MQTT start loop failed:" << mosquitto_strerror(rc);
     return false;
   }
   return true;
