@@ -22,8 +22,12 @@ THE SOFTWARE.
 #include "PlotJuggler/datastreamer_base.h"
 #include "PlotJuggler/messageparser_base.h"
 
+#include <QThread>
+
 using namespace PJ;
 
+
+class WorkerThread;
 class UDP_Server : public PJ::DataStreamer
 {
   Q_OBJECT
@@ -54,12 +58,34 @@ public:
     return false;
   }
 
-private:
-  bool _running;
+public:
   QUdpSocket* _udp_socket;
+
+  int normal_socket(char* address_str, int port);
+
+private:
+  bool _running,_threadStarted = false,_threadFinished = false;
+  WorkerThread* workerThread;
   PJ::MessageParserPtr _parser;
+};
 
-private slots:
+class WorkerThread : public QThread
+{
+  Q_OBJECT
+public:
+  WorkerThread(QObject* parent = nullptr) : QThread(parent)
+  {
+  }
 
-  void processMessage();
+  UDP_Server* udpServer;
+  int port;
+  QString address_str;
+
+protected:
+  void run() override
+  {
+    QByteArray byteArray = address_str.toUtf8();  // Convert QString to QByteArray using UTF-8 encoding
+    char* charPtr = byteArray.data();  // Get pointer to the underlying data
+    udpServer->normal_socket(charPtr, port);
+  }
 };
