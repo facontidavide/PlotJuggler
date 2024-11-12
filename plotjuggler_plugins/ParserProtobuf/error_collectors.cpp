@@ -23,6 +23,16 @@ void FileErrorCollector::AddWarning(const std::string& filename, int line, int,
   qDebug() << msg;
 }
 
+void FileErrorCollector::RecordError(absl::string_view filename, int line, int column,
+                                     absl::string_view message)
+{
+  QString errorMessage = QString("Error in file: %1 at line: %2, column: %3: %4")
+                             .arg(QString::fromStdString(std::string(filename)))
+                             .arg(line)
+                             .arg(column)
+                             .arg(QString::fromStdString(std::string(message)));
+  _errors << errorMessage;
+}
 void IoErrorCollector::AddError(int line, google::protobuf::io::ColumnNumber,
                                 const std::string& message)
 {
