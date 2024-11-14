@@ -53,6 +53,11 @@ QString ConfigZCM::getLibraries() const
   }
 }
 
+QString ConfigZCM::getDataPrefix() const
+{
+  return ui->lineEditDataPrefix->text();
+}
+
 void ConfigZCM::on_radioEnvironmentLibrary_toggled(bool checked)
 {
   if (checked)

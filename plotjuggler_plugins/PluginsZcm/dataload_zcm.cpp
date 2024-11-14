@@ -28,7 +28,9 @@ DataLoadZcm::DataLoadZcm()
   _ui->setupUi(_dialog);
 
   _config_widget = new ConfigZCM("DataLoadZcm", _dialog);
+  _config_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   _ui->mainLayout->insertWidget(0, _config_widget, 1);
+  _ui->mainLayout->setStretchFactor(_config_widget, 0);
 
   _ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
 
@@ -269,6 +271,8 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   vector<pair<string, string>> strings;
   ProcessUsr usr = { numerics, strings };
 
+  string prefix = _config_widget->getDataPrefix().toStdString() + "/";
+
   auto processEvent = [&](const zcm::LogEvent* evt) {
     if (_selected_channels.find(evt->channel) == _selected_channels.end())
     {
@@ -277,9 +281,10 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
 
     if (evt->datalen == 0)
     {
-      auto itr = plot_data.numeric.find(evt->channel);
+      string chan(prefix + evt->channel);
+      auto itr = plot_data.numeric.find(chan);
       if (itr == plot_data.numeric.end())
-        itr = plot_data.addNumeric(evt->channel);
+        itr = plot_data.addNumeric(chan);
       itr->second.pushBack({ (double)evt->timestamp / 1e6, 0 });
       return;
     }
@@ -288,16 +293,18 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
                                            types, processData, &usr);
     for (auto& n : usr.numerics)
     {
-      auto itr = plot_data.numeric.find(n.first);
+      string chan(prefix + n.first);
+      auto itr = plot_data.numeric.find(chan);
       if (itr == plot_data.numeric.end())
-        itr = plot_data.addNumeric(n.first);
+        itr = plot_data.addNumeric(chan);
       itr->second.pushBack({ (double)evt->timestamp / 1e6, n.second });
     }
     for (auto& s : usr.strings)
     {
-      auto itr = plot_data.strings.find(s.first);
+      string chan(prefix + s.first);
+      auto itr = plot_data.strings.find(chan);
       if (itr == plot_data.strings.end())
-        itr = plot_data.addStringSeries(s.first);
+        itr = plot_data.addStringSeries(chan);
       itr->second.pushBack({ (double)evt->timestamp / 1e6, s.second });
     }
 

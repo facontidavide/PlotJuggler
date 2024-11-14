@@ -16,6 +16,7 @@ public:
   ~ConfigZCM();
 
   QString getLibraries() const;
+  QString getDataPrefix() const;
 
 private slots:
   void on_radioEnvironmentLibrary_toggled(bool checked);
