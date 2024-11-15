@@ -28,7 +28,9 @@ DataLoadZcm::DataLoadZcm()
   _ui->setupUi(_dialog);
 
   _config_widget = new ConfigZCM("DataLoadZcm", _dialog);
+  _config_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   _ui->mainLayout->insertWidget(0, _config_widget, 1);
+  _ui->mainLayout->setStretchFactor(_config_widget, 0);
 
   _ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
 
