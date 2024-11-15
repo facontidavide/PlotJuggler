@@ -54,6 +54,7 @@ private:
 
   void handler(const zcm::ReceiveBuffer* rbuf, const std::string& channel);
 
+  std::string _prefix;
   bool _running;
   QString _types_library;
   QString _subscribe_string;

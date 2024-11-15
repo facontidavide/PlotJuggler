@@ -131,6 +131,7 @@ bool DataStreamZcm::start(QStringList*)
     }
   }
 
+  _prefix = _config_widget->getDataPrefix().toStdString() + "/";
   _zcm->start();
   _running = true;
   return true;
@@ -227,24 +228,27 @@ void DataStreamZcm::handler(const zcm::ReceiveBuffer* rbuf, const string& channe
 {
   zcm::Introspection::processEncodedType(channel, rbuf->data, rbuf->data_size, "/",
                                          *_types.get(), processData, this);
+
   {
     std::lock_guard<std::mutex> lock(mutex());
 
     for (auto& n : _numerics)
     {
-      auto itr = dataMap().numeric.find(n.first);
+      auto chan = _prefix + n.first;
+      auto itr = dataMap().numeric.find(chan);
       if (itr == dataMap().numeric.end())
       {
-        itr = dataMap().addNumeric(n.first);
+        itr = dataMap().addNumeric(chan);
       }
       itr->second.pushBack({ double(rbuf->recv_utime) / 1e6, n.second });
     }
     for (auto& s : _strings)
     {
-      auto itr = dataMap().strings.find(s.first);
+      auto chan = _prefix + s.first;
+      auto itr = dataMap().strings.find(chan);
       if (itr == dataMap().strings.end())
       {
-        itr = dataMap().addStringSeries(s.first);
+        itr = dataMap().addStringSeries(chan);
       }
       itr->second.pushBack({ double(rbuf->recv_utime) / 1e6, s.second });
     }
