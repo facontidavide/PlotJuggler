@@ -234,7 +234,7 @@ static void processData(const string& name, zcm_field_type_t type, const void* d
       v->numerics.emplace_back(name, toDouble<bool>(data));
       break;
     case ZCM_FIELD_STRING:
-      v->strings.emplace_back(name, string((const char*)data));
+      v->strings.emplace_back(name, string(*((const char**)data)));
       break;
     case ZCM_FIELD_USER_TYPE:
       assert(false && "Should not be possble");
@@ -267,7 +267,7 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
 
   vector<pair<string, double>> numerics;
   vector<pair<string, string>> strings;
-  ProcessUsr usr = { numerics, strings };
+  ProcessUsr usr { numerics, strings };
 
   auto processEvent = [&](const zcm::LogEvent* evt) {
     if (_selected_channels.find(evt->channel) == _selected_channels.end())
