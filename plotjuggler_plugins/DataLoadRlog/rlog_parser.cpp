@@ -187,7 +187,6 @@ bool RlogMessageParser::parseCanMessage(
     }
 
     updated_busses.insert(bus);
-    parsers[bus]->last_nanos = last_nanos;
 
     auto dat = value.get("dat").as<capnp::Data>();
     if (dat.size() > 64) continue;  // shouldn't ever happen
@@ -199,13 +198,16 @@ bool RlogMessageParser::parseCanMessage(
   }
 
   for (uint8_t bus : updated_busses) {
-    std::vector<SignalValue> signal_values;
-    parsers[bus]->update(can_data_list, signal_values);
-    for (auto& sg : signal_values) {
+    auto &parser = parsers[bus];
+    auto updated_addresses = parser->update(can_data_list);
+    for (auto address : updated_addresses) {
       // TODO: plot all updated values
-      PJ::PlotData& _data_series = getSeries(topic_name + '/' + std::to_string(bus) + '/' +
-          packer->lookup_message(sg.address)->name + '/' + sg.name);
-      _data_series.pushBack({time_stamp, (double) sg.value});
+      auto *state = parser->getMessageState(address);
+      auto name = topic_name + '/' + std::to_string(bus) + '/' + state->name;
+      for (int i = 0; i < state->parse_sigs.size(); ++i) {
+        PJ::PlotData& _data_series = getSeries(name + '/' + state->parse_sigs[i].name);
+        _data_series.pushBack({time_stamp, (double) state->vals[i]});
+      }
     }
 
     // parser state
@@ -215,7 +217,6 @@ bool RlogMessageParser::parseCanMessage(
       {(double)p->bus_timeout, "bus_timeout"},
       {(double)p->bus_timeout_threshold, "bus_timeout_threshold"},
       {(double)p->first_nanos, "first_nanos"},
-      {(double)p->last_nanos, "last_nanos"},
       {(double)p->last_nonempty_nanos, "last_nonempty_nanos"},
       {(double)p->can_invalid_cnt, "can_invalid_cnt"},
     };
