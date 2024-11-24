@@ -39,7 +39,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   portaudio19-dev
 
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:${PATH}"
+ENV PATH="/root/.local/bin:${PATH}"
 RUN uv venv --python 3.11.4
 RUN uv pip install pkgconfig jinja2 Cython
 
