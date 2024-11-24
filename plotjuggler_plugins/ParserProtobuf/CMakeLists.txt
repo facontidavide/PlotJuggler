@@ -42,5 +42,5 @@ if( Protobuf_FOUND)
 
     install(TARGETS ProtobufParser DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
 else()
-    message("[Protobuf] not found: skipping compilatiopn of plugin ProtobufParser")
+    message("[Protobuf] not found: skipping compilation of plugin ProtobufParser")
 endif()
