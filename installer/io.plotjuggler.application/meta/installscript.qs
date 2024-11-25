@@ -102,3 +102,4 @@ Component.prototype.componentSelectionPageEntered = function()
         installer.execute(dir + "/maintenancetool.exe", ["purge", "-c"]);
     }
 }
+
