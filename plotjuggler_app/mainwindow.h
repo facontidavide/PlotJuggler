@@ -152,6 +152,8 @@ private:
   std::vector<FileLoadInfo> _loaded_datafiles_previous;
   CurveTracker::Parameter _tracker_param;
 
+  QString _loaded_layout_filename;
+
   std::map<CurveTracker::Parameter, QIcon> _tracker_button_icons;
 
   MonitoredValue _time_offset;
@@ -287,6 +289,7 @@ private slots:
   void on_actionColorMap_Editor_triggered();
 
   void on_buttonReloadData_clicked();
+  void on_buttonReloadLayout_clicked();
 
   void on_buttonCloseStatus_clicked();
 
