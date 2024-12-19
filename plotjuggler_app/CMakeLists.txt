@@ -1,3 +1,4 @@
+option(EXE_STATIC "Link the PlotJuggler binary statically" OFF)
 
 set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -119,7 +120,8 @@ target_link_libraries(plotjuggler
     plotjuggler_base
     plotjuggler_qwt
     QCodeEditor
-    )
+    $<$<BOOL:${EXE_STATIC}>:-static-libgcc -static-libstdc++ -static>
+)
 
 if(COMPILING_WITH_CATKIN)
 
