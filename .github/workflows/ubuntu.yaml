@@ -3,7 +3,6 @@ name: ubuntu
 on: [push, pull_request]
 
 jobs:
-
   ubuntu-build:
     runs-on: ${{ matrix.ubuntu-distro }}
     strategy:
