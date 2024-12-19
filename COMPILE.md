@@ -87,14 +87,16 @@ docker buildx build -o . .
 On Mac, the dependencies can be installed using [brew](https://brew.sh/) with the following command:
 
 ```shell
-brew install cmake qt@5 protobuf mosquitto zeromq zstd
+brew install cmake qt@5 protobuf@21 mosquitto zeromq zstd
 ```
 
-If a newer version of qt is installed, you may need to temporarily link to qt5
+If you have multiple versions of Qt installed (e.g., `qt` and `qt@5`), you may need to explicitly link `qt@5` to ensure it is found by CMake. Use the following commands:
 
 ```shell
-brew link qt@5 --override
-# brew link qt --override # Run once you are done building to restore the original linking
+brew link qt@5 --overwrite
+#In case needed and still qt@5 was not found by cmake you can do:
+brew unlink qt@5 && brew link --force qt@5
+# brew link qt --overwrite # Run once you are done building to restore the original linking
 ```
 
 Add CMake into your env-vars to be detected by cmake
