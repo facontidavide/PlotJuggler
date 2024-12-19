@@ -141,6 +141,7 @@ public:
   std::list<CurveInfo> curve_list;
 
   CurveStyle curve_style = LINES;
+  double curve_width = 1.3;
 
   bool zoom_enabled = true;
 
@@ -430,6 +431,7 @@ PlotWidgetBase::CurveInfo* PlotWidgetBase::addCurve(const std::string& name,
 
   curve->setPen(color);
   setStyle(curve, p->curve_style);
+  setWidth(curve, p->curve_width);
 
   curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 
@@ -499,6 +501,11 @@ QwtSeriesWrapper* PlotWidgetBase::createTimeSeries(const PlotData* data,
 PlotWidgetBase::CurveStyle PlotWidgetBase::curveStyle() const
 {
   return p->curve_style;
+}
+
+double PlotWidgetBase::curvesWidth() const
+{
+  return p->curve_width;
 }
 
 bool PlotWidgetBase::keepRatioXY() const
@@ -697,8 +704,6 @@ std::map<QString, QColor> PlotWidgetBase::getCurveColors() const
 
 void PlotWidgetBase::setStyle(QwtPlotCurve* curve, CurveStyle style)
 {
-  curve->setPen(curve->pen().color(), (style == DOTS) ? 4.0 : 1.3);
-
   switch (style)
   {
     case LINES:
@@ -724,12 +729,27 @@ void PlotWidgetBase::setStyle(QwtPlotCurve* curve, CurveStyle style)
   }
 }
 
+void PlotWidgetBase::setWidth(QwtPlotCurve* curve, double width)
+{
+  curve->setPen(curve->pen().color(), width);
+}
+
 void PlotWidgetBase::changeCurvesStyle(CurveStyle style)
 {
   p->curve_style = style;
   for (auto& it : p->curve_list)
   {
     setStyle(it.curve, style);
+  }
+  replot();
+}
+
+void PlotWidgetBase::changeCurvesWidth(double width)
+{
+  p->curve_width = width;
+  for (auto& it : p->curve_list)
+  {
+    setWidth(it.curve, width);
   }
   replot();
 }
