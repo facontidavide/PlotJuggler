@@ -32,7 +32,7 @@ set(${PROJECT_NAME}_source_files
     exceptions/Exception.cpp
     exceptions/LockedExternalAccessException.cpp
     exceptions/NotEnoughMemoryException.cpp
-    FastCdr.rc
+    $<$<STREQUAL:$<TARGET_PROPERTY:${PROJECT_NAME},TYPE>,SHARED_LIBRARY>:FastCdr.rc>
     )
 
 configure_file(${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/config.h.in
