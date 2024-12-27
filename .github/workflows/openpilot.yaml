@@ -1,17 +1,25 @@
 name: openpilot plugins
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+
+  # needs to run on a schedule since we push commits here
+  # infrequently, but the macOS brew libs get updated frequently
+  schedule:
+    - cron: '0 0 * * *'
 
 env:
   ZIP: |
     cd $GITHUB_WORKSPACE/build/bin
     export PATH=/usr/local/opt/gnu-tar/libexec/gnubin:$PATH
-    sudo tar -czf $(uname -s)-$(uname -m).tar.gz plotjuggler *.so
+    sudo tar -czf $(uname -s)-$(uname -m).tar.gz plotjuggler lib*
 
 jobs:
   build_ubuntu:
     name: build ubuntu
     strategy:
+      fail-fast: false
       matrix:
         arch: ${{ fromJson(
            ((github.repository == 'commaai/plotjuggler') &&
@@ -19,7 +27,7 @@ jobs:
                (github.event.pull_request.head.repo.full_name == 'commaai/plotjuggler'))) && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
     runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-4vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: build
@@ -34,7 +42,7 @@ jobs:
     - name: zip plugins
       run: eval "$ZIP"
     - name: upload
-      if: github.ref == 'refs/heads/comma-master' && github.event_name == 'push'
+      if: github.ref == 'refs/heads/comma-master'
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -45,17 +53,25 @@ jobs:
 
   build_mac:
     name: build mac
-    runs-on: macOS-latest
+    # strategy:
+    #   fail-fast: false
+    #   matrix:
+    #     # 15 = M1, 13 = Intel
+    #     os: [macOS-13, macOS-15]
+    # runs-on: ${{ matrix.os }}
+    runs-on: macOS-15
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.11.x'
     - name: setup dependencies
       run: |
+        brew update --force
         brew install cmake bzip2 capnp qt@5 zeromq protobuf@3 gnu-tar portaudio
+        brew upgrade
         curl -LsSf https://astral.sh/uv/install.sh | sh
         uv venv
         uv pip install 3rdparty/openpilot 3rdparty/openpilot/opendbc_repo
@@ -68,7 +84,7 @@ jobs:
     - name: zip plugins
       run: eval "$ZIP"
     - name: upload
-      if: github.ref == 'refs/heads/comma-master' && github.event_name == 'push'
+      if: github.ref == 'refs/heads/comma-master'
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
