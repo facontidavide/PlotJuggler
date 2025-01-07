@@ -120,7 +120,7 @@ export LDFLAGS="$QT_HOME/lib"
 Clone the repository into **~/plotjuggler_ws**:
 
 ```shell
-git clone https://github.com/PX4/PlotJuggler.git ~/plotjuggler_ws/src/PlotJuggler
+git clone https://github.com/facontidavide/PlotJuggler.git ~/plotjuggler_ws/src/PlotJuggler
 cd ~/plotjuggler_ws
 ```
 
