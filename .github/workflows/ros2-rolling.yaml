@@ -1,17 +1,15 @@
-name: ros2-rolling
+name: ros2
 
 on: [push, pull_request]
 
 jobs:
-  industrial_ci:
-    strategy:
-      matrix:
-        env:
-          - {ROS_DISTRO: rolling, ROS_REPO: main}
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: 'ros-industrial/industrial_ci@master'
-        env: ${{matrix.env}}
+      - uses: ros-tooling/setup-ros@v0.7
         with:
-            package-name: plotjuggler
+          required-ros-distributions: rolling
+      - uses: ros-tooling/action-ros-ci@v0.3
+        with:
+          package-name: plotjuggler
+          target-ros2-distro: rolling

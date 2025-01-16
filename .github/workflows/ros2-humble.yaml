@@ -3,6 +3,7 @@ name: ros2
 on: [push, pull_request]
 
 jobs:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: ros-tooling/setup-ros@v0.7
