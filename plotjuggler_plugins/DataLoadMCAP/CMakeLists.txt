@@ -9,11 +9,13 @@ add_library(DataLoadMCAP SHARED
     dialog_mcap.cpp
     ${UI_SRC}  )
 
-target_link_libraries(DataLoadMCAP
+target_link_libraries(DataLoadMCAP PRIVATE
     ${Qt5Widgets_LIBRARIES}
     ${Qt5Xml_LIBRARIES}
-    libzstd_static
-    lz4_static
+    zstd
+    lz4
+    mcap
+    data_tamer_parser
     plotjuggler_base )
 
 install(TARGETS DataLoadMCAP DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )

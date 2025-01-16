@@ -6,6 +6,8 @@
 #include <QPushButton>
 #include <QElapsedTimer>
 
+#include <mcap/reader.hpp>
+
 const QString DialogMCAP::prefix = "DialogLoadMCAP::";
 
 DialogMCAP::DialogMCAP(const std::unordered_map<int, mcap::ChannelPtr>& channels,
