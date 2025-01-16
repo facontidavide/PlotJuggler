@@ -118,6 +118,7 @@ target_link_libraries(plotjuggler
     plotjuggler_base
     plotjuggler_qwt
     QCodeEditor
+    nlohmann_json
     lua
     sol2
     )

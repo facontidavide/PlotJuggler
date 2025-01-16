@@ -1,0 +1,14 @@
+name: ros2
+
+on: [push, pull_request]
+
+jobs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: humble
+      - uses: ros-tooling/action-ros-ci@v0.3
+        with:
+          package-name: plotjuggler
+          target-ros2-distro: humble
