@@ -23,7 +23,6 @@ CPMAddPackage(
 file(GLOB ZSTD_SOURCES ${zstd_SOURCE_DIR}/lib/*.c)
 add_library(zstd_static STATIC ${ZSTD_SOURCES})
 target_include_directories(zstd_static PUBLIC ${zstd_SOURCE_DIR}/lib)
-target_sources(zstd_static PRIVATE ${ZSTD_SOURCES})
 
 
 CPMAddPackage(
@@ -35,7 +34,6 @@ CPMAddPackage(
 file(GLOB LZ4_SOURCES ${lz4_SOURCE_DIR}/lib/*.c)
 add_library(lz4_static STATIC ${LZ4_SOURCES})
 target_include_directories(lz4_static PUBLIC ${lz4_SOURCE_DIR}/lib)
-target_sources(lz4_static PRIVATE ${LZ4_SOURCES})
 
 
 CPMAddPackage(
