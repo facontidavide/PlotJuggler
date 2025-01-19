@@ -20,7 +20,11 @@ CPMAddPackage(
     GIT_TAG v1.5.6
     DOWNLOAD_ONLY YES
 )
-file(GLOB ZSTD_SOURCES ${zstd_SOURCE_DIR}/lib/*.c)
+file(GLOB ZSTD_SOURCES_COMMON ${zstd_SOURCE_DIR}/lib/common/*.c)
+file(GLOB ZSTD_SOURCES_COMPRESS ${zstd_SOURCE_DIR}/lib/compress/*.c)
+file(GLOB ZSTD_SOURCES_DECOMPRESS ${zstd_SOURCE_DIR}/lib/decompress/*.c)
+file(GLOB ZSTD_SOURCES_DICTBUILDER ${zstd_SOURCE_DIR}/lib/dictBuilder/*.c)
+list(APPEND ZSTD_SOURCES ${ZSTD_SOURCES_COMMON} ${ZSTD_SOURCES_COMPRESS} ${ZSTD_SOURCES_DECOMPRESS} ${ZSTD_SOURCES_DICTBUILDER})
 add_library(zstd_static STATIC ${ZSTD_SOURCES})
 target_include_directories(zstd_static PUBLIC ${zstd_SOURCE_DIR}/lib)
 

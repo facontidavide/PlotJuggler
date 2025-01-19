@@ -19,9 +19,10 @@ jobs:
             ~/.ros
             /tmp/rosdep
             /opt/ros/rolling
-          key: ${{ runner.os }}-ros2-${{ hashFiles('**/package.xml') }}
+          key: ${{ runner.os }}-ros2-rolling-${{ hashFiles('**/package.xml') }}-rosdep
           restore-keys: |
-            ${{ runner.os }}-ros2-
+              ${{ runner.os }}-ros2-rolling-${{ hashFiles('**/package.xml') }}-
+              ${{ runner.os }}-ros2-rolling-
 
       # Step 3: Run ROS CI
       - uses: ros-tooling/action-ros-ci@v0.3
