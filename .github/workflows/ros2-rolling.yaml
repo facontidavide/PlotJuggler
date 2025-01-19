@@ -1,4 +1,4 @@
-name: ros2
+name: ros2-rolling
 
 on: [push, pull_request]
 

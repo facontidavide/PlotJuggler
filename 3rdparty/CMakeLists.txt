@@ -57,7 +57,7 @@ if (NOT lua_FOUND)
     # lua has no CMake support, so we create our own target
     if (lua_ADDED)
         file(GLOB lua_sources ${lua_SOURCE_DIR}/*.c)
-        list(REMOVE_ITEM lua_sources "${lua_SOURCE_DIR}/lua.c" "${lua_SOURCE_DIR}/luac.c")
+        list(REMOVE_ITEM lua_sources "${lua_SOURCE_DIR}/lua.c" "${lua_SOURCE_DIR}/luac.c" "${lua_SOURCE_DIR}/onelua.c")
         add_library(lua STATIC ${lua_sources})
         target_include_directories(lua SYSTEM PUBLIC $<BUILD_INTERFACE:${lua_SOURCE_DIR}>)
         set_property(TARGET lua PROPERTY POSITION_INDEPENDENT_CODE ON)

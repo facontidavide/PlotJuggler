@@ -16,17 +16,23 @@
     <depend>rclcpp</depend>
     <depend>fastcdr</depend>
 
-    <!-- common dependancies -->
+    <!-- Qt dependancies -->
     <depend>qtbase5-dev</depend>
     <depend>libqt5-svg-dev</depend>
     <depend>libqt5-websockets-dev</depend>
     <depend>libqt5-opengl-dev</depend>
     <depend>libqt5x11extras5-dev</depend>
+
+    <!-- needed for backward_cpp -->
     <depend>binutils</depend>
+
     <depend>boost</depend>
     <depend>libzmq3-dev</depend>
+
+    <!-- needed for MCAP -->
     <depend>lz4</depend>
     <depend>libzstd-dev</depend>
+
     <depend>protobuf-dev</depend>
 
     <!-- The export tag contains other, unspecified, tags -->

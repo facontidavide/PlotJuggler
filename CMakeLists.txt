@@ -26,6 +26,7 @@ IF (NOT WIN32 AND ENABLE_ASAN)
   set (CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
+
 include_directories( plotjuggler_base/include )
 include_directories( plotjuggler_base/src )
 
@@ -65,10 +66,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 SET(CMAKE_AUTOUIC ON)
 
-
-if (NOT WIN32)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
-endif()
 
 if(APPLE AND EXISTS /usr/local/opt/qt5)
     # Homebrew installs Qt5 (up to at least 5.9.1) in
@@ -110,12 +107,16 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
 
-IF (NOT WIN32)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIC")
-else()
+IF (WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -D_USE_MATH_DEFINES")
     set(CMAKE_WIN32_EXECUTABLE ON)
     set(GUI_TYPE WIN32)
+    if(MSVC)
+        add_compile_options(/wd4267)
+    endif()
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIC -fno-omit-frame-pointer")
+    add_compile_options(-Wno-deprecated-declarations)
 ENDIF()
 
 include_directories(
