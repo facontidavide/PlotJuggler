@@ -6,9 +6,24 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Set up ROS
       - uses: ros-tooling/setup-ros@v0.7
         with:
           required-ros-distributions: rolling
+
+      # Step 2: Cache ROS dependencies
+      - name: Cache ROS dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.ros
+            /tmp/rosdep
+            /opt/ros/rolling
+          key: ${{ runner.os }}-ros2-${{ hashFiles('**/package.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-ros2-
+
+      # Step 3: Run ROS CI
       - uses: ros-tooling/action-ros-ci@v0.3
         with:
           package-name: plotjuggler

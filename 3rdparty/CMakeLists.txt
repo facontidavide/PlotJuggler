@@ -18,25 +18,41 @@ CPMAddPackage("gh:nlohmann/json@3.11.3")
 
 ##### MCAP + compression libs ######
 
-CPMAddPackage("gh:facebook/zstd@1.5.6")
-CPMAddPackage("gh:lz4/lz4@1.10.0")
+CPMAddPackage(
+    NAME zstd
+    GITHUB_REPOSITORY facebook/zstd
+    GIT_TAG v1.5.6
+    DOWNLOAD_ONLY YES
+)
+file(GLOB ZSTD_SOURCES ${ZSTD_SOURCE_DIR}/lib/*.c)
+add_library(zstd STATIC ${ZSTD_SOURCES})
+target_include_directories(zstd PRIVATE ${ZSTD_SOURCE_DIR}/lib)
+target_sources(zstd PRIVATE ${ZSTD_SOURCES})
 
-find_package(mcap QUIET)
-if (NOT mcap_FOUND)
 
-    CPMAddPackage(
-        NAME mcap
-        GITHUB_REPOSITORY foxglove/mcap
-        GIT_TAG releases/cpp/v2.0.0
-        DOWNLOAD_ONLY YES
-    )
-    # mcap has no CMake support, so we create our own target
-    if (mcap_ADDED)
-        add_library(mcap INTERFACE)
-        target_include_directories(mcap INTERFACE "${mcap_SOURCE_DIR}/cpp/mcap/include")
-        target_link_libraries(mcap INTERFACE zstd lz4)
-    endif()
-endif()
+CPMAddPackage(
+    NAME lz4
+    GITHUB_REPOSITORY lz4/lz4
+    GIT_TAG v1.10.0
+    DOWNLOAD_ONLY YES
+)
+file(GLOB LZ4_SOURCES ${LZ4_SOURCE_DIR}/lib/*.c)
+add_library(lz4 STATIC ${LZ4_SOURCES})
+target_include_directories(lz4 PRIVATE ${LZ4_SOURCE_DIR}/lib)
+target_sources(lz4 PRIVATE ${LZ4_SOURCES})
+
+
+CPMAddPackage(
+    NAME mcap
+    GITHUB_REPOSITORY foxglove/mcap
+    GIT_TAG releases/cpp/v2.0.0
+    DOWNLOAD_ONLY YES
+)
+# mcap has no CMake support, so we create our own target
+add_library(mcap INTERFACE)
+target_include_directories(mcap INTERFACE "${mcap_SOURCE_DIR}/cpp/mcap/include")
+target_link_libraries(mcap INTERFACE zstd lz4)
+
 
 ##### Lua + Sol2 ######
 
