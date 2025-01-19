@@ -12,8 +12,8 @@ add_library(DataLoadMCAP SHARED
 target_link_libraries(DataLoadMCAP PRIVATE
     ${Qt5Widgets_LIBRARIES}
     ${Qt5Xml_LIBRARIES}
-    zstd
-    lz4
+    zstd_static
+    lz4_static
     mcap
     data_tamer_parser
     plotjuggler_base )

@@ -1,5 +1,4 @@
 
-
 ##### fastCDR ######
 
 find_package(fastcdr QUIET)
@@ -8,12 +7,9 @@ if (NOT fastcdr_FOUND)
 endif()
 
 ##### backward_cpp ######
-
 CPMAddPackage("gh:bombela/backward-cpp@1.6")
 
 ##### nlohmann_json ######
-
-
 CPMAddPackage("gh:nlohmann/json@3.11.3")
 
 ##### MCAP + compression libs ######
@@ -24,10 +20,10 @@ CPMAddPackage(
     GIT_TAG v1.5.6
     DOWNLOAD_ONLY YES
 )
-file(GLOB ZSTD_SOURCES ${ZSTD_SOURCE_DIR}/lib/*.c)
-add_library(zstd STATIC ${ZSTD_SOURCES})
-target_include_directories(zstd PRIVATE ${ZSTD_SOURCE_DIR}/lib)
-target_sources(zstd PRIVATE ${ZSTD_SOURCES})
+file(GLOB ZSTD_SOURCES ${zstd_SOURCE_DIR}/lib/*.c)
+add_library(zstd_static STATIC ${ZSTD_SOURCES})
+target_include_directories(zstd_static PUBLIC ${zstd_SOURCE_DIR}/lib)
+target_sources(zstd_static PRIVATE ${ZSTD_SOURCES})
 
 
 CPMAddPackage(
@@ -36,10 +32,10 @@ CPMAddPackage(
     GIT_TAG v1.10.0
     DOWNLOAD_ONLY YES
 )
-file(GLOB LZ4_SOURCES ${LZ4_SOURCE_DIR}/lib/*.c)
-add_library(lz4 STATIC ${LZ4_SOURCES})
-target_include_directories(lz4 PRIVATE ${LZ4_SOURCE_DIR}/lib)
-target_sources(lz4 PRIVATE ${LZ4_SOURCES})
+file(GLOB LZ4_SOURCES ${lz4_SOURCE_DIR}/lib/*.c)
+add_library(lz4_static STATIC ${LZ4_SOURCES})
+target_include_directories(lz4_static PUBLIC ${lz4_SOURCE_DIR}/lib)
+target_sources(lz4_static PRIVATE ${LZ4_SOURCES})
 
 
 CPMAddPackage(
@@ -51,7 +47,7 @@ CPMAddPackage(
 # mcap has no CMake support, so we create our own target
 add_library(mcap INTERFACE)
 target_include_directories(mcap INTERFACE "${mcap_SOURCE_DIR}/cpp/mcap/include")
-target_link_libraries(mcap INTERFACE zstd lz4)
+target_link_libraries(mcap INTERFACE zstd_static lz4_static)
 
 
 ##### Lua + Sol2 ######
