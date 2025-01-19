@@ -22,8 +22,7 @@ add_library(rosx_introspection STATIC
     src/deserializer.cpp
     )
 
-target_link_libraries(rosx_introspection
-    fastcdr )
+target_link_libraries(rosx_introspection PRIVATE fastcdr )
 
 target_include_directories(rosx_introspection PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

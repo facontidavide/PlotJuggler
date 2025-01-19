@@ -1,9 +1,12 @@
 
 ##### fastCDR ######
-
-find_package(fastcdr QUIET)
-if (NOT fastcdr_FOUND)
-    CPMAddPackage("gh:eProsima/Fast-CDR@2.2.6")
+if(NOT TARGET fastcdr)
+    CPMAddPackage(
+        NAME fastcdr_imported
+        GITHUB_REPOSITORY eProsima/Fast-CDR
+        GIT_TAG v2.2.6
+        OPTIONS "BUILD_SHARED_LIBS OFF"
+    )
 endif()
 
 ##### backward_cpp ######
