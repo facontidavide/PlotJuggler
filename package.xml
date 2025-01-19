@@ -29,10 +29,6 @@
     <depend>boost</depend>
     <depend>libzmq3-dev</depend>
 
-    <!-- needed for MCAP -->
-    <depend>lz4</depend>
-    <depend>libzstd-dev</depend>
-
     <depend>protobuf-dev</depend>
 
     <!-- The export tag contains other, unspecified, tags -->

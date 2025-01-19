@@ -18,15 +18,8 @@ CPMAddPackage("gh:nlohmann/json@3.11.3")
 
 ##### MCAP + compression libs ######
 
-find_package(zstd QUIET)
-if (NOT zstd_FOUND)
-    CPMAddPackage("gh:facebook/zstd@1.5.6")
-endif()
-
-find_package(lz4 QUIET)
-if (NOT lz4_FOUND)
-    CPMAddPackage("gh:lz4/lz4@1.10.0")
-endif()
+CPMAddPackage("gh:facebook/zstd@1.5.6")
+CPMAddPackage("gh:lz4/lz4@1.10.0")
 
 find_package(mcap QUIET)
 if (NOT mcap_FOUND)
@@ -41,6 +34,7 @@ if (NOT mcap_FOUND)
     if (mcap_ADDED)
         add_library(mcap INTERFACE)
         target_include_directories(mcap INTERFACE "${mcap_SOURCE_DIR}/cpp/mcap/include")
+        target_link_libraries(mcap INTERFACE zstd lz4)
     endif()
 endif()
 
