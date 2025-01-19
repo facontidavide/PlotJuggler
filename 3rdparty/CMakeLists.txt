@@ -18,16 +18,9 @@ CPMAddPackage(
     NAME zstd
     GITHUB_REPOSITORY facebook/zstd
     GIT_TAG v1.5.6
-    DOWNLOAD_ONLY YES
+    OPTIONS "ZSTD_BUILD_STATIC ON" "ZSTD_BUILD_SHARED OFF"
+    SOURCE_SUBDIR build/cmake
 )
-file(GLOB ZSTD_SOURCES_COMMON ${zstd_SOURCE_DIR}/lib/common/*.c)
-file(GLOB ZSTD_SOURCES_COMPRESS ${zstd_SOURCE_DIR}/lib/compress/*.c)
-file(GLOB ZSTD_SOURCES_DECOMPRESS ${zstd_SOURCE_DIR}/lib/decompress/*.c)
-file(GLOB ZSTD_SOURCES_DICTBUILDER ${zstd_SOURCE_DIR}/lib/dictBuilder/*.c)
-list(APPEND ZSTD_SOURCES ${ZSTD_SOURCES_COMMON} ${ZSTD_SOURCES_COMPRESS} ${ZSTD_SOURCES_DECOMPRESS} ${ZSTD_SOURCES_DICTBUILDER})
-add_library(zstd_static STATIC ${ZSTD_SOURCES})
-target_include_directories(zstd_static PUBLIC ${zstd_SOURCE_DIR}/lib)
-
 
 CPMAddPackage(
     NAME lz4
@@ -49,8 +42,8 @@ CPMAddPackage(
 # mcap has no CMake support, so we create our own target
 add_library(mcap INTERFACE)
 target_include_directories(mcap INTERFACE "${mcap_SOURCE_DIR}/cpp/mcap/include")
-target_link_libraries(mcap INTERFACE zstd_static lz4_static)
-
+target_link_libraries(mcap INTERFACE libzstd_static lz4_static)
+target_include_directories(mcap INTERFACE ${zstd_SOURCE_DIR}/lib)
 
 ##### Lua + Sol2 ######
 
@@ -89,8 +82,7 @@ if (data_tamer_ADDED)
     add_library(data_tamer_parser INTERFACE)
     target_include_directories(data_tamer_parser INTERFACE "${data_tamer_SOURCE_DIR}/data_tamer_cpp/include")
 endif()
-    
-    
+
 add_subdirectory( qwt/src )
 add_subdirectory( QCodeEditor )
 add_subdirectory( color_widgets )
