@@ -37,6 +37,7 @@ bool DataLoadMCAP::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) 
   QDomElement elem = doc.createElement("parameters");
   const auto& params = *_dialog_parameters;
   elem.setAttribute("use_timestamp", int(params.use_timestamp));
+  elem.setAttribute("use_mcap_log_time", int(params.use_mcap_log_time));
   elem.setAttribute("clamp_large_arrays", int(params.clamp_large_arrays));
   elem.setAttribute("max_array_size", params.max_array_size);
   elem.setAttribute("selected_topics", params.selected_topics.join(';'));
@@ -55,6 +56,7 @@ bool DataLoadMCAP::xmlLoadState(const QDomElement& parent_element)
   }
   mcap::LoadParams params;
   params.use_timestamp = bool(elem.attribute("use_timestamp").toInt());
+  params.use_mcap_log_time = bool(elem.attribute("use_mcap_log_time").toInt());
   params.clamp_large_arrays = bool(elem.attribute("clamp_large_arrays").toInt());
   params.max_array_size = elem.attribute("max_array_size").toInt();
   params.selected_topics = elem.attribute("selected_topics").split(';');
@@ -227,6 +229,10 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
 
     // MCAP always represents publishTime in nanoseconds
     double timestamp_sec = double(msg_view.message.publishTime) * 1e-9;
+    if (_dialog_parameters->use_mcap_log_time)
+    {
+      timestamp_sec = double(msg_view.message.logTime) * 1e-9;
+    }
     auto parser_it = parsers_by_channel.find(msg_view.channel->id);
     if (parser_it == parsers_by_channel.end())
     {

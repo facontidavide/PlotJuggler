@@ -34,6 +34,8 @@ DialogMCAP::DialogMCAP(const std::unordered_map<int, mcap::ChannelPtr>& channels
     params.clamp_large_arrays = settings.value(prefix + "clamp", true).toBool();
     params.max_array_size = settings.value(prefix + "max_array", 500).toInt();
     params.use_timestamp = settings.value(prefix + "use_timestamp", false).toBool();
+    params.use_mcap_log_time =
+        settings.value(prefix + "use_mcap_log_time", false).toBool();
   }
   else
   {
@@ -50,6 +52,14 @@ DialogMCAP::DialogMCAP(const std::unordered_map<int, mcap::ChannelPtr>& channels
   }
   ui->spinBox->setValue(params.max_array_size);
   ui->checkBoxUseTimestamp->setChecked(params.use_timestamp);
+  if (params.use_mcap_log_time)
+  {
+    ui->radioLogTime->setChecked(true);
+  }
+  else
+  {
+    ui->radioPubTime->setChecked(true);
+  }
 
   int row = 0;
   for (const auto& [id, channel] : channels)
@@ -83,6 +93,7 @@ mcap::LoadParams DialogMCAP::getParams() const
   params.max_array_size = ui->spinBox->value();
   params.clamp_large_arrays = ui->radioClamp->isChecked();
   params.use_timestamp = ui->checkBoxUseTimestamp->isChecked();
+  params.use_mcap_log_time = ui->radioLogTime->isChecked();
 
   QItemSelectionModel* select = ui->tableWidget->selectionModel();
   QStringList selected_topics;
@@ -107,10 +118,12 @@ void DialogMCAP::accept()
   bool clamp_checked = ui->radioClamp->isChecked();
   int max_array = ui->spinBox->value();
   bool use_timestamp = ui->checkBoxUseTimestamp->isChecked();
+  bool use_mcap_log_time = ui->radioLogTime->isChecked();
 
   settings.setValue(prefix + "clamp", clamp_checked);
   settings.setValue(prefix + "max_array", max_array);
   settings.setValue(prefix + "use_timestamp", use_timestamp);
+  settings.setValue(prefix + "use_mcap_log_time", use_mcap_log_time);
 
   QItemSelectionModel* select = ui->tableWidget->selectionModel();
   QStringList selected_topics;
