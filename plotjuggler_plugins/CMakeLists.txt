@@ -20,6 +20,6 @@ add_subdirectory( ParserProtobuf )
 add_subdirectory( ParserROS )
 add_subdirectory( ParserDataTamer )
 add_subdirectory( ParserLineInflux )
-# add_subdirectory( ParserIDL )
+add_subdirectory( ParserIDL )
 
 add_subdirectory( PluginsZcm )

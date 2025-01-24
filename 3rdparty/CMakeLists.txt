@@ -17,13 +17,8 @@ CPMAddPackage("gh:nlohmann/json@3.11.3")
 
 ##### MCAP + compression libs ######
 
-CPMAddPackage(
-    NAME zstd
-    GITHUB_REPOSITORY facebook/zstd
-    GIT_TAG v1.5.6
-    OPTIONS "ZSTD_BUILD_STATIC ON" "ZSTD_BUILD_SHARED OFF"
-    SOURCE_SUBDIR build/cmake
-)
+# Still have some problem setting up CPM for this...
+add_subdirectory( zstd-1.5.5 )
 
 CPMAddPackage(
     NAME lz4
@@ -46,7 +41,6 @@ CPMAddPackage(
 add_library(mcap INTERFACE)
 target_include_directories(mcap INTERFACE "${mcap_SOURCE_DIR}/cpp/mcap/include")
 target_link_libraries(mcap INTERFACE libzstd_static lz4_static)
-target_include_directories(mcap INTERFACE ${zstd_SOURCE_DIR}/lib)
 
 ##### Lua + Sol2 ######
 
