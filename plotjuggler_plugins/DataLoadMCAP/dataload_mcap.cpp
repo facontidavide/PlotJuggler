@@ -98,6 +98,9 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
                              .arg(QString::fromStdString(status.message)));
     return false;
   }
+  plot_data.addUserDefined("plotjuggler::mcap::file_path")
+      ->second.pushBack({ 0, std::any(info->filename.toStdString()) });
+
   auto statistics = reader.statistics();
 
   std::unordered_map<int, mcap::SchemaPtr> mcap_schemas;         // schema_id
