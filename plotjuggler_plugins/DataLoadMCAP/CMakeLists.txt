@@ -29,7 +29,7 @@ if(NOT TARGET mcap)
     set(ZSTD_PROGRAMS "" CACHE STRING " " FORCE)
 
     add_subdirectory(${zstd_SOURCE_DIR}/build/cmake ${zstd_BINARY_DIR})
-    target_include_directories(libzstd_static PUBLIC ${zstd_SOURCE_DIR}/lib)
+    target_include_directories(libzstd_static INTERFACE ${zstd_SOURCE_DIR}/lib)
 
     ### lz4 ###
     CPMAddPackage(
