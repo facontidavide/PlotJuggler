@@ -1,6 +1,5 @@
 #include "dataload_mcap.h"
 
-#include "data_tamer_parser/data_tamer_parser.hpp"
 #include "PlotJuggler/messageparser_base.h"
 
 #include "mcap/reader.hpp"
@@ -104,7 +103,6 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
   std::unordered_map<int, mcap::ChannelPtr> channels;            // channel_id
   std::unordered_map<int, MessageParserPtr> parsers_by_channel;  // channel_id
 
-  std::unordered_map<int, DataTamerParser::Schema> dt_schames;
   int total_dt_schemas = 0;
 
   std::unordered_set<mcap::ChannelId> channels_containing_datatamer_schema;

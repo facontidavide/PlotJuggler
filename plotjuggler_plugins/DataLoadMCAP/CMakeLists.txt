@@ -15,11 +15,22 @@ if(NOT TARGET mcap)
             GIT_TAG v1.5.5
             DOWNLOAD_ONLY YES
         )
-        if (zstd_ADDED)
-            set(ZSTD_BUILD_STATIC ON  CACHE BOOL " " FORCE)
-            set(ZSTD_BUILD_SHARED OFF CACHE BOOL " " FORCE)
-            add_subdirectory(${zstd_SOURCE_DIR}/build/cmake ${CMAKE_BINARY_DIR}/zstd)
-        endif()
+        set(ZSTD_BUILD_STATIC ON  CACHE BOOL " " FORCE)
+        set(ZSTD_BUILD_SHARED OFF CACHE BOOL " " FORCE)
+        set(ZSTD_LEGACY_SUPPORT OFF   CACHE BOOL " " FORCE)
+        set(ZSTD_BUILD_PROGRAMS OFF CACHE BOOL " " FORCE)
+        set(ZSTD_BUILD_TESTS OFF   CACHE BOOL " " FORCE)
+        set(ZSTD_BUILD_CONTRIB OFF  CACHE BOOL " " FORCE)
+        set(ZSTD_BUILD_EXAMPLES OFF CACHE BOOL " " FORCE)
+        set(ZSTD_MULTITHREAD_SUPPORT OFF CACHE BOOL " " FORCE)
+        set(ZSTD_LEGACY_SUPPORT OFF CACHE BOOL " " FORCE)
+        set(ZSTD_ZLIB_SUPPORT OFF CACHE BOOL " " FORCE)
+        set(ZSTD_LZ4_SUPPORT OFF CACHE BOOL " " FORCE)
+        set(ZSTD_LZMA_SUPPORT OFF CACHE BOOL " " FORCE)
+        set(ZSTD_ZDICT_SUPPORT OFF CACHE BOOL " " FORCE)
+        set(ZSTD_PROGRAMS "" CACHE STRING " " FORCE)
+        add_subdirectory(${zstd_SOURCE_DIR}/build/cmake ${zstd_BINARY_DIR})
+
     endif()
 
     ### lz4 ###
@@ -31,11 +42,9 @@ if(NOT TARGET mcap)
             GIT_TAG v1.10.0
             DOWNLOAD_ONLY YES
         )
-        if (lz4_ADDED)
-            file(GLOB LZ4_SOURCES ${lz4_SOURCE_DIR}/lib/*.c)
-            add_library(lz4_static STATIC ${LZ4_SOURCES})
-            target_include_directories(lz4_static PUBLIC ${lz4_SOURCE_DIR}/lib)
-        endif()
+        file(GLOB LZ4_SOURCES ${lz4_SOURCE_DIR}/lib/*.c)
+        add_library(lz4_static STATIC ${LZ4_SOURCES})
+        target_include_directories(lz4_static PUBLIC ${lz4_SOURCE_DIR}/lib)
     endif()
 
     ### mcap ###
@@ -63,7 +72,6 @@ target_link_libraries(DataLoadMCAP PRIVATE
     ${Qt5Widgets_LIBRARIES}
     ${Qt5Xml_LIBRARIES}
     mcap
-    data_tamer_parser
     plotjuggler_base )
 
 install(TARGETS DataLoadMCAP DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
