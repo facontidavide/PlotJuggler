@@ -20,6 +20,10 @@ add_subdirectory( ParserProtobuf )
 add_subdirectory( ParserROS )
 add_subdirectory( ParserDataTamer )
 add_subdirectory( ParserLineInflux )
-add_subdirectory( ParserIDL )
 
 add_subdirectory( PluginsZcm )
+
+## if subdirectory exist
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR/ParserIDL/dds_parser}")
+    add_subdirectory( ParserIDL )
+endif()
