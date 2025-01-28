@@ -7,45 +7,40 @@ QT5_WRAP_UI ( UI_SRC  dialog_mcap.ui  )
 ########################################
 if(NOT TARGET mcap)
     ### zstd ###
-    find_package(zstd QUIET)
-    if (NOT zstd_FOUND)
-        CPMAddPackage(
-            NAME zstd
-            GITHUB_REPOSITORY facebook/zstd
-            GIT_TAG v1.5.5
-            DOWNLOAD_ONLY YES
-        )
-        set(ZSTD_BUILD_STATIC ON  CACHE BOOL " " FORCE)
-        set(ZSTD_BUILD_SHARED OFF CACHE BOOL " " FORCE)
-        set(ZSTD_LEGACY_SUPPORT OFF   CACHE BOOL " " FORCE)
-        set(ZSTD_BUILD_PROGRAMS OFF CACHE BOOL " " FORCE)
-        set(ZSTD_BUILD_TESTS OFF   CACHE BOOL " " FORCE)
-        set(ZSTD_BUILD_CONTRIB OFF  CACHE BOOL " " FORCE)
-        set(ZSTD_BUILD_EXAMPLES OFF CACHE BOOL " " FORCE)
-        set(ZSTD_MULTITHREAD_SUPPORT OFF CACHE BOOL " " FORCE)
-        set(ZSTD_LEGACY_SUPPORT OFF CACHE BOOL " " FORCE)
-        set(ZSTD_ZLIB_SUPPORT OFF CACHE BOOL " " FORCE)
-        set(ZSTD_LZ4_SUPPORT OFF CACHE BOOL " " FORCE)
-        set(ZSTD_LZMA_SUPPORT OFF CACHE BOOL " " FORCE)
-        set(ZSTD_ZDICT_SUPPORT OFF CACHE BOOL " " FORCE)
-        set(ZSTD_PROGRAMS "" CACHE STRING " " FORCE)
-        add_subdirectory(${zstd_SOURCE_DIR}/build/cmake ${zstd_BINARY_DIR})
+    CPMAddPackage(
+        NAME zstd
+        GITHUB_REPOSITORY facebook/zstd
+        GIT_TAG v1.5.6
+        DOWNLOAD_ONLY YES
+    )
+    set(ZSTD_BUILD_STATIC ON  CACHE BOOL " " FORCE)
+    set(ZSTD_BUILD_SHARED OFF CACHE BOOL " " FORCE)
+    set(ZSTD_LEGACY_SUPPORT OFF   CACHE BOOL " " FORCE)
+    set(ZSTD_BUILD_PROGRAMS OFF CACHE BOOL " " FORCE)
+    set(ZSTD_BUILD_TESTS OFF   CACHE BOOL " " FORCE)
+    set(ZSTD_BUILD_CONTRIB OFF  CACHE BOOL " " FORCE)
+    set(ZSTD_BUILD_EXAMPLES OFF CACHE BOOL " " FORCE)
+    set(ZSTD_MULTITHREAD_SUPPORT OFF CACHE BOOL " " FORCE)
+    set(ZSTD_LEGACY_SUPPORT OFF CACHE BOOL " " FORCE)
+    set(ZSTD_ZLIB_SUPPORT OFF CACHE BOOL " " FORCE)
+    set(ZSTD_LZ4_SUPPORT OFF CACHE BOOL " " FORCE)
+    set(ZSTD_LZMA_SUPPORT OFF CACHE BOOL " " FORCE)
+    set(ZSTD_ZDICT_SUPPORT OFF CACHE BOOL " " FORCE)
+    set(ZSTD_PROGRAMS "" CACHE STRING " " FORCE)
 
-    endif()
+    add_subdirectory(${zstd_SOURCE_DIR}/build/cmake ${zstd_BINARY_DIR})
+    target_include_directories(libzstd_static PUBLIC ${zstd_SOURCE_DIR}/lib)
 
     ### lz4 ###
-    find_package(lz4 QUIET)
-    if (NOT lz4_FOUND AND NOT TARGET lz4_static)
-        CPMAddPackage(
-            NAME lz4
-            GITHUB_REPOSITORY lz4/lz4
-            GIT_TAG v1.10.0
-            DOWNLOAD_ONLY YES
-        )
-        file(GLOB LZ4_SOURCES ${lz4_SOURCE_DIR}/lib/*.c)
-        add_library(lz4_static STATIC ${LZ4_SOURCES})
-        target_include_directories(lz4_static PUBLIC ${lz4_SOURCE_DIR}/lib)
-    endif()
+    CPMAddPackage(
+        NAME lz4
+        GITHUB_REPOSITORY lz4/lz4
+        GIT_TAG v1.10.0
+        DOWNLOAD_ONLY YES
+    )
+    file(GLOB LZ4_SOURCES ${lz4_SOURCE_DIR}/lib/*.c)
+    add_library(lz4_static STATIC ${LZ4_SOURCES})
+    target_include_directories(lz4_static PUBLIC ${lz4_SOURCE_DIR}/lib)
 
     ### mcap ###
     CPMAddPackage(
