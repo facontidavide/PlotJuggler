@@ -15,33 +15,6 @@ CPMAddPackage("gh:bombela/backward-cpp@1.6")
 ##### nlohmann_json ######
 CPMAddPackage("gh:nlohmann/json@3.11.3")
 
-##### MCAP + compression libs ######
-
-# Still have some problem setting up CPM for this...
-add_subdirectory( zstd-1.5.5 )
-
-CPMAddPackage(
-    NAME lz4
-    GITHUB_REPOSITORY lz4/lz4
-    GIT_TAG v1.10.0
-    DOWNLOAD_ONLY YES
-)
-file(GLOB LZ4_SOURCES ${lz4_SOURCE_DIR}/lib/*.c)
-add_library(lz4_static STATIC ${LZ4_SOURCES})
-target_include_directories(lz4_static PUBLIC ${lz4_SOURCE_DIR}/lib)
-
-
-CPMAddPackage(
-    NAME mcap
-    GITHUB_REPOSITORY foxglove/mcap
-    GIT_TAG releases/cpp/v2.0.0
-    DOWNLOAD_ONLY YES
-)
-# mcap has no CMake support, so we create our own target
-add_library(mcap INTERFACE)
-target_include_directories(mcap INTERFACE "${mcap_SOURCE_DIR}/cpp/mcap/include")
-target_link_libraries(mcap INTERFACE libzstd_static lz4_static)
-
 ##### Lua + Sol2 ######
 
 find_package(lua 5.4 QUIET)
