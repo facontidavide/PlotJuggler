@@ -29,7 +29,6 @@ if(NOT TARGET mcap)
     set(ZSTD_PROGRAMS "" CACHE STRING " " FORCE)
 
     add_subdirectory(${zstd_SOURCE_DIR}/build/cmake ${zstd_BINARY_DIR})
-    target_include_directories(libzstd_static INTERFACE ${zstd_SOURCE_DIR}/lib)
 
     ### lz4 ###
     CPMAddPackage(
@@ -62,6 +61,9 @@ add_library(DataLoadMCAP SHARED
     dataload_mcap.cpp
     dialog_mcap.cpp
     ${UI_SRC}  )
+
+target_include_directories(DataLoadMCAP PRIVATE
+    $<BUILD_INTERFACE:${lz4_SOURCE_DIR}/lib>)
 
 target_link_libraries(DataLoadMCAP PRIVATE
     ${Qt5Widgets_LIBRARIES}
