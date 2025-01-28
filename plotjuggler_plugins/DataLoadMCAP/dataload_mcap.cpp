@@ -189,6 +189,7 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
   }
 
   std::unordered_set<int> enabled_channels;
+  size_t total_msgs = 0;
 
   for (const auto& [channel_id, parser] : parsers_by_channel)
   {
@@ -200,6 +201,11 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
     if (_dialog_parameters->selected_topics.contains(topic_name))
     {
       enabled_channels.insert(channel_id);
+      auto mcap_channel = channels[channel_id]->id;
+      if (statistics->channelMessageCounts.count(mcap_channel) != 0)
+      {
+        total_msgs += statistics->channelMessageCounts[channels[channel_id]->id];
+      }
     }
   }
 
@@ -214,10 +220,8 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
 
   QProgressDialog progress_dialog("Loading... please wait", "Cancel", 0, 0, nullptr);
   progress_dialog.setWindowTitle("Loading the MCAP file");
-  progress_dialog.setModal(true);
-  progress_dialog.setAutoClose(true);
-  progress_dialog.setAutoReset(true);
-  progress_dialog.setMinimumDuration(0);
+  progress_dialog.setWindowModality(Qt::ApplicationModal);
+  progress_dialog.setRange(0, std::max<size_t>(total_msgs, 1) - 1);
   progress_dialog.show();
   progress_dialog.setValue(0);
 
@@ -249,6 +253,7 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
 
     if (msg_count++ % 1000 == 0)
     {
+      progress_dialog.setValue(msg_count);
       QApplication::processEvents();
       if (progress_dialog.wasCanceled())
       {
