@@ -13,11 +13,11 @@ class dialog_mcap;
 
 namespace mcap
 {
-class Channel;
+struct Channel;
 using ChannelPtr = std::shared_ptr<Channel>;
-class Schema;
+struct Schema;
 using SchemaPtr = std::shared_ptr<Schema>;
-class LoadParams;
+struct LoadParams;
 }  // namespace mcap
 
 class DialogMCAP : public QDialog
