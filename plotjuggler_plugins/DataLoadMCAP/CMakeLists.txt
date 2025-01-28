@@ -63,6 +63,7 @@ add_library(DataLoadMCAP SHARED
     ${UI_SRC}  )
 
 target_include_directories(DataLoadMCAP PRIVATE
+    $<BUILD_INTERFACE:${zstd_SOURCE_DIR}/lib>
     $<BUILD_INTERFACE:${lz4_SOURCE_DIR}/lib>)
 
 target_link_libraries(DataLoadMCAP PRIVATE
