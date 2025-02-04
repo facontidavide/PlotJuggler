@@ -1,15 +1,15 @@
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/dds_parser")
+    set(DDS_PARSER_BUILD_TESTING OFF CACHE BOOL "Force DDS_PARSER_BUILD_TESTING to OFF" FORCE)
+    add_subdirectory(dds_parser)
+else()
+    message(WARNING "dds_parser not found in ${CMAKE_CURRENT_SOURCE_DIR}/dds_parser, skipping!")
+    return()
+endif()
+
 
 add_definitions(${QT_DEFINITIONS})
 add_definitions(-DQT_PLUGIN)
 
-# if subdirectory not found, skip
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dds_parser)
-    message(WARNING "dds_parser not found, skipping")
-    return()
-endif()
-
-set(DDS_PARSER_BUILD_TESTING OFF)
-add_subdirectory(dds_parser)
 
 add_library(ParserDDS SHARED
     idl_parser.cpp)

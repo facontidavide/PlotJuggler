@@ -23,7 +23,4 @@ add_subdirectory( ParserLineInflux )
 
 add_subdirectory( PluginsZcm )
 
-## if subdirectory exist
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR/ParserIDL/dds_parser}")
-    add_subdirectory( ParserIDL )
-endif()
+add_subdirectory( ParserIDL )
