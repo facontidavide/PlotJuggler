@@ -92,10 +92,7 @@ MoveDataRet MoveData(PlotDataMapRef& source, PlotDataMapRef& destination,
       }
       else
       {
-        for (size_t i = 0; i < source_plot.size(); i++)
-        {
-          destination_plot.pushBack(source_plot.at(i));
-        }
+        destination_plot.mergeWith(source_plot);
         source_plot.clear();
       }
     }
