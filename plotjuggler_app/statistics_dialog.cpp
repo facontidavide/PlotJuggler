@@ -43,6 +43,8 @@ void StatisticsDialog::update(PJ::Range range)
   for (const auto& info : _parent->curveList())
   {
     Statistics stat;
+    double start_time;
+    double end_time;
     const auto ts = info.curve->data();
 
     bool first = true;
@@ -64,17 +66,22 @@ void StatisticsDialog::update(PJ::Range range)
       stat.count++;
       if (first)
       {
+        start_time = p.x();
+        end_time = p.x();
         stat.min = p.y();
         stat.max = p.y();
         first = false;
       }
       else
       {
+        start_time = std::min(start_time, p.x());
+        end_time = std::max(end_time, p.x());
         stat.min = std::min(stat.min, p.y());
         stat.max = std::max(stat.max, p.y());
       }
       stat.mean_tot += p.y();
     }
+    stat.mean_interval = (end_time - start_time) / double(stat.count);
     statistics[info.curve->title().text()] = stat;
   }
 
@@ -84,13 +91,14 @@ void StatisticsDialog::update(PJ::Range range)
   {
     const auto& stat = it.second;
 
-    std::array<QString, 5> row_values;
+    std::array<QString, 6> row_values;
     row_values[0] = it.first;
     row_values[1] = QString::number(stat.count);
     row_values[2] = QString::number(stat.min, 'f');
     row_values[3] = QString::number(stat.max, 'f');
     double mean = stat.mean_tot / double(stat.count);
     row_values[4] = QString::number(mean, 'f');
+    row_values[5] = QString::number(stat.mean_interval, 'f');
 
     for (size_t col = 0; col < row_values.size(); col++)
     {
