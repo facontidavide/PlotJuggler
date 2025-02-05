@@ -216,7 +216,7 @@ void DataStreamZcm::processData(const string& name, zcm_field_type_t type,
       me->_numerics.emplace_back(name, toDouble<bool>(data));
       break;
     case ZCM_FIELD_STRING:
-      me->_strings.emplace_back(name, string((const char*)data));
+      me->_strings.emplace_back(name, string(*((const char**)data)));
       break;
     case ZCM_FIELD_USER_TYPE:
       assert(false && "Should not be possble");
