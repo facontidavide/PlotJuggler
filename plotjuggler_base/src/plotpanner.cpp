@@ -4,6 +4,8 @@
 
 #include "plotpanner.h"
 
+#include <QKeyEvent>
+
 void PlotPanner::moveCanvas(int dx, int dy)
 {
   if (dx == 0 && dy == 0)
@@ -60,4 +62,16 @@ void PlotPanner::moveCanvas(int dx, int dy)
 
   plot->setAutoReplot(doAutoReplot);
   plot->replot();
+}
+
+void PlotPanner::widgetKeyPressEvent(QKeyEvent* ke)
+{
+  if(ke->key() == Qt::Key_Right)
+    moveCanvas(-10,0);
+  else if(ke->key() == Qt::Key_Left)
+    moveCanvas(10,0);
+  else if(ke->key() == Qt::Key_Up)
+    moveCanvas(0,10);
+  else if(ke->key() == Qt::Key_Down)
+    moveCanvas(0,-10);
 }

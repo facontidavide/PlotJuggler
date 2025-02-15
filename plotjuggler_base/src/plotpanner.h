@@ -15,6 +15,8 @@ public:
 public Q_SLOTS:
   void moveCanvas(int dx, int dy) override;
 
+  void widgetKeyPressEvent(QKeyEvent* ke) override;
+
 signals:
   void rescaled(QRectF new_size);
 
