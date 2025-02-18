@@ -11,32 +11,28 @@
 
     <author email="davide.faconti@gmail.com">Davide Faconti</author>
 
-    <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
-    <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
+    <buildtool_depend>ament_cmake</buildtool_depend>
+    <depend>ament_index_cpp</depend>
+    <depend>rclcpp</depend>
+    <depend>fastcdr</depend>
 
-    <depend  condition="$ROS_VERSION == 1">roslib</depend>
-    <depend  condition="$ROS_VERSION == 1">roscpp</depend>
-
-    <depend  condition="$ROS_VERSION == 2">ament_index_cpp</depend>
-    <depend  condition="$ROS_VERSION == 2">rclcpp</depend>
-    <depend  condition="$ROS_VERSION == 2">fastcdr</depend>
-
-    <!-- common dependancies -->
+    <!-- Qt dependancies -->
     <depend>qtbase5-dev</depend>
     <depend>libqt5-svg-dev</depend>
     <depend>libqt5-websockets-dev</depend>
     <depend>libqt5-opengl-dev</depend>
     <depend>libqt5x11extras5-dev</depend>
+
+    <!-- needed for backward_cpp -->
     <depend>binutils</depend>
+
     <depend>boost</depend>
     <depend>libzmq3-dev</depend>
-    <depend>lz4</depend>
-    <depend>libzstd-dev</depend>
+
     <depend>protobuf-dev</depend>
 
     <!-- The export tag contains other, unspecified, tags -->
     <export>
-        <build_type condition="$ROS_VERSION == 1">catkin</build_type>
-        <build_type condition="$ROS_VERSION == 2">ament_cmake</build_type>
+        <build_type>ament_cmake</build_type>
     </export>
 </package>

@@ -1,15 +1,24 @@
 #ifndef DIALOG_MCAP_H
 #define DIALOG_MCAP_H
 
+#include <memory>
 #include <QDialog>
-
-#include "mcap/reader.hpp"
+#include <optional>
 #include "dataload_params.h"
 
 namespace Ui
 {
 class dialog_mcap;
 }
+
+namespace mcap
+{
+struct Channel;
+using ChannelPtr = std::shared_ptr<Channel>;
+struct Schema;
+using SchemaPtr = std::shared_ptr<Schema>;
+struct LoadParams;
+}  // namespace mcap
 
 class DialogMCAP : public QDialog
 {

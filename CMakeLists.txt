@@ -19,13 +19,13 @@ add_definitions(
 #add_definitions( -DPJ_DEFAULT_ARGS="${PJ_DEFAULT_ARGS}")
 
 option(ENABLE_ASAN "Enable Address Sanitizer" OFF)
-option(BASE_AS_SHARED "Build the base library as a shared libary" OFF)
 option(BUILDING_WITH_CONAN "Using Conan for depenencies" OFF)
 
 IF (NOT WIN32 AND ENABLE_ASAN)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
   set (CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 endif()
+
 
 include_directories( plotjuggler_base/include )
 include_directories( plotjuggler_base/src )
@@ -39,30 +39,8 @@ if(VCPKG_TOOLCHAIN)
 endif()
 
 find_package(ament_cmake QUIET)
-find_package(catkin QUIET)
 
-# http://answers.ros.org/question/230877/optionally-build-a-package-with-catkin/
-if(catkin_FOUND)
-    set(COMPILING_WITH_CATKIN 1)
-
-    message(STATUS "--------------------------------------------------")
-    message(STATUS "PlotJuggler is being built using CATKIN.")
-    message(STATUS "--------------------------------------------------")
-
-    find_package(catkin REQUIRED COMPONENTS roslib roscpp)
-
-    catkin_package(
-        INCLUDE_DIRS  plotjuggler_base/include
-        LIBRARIES  plotjuggler_base
-        CATKIN_DEPENDS roslib roscpp
-    )
-
-message(STATUS ${catkin_INCLUDE_DIRS})
-
-    include_directories(${catkin_INCLUDE_DIRS})
-    add_definitions(-DCOMPILED_WITH_CATKIN)
-
-elseif(ament_cmake_FOUND)
+if(ament_cmake_FOUND)
     set(COMPILING_WITH_AMENT 1)
 
     find_package(ament_cmake REQUIRED)
@@ -88,10 +66,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 SET(CMAKE_AUTOUIC ON)
 
-
-if (NOT WIN32)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
-endif()
 
 if(APPLE AND EXISTS /usr/local/opt/qt5)
     # Homebrew installs Qt5 (up to at least 5.9.1) in
@@ -133,12 +107,16 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
 
-IF (NOT WIN32)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIC")
-else()
+IF (WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -D_USE_MATH_DEFINES")
     set(CMAKE_WIN32_EXECUTABLE ON)
     set(GUI_TYPE WIN32)
+    if(MSVC)
+        add_compile_options(/wd4267)
+    endif()
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIC -fno-omit-frame-pointer")
+    add_compile_options(-Wno-deprecated-declarations)
 ENDIF()
 
 include_directories(
@@ -150,15 +128,10 @@ include_directories(
     ${Qt5WebSockets_INCLUDE_DIRS}
     ${Qt5Svg_INCLUDE_DIRS}
     ${Qt5OpenGL_INCLUDE_DIRS}
-    ./3rdparty/
     ./3rdparty/color_widgets/include
     ./3rdparty/Qt-Advanced-Docking/include
     ./3rdparty/qwt/src
-    ./3rdparty/sol
-    ./3rdparty/lua-5.4.3/src
     ./3rdparty/QCodeEditor/include
-    ./3rdparty/lz4-1.9.4
-    ./3rdparty/zstd-1.5.5
 )
 
 #########################  BASE library  ####################################
@@ -185,20 +158,16 @@ qt5_wrap_cpp(PLOTJUGGLER_BASE_MOCS
   plotjuggler_base/include/PlotJuggler/plotwidget_base.h
 )
 
-if (BASE_AS_SHARED)
-    add_library(plotjuggler_base SHARED
-        ${PLOTJUGGLER_BASE_SRC}
-        ${PLOTJUGGLER_BASE_MOCS}
-        )
-    target_link_libraries(plotjuggler_base PRIVATE lua_objects plotjuggler_qwt_objects)
-else()
-    add_library(plotjuggler_base STATIC
-        ${PLOTJUGGLER_BASE_SRC}
-        ${PLOTJUGGLER_BASE_MOCS}
-        )
-endif()
+add_library(plotjuggler_base STATIC
+    ${PLOTJUGGLER_BASE_SRC}
+    ${PLOTJUGGLER_BASE_MOCS}
+)
 
-# target_link_libraries(plotjuggler_base plotjuggler_qwt)
+target_link_libraries(plotjuggler_base PUBLIC
+    plotjuggler_qwt
+    lua
+    sol2
+)
 
 target_include_directories(plotjuggler_base INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -207,14 +176,7 @@ target_include_directories(plotjuggler_base INTERFACE
 
 #########################  INSTALL  ####################################
 
-if(COMPILING_WITH_CATKIN)
-
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_LIB_DESTINATION})
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_BIN_DESTINATION})
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_BIN_DESTINATION})
-    set(PJ_PLUGIN_INSTALL_DIRECTORY ${CATKIN_PACKAGE_BIN_DESTINATION} )
-
-elseif(COMPILING_WITH_AMENT)
+if(COMPILING_WITH_AMENT)
 
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -245,50 +207,18 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler.svg
 
 ######################## Main App, Libraries and Plugins ###################################
 
-add_subdirectory( 3rdparty/qwt/src )
-add_subdirectory( 3rdparty/lz4-1.9.4 )
-add_subdirectory( 3rdparty/zstd-1.5.5 )
-add_subdirectory( 3rdparty/QCodeEditor )
-add_subdirectory( 3rdparty/color_widgets )
-add_subdirectory( 3rdparty/Qt-Advanced-Docking )
-add_subdirectory( 3rdparty/lua-5.4.3 )
+include(FetchContent)
+include(cmake/CPM.cmake)
 
-if (NOT WIN32)
-  add_subdirectory( 3rdparty/backward-cpp )
-endif()
-
+add_subdirectory( 3rdparty )
 add_subdirectory( plotjuggler_app )
-
-add_subdirectory( plotjuggler_plugins/DataLoadCSV )
-add_subdirectory( plotjuggler_plugins/DataLoadMCAP )
-add_subdirectory( plotjuggler_plugins/DataLoadParquet )
-add_subdirectory( plotjuggler_plugins/DataLoadULog )
-
-add_subdirectory( plotjuggler_plugins/DataStreamSample )
-add_subdirectory( plotjuggler_plugins/DataStreamWebsocket )
-add_subdirectory( plotjuggler_plugins/DataStreamUDP )
-add_subdirectory( plotjuggler_plugins/DataStreamMQTT )
-add_subdirectory( plotjuggler_plugins/DataStreamZMQ )
-
-add_subdirectory( plotjuggler_plugins/StatePublisherCSV )
-add_subdirectory( plotjuggler_plugins/VideoViewer )
-
-add_subdirectory( plotjuggler_plugins/ToolboxQuaternion )
-add_subdirectory( plotjuggler_plugins/ToolboxFFT )
-add_subdirectory( plotjuggler_plugins/ToolboxLuaEditor )
-
-add_subdirectory( plotjuggler_plugins/ParserProtobuf )
-add_subdirectory( plotjuggler_plugins/ParserROS )
-add_subdirectory( plotjuggler_plugins/ParserDataTamer )
-add_subdirectory( plotjuggler_plugins/ParserLineInflux )
-
-add_subdirectory( plotjuggler_plugins/PluginsZcm )
+add_subdirectory( plotjuggler_plugins)
 
 # Install targets
 
 install(
      TARGETS
-        plotjuggler_base
+        plotjuggler_base plotjuggler_qwt lua sol2
      EXPORT ${PROJECT_NAME}Targets
      LIBRARY DESTINATION lib
      ARCHIVE DESTINATION lib
@@ -299,7 +229,7 @@ install(DIRECTORY plotjuggler_base/include/ DESTINATION include )
 
 export(PACKAGE ${PROJECT_NAME})
 
-if(NOT COMPILING_WITH_AMENT AND NOT COMPILING_WITH_CATKIN)
+if(NOT COMPILING_WITH_AMENT)
 
     include(GNUInstallDirs)
 

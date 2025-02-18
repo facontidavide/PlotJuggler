@@ -1,6 +1,5 @@
 #include "dataload_mcap.h"
 
-#include "data_tamer_parser/data_tamer_parser.hpp"
 #include "PlotJuggler/messageparser_base.h"
 
 #include "mcap/reader.hpp"
@@ -37,6 +36,7 @@ bool DataLoadMCAP::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) 
   QDomElement elem = doc.createElement("parameters");
   const auto& params = *_dialog_parameters;
   elem.setAttribute("use_timestamp", int(params.use_timestamp));
+  elem.setAttribute("use_mcap_log_time", int(params.use_mcap_log_time));
   elem.setAttribute("clamp_large_arrays", int(params.clamp_large_arrays));
   elem.setAttribute("max_array_size", params.max_array_size);
   elem.setAttribute("selected_topics", params.selected_topics.join(';'));
@@ -55,6 +55,7 @@ bool DataLoadMCAP::xmlLoadState(const QDomElement& parent_element)
   }
   mcap::LoadParams params;
   params.use_timestamp = bool(elem.attribute("use_timestamp").toInt());
+  params.use_mcap_log_time = bool(elem.attribute("use_mcap_log_time").toInt());
   params.clamp_large_arrays = bool(elem.attribute("clamp_large_arrays").toInt());
   params.max_array_size = elem.attribute("max_array_size").toInt();
   params.selected_topics = elem.attribute("selected_topics").split(';');
@@ -96,13 +97,15 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
                              .arg(QString::fromStdString(status.message)));
     return false;
   }
+  plot_data.addUserDefined("plotjuggler::mcap::file_path")
+      ->second.pushBack({ 0, std::any(info->filename.toStdString()) });
+
   auto statistics = reader.statistics();
 
   std::unordered_map<int, mcap::SchemaPtr> mcap_schemas;         // schema_id
   std::unordered_map<int, mcap::ChannelPtr> channels;            // channel_id
   std::unordered_map<int, MessageParserPtr> parsers_by_channel;  // channel_id
 
-  std::unordered_map<int, DataTamerParser::Schema> dt_schames;
   int total_dt_schemas = 0;
 
   std::unordered_set<mcap::ChannelId> channels_containing_datatamer_schema;
@@ -184,6 +187,7 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
   }
 
   std::unordered_set<int> enabled_channels;
+  size_t total_msgs = 0;
 
   for (const auto& [channel_id, parser] : parsers_by_channel)
   {
@@ -195,6 +199,11 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
     if (_dialog_parameters->selected_topics.contains(topic_name))
     {
       enabled_channels.insert(channel_id);
+      auto mcap_channel = channels[channel_id]->id;
+      if (statistics->channelMessageCounts.count(mcap_channel) != 0)
+      {
+        total_msgs += statistics->channelMessageCounts[channels[channel_id]->id];
+      }
     }
   }
 
@@ -209,10 +218,8 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
 
   QProgressDialog progress_dialog("Loading... please wait", "Cancel", 0, 0, nullptr);
   progress_dialog.setWindowTitle("Loading the MCAP file");
-  progress_dialog.setModal(true);
-  progress_dialog.setAutoClose(true);
-  progress_dialog.setAutoReset(true);
-  progress_dialog.setMinimumDuration(0);
+  progress_dialog.setWindowModality(Qt::ApplicationModal);
+  progress_dialog.setRange(0, std::max<size_t>(total_msgs, 1) - 1);
   progress_dialog.show();
   progress_dialog.setValue(0);
 
@@ -227,6 +234,10 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
 
     // MCAP always represents publishTime in nanoseconds
     double timestamp_sec = double(msg_view.message.publishTime) * 1e-9;
+    if (_dialog_parameters->use_mcap_log_time)
+    {
+      timestamp_sec = double(msg_view.message.logTime) * 1e-9;
+    }
     auto parser_it = parsers_by_channel.find(msg_view.channel->id);
     if (parser_it == parsers_by_channel.end())
     {
@@ -240,6 +251,7 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
 
     if (msg_count++ % 1000 == 0)
     {
+      progress_dialog.setValue(msg_count);
       QApplication::processEvents();
       if (progress_dialog.wasCanceled())
       {

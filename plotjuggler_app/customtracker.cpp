@@ -15,6 +15,7 @@
 #include "qwt_text.h"
 #include <qevent.h>
 #include <QFontDatabase>
+#include <QSettings>
 
 struct compareX
 {
@@ -155,13 +156,16 @@ void CurveTracker::setPosition(const QPointF& position)
 
       QString line;
 
+      QSettings settings;
+      int prec = settings.value("Preferences::precision", 3).toInt();
+
       if (_param == VALUE)
       {
         line = QString("<font color=%1>%2</font>").arg(color.name()).arg(val);
       }
       else if (_param == VALUE_NAME)
       {
-        QString value = QString::number(val, 'f', 3);
+        QString value = QString::number(val, 'f', prec);
         int whitespaces = 8 - value.length();
         while (whitespaces-- > 0)
           value.prepend("&nbsp;");

@@ -168,6 +168,7 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
     {
       if (!valid_column[col])
       {
+        os.SkipColumns(1);
         continue;
       }
       auto type = column_type[col];
