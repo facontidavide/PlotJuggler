@@ -33,7 +33,7 @@ jobs:
               libqt5x11extras5-dev \
               libprotoc-dev \
               libzmq3-dev \
-                liblz4-dev \
+              liblz4-dev \
               libzstd-dev \
               ccache
 
@@ -41,7 +41,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.ccache
-          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          key: ${{ runner.os }}-${{ matrix.ubuntu-distro }}-ccache-${{ github.sha }}
           restore-keys: ${{ runner.os }}-ccache-
 
       - name: Build Plotjuggler
