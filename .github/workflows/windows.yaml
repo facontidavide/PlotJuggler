@@ -31,7 +31,7 @@ jobs:
         with:
           path: |
             ${{ github.workspace }}/qt_installation/
-            ~/.conan/data
+            ~/.conan2/
           key: ${{ runner.os }}-${{ hashFiles('**/qt_installation/**', '**/conanfile.txt') }}
           restore-keys: ${{ runner.os }}-
 
@@ -63,17 +63,16 @@ jobs:
           cmake --preset conan-default -B build -DBUILDING_WITH_CONAN=ON -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Release .;
           cmake --build build --config Release --target install
 
-      # - name: Build QT Installer
-      #   # if: github.event_name == 'release' || github.event.inputs.run-installer == 'true'
-      #   shell: pwsh
-      #   run: >
-      #     xcopy PlotJuggler/installer installer/ /Y /S /f /z;
-      #     xcopy install/bin/*.* installer/io.plotjuggler.application/data /Y /S /f /z;
-      #     windeployqt.exe --release installer/io.plotjuggler.application/data/PlotJuggler.exe;
-      #     binarycreator.exe --offline-only -c installer\config.xml -p installer PlotJuggler-Windows-installer.exe
+      - name: Build QT Installer
+        # if: github.event_name == 'release'
+        shell: pwsh
+        run: >
+          xcopy install/bin/*.* installer/io.plotjuggler.application/data /Y /S /f /z;
+          windeployqt.exe --release installer/io.plotjuggler.application/data/PlotJuggler.exe;
+          binarycreator.exe --offline-only -c installer\config.xml -p installer PlotJuggler-Windows-installer.exe
 
       # - name: Upload installer
-      #   if: github.event_name == 'release' || github.event.inputs.run-installer == 'true'
+      #   if: github.event_name == 'release'
       #   uses: softprops/action-gh-release@v1
       #   with:
       #     files: PlotJuggler-Windows-installer.exe
