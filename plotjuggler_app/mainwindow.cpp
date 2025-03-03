@@ -2273,6 +2273,9 @@ bool MainWindow::loadLayoutFromFile(QString filename)
 
   linkedZoomOut();
 
+  _loaded_layout_filename = filename;
+  ui->buttonReloadLayout->setEnabled(true);
+
   _undo_states.clear();
   _undo_states.push_back(domDocument);
   return true;
@@ -3538,6 +3541,11 @@ void MainWindow::on_buttonReloadData_clicked()
     loadDataFromFile(info);
   }
   ui->buttonReloadData->setEnabled(!_loaded_datafiles_previous.empty());
+}
+
+void MainWindow::on_buttonReloadLayout_clicked()
+{
+  MainWindow::loadLayoutFromFile(_loaded_layout_filename);
 }
 
 void MainWindow::on_buttonCloseStatus_clicked()
