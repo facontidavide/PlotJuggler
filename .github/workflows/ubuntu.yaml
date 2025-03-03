@@ -25,17 +25,26 @@ jobs:
       - name: Install apt packages
         run: |
               sudo apt update && sudo apt -y install \
-                software-properties-common \
-                qtbase5-dev \
-                libqt5svg5-dev \
-                libqt5websockets5-dev \
-                libqt5opengl5-dev \
-                libqt5x11extras5-dev \
-                libprotoc-dev \
-                libzmq3-dev \
-                liblz4-dev libzstd-dev
+              software-properties-common \
+              qtbase5-dev \
+              libqt5svg5-dev \
+              libqt5websockets5-dev \
+              libqt5opengl5-dev \
+              libqt5x11extras5-dev \
+              libprotoc-dev \
+              libzmq3-dev \
+                liblz4-dev \
+              libzstd-dev \
+              ccache
+
+      - name: Save ccache folder
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-ccache-
 
       - name: Build Plotjuggler
         run: |
-            cmake -B build -DCMAKE_INSTALL_PREFIX=install PlotJuggler;
+            cmake -B build -DCMAKE_INSTALL_PREFIX=install -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache PlotJuggler;
             cmake --build build --target install
