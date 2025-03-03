@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Conan
-        uses: turtlebrowser/get-conan@v1.2
+        uses: turtlebrowser/get-conan@main
 
       - name: Cache Qt and Conan
         uses: actions/cache@v4
@@ -50,6 +50,7 @@ jobs:
       - name: Build Plotjuggler
         shell: pwsh
         run: >
+          conan profile detect;
           conan install . -of build --build=missing -pr:b=default -s build_type=Release;
           set TOOLCHAIN=%cd%/build/conan_toolchain.cmake;
           cmake -Ax64 -T host=x64 -B build -DCMAKE_INSTALL_PREFIX=install -DCMAKE_TOOLCHAIN_FILE=%TOOLCHAIN% -DCMAKE_POLICY_DEFAULT_CMP0091=NEW .;
