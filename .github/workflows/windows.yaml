@@ -16,7 +16,6 @@ jobs:
       matrix:
         windows-version:
           - 'windows-2019'
-          - 'windows-latest'
     env:
       CXXFLAGS: /MP
 
@@ -47,13 +46,25 @@ jobs:
           tools: 'tools_ifw'
           add-tools-to-path: true
 
+      - name: Setup ccache
+        uses: Chocobo1/setup-ccache-action@v1
+        with:
+          windows_compile_environment: msvc  # this field is required
+
       - name: Build Plotjuggler
         shell: pwsh
         run: >
           conan profile detect;
           conan install . -of build --build=missing -pr:b=default -s build_type=Release;
-          set TOOLCHAIN=%cd%/build/conan_toolchain.cmake;
-          cmake -Ax64 -T host=x64 -B build -DCMAKE_INSTALL_PREFIX=install -DCMAKE_TOOLCHAIN_FILE=%TOOLCHAIN% -DCMAKE_POLICY_DEFAULT_CMP0091=NEW .;
+          cmake `
+          -G "Visual Studio 16 2019"  `
+          -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
+          -Ax64 -T host=x64 `
+          -B build `
+          -DCMAKE_CXX_COMPILER_LAUNCHER:FILEPATH="${{ env.ccache_symlinks_path }}" `
+          -DCMAKE_INSTALL_PREFIX=install `
+          -DCMAKE_POLICY_DEFAULT_CMP0091=NEW `
+          .;
           cmake --build build --config Release --target install
 
       - name: Build QT Installer
