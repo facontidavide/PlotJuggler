@@ -1,6 +1,11 @@
 name: windows
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, closed]
 
 jobs:
 
@@ -11,13 +16,24 @@ jobs:
       matrix:
         windows-version:
           - 'windows-2019'
-          - 'windows-latest'
     env:
       CXXFLAGS: /MP
 
     steps:
       - name: Sync repository
         uses: actions/checkout@v4
+
+      - name: Install Conan
+        uses: turtlebrowser/get-conan@main
+
+      - name: Cache Qt and Conan
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/qt_installation/
+            ~/.conan2/
+          key: ${{ runner.os }}-${{ hashFiles('**/qt_installation/**', '**/conanfile.txt') }}
+          restore-keys: ${{ runner.os }}-
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -27,9 +43,36 @@ jobs:
           dir: '${{ github.workspace }}/qt_installation/'
           cache: 'true'
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          tools: 'tools_ifw'
+          add-tools-to-path: true
+
+      - name: Setup ccache
+        uses: Chocobo1/setup-ccache-action@v1
+        with:
+          windows_compile_environment: msvc  # this field is required
+
+      - name: Conan install
+        shell: pwsh
+        run: >
+          conan profile detect;
+          conan install . -of build --build=missing -pr:b=default -s build_type=Release
 
       - name: Build Plotjuggler
         shell: pwsh
         run: >
-          cmake -Ax64 -T host=x64 -B build -DCMAKE_INSTALL_PREFIX=install PlotJuggler;
-          cmake --build build --target install
+          cmake --preset conan-default -B build -DBUILDING_WITH_CONAN=ON -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Release .;
+          cmake --build build --config Release --target install
+
+      - name: Build QT Installer
+        # if: github.event_name == 'release'
+        shell: pwsh
+        run: >
+          xcopy install/bin/*.* installer/io.plotjuggler.application/data /Y /S /f /z;
+          windeployqt.exe --release installer/io.plotjuggler.application/data/PlotJuggler.exe;
+          binarycreator.exe --offline-only -c installer\config.xml -p installer PlotJuggler-Windows-installer.exe
+
+      # - name: Upload installer
+      #   if: github.event_name == 'release'
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     files: PlotJuggler-Windows-installer.exe
