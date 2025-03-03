@@ -22,14 +22,15 @@ jobs:
       - name: Install Conan
         uses: turtlebrowser/get-conan@v1.2
 
-      - name: Cache Qt
+      - name: Cache Qt and Conan
         id: cache-qt
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/qt_installation/
-          key: ${{ runner.os }}-qt-${{ hashFiles('**/qt_installation/**') }}
-          restore-keys: |
-            ${{ runner.os }}-qt-
+          path: |
+            ${{ github.workspace }}/qt_installation/
+            ~/.conan/data
+          key: ${{ runner.os }}-${{ hashFiles('**/qt_installation/**', '**/conanfile.txt') }}
+          restore-keys: ${{ runner.os }}-
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -45,7 +46,7 @@ jobs:
       - name: Build Plotjuggler
         shell: pwsh
         run: >
-          conan install . --install-folder build --build=missing -pr:b=default;
+          conan install . -of build --build=missing -pr:b=default -s build_type=Release;
           set TOOLCHAIN=%cd%/build/conan_toolchain.cmake;
           cmake -Ax64 -T host=x64 -B build -DCMAKE_INSTALL_PREFIX=install -DCMAKE_TOOLCHAIN_FILE=%TOOLCHAIN% -DCMAKE_POLICY_DEFAULT_CMP0091=NEW .;
           cmake --build build --config Release --target install
