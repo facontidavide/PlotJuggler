@@ -1,6 +1,11 @@
 name: windows
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, closed]
 
 jobs:
 
@@ -23,7 +28,6 @@ jobs:
         uses: turtlebrowser/get-conan@v1.2
 
       - name: Cache Qt and Conan
-        id: cache-qt
         uses: actions/cache@v4
         with:
           path: |
