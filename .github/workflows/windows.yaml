@@ -55,7 +55,7 @@ jobs:
         shell: pwsh
         run: >
           conan profile detect;
-          conan install . -if build --build=missing -pr:b=default -s build_type=Release
+          conan install . -of build --build=missing -pr:b=default -s build_type=Release
 
       - name: Build Plotjuggler
         shell: pwsh
@@ -63,17 +63,17 @@ jobs:
           cmake --preset conan-default -B build -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Release .;
           cmake --build build --config Release --target install
 
-      - name: Build QT Installer
-        # if: github.event_name == 'release' || github.event.inputs.run-installer == 'true'
-        shell: pwsh
-        run: >
-          xcopy PlotJuggler/installer installer/ /Y /S /f /z;
-          xcopy install/bin/*.* installer/io.plotjuggler.application/data /Y /S /f /z;
-          windeployqt.exe --release installer/io.plotjuggler.application/data/PlotJuggler.exe;
-          binarycreator.exe --offline-only -c installer\config.xml -p installer PlotJuggler-Windows-installer.exe
+      # - name: Build QT Installer
+      #   # if: github.event_name == 'release' || github.event.inputs.run-installer == 'true'
+      #   shell: pwsh
+      #   run: >
+      #     xcopy PlotJuggler/installer installer/ /Y /S /f /z;
+      #     xcopy install/bin/*.* installer/io.plotjuggler.application/data /Y /S /f /z;
+      #     windeployqt.exe --release installer/io.plotjuggler.application/data/PlotJuggler.exe;
+      #     binarycreator.exe --offline-only -c installer\config.xml -p installer PlotJuggler-Windows-installer.exe
 
-      - name: Upload installer
-        if: github.event_name == 'release' || github.event.inputs.run-installer == 'true'
-        uses: softprops/action-gh-release@v1
-        with:
-          files: PlotJuggler-Windows-installer.exe
+      # - name: Upload installer
+      #   if: github.event_name == 'release' || github.event.inputs.run-installer == 'true'
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     files: PlotJuggler-Windows-installer.exe
