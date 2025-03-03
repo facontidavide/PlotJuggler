@@ -1,13 +1,6 @@
-if(BUILDING_WITH_CONAN)
-    message(STATUS "Finding Protobuf with conan")
-    set(Protobuf_LIBS protobuf::libprotobuf)
-else()
-    message(STATUS "Finding Protobuf without package managers")
-    find_package(Protobuf QUIET)
-    set(Protobuf_LIBS ${Protobuf_LIBRARIES})
-endif()
 
 find_package(Protobuf QUIET)
+set(Protobuf_LIBS ${Protobuf_LIBRARIES})
 
 if( Protobuf_FOUND)
 

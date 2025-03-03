@@ -60,7 +60,7 @@ jobs:
       - name: Build Plotjuggler
         shell: pwsh
         run: >
-          cmake --preset conan-default -B build -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Release .;
+          cmake --preset conan-default -B build -DBUILDING_WITH_CONAN=ON -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Release .;
           cmake --build build --config Release --target install
 
       # - name: Build QT Installer
