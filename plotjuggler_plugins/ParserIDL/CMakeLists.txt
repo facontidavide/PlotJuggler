@@ -1,8 +1,8 @@
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/dds_parser")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/dds-parser")
     set(DDS_PARSER_BUILD_TESTING OFF CACHE BOOL "Force DDS_PARSER_BUILD_TESTING to OFF" FORCE)
-    add_subdirectory(dds_parser)
+    add_subdirectory(dds-parser)
 else()
-    message(WARNING "dds_parser not found in ${CMAKE_CURRENT_SOURCE_DIR}/dds_parser, skipping!")
+    message(WARNING "dds-parser not found in ${CMAKE_CURRENT_SOURCE_DIR}/dds-parser, skipping!")
     return()
 endif()
 
@@ -15,7 +15,7 @@ add_library(ParserDDS SHARED
     idl_parser.cpp)
 
 target_include_directories(ParserDDS PRIVATE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/dds_parser/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/dds-parser/include>
     )
 
 target_link_libraries(ParserDDS
