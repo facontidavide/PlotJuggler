@@ -15,7 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         ubuntu-distro:
-          - ubuntu-20.04
           - ubuntu-22.04
 
     steps:

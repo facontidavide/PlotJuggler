@@ -35,7 +35,7 @@ if (NOT lua_FOUND)
     endif()
 endif()
 
-CPMAddPackage("gh:ThePhD/sol2@3.5.0")
+CPMAddPackage("gh:ThePhD/sol2@3.3.0")
 
 
 ##### data_tamer ######
