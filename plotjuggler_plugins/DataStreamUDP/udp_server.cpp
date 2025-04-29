@@ -158,7 +158,7 @@ bool UDP_Server::start(QStringList*)
 
   _udp_socket = new QUdpSocket();
   int ip_version = 4;
-  if(address.protocol() == QAbstractSocket::IPv6Protocol)
+  if (address.protocol() == QAbstractSocket::IPv6Protocol)
   {
     ip_version = 6;
   }
@@ -170,35 +170,42 @@ bool UDP_Server::start(QStringList*)
   else
   {
     QHostAddress bind_address = address;
-    if(ip_version == 6)
+    if (ip_version == 6)
     {
       // IPv6 multicast needs to bind to AnyIPv6
       bind_address = QHostAddress::AnyIPv6;
     }
-    success &= _udp_socket->bind(
-      bind_address, port, QAbstractSocket::ShareAddress | QAbstractSocket::ReuseAddressHint);
+    success &= _udp_socket->bind(bind_address, port,
+                                 QAbstractSocket::ShareAddress |
+                                     QAbstractSocket::ReuseAddressHint);
     if (!success)
     {
-      qDebug() << tr("Couldn't bind IPv%3 UDP socket (%1, %2)").arg(address_str).arg(port).arg(ip_version);
+      qDebug() << tr("Couldn't bind IPv%3 UDP socket (%1, %2)")
+                      .arg(address_str)
+                      .arg(port)
+                      .arg(ip_version);
     }
-      
+
     // Add multicast group membership to all interfaces which support multicast.
     bool bound_one_interface = false;
     for (const auto& interface : QNetworkInterface::allInterfaces())
     {
       QNetworkInterface::InterfaceFlags iflags = interface.flags();
-      if (success && interface.isValid() && !iflags.testFlag(QNetworkInterface::IsLoopBack) &&
+      if (success && interface.isValid() &&
+          !iflags.testFlag(QNetworkInterface::IsLoopBack) &&
           iflags.testFlag(QNetworkInterface::CanMulticast) &&
           iflags.testFlag(QNetworkInterface::IsRunning))
       {
-        if(_udp_socket->joinMulticastGroup(address, interface))
+        if (_udp_socket->joinMulticastGroup(address, interface))
         {
           bound_one_interface = true;
         }
         else
         {
           qDebug() << tr("Couldn't join IPv%4 multicast group (%1, %2) on interface %3")
-            .arg(address_str).arg(port).arg(interface.name().arg(ip_version));
+                          .arg(address_str)
+                          .arg(port)
+                          .arg(interface.name().arg(ip_version));
         }
       }
     }
@@ -211,12 +218,18 @@ bool UDP_Server::start(QStringList*)
 
   if (success)
   {
-    qDebug() << tr("IPv%3 UDP listening on (%1, %2)").arg(address_str).arg(port).arg(ip_version);
+    qDebug() << tr("IPv%3 UDP listening on (%1, %2)")
+                    .arg(address_str)
+                    .arg(port)
+                    .arg(ip_version);
   }
   else
   {
     QMessageBox::warning(nullptr, tr("UDP Server"),
-                         tr("Couldn't bind to IPv%4 UDP server at (%1, %2)").arg(address_str).arg(port).arg(ip_version),
+                         tr("Couldn't bind to IPv%4 UDP server at (%1, %2)")
+                             .arg(address_str)
+                             .arg(port)
+                             .arg(ip_version),
                          QMessageBox::Ok);
     shutdown();
   }
