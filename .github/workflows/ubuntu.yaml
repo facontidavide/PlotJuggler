@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Sync repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install apt packages
         run: |

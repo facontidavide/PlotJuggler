@@ -33,9 +33,9 @@ if (NOT lua_FOUND)
         target_include_directories(lua SYSTEM PUBLIC $<BUILD_INTERFACE:${lua_SOURCE_DIR}>)
         set_property(TARGET lua PROPERTY POSITION_INDEPENDENT_CODE ON)
     endif()
- endif()
+endif()
 
-CPMAddPackage("gh:ThePhD/sol2@3.3.0")
+CPMAddPackage("gh:ThePhD/sol2@3.5.0")
 
 
 ##### data_tamer ######
@@ -43,7 +43,7 @@ CPMAddPackage("gh:ThePhD/sol2@3.3.0")
 CPMAddPackage(
     NAME data_tamer
     GITHUB_REPOSITORY PickNikRobotics/data_tamer
-    GIT_TAG 0.9.3
+    GIT_TAG 1.0.1
     DOWNLOAD_ONLY YES
 )
     
