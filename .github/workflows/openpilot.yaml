@@ -21,11 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: ${{ fromJson(
-           ((github.repository == 'commaai/plotjuggler') &&
-              ((github.event_name != 'pull_request') || 
-               (github.event.pull_request.head.repo.full_name == 'commaai/plotjuggler'))) && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
-    runs-on: ${{ (matrix.arch == 'aarch64') && 'buildjet-4vcpu-ubuntu-2204-arm' || 'ubuntu-20.04' }}
+        arch: ["x86_64", "aarch64"]
+    runs-on: ${{ (matrix.arch == 'aarch64') && 'ubuntu-24.04-arm' || 'ubuntu-20.04' }}
     steps:
     - uses: actions/checkout@v4
       with:
