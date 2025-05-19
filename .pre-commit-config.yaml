@@ -42,3 +42,14 @@ repos:
     hooks:
       - id: clang-format
         args: ['-fallback-style=none', '-i']
+
+  # Spell check
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        additional_dependencies:
+        -   tomli
+        args:
+            [--toml=./tools/pyproject.toml]
+        exclude_types: [svg]

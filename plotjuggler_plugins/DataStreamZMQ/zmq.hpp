@@ -441,7 +441,7 @@ public:
   // NOTE this constructor will include the null terminator
   // when called with a string literal.
   // An overload taking const char* can not be added because
-  // it would be preferred over this function and break compatiblity.
+  // it would be preferred over this function and break compatibility.
   template <class Char, size_t N,
             typename = typename std::enable_if<detail::is_char_type<Char>::value>::type>
   ZMQ_DEPRECATED("from 4.7.0, use constructors taking iterators, (pointer, size) "

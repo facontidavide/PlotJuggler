@@ -599,7 +599,7 @@ constexpr static std::array<BuiltinType, 11> _tsl_type_order = {
   BuiltinType::UINT64, BuiltinType::FLOAT32, BuiltinType::FLOAT64,
 };
 static std::unordered_map<std::uint64_t, std::vector<std::string>> _tsl_definitions;
-// Add a buffer for messages that are recieved before their definition
+// Add a buffer for messages that are received before their definition
 static std::unordered_map<
     std::uint64_t, std::queue<std::tuple<std::string, double, std::vector<double>>>>
     _tsl_values_buffer;

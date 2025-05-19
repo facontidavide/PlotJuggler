@@ -28,7 +28,7 @@ public:
   /// Method called when the timetracker is moved manually to a certain position.
   virtual void updateState(double current_time) = 0;
 
-  /// Method called when the "play" button is cheked.
+  /// Method called when the "play" button is checked.
   /// @param interval is seconds passed since the last time play was called.
   virtual void play(double interval) = 0;
 

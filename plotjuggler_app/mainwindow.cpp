@@ -1736,7 +1736,7 @@ void MainWindow::startStreamingPlugin(QString streamer_name)
     return;
   }
 
-  // The attemp to start the plugin may have succeded or failed
+  // The attempt to start the plugin may have succeeded or failed
   if (started)
   {
     {
@@ -2166,7 +2166,7 @@ bool MainWindow::loadLayoutFromFile(QString filename)
       snippets.push_back({ GetSnippetFromXML(custom_eq), custom_eq });
     }
     // A custom plot may depend on other custom plots.
-    // Reorder them to respect the mutual depencency.
+    // Reorder them to respect the mutual dependency.
     auto DependOn = [](const SnippetPair& a, const SnippetPair& b) {
       if (b.first.linked_source == a.first.alias_name)
       {
@@ -2636,7 +2636,7 @@ void MainWindow::on_streamingNotificationsChanged(int active_count)
   {
     enableStreamingNotificationsButton(true);
 
-    QString tooltipText = QString("%1 has %2 outstanding notitication%3")
+    QString tooltipText = QString("%1 has %2 outstanding notification%3")
                               .arg(_active_streamer_plugin->name())
                               .arg(active_count)
                               .arg(active_count > 1 ? "s" : "");

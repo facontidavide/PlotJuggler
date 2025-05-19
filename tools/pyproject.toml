@@ -1,0 +1,2 @@
+[tool.codespell]
+ignore-words = "tools/.codespell_ignore_words"

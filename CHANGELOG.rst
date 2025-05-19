@@ -554,7 +554,7 @@ Changelog for package plotjuggler
 * fix issue when starting streaming plugins (add placeholders)
 * string series seems to work
 * WIP
-* embracing C++17 and new data strucutre to accomodate more types
+* embracing C++17 and new data structure to accommodate more types
 * Updated support for windows build + installer (`#396 <https://github.com/facontidavide/PlotJuggler/issues/396>`_)
   Added win32build.bat batch file for easy windows builds (need to update QT path variables inside to correct ones in case it does not work)
 * Fix issue `#453 <https://github.com/facontidavide/PlotJuggler/issues/453>`_, `#419 <https://github.com/facontidavide/PlotJuggler/issues/419>`_ and `#405 <https://github.com/facontidavide/PlotJuggler/issues/405>`_ . Ulog path in Windows
@@ -616,7 +616,7 @@ Changelog for package plotjuggler
 * Add plugin folders in the preference dialog
 * fix issue `#370 <https://github.com/PlotJuggler/PlotJuggler/issues/370>`_: libDataStreamMQTT compilation with Clang
 * fix command line options
-* change the way ROS path are added t othe list of plugins
+* change the way ROS path are added to the list of plugins
 * fixing windows builds, for real this time. (`#379 <https://github.com/PlotJuggler/PlotJuggler/issues/379>`_)
 * fix bug when datapoints are cleared
 * remember the directory in the FunctionEditor
@@ -646,7 +646,7 @@ Changelog for package plotjuggler
 
 3.0.4 (2020-12-04)
 ------------------
-* Lua ans Sol updated (c++17
+* Lua and Sol updated (c++17
 * bug fix `#350 <https://github.com/PlotJuggler/PlotJuggler/issues/350>`_ (crash in lua)
 * Contributors: Davide Faconti
 
@@ -681,8 +681,8 @@ Changelog for package plotjuggler
 2.8.3 (2020-07-11)
 ------------------
 * more memes
-* "New versione vailable" improved
-* fix segmentation fault when tryin reconnect to ROS master
+* "New version available" improved
+* fix segmentation fault when trying reconnect to ROS master
 * Contributors: Davide Faconti
 
 2.8.2 (2020-07-07)
@@ -773,7 +773,7 @@ Changelog for package plotjuggler
 * Bugfix/executable (`#264 <https://github.com/facontidavide/PlotJuggler/issues/264>`_)
   * created launching script , installing and making use of it in the icon
   * ignoring temporary folders when creating binary locally
-  * corrected intsallation of script
+  * corrected installation of script
   * using PROGRAM to install it with executable permissions
   Co-authored-by: Jorge Rodriguez <jr@blue-ocean-robotics.com>
 * Feature/scalable icon (`#265 <https://github.com/facontidavide/PlotJuggler/issues/265>`_)
@@ -819,7 +819,7 @@ Changelog for package plotjuggler
 * Adding custom parser for Imu message (issue `#238 <https://github.com/facontidavide/PlotJuggler/issues/238>`_)
 * remember the last value in the function editor
 * minor update
-* Both javascript and Lua langiages can be selected in preferences
+* Both javascript and Lua languages can be selected in preferences
 * WIP to support both QML and Lua
 * fix menu bar size of PlotJuggler
 * scripting moved to Lua
@@ -1004,14 +1004,14 @@ Changelog for package plotjuggler
 * On MacOS there are several mime formats generated in addition to "curveslist", this fix will keep curves array with names collected instead of resetting it for each new mime format. (#159)
 * ulog_parser: fixed parsing of array topics (#157)
   Signed-off-by: Roman <bapstroman@gmail.com>
-* fis issue  #156 : catch expections
+* fix issue  #156 : catch exceptions
 * remember if the state of _action_clearBuffer
 * QSettings cleanups
 * Contributors: Alexey Zaparovanny, Davide Faconti, Roman Bapst
 
 2.1.6 (2019-03-07)
 ------------------
-* removed obsolate question
+* removed obsolete question
 * remember RemoveTimeOffset state
 * add clear buffer from data stream
 * reject non valid data
@@ -1071,7 +1071,7 @@ Changelog for package plotjuggler
 * cleanup
 * fix issue with Datetime and cheatsheet dialog
 * further stylesheet refinements
-* fixing visualization of fucntion editor dialog
+* fixing visualization of function editor dialog
 * fixing html of cheatsheet
 * Contributors: Davide Faconti
 
@@ -1127,7 +1127,7 @@ Changelog for package plotjuggler
 2.0.2 (2019-01-23)
 ------------------
 * should solve issue #127 : stop publishers when data reloaded or deleted
-* fixing issues whe disabling an already disabled publisher
+* fixing issues when disabling an already disabled publisher
 * solved problem with time slider (issue #125)
 * fix issue #126
 * StatePublisher improved
@@ -1271,7 +1271,7 @@ Changelog for package plotjuggler
 
 1.6.0 (2018-05-01)
 ------------------
-* fixed the most annoying bug ever (erroneus DragLeave). issue #80
+* fixed the most annoying bug ever (erroneous DragLeave). issue #80
 * fine tuning the widget spacing
 * added feature #83
 * fix issue #82
@@ -1452,7 +1452,7 @@ Changelog for package plotjuggler
 -------------------
 * added visualization policy to the TimeTracker
 * bug fix in RosoutPublisher
-* added try-catch guard to third party plugins method invokation
+* added try-catch guard to third party plugins method invocation
 * improving documentation
 * multiple fixes
 * shall periodically update the list of curves from the streamer
@@ -1503,7 +1503,7 @@ Changelog for package plotjuggler
 
 0.15.0 (2017-03-17)
 -------------------
-* Multiple problems fixed with streaming interface nd XY plots
+* Multiple problems fixed with streaming interface and XY plots
 * Contributors: Davide Faconti
 
 0.14.2 (2017-03-16)

@@ -21,7 +21,7 @@
     <depend  condition="$ROS_VERSION == 2">rclcpp</depend>
     <depend  condition="$ROS_VERSION == 2">fastcdr</depend>
 
-    <!-- Qt dependancies -->
+    <!-- Qt dependencies -->
     <depend>qtbase5-dev</depend>
     <depend>libqt5-svg-dev</depend>
     <depend>libqt5-websockets-dev</depend>
