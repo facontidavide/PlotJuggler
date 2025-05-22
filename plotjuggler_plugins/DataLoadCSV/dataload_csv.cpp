@@ -626,7 +626,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       msgBox.setWindowTitle(tr("Error reading file"));
       msgBox.setText(tr("The number of values at line %1 is %2,\n"
                         "but the expected number of columns is %3.\n"
-                        "Aborting...")
+                        "Ignore line and proceed or abort?")
                          .arg(linecount + 2)
                          .arg(string_items.size())
                          .arg(column_names.size()));
@@ -648,13 +648,21 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
                                  .arg(column_names.size())
                                  .arg(string_items.size()));
 
-      QPushButton* abortButton = msgBox.addButton(QMessageBox::Ok);
+      QPushButton* abortButton = msgBox.addButton(QMessageBox::Abort);
+      QPushButton* ignoreButton = msgBox.addButton(QMessageBox::Ignore);
 
       msgBox.setIcon(QMessageBox::Warning);
 
       msgBox.exec();
 
-      return false;
+      if (msgBox.clickedButton() == ignoreButton)
+      {
+        continue;
+      }
+      else
+      {
+        return false;
+      }
     }
 
     double timestamp = linecount;
