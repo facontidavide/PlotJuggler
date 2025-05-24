@@ -1,11 +1,6 @@
 function(find_or_download_data_tamer)
 
-    find_package(data_tamer QUIET)
-
-    if(data_tamer_FOUND)
-        message(STATUS "Found data_tamer in system")
-
-    elseif (NOT TARGET data_tamer_parser)
+    if (NOT TARGET data_tamer_parser)
         message(STATUS "data_tamer not found, downloading")
         CPMAddPackage(
             NAME data_tamer

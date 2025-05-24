@@ -5,11 +5,13 @@ function(find_or_download_zstd)
     if (ZSTD_FOUND)
         message(STATUS "Found ZSTD in system")
 
-        add_library(zstd::zstd INTERFACE IMPORTED)
-        set_target_properties(zstd::zstd PROPERTIES
-            INTERFACE_INCLUDE_DIRECTORIES "${ZSTD_INCLUDE_DIR}"
-            INTERFACE_LINK_LIBRARIES "${ZSTD_LIBRARY}"
-        )
+        if(NOT TARGET zstd::zstd)
+            add_library(zstd::zstd INTERFACE IMPORTED)
+            set_target_properties(zstd::zstd PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${ZSTD_INCLUDE_DIR}"
+                INTERFACE_LINK_LIBRARIES "${ZSTD_LIBRARY}"
+            )
+        endif()
 
     elseif(NOT TARGET libzstd_static)
         ### zstd ###

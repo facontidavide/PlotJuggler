@@ -5,11 +5,13 @@ function(find_or_download_lz4)
     if (LZ4_FOUND)
         message(STATUS "Found LZ4 in system")
 
-        add_library(lz4::lz4 INTERFACE IMPORTED)
-        set_target_properties(lz4::lz4 PROPERTIES
-            INTERFACE_INCLUDE_DIRECTORIES "${LZ4_INCLUDE_DIR}"
-            INTERFACE_LINK_LIBRARIES "${LZ4_LIBRARY}"
-        )
+        if(NOT TARGET lz4::lz4)
+            add_library(lz4::lz4 INTERFACE IMPORTED)
+            set_target_properties(lz4::lz4 PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${LZ4_INCLUDE_DIR}"
+                INTERFACE_LINK_LIBRARIES "${LZ4_LIBRARY}"
+            )
+        endif()
     elseif(NOT TARGET lz4_static)
         ### lz4 ###
         CPMAddPackage(
