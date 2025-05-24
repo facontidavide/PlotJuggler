@@ -1,6 +1,6 @@
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-find_package(Mosquitto QUIET)
+find_package(MOSQUITTO QUIET)
 
 if(MOSQUITTO_FOUND)
 

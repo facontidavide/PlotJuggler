@@ -19,7 +19,7 @@ target_link_libraries(ParserROS1
     ${Qt5Widgets_LIBRARIES}
     rosx_introspection
     plotjuggler_base
-    data_tamer_parser)
+    data_tamer::parser)
 
 add_library(ParserROS2 SHARED
     special_messages.cpp
@@ -30,7 +30,7 @@ target_link_libraries(ParserROS2
     ${Qt5Widgets_LIBRARIES}
     rosx_introspection
     plotjuggler_base
-    data_tamer_parser)
+    data_tamer::parser)
 
 install(TARGETS ParserROS1 ParserROS2
     DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )

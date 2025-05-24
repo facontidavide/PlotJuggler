@@ -3,6 +3,11 @@ add_definitions(-DQT_PLUGIN)
 
 QT5_WRAP_UI ( UI_SRC  dialog_mcap.ui  )
 
+include(${PROJECT_SOURCE_DIR}/cmake/find_or_download_lz4.cmake)
+find_or_download_lz4()
+
+include(${PROJECT_SOURCE_DIR}/cmake/find_or_download_zstd.cmake)
+find_or_download_zstd()
 
 if(NOT TARGET mcap)
     ### mcap ###
@@ -30,8 +35,8 @@ target_link_libraries(DataLoadMCAP PRIVATE
         ${Qt5Xml_LIBRARIES}
         ${Qt5Concurrent_LIBRARIES}
         plotjuggler_base
-        lz4::lz4_static
-        zstd::libzstd_static
+        lz4::lz4
+        zstd::zstd
         mcap
     )
 

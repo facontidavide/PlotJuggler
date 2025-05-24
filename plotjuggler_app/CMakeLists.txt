@@ -2,7 +2,6 @@
 set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories( ./ ../  ../include )
 
 QT5_ADD_RESOURCES (RES_SRC  resource.qrc )
 
@@ -118,20 +117,25 @@ target_include_directories(plotjuggler
     )
 
 target_link_libraries(plotjuggler
+    PRIVATE
         ${QT_LINK_LIBRARIES}
+        plotjuggler_base
         colorwidgets
         qt_advanced_docking
-        plotjuggler_base
         plotjuggler_qwt
         QCodeEditor
-        nlohmann_json
-        Lua::Lua
-        sol2
+        nlohmann_json::nlohmann_json
+        lua::lua
+        sol2::sol2
     )
 
 if(COMPILING_WITH_AMENT)
 
-    ament_target_dependencies(plotjuggler ament_index_cpp rclcpp)
+    target_link_libraries(plotjuggler PRIVATE
+        ament_index_cpp::ament_index_cpp
+        rclcpp::rclcpp
+    )
+
     install(TARGETS plotjuggler
         DESTINATION lib/${PROJECT_NAME} )
 else()

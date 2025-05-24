@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.16)
 
 PROJECT(plotjuggler LANGUAGES C CXX VERSION 3.10.4)
 
@@ -154,13 +154,17 @@ include_directories(
 
 include(FetchContent)
 include(cmake/CPM.cmake)
-include(cmake/find_or_download_dependencies.cmake)
 
-find_or_download_dependencies()
+include(cmake/find_or_download_lua.cmake)
+find_or_download_lua()
+
+include(cmake/find_or_download_data_tamer.cmake)
+find_or_download_data_tamer()
 
 add_subdirectory( 3rdparty/qwt/src )
 add_subdirectory( 3rdparty/QCodeEditor )
 add_subdirectory( 3rdparty/color_widgets )
+add_subdirectory( 3rdparty/json )
 add_subdirectory( 3rdparty/Qt-Advanced-Docking )
 
 if (NOT WIN32)
@@ -207,8 +211,8 @@ target_link_libraries(plotjuggler_base
     PUBLIC
         plotjuggler_qwt
     PRIVATE
-        Lua::Lua
-        sol2
+        lua::lua
+        sol2::sol2
     )
 
 target_include_directories(plotjuggler_base
@@ -239,7 +243,6 @@ elseif(COMPILING_WITH_AMENT)
         export_plotjuggler_qwt
         HAS_LIBRARY_TARGET)
     ament_package()
-
 else()
 
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -257,16 +260,16 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/PlotJuggler.desktop
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler.svg
         DESTINATION ${DESKTOP_ICON_DIR}  )
 
-######################## Main App, Libraries and Plugins ###################################
+# ######################## Main App, Libraries and Plugins ###################################
 
 add_subdirectory( plotjuggler_app )
 add_subdirectory( plotjuggler_plugins)
 
-# Install targets
+# # Install targets
 
 install(
      TARGETS
-        plotjuggler_base plotjuggler_qwt
+        plotjuggler_base plotjuggler_qwt sol2
      EXPORT ${PROJECT_NAME}Targets
      LIBRARY DESTINATION lib
      ARCHIVE DESTINATION lib
