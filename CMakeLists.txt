@@ -161,6 +161,7 @@ find_or_download_lua()
 include(cmake/find_or_download_data_tamer.cmake)
 find_or_download_data_tamer()
 
+add_subdirectory( 3rdparty/sol2-3.5.0 )
 add_subdirectory( 3rdparty/qwt/src )
 add_subdirectory( 3rdparty/QCodeEditor )
 add_subdirectory( 3rdparty/color_widgets )
@@ -269,7 +270,7 @@ add_subdirectory( plotjuggler_plugins)
 
 install(
      TARGETS
-        plotjuggler_base plotjuggler_qwt sol2
+        plotjuggler_base plotjuggler_qwt
      EXPORT ${PROJECT_NAME}Targets
      LIBRARY DESTINATION lib
      ARCHIVE DESTINATION lib

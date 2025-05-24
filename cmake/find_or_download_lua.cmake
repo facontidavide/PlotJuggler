@@ -37,24 +37,4 @@ function(find_or_download_lua)
         )
     endif()
 
-    ########################################
-
-    if(NOT TARGET lua::lua)
-        message(FATAL_ERROR "Lua not found, please install Lua or download it")
-    endif()
-
-    if (NOT TARGET sol2::sol2)
-        message(STATUS "Sol2 not found, downloading")
-        CPMAddPackage(
-            NAME sol2
-            GITHUB_REPOSITORY ThePhD/sol2
-            GIT_TAG v3.5.0
-            DOWNLOAD_ONLY YES
-        )
-
-        add_library(sol2 INTERFACE )
-        target_include_directories(sol2 INTERFACE "${sol2_SOURCE_DIR}/include")
-        add_library(sol2::sol2 ALIAS sol2)
-    endif()
-
 endfunction()
