@@ -161,11 +161,12 @@ find_or_download_lua()
 include(cmake/find_or_download_data_tamer.cmake)
 find_or_download_data_tamer()
 
-add_subdirectory( 3rdparty/sol2-3.5.0 )
+include(cmake/find_or_download_json.cmake)
+find_or_download_json()
+
 add_subdirectory( 3rdparty/qwt/src )
 add_subdirectory( 3rdparty/QCodeEditor )
 add_subdirectory( 3rdparty/color_widgets )
-add_subdirectory( 3rdparty/json )
 add_subdirectory( 3rdparty/Qt-Advanced-Docking )
 
 if (NOT WIN32)

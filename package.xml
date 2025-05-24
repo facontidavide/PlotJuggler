@@ -39,6 +39,7 @@
     <depend>protobuf-dev</depend>
     <depend>lua-dev</depend>
     <depend>mosquittopp-dev</depend>
+    <depend>nlohmann-json-dev</depend>
 
     <!-- The export tag contains other, unspecified, tags -->
     <export>
