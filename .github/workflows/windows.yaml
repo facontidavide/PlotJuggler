@@ -61,7 +61,7 @@ jobs:
         id: create_installer
         shell: pwsh
         run: |
-          xcopy install\lib\*.* installer\io.plotjuggler.application\data\lib /Y /S /f /z
+          xcopy install\bin\*.* installer\io.plotjuggler.application\data /Y /S /f /z
           windeployqt.exe --release installer\io.plotjuggler.application\data\plotjuggler.exe
           $tag = "${{ github.ref_name }}"
           $installerName = "PlotJuggler-Windows-installer-$tag.exe"
