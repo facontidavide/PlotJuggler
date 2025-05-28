@@ -43,6 +43,7 @@ jobs:
           dir: '${{ github.workspace }}/qt_installation/'
           cache: 'true'
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          tools: 'tools_ifw'
 
       - name: Conan install
         shell: pwsh
@@ -55,3 +56,20 @@ jobs:
         run: |
           cmake --preset conan-default -B build -DBUILDING_WITH_CONAN=ON -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Release .
           cmake --build build --config Release --target install
+
+      - name: Create installer using QT Installation Framework
+        id: create_installer
+        shell: pwsh
+        run: |
+          xcopy install\lib\*.* installer\io.plotjuggler.application\data\lib /Y /S /f /z
+          windeployqt.exe --release installer\io.plotjuggler.application\data\plotjuggler.exe
+          $tag = "${{ github.ref_name }}"
+          $installerName = "PlotJuggler-Windows-installer-$tag.exe"
+          binarycreator.exe --offline-only -c installer\config.xml -p installer $installerName
+          echo "installer_name=$installerName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.create_installer.outputs.installer_name }}
+          path: ${{ steps.create_installer.outputs.installer_name }}
