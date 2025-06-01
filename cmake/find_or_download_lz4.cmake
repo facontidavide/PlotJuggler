@@ -16,8 +16,7 @@ function(find_or_download_lz4)
         ### lz4 ###
         CPMAddPackage(
             NAME lz4
-            GITHUB_REPOSITORY lz4/lz4
-            GIT_TAG v1.10.0
+            URI https://github.com/lz4/lz4/archive/refs/tags/v1.10.0.zip
             DOWNLOAD_ONLY YES
         )
         file(GLOB LZ4_SOURCES ${lz4_SOURCE_DIR}/lib/*.c)

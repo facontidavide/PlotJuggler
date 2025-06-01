@@ -17,8 +17,7 @@ function(find_or_download_json)
         message(STATUS "nlohmann_json not found, downloading")
         CPMAddPackage(
             NAME nlohmann_json
-            GITHUB_REPOSITORY nlohmann/json
-            GIT_TAG v3.12.0
+            URI https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.zip
             DOWNLOAD_ONLY YES
         )
 

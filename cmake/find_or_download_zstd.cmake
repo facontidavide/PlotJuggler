@@ -17,8 +17,7 @@ function(find_or_download_zstd)
         ### zstd ###
         CPMAddPackage(
             NAME zstd
-            GITHUB_REPOSITORY facebook/zstd
-            GIT_TAG v1.5.6
+            URI https://github.com/facebook/zstd/archive/refs/tags/v1.5.7.zip
             DOWNLOAD_ONLY YES
         )
         set(ZSTD_BUILD_STATIC ON  CACHE BOOL " " FORCE)

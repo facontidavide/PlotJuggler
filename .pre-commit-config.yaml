@@ -13,7 +13,7 @@
 #
 # See https://github.com/pre-commit/pre-commit
 
-exclude: ^3rdparty/|3rdparty|^plotjuggler_base/include/PlotJuggler/contrib/
+exclude: cmake/CPM.cmake|^3rdparty/|3rdparty|^plotjuggler_base/include/PlotJuggler/contrib/
 repos:
 
   # Standard hooks
