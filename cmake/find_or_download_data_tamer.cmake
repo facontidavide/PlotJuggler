@@ -4,7 +4,7 @@ function(find_or_download_data_tamer)
         message(STATUS "data_tamer not found, downloading")
         CPMAddPackage(
             NAME data_tamer
-            URI https://github.com/PickNikRobotics/data_tamer/archive/refs/tags/1.0.3.zip
+            URL https://github.com/PickNikRobotics/data_tamer/archive/refs/tags/1.0.3.zip
             DOWNLOAD_ONLY YES
         )
 

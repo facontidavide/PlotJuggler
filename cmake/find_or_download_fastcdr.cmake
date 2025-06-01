@@ -10,7 +10,7 @@ function(find_or_download_fastcdr)
         message(STATUS "fastcdr not found, downloading")
         CPMAddPackage(
             NAME fastcdr_imported
-            URI https://github.com/eProsima/Fast-CDR/archive/refs/tags/v2.3.0.zip
+            URL https://github.com/eProsima/Fast-CDR/archive/refs/tags/v2.3.0.zip
             OPTIONS "BUILD_SHARED_LIBS OFF"
         )
     endif()
