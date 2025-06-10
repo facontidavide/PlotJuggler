@@ -11,7 +11,7 @@ function(find_or_download_fastcdr)
         CPMAddPackage(
             NAME fastcdr_imported
             URL https://github.com/eProsima/Fast-CDR/archive/refs/tags/v2.3.0.zip
-            OPTIONS "BUILD_SHARED_LIBS OFF"
+            OPTIONS "BUILD_SHARED_LIBS OFF" "BUILD_TESTING OFF"
         )
     endif()
 

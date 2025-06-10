@@ -11,25 +11,19 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      # Step 1: Set up ROS
+
+      - name: Cache apt packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: software-properties-common qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq3-dev liblz4-dev libzstd-dev libmosquitto-dev
+          version: 1.0
+
+      # Set up ROS
       - uses: ros-tooling/setup-ros@v0.7
         with:
           required-ros-distributions: humble
 
-      # SteCache ROS dependencies
-      - name: Cache ROS dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.ros
-            /tmp/rosdep
-            /opt/ros/humble
-          key: ${{ runner.os }}-ros2-humble-${{ hashFiles('**/package.xml') }}-rosdep
-          restore-keys: |
-            ${{ runner.os }}-ros2-humble-${{ hashFiles('**/package.xml') }}-
-            ${{ runner.os }}-ros2-humble-
-
-      # Step 3: Run ROS CI
+      # Run ROS CI
       - uses: ros-tooling/action-ros-ci@v0.4
         with:
           package-name: plotjuggler

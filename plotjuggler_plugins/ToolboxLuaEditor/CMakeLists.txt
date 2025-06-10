@@ -21,7 +21,6 @@ target_link_libraries(ToolboxLuaEditor
     plotjuggler_qwt
     QCodeEditor
     lua::lua
-    sol2::sol2
     )
 
 install(TARGETS ToolboxLuaEditor DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )

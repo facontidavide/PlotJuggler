@@ -21,20 +21,11 @@ jobs:
       - name: Sync repository
         uses: actions/checkout@v4
 
-      - name: Install apt packages
-        run: |
-              sudo apt update && sudo apt -y install \
-              software-properties-common \
-              qtbase5-dev \
-              libqt5svg5-dev \
-              libqt5websockets5-dev \
-              libqt5opengl5-dev \
-              libqt5x11extras5-dev \
-              libprotoc-dev \
-              libzmq3-dev \
-              liblz4-dev \
-              libzstd-dev \
-              ccache
+      - name: Cache apt packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: software-properties-common qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq3-dev liblz4-dev libzstd-dev ccache libmosquitto-dev
+          version: 1.0
 
       - name: Prepare ccache
         shell: bash

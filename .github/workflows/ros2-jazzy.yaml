@@ -1,4 +1,4 @@
-name: ros2-rolling
+name: ros2-jazzy
 
 on:
   push:
@@ -10,6 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Cache apt packages
         uses: awalsh128/cache-apt-pkgs-action@latest
@@ -20,10 +21,10 @@ jobs:
       # Set up ROS
       - uses: ros-tooling/setup-ros@v0.7
         with:
-          required-ros-distributions: rolling
+          required-ros-distributions: jazzy
 
       # Run ROS CI
       - uses: ros-tooling/action-ros-ci@v0.3
         with:
           package-name: plotjuggler
-          target-ros2-distro: rolling
+          target-ros2-distro: jazzy
