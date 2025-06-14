@@ -495,6 +495,12 @@ void CurveListPanel::onCustomSelectionChanged(const QItemSelection&,
   ui->buttonEditCustom->setToolTip(enabled ? "Edit the selected custom timeserie" :
                                              "Select a single custom Timeserie to Edit "
                                              "it");
+
+  enabled = (selected.size() > 0);
+  ui->buttonDeleteCustom->setEnabled(enabled);
+  ui->buttonDeleteCustom->setToolTip(enabled ? "Delete the selected custom timeseries" :
+                                               "Select one or more custom timeseries to"
+                                               " delete them");
 }
 
 void CurveListPanel::on_buttonEditCustom_clicked()
@@ -503,6 +509,18 @@ void CurveListPanel::on_buttonEditCustom_clicked()
   if (selected.size() == 1)
   {
     editMathPlot(selected.front());
+  }
+}
+
+void CurveListPanel::on_buttonDeleteCustom_clicked()
+{
+  auto selected = _custom_view->getSelectedNames();
+  if (selected.size() >= 1)
+  {
+    for (const auto& curve_name : selected)
+    {
+      removeCurve(curve_name);
+    }
   }
 }
 
@@ -525,6 +543,7 @@ void CurveListPanel::on_stylesheetChanged(QString theme)
   _style_dir = theme;
   ui->buttonAddCustom->setIcon(LoadSvg(":/resources/svg/add_tab.svg", theme));
   ui->buttonEditCustom->setIcon(LoadSvg(":/resources/svg/pencil-edit.svg", theme));
+  ui->buttonDeleteCustom->setIcon(LoadSvg(":/resources/svg/trash.svg", theme));
   ui->pushButtonTrash->setIcon(LoadSvg(":/resources/svg/trash.svg", theme));
 
   auto ChangeIconVisitor = [&](QTreeWidgetItem* cell) {

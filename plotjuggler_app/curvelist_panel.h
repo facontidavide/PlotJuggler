@@ -70,6 +70,8 @@ private slots:
 
   void on_buttonEditCustom_clicked();
 
+  void on_buttonDeleteCustom_clicked();
+
   void onCustomSelectionChanged(const QItemSelection& selected,
                                 const QItemSelection& deselected);
 
