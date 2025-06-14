@@ -6,21 +6,51 @@
 #include <QPushButton>
 #include <QElapsedTimer>
 
+#include <mcap/reader.hpp>
+
 const QString DialogMCAP::prefix = "DialogLoadMCAP::";
 
-DialogMCAP::DialogMCAP(const std::unordered_map<int, mcap::ChannelPtr>& channels,
-                       const std::unordered_map<int, mcap::SchemaPtr>& schemas,
-                       std::optional<mcap::LoadParams> default_parameters,
-                       QWidget* parent)
-  : QDialog(parent), ui(new Ui::dialog_mcap)
+DialogMCAP::DialogMCAP(
+    const std::unordered_map<int, mcap::ChannelPtr>& channels,
+    const std::unordered_map<int, mcap::SchemaPtr>& schemas,
+    const std::unordered_map<uint16_t, uint64_t>& messages_count_by_channelID,
+    std::optional<mcap::LoadParams> default_parameters, QWidget* parent)
+  : QDialog(parent)
+  , ui(new Ui::dialog_mcap)
+  , _select_all(QKeySequence(Qt::CTRL + Qt::Key_A), this)
+  , _deselect_all(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_A), this)
 {
   ui->setupUi(this);
+
+  if (messages_count_by_channelID.empty())
+  {
+    ui->tableWidget->horizontalHeader()->hideSection(3);
+  }
+
+  _select_all.setContext(Qt::WindowShortcut);
+  _deselect_all.setContext(Qt::WindowShortcut);
+
+  connect(&_select_all, &QShortcut::activated, ui->tableWidget, [this]() {
+    for (int row = 0; row < ui->tableWidget->rowCount(); row++)
+    {
+      if (!ui->tableWidget->isRowHidden(row) &&
+          !ui->tableWidget->item(row, 0)->isSelected())
+      {
+        ui->tableWidget->selectRow(row);
+      }
+    }
+  });
+
+  connect(&_deselect_all, &QShortcut::activated, ui->tableWidget,
+          &QAbstractItemView::clearSelection);
 
   ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
   ui->tableWidget->horizontalHeader()->setSectionResizeMode(
       1, QHeaderView::ResizeToContents);
   ui->tableWidget->horizontalHeader()->setSectionResizeMode(
       2, QHeaderView::ResizeToContents);
+  ui->tableWidget->horizontalHeader()->setSectionResizeMode(
+      3, QHeaderView::ResizeToContents);
 
   ui->tableWidget->setRowCount(channels.size());
 
@@ -34,6 +64,9 @@ DialogMCAP::DialogMCAP(const std::unordered_map<int, mcap::ChannelPtr>& channels
     params.clamp_large_arrays = settings.value(prefix + "clamp", true).toBool();
     params.max_array_size = settings.value(prefix + "max_array", 500).toInt();
     params.use_timestamp = settings.value(prefix + "use_timestamp", false).toBool();
+    params.use_mcap_log_time =
+        settings.value(prefix + "use_mcap_log_time", false).toBool();
+    params.sorted_column = settings.value(prefix + "sorted_column", 0).toInt();
   }
   else
   {
@@ -50,8 +83,19 @@ DialogMCAP::DialogMCAP(const std::unordered_map<int, mcap::ChannelPtr>& channels
   }
   ui->spinBox->setValue(params.max_array_size);
   ui->checkBoxUseTimestamp->setChecked(params.use_timestamp);
+  if (params.use_mcap_log_time)
+  {
+    ui->radioLogTime->setChecked(true);
+  }
+  else
+  {
+    ui->radioPubTime->setChecked(true);
+  }
 
   int row = 0;
+  ui->tableWidget->setFocusPolicy(Qt::NoFocus);
+  const int columns_count = ui->tableWidget->columnCount();
+
   for (const auto& [id, channel] : channels)
   {
     auto topic = QString::fromStdString(channel->topic);
@@ -63,13 +107,32 @@ DialogMCAP::DialogMCAP(const std::unordered_map<int, mcap::ChannelPtr>& channels
     ui->tableWidget->setItem(
         row, 2, new QTableWidgetItem(QString::fromStdString(schema->encoding)));
 
-    if (params.selected_topics.contains(topic))
+    auto count_it = messages_count_by_channelID.find(id);
+    int message_count =
+        (count_it != messages_count_by_channelID.end()) ? count_it->second : 0;
+    ui->tableWidget->setItem(row, 3,
+                             new QTableWidgetItem(QString::number(message_count)));
+
+    for (int col = 0; col < columns_count; ++col)
+    {
+      QTableWidgetItem* it = ui->tableWidget->item(row, col);
+      if (message_count == 0)
+      {
+        it->setFlags(it->flags() & ~(Qt::ItemIsEnabled | Qt::ItemIsSelectable));
+        it->setForeground(QBrush(Qt::gray));
+      }
+    }
+    if (message_count != 0 && params.selected_topics.contains(topic))
     {
       ui->tableWidget->selectRow(row);
     }
     row++;
   }
-  ui->tableWidget->sortByColumn(0, Qt::SortOrder::DescendingOrder);
+  auto sort_order = (params.sorted_column >= columns_count) ?
+                        Qt::SortOrder::DescendingOrder :
+                        Qt::SortOrder::AscendingOrder;
+  auto sort_count = params.sorted_column % columns_count;
+  ui->tableWidget->sortByColumn(sort_count, sort_order);
 }
 
 DialogMCAP::~DialogMCAP()
@@ -83,6 +146,7 @@ mcap::LoadParams DialogMCAP::getParams() const
   params.max_array_size = ui->spinBox->value();
   params.clamp_large_arrays = ui->radioClamp->isChecked();
   params.use_timestamp = ui->checkBoxUseTimestamp->isChecked();
+  params.use_mcap_log_time = ui->radioLogTime->isChecked();
 
   QItemSelectionModel* select = ui->tableWidget->selectionModel();
   QStringList selected_topics;
@@ -107,10 +171,17 @@ void DialogMCAP::accept()
   bool clamp_checked = ui->radioClamp->isChecked();
   int max_array = ui->spinBox->value();
   bool use_timestamp = ui->checkBoxUseTimestamp->isChecked();
+  bool use_mcap_log_time = ui->radioLogTime->isChecked();
+  int sort_column = ui->tableWidget->horizontalHeader()->sortIndicatorSection();
+  Qt::SortOrder sortOrder = ui->tableWidget->horizontalHeader()->sortIndicatorOrder();
+  // apply an offsert to descending order
+  sort_column += (sortOrder == Qt::DescendingOrder) ? ui->tableWidget->columnCount() : 0;
 
   settings.setValue(prefix + "clamp", clamp_checked);
   settings.setValue(prefix + "max_array", max_array);
   settings.setValue(prefix + "use_timestamp", use_timestamp);
+  settings.setValue(prefix + "use_mcap_log_time", use_mcap_log_time);
+  settings.setValue(prefix + "sorted_column", sort_column);
 
   QItemSelectionModel* select = ui->tableWidget->selectionModel();
   QStringList selected_topics;

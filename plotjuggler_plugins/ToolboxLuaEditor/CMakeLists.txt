@@ -19,8 +19,8 @@ target_link_libraries(ToolboxLuaEditor
     ${Qt5Xml_LIBRARIES}
     plotjuggler_base
     plotjuggler_qwt
-    lua_static
     QCodeEditor
+    lua::lua
     )
 
 install(TARGETS ToolboxLuaEditor DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )

@@ -81,7 +81,7 @@ add_library(QCodeEditor STATIC
 )
 
 target_include_directories(QCodeEditor PUBLIC
-    include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
 if(CMAKE_COMPILER_IS_GNUCXX)

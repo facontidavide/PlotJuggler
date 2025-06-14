@@ -1,13 +1,6 @@
 
-if(BUILDING_WITH_CONAN)
-  message(STATUS "Finding MOSQUITTO with conan")
-  find_package(mosquitto REQUIRED)
-  set(MOSQUITTO_FOUND ON)
-else()
-  message(STATUS "Finding MOSQUITTO without package managers")
-  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-  find_package(Mosquitto REQUIRED)
-endif()
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+find_package(MOSQUITTO QUIET)
 
 if(MOSQUITTO_FOUND)
 

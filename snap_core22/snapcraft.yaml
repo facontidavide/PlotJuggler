@@ -58,7 +58,7 @@ parts:
         craftctl set version="$version"
         craftctl set grade="$grade"
 
-        # Necessary to bypass XDG desktop portals because ROS 2 bags metadata.yaml are refering db3 files relatively
+        # Necessary to bypass XDG desktop portals because ROS 2 bags metadata.yaml are referring db3 files relatively
         sed -i '/QApplication app(new_argc, new_argv.data());/a QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs);' plotjuggler_app/main.cpp
 
   plotjuggler-ros2:
@@ -71,7 +71,7 @@ parts:
       - -DBUILD_DOCS=OFF
       # point to previously build plotjuggler
       - -Dplotjuggler_DIR:PATH=$CRAFT_STAGE/usr/local/lib/cmake/plotjuggler
-      # Due to https://github.com/ament/ament_cmake/issues/189 implicity OpenSSL link breaks. So we change CMAKE_PREFIX_PATH and not CMAKE_FIND_ROOT_PATH
+      # Due to https://github.com/ament/ament_cmake/issues/189 implicitly OpenSSL link breaks. So we change CMAKE_PREFIX_PATH and not CMAKE_FIND_ROOT_PATH
       - -DCMAKE_PREFIX_PATH=$(echo $SNAPCRAFT_CMAKE_ARGS | awk -F= '{printf("%s/usr/lib/x86_64-linux-gnu/cmake/Qt5", $2)}')
       - --event-handlers=console_direct+
     build-packages:

@@ -1,10 +1,10 @@
 name: pre-commit
 
 on:
-  pull_request:
   push:
     branches: [main]
-
+  pull_request:
+    types: [opened, synchronize]
 jobs:
   pre-commit:
     runs-on: ubuntu-latest

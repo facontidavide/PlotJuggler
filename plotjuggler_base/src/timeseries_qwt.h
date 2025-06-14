@@ -13,7 +13,7 @@
 
 using namespace PJ;
 
-// wrapper to Timeseries inclduing a time offset
+// wrapper to Timeseries including a time offset
 class QwtSeriesWrapper : public QwtSeriesData<QPointF>
 {
 private:

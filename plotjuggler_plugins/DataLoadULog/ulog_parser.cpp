@@ -153,10 +153,6 @@ void ULogParser::parseDataMessage(const ULogParser::Subscription& sub, char* mes
   }
   Timeseries& timeseries = ts_it->second;
 
-  uint64_t time_val = *reinterpret_cast<uint64_t*>(message);
-  timeseries.timestamps.push_back(time_val);
-  message += sizeof(uint64_t);
-
   size_t index = 0;
   parseSimpleDataMessage(timeseries, sub.format, message, &index);
 }
@@ -173,8 +169,16 @@ char* ULogParser::parseSimpleDataMessage(Timeseries& timeseries, const Format* f
       continue;
     }
 
+    bool timestamp_done = false;
     for (int array_pos = 0; array_pos < field.array_size; array_pos++)
     {
+      if (*index == format->timestamp_idx && !timestamp_done)
+      {
+        timestamp_done = true;
+        uint64_t time_val = *reinterpret_cast<uint64_t*>(message);
+        timeseries.timestamps.push_back(time_val);
+        message += sizeof(uint64_t);
+      }
       double value = 0;
       switch (field.type)
       {
@@ -619,13 +623,19 @@ bool ULogParser::readFormat(DataStream& datastream, uint16_t msg_size)
 
     if (field.type == UINT64 && field_name == StringView("timestamp"))
     {
-      // skip
+      format.timestamp_idx = format.fields.size();
     }
     else
     {
       field.field_name = field_name.to_string();
       format.fields.push_back(field);
     }
+  }
+
+  if (format.timestamp_idx < 0)
+  {
+    // Required timestamp is not found in definition
+    return false;
   }
 
   format.name = name;

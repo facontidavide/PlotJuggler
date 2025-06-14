@@ -69,3 +69,7 @@ _deps
 # Clangd
 .cache
 /snap/*
+*.AppImage
+/linuxdeploy/*
+/linuxdeploy-plugin-qt/*
+/plotjuggler_plugins/ParserIDL/build*

@@ -1,0 +1,30 @@
+name: ros2-jazzy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Cache apt packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: software-properties-common qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq3-dev liblz4-dev libzstd-dev libmosquitto-dev
+          version: 1.0
+
+      # Set up ROS
+      - uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: jazzy
+
+      # Run ROS CI
+      - uses: ros-tooling/action-ros-ci@v0.3
+        with:
+          package-name: plotjuggler
+          target-ros2-distro: jazzy

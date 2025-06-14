@@ -34,7 +34,6 @@
 #include "transforms/absolute_transform.h"
 
 #include "new_release_dialog.h"
-#include "ui_changelog_dialog.h"
 
 #ifdef COMPILED_WITH_CATKIN
 #include <ros/ros.h>
@@ -57,26 +56,6 @@ inline int GetVersionNumber(QString str)
   int minor = online_version[1].toInt();
   int patch = online_version[2].toInt();
   return major * 10000 + minor * 100 + patch;
-}
-
-void ShowChangelogDialog()
-{
-  QDialog* dialog = new QDialog();
-  auto ui = new Ui::ChangelogDialog();
-  ui->setupUi(dialog);
-
-  QObject::connect(ui->buttonChangelog, &QPushButton::clicked, dialog, [](bool) {
-    QDesktopServices::openUrl(QUrl("https://bit.ly/plotjuggler-update"));
-    QSettings settings;
-    settings.setValue("Changelog/first", false);
-  });
-
-  QObject::connect(ui->checkBox, &QCheckBox::toggled, dialog, [](bool toggle) {
-    QSettings settings;
-    settings.setValue("Changelog/dont", toggle);
-  });
-
-  dialog->exec();
 }
 
 void OpenNewReleaseDialog(QNetworkReply* reply)
@@ -114,12 +93,7 @@ QPixmap getFunnySplashscreen()
 
   auto getNum = []() {
     const int last_image_num = 94;
-    int n = rand() % (last_image_num + 2);
-    if (n > last_image_num)
-    {
-      n = 0;
-    }
-    return n;
+    return rand() % (last_image_num);
   };
   std::set<int> previous_set;
   std::list<int> previous_nums;
@@ -398,16 +372,8 @@ int main(int argc, char* argv[])
    * reject a message that brings a little of happiness into your day, spent analyzing
    * data. Please don't do it.
    */
-
-  bool first_changelog = settings.value("Changelog/first", true).toBool();
-  bool dont_changelog = settings.value("Changelog/dont", false).toBool();
-
-  if (first_changelog && !dont_changelog)
-  {
-    ShowChangelogDialog();
-  }
-  else if (!parser.isSet(nosplash_option) &&
-           !(parser.isSet(loadfile_option) || parser.isSet(layout_option)))
+  if (!parser.isSet(nosplash_option) &&
+      !(parser.isSet(loadfile_option) || parser.isSet(layout_option)))
   // if(false) // if you uncomment this line, a kitten will die somewhere in the world.
   {
     QPixmap main_pixmap;

@@ -1,6 +1,11 @@
 name: windows
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, closed]
 
 jobs:
 
@@ -10,32 +15,43 @@ jobs:
       fail-fast: false
       matrix:
         windows-version:
-          - 'windows-2019'
           - 'windows-latest'
     env:
       CXXFLAGS: /MP
 
     steps:
       - name: Sync repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Cache Qt
-        id: cache-qt
-        uses: actions/cache@v1  # not v2!
+      - name: Install Conan
+        uses: turtlebrowser/get-conan@main
+
+      - name: Cache Qt and Conan
+        uses: actions/cache@v4
         with:
-          path: '${{ github.workspace }}/qt_installation/'
-          key: ${{ runner.os }}-QtCache
+          path: |
+            ${{ github.workspace }}/qt_installation/
+            ~/.conan2/
+          key: ${{ runner.os }}-${{ hashFiles('**/qt_installation/**', '**/conanfile.txt') }}
+          restore-keys: ${{ runner.os }}-
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v2.13.0
+        uses: jurplel/install-qt-action@v4
         with:
           version: '5.15.2'
           arch: 'win64_msvc2019_64'
           dir: '${{ github.workspace }}/qt_installation/'
+          cache: 'true'
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
+
+      - name: Conan install
+        shell: pwsh
+        run: |
+          conan profile detect
+          conan install . -of build --build=missing -pr:b=default -s build_type=Release
 
       - name: Build Plotjuggler
         shell: pwsh
-        run: >
-          cmake -Ax64 -T host=x64 -B build -DCMAKE_INSTALL_PREFIX=install PlotJuggler;
-          cmake --build build --target install
+        run: |
+          cmake --preset conan-default -B build -DBUILDING_WITH_CONAN=ON -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Release .
+          cmake --build build --config Release --target install

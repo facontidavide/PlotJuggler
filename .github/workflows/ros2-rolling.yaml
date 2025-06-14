@@ -1,17 +1,29 @@
 name: ros2-rolling
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize]
 
 jobs:
-  industrial_ci:
-    strategy:
-      matrix:
-        env:
-          - {ROS_DISTRO: rolling, ROS_REPO: main}
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: 'ros-industrial/industrial_ci@master'
-        env: ${{matrix.env}}
+      - name: Cache apt packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-            package-name: plotjuggler
+          packages: software-properties-common qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq3-dev liblz4-dev libzstd-dev libmosquitto-dev
+          version: 1.0
+
+      # Set up ROS
+      - uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: rolling
+
+      # Run ROS CI
+      - uses: ros-tooling/action-ros-ci@v0.3
+        with:
+          package-name: plotjuggler
+          target-ros2-distro: rolling

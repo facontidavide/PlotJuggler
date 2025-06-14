@@ -2,7 +2,6 @@
 set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories( ./ ../  ../include )
 
 QT5_ADD_RESOURCES (RES_SRC  resource.qrc )
 
@@ -15,7 +14,6 @@ QT5_WRAP_UI ( UI_SRC
     preferences_dialog.ui
     suggest_dialog.ui
     new_release_dialog.ui
-    changelog_dialog.ui
     multifile_prefix.ui
     colormap_editor.ui
     colormap_selector.ui
@@ -111,29 +109,31 @@ if (NOT WIN32)
     add_backward(plotjuggler)
 endif()
 
-target_link_libraries(plotjuggler
-    ${QT_LINK_LIBRARIES}
-    colorwidgets
-    lua_static
-    qt_advanced_docking
-    plotjuggler_base
-    plotjuggler_qwt
-    QCodeEditor
+target_include_directories(plotjuggler
+    PRIVATE
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/3rdparty/color_widgets/include>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/3rdparty/Qt-Advanced-Docking/include>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/3rdparty/QCodeEditor/include>
     )
 
-if(COMPILING_WITH_CATKIN)
+target_link_libraries(plotjuggler
+    PRIVATE
+        ${QT_LINK_LIBRARIES}
+        plotjuggler_base
+        colorwidgets
+        qt_advanced_docking
+        plotjuggler_qwt
+        QCodeEditor
+        nlohmann_json::nlohmann_json
+        lua::lua
+    )
 
-    target_link_libraries(plotjuggler ${catkin_LIBRARIES} )
+if(COMPILING_WITH_AMENT)
 
-    install(TARGETS plotjuggler
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-        )
-
-elseif(COMPILING_WITH_AMENT)
-
-    ament_target_dependencies(plotjuggler ament_index_cpp rclcpp)
+    target_link_libraries(plotjuggler PRIVATE
+        ament_index_cpp::ament_index_cpp
+        rclcpp::rclcpp
+    )
 
     install(TARGETS plotjuggler
         DESTINATION lib/${PROJECT_NAME} )

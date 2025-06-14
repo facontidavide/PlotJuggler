@@ -11,6 +11,7 @@
 #include <QInputDialog>
 #include <QPushButton>
 #include <QSyntaxStyle>
+#include <QRadioButton>
 
 #include <array>
 #include <set>
@@ -121,7 +122,7 @@ DataLoadCSV::DataLoadCSV()
   connect(_ui->listWidgetSeries, &QListWidget::itemDoubleClicked, this,
           [this]() { emit _ui->buttonBox->accepted(); });
 
-  connect(_ui->checkBoxDateFormat, &QCheckBox::toggled, this,
+  connect(_ui->radioCustomTime, &QRadioButton::toggled, this,
           [this](bool checked) { _ui->lineEditDateFormat->setEnabled(checked); });
 
   connect(_ui->dateTimeHelpButton, &QPushButton::clicked, this,
@@ -300,8 +301,15 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
 
   _ui->radioButtonIndex->setChecked(
       settings.value("DataLoadCSV.useIndex", false).toBool());
-  _ui->checkBoxDateFormat->setChecked(
-      settings.value("DataLoadCSV.useDateFormat", false).toBool());
+  bool use_custom_time = settings.value("DataLoadCSV.useDateFormat", false).toBool();
+  if (use_custom_time)
+  {
+    _ui->radioCustomTime->setChecked(true);
+  }
+  else
+  {
+    _ui->radioAutoTime->setChecked(true);
+  }
   _ui->lineEditDateFormat->setText(
       settings.value("DataLoadCSV.dateFormat", "yyyy-MM-dd hh:mm:ss").toString());
 
@@ -381,7 +389,7 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
 
   settings.setValue("DataLoadCSV.geometry", _dialog->saveGeometry());
   settings.setValue("DataLoadCSV.useIndex", _ui->radioButtonIndex->isChecked());
-  settings.setValue("DataLoadCSV.useDateFormat", _ui->checkBoxDateFormat->isChecked());
+  settings.setValue("DataLoadCSV.useDateFormat", _ui->radioCustomTime->isChecked());
   settings.setValue("DataLoadCSV.dateFormat", _ui->lineEditDateFormat->text());
 
   if (res == QDialog::Rejected)
@@ -404,6 +412,72 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
   }
 
   return TIME_INDEX_NOT_DEFINED;
+}
+
+std::optional<double> AutoParseTimestamp(const QString& str)
+{
+  bool is_number = false;
+  QString str_trimmed = str.trimmed();
+  double val = 0.0;
+
+  // Support the case where the timestamp is in nanoseconds / microseconds
+  int64_t ts = str.toLong(&is_number);
+  const int64_t first_ts = 1400000000;  // July 14, 2017
+  const int64_t last_ts = 2000000000;   // May 18, 2033
+  if (is_number)
+  {
+    // check if it is an absolute time in nanoseconds.
+    // convert to seconds if it is
+    if (ts > first_ts * 1e9 && ts < last_ts * 1e9)
+    {
+      val = double(ts) * 1e-9;
+    }
+    else if (ts > first_ts * 1e6 && ts < last_ts * 1e6)
+    {
+      // check if it is an absolute time in microseconds.
+      // convert to seconds if it is
+      val = double(ts) * 1e-6;
+    }
+    else
+    {
+      val = double(ts);
+    }
+  }
+  else
+  {
+    // Try a double value (seconds)
+    val = str.toDouble(&is_number);
+  }
+
+  // handle numbers with comma instead of point as decimal separator
+  if (!is_number)
+  {
+    static QLocale locale_with_comma(QLocale::German);
+    val = locale_with_comma.toDouble(str, &is_number);
+  }
+  if (!is_number)
+  {
+    QDateTime ts = QDateTime::fromString(str, Qt::ISODateWithMs);
+    if (ts.isValid())
+    {
+      return double(ts.toMSecsSinceEpoch()) / 1000.0;
+    }
+    else
+    {
+      return std::nullopt;
+    }
+  }
+  return is_number ? std::optional<double>(val) : std::nullopt;
+};
+
+std::optional<double> FormatParseTimestamp(const QString& str, const QString& format)
+{
+  QDateTime ts = QDateTime::fromString(str, format);
+  if (ts.isValid())
+  {
+    return double(ts.toMSecsSinceEpoch()) / 1000.0;
+  }
+  return std::nullopt;
 }
 
 bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data)
@@ -491,59 +565,8 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
 
   //-----------------
   double prev_time = std::numeric_limits<double>::lowest();
-  bool parse_date_format = _ui->checkBoxDateFormat->isChecked();
-  QString format_string = _ui->lineEditDateFormat->text();
-
-  auto ParseTimestamp = [&](QString str, bool& is_number) {
-    QString str_trimmed = str.trimmed();
-    double val = 0.0;
-    is_number = false;
-    // Support the case where the timestamp is in nanoseconds / microseconds
-    int64_t ts = str_trimmed.toLong(&is_number);
-    const int64_t first_ts = 1400000000;  // July 14, 2017
-    const int64_t last_ts = 2000000000;   // May 18, 2033
-    if (is_number)
-    {
-      // check if it is an absolute time in nanoseconds.
-      // convert to seconds if it is
-      if (ts > first_ts * 1e9 && ts < last_ts * 1e9)
-      {
-        val = double(ts) * 1e-9;
-      }
-      else if (ts > first_ts * 1e6 && ts < last_ts * 1e6)
-      {
-        // check if it is an absolute time in microseconds.
-        // convert to seconds if it is
-        val = double(ts) * 1e-6;
-      }
-      else
-      {
-        val = double(ts);
-      }
-    }
-    else
-    {
-      // Try a double value (seconds)
-      val = str_trimmed.toDouble(&is_number);
-    }
-
-    // handle numbers with comma instead of point as decimal separator
-    if (!is_number)
-    {
-      static QLocale locale_with_comma(QLocale::German);
-      val = locale_with_comma.toDouble(str_trimmed, &is_number);
-    }
-    if (!is_number && parse_date_format && !format_string.isEmpty())
-    {
-      QDateTime ts = QDateTime::fromString(str_trimmed, format_string);
-      is_number = ts.isValid();
-      if (is_number)
-      {
-        val = ts.toMSecsSinceEpoch() / 1000.0;
-      }
-    }
-    return val;
-  };
+  const QString format_string = _ui->lineEditDateFormat->text();
+  const bool parse_date_format = _ui->radioCustomTime->isChecked();
 
   auto ParseNumber = [&](QString str, bool& is_number) {
     QString str_trimmed = str.trimmed();
@@ -554,9 +577,17 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       static QLocale locale_with_comma(QLocale::German);
       val = locale_with_comma.toDouble(str_trimmed, &is_number);
     }
-    if (!is_number && parse_date_format && !format_string.isEmpty())
+    if (!is_number)
     {
-      QDateTime ts = QDateTime::fromString(str_trimmed, format_string);
+      QDateTime ts;
+      if (parse_date_format)
+      {
+        ts = QDateTime::fromString(str_trimmed, format_string);
+      }
+      else
+      {
+        ts = QDateTime::fromString(str_trimmed, Qt::ISODateWithMs);
+      }
       is_number = ts.isValid();
       if (is_number)
       {
@@ -630,9 +661,26 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
 
     if (time_index >= 0)
     {
-      bool is_number = false;
       t_str = string_items[time_index];
-      timestamp = ParseTimestamp(t_str, is_number);
+      const auto time_trimm = t_str.trimmed();
+      bool is_number = false;
+      if (parse_date_format)
+      {
+        if (auto ts = FormatParseTimestamp(time_trimm, format_string))
+        {
+          is_number = true;
+          timestamp = *ts;
+        }
+      }
+      else
+      {
+        if (auto ts = AutoParseTimestamp(time_trimm))
+        {
+          is_number = true;
+          timestamp = *ts;
+        }
+      }
+
       time_header_str = header_string_items[time_index];
 
       if (!is_number)
@@ -783,7 +831,7 @@ bool DataLoadCSV::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) c
   elem.setAttribute("delimiter", _ui->comboBox->currentIndex());
 
   QString date_format;
-  if (_ui->checkBoxDateFormat->isChecked())
+  if (_ui->radioCustomTime->isChecked())
   {
     elem.setAttribute("date_format", _ui->lineEditDateFormat->text());
   }
@@ -822,8 +870,12 @@ bool DataLoadCSV::xmlLoadState(const QDomElement& parent_element)
   }
   if (elem.hasAttribute("date_format"))
   {
-    _ui->checkBoxDateFormat->setChecked(true);
+    _ui->radioCustomTime->setChecked(true);
     _ui->lineEditDateFormat->setText(elem.attribute("date_format"));
+  }
+  else
+  {
+    _ui->radioAutoTime->setChecked(true);
   }
   return true;
 }

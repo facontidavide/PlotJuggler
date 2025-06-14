@@ -79,12 +79,13 @@ public:
 
   struct Format
   {
-    Format() : padding(0)
+    Format() : padding(0), timestamp_idx(-1)
     {
     }
     std::string name;
     std::vector<Field> fields;
     int padding;
+    int timestamp_idx;
   };
 
   struct MessageLog

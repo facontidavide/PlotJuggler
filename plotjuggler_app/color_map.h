@@ -11,7 +11,7 @@
 #include <limits>
 #include <map>
 #include <QColor>
-#include "sol.hpp"
+#include <sol/sol.hpp>
 
 class ColorMap
 {

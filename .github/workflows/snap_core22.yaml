@@ -11,7 +11,7 @@ jobs:
     outputs:
       snap-file: ${{ steps.build-snap22.outputs.snap }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         # full history for latest tag name
         fetch-depth: 0
@@ -23,7 +23,7 @@ jobs:
     - run: |
         sudo snap install --dangerous ${{ steps.build-snap22.outputs.snap }}
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: plotjuggler-snap22
         path: ${{ steps.build-snap22.outputs.snap }}
@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: plotjuggler-snap22
         path: .

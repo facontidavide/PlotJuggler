@@ -1,12 +1,11 @@
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.16)
 
-PROJECT(plotjuggler LANGUAGES C CXX VERSION 3.9.2)
+PROJECT(plotjuggler LANGUAGES C CXX VERSION 3.10.5)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  "${CMAKE_CURRENT_LIST_DIR}/cmake")
-
 
 add_definitions(
     -DPJ_MAJOR_VERSION=${PROJECT_VERSION_MAJOR}
@@ -20,16 +19,14 @@ add_definitions(
 #add_definitions( -DPJ_DEFAULT_ARGS="${PJ_DEFAULT_ARGS}")
 
 option(ENABLE_ASAN "Enable Address Sanitizer" OFF)
-option(BASE_AS_SHARED "Build the base library as a shared libary" OFF)
-option(BUILDING_WITH_CONAN "Using Conan for depenencies" OFF)
+option(BASE_AS_SHARED "Build the base library as a shared library" OFF)
+option(BUILDING_WITH_CONAN "Using Conan for dependencies" OFF)
 
 IF (NOT WIN32 AND ENABLE_ASAN)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
   set (CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
-include_directories( plotjuggler_base/include )
-include_directories( plotjuggler_base/src )
 
 add_definitions( -DFMT_HEADER_ONLY )
 
@@ -76,6 +73,7 @@ elseif(ament_cmake_FOUND)
     message(STATUS "--------------------------------------------------")
 
     add_definitions(-DCOMPILED_WITH_AMENT)
+    set(BASE_AS_SHARED ON)
 
 else()
     message(STATUS "--------------------------------------------------")
@@ -89,10 +87,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 SET(CMAKE_AUTOUIC ON)
 
-
-if (NOT WIN32)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
-endif()
 
 if(APPLE AND EXISTS /usr/local/opt/qt5)
     # Homebrew installs Qt5 (up to at least 5.9.1) in
@@ -128,18 +122,21 @@ set( QT_LINK_LIBRARIES
     Qt5::WebSockets
     )
 
-
 if (NOT CMAKE_BUILD_TYPE)
     message(STATUS "No build type selected, default to RelWithDebInfo")
     set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
 
-IF (NOT WIN32)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIC")
-else()
+IF (WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -D_USE_MATH_DEFINES")
     set(CMAKE_WIN32_EXECUTABLE ON)
     set(GUI_TYPE WIN32)
+    if(MSVC)
+        add_compile_options(/wd4267)
+    endif()
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIC -fno-omit-frame-pointer")
+    add_compile_options(-Wno-deprecated-declarations)
 ENDIF()
 
 include_directories(
@@ -151,16 +148,33 @@ include_directories(
     ${Qt5WebSockets_INCLUDE_DIRS}
     ${Qt5Svg_INCLUDE_DIRS}
     ${Qt5OpenGL_INCLUDE_DIRS}
-    ./3rdparty/
-    ./3rdparty/color_widgets/include
-    ./3rdparty/Qt-Advanced-Docking/include
-    ./3rdparty/qwt/src
-    ./3rdparty/sol
-    ./3rdparty/lua-5.4.3/src
-    ./3rdparty/QCodeEditor/include
-    ./3rdparty/lz4-1.9.4
-    ./3rdparty/zstd-1.5.5
 )
+
+#########################  3rd party dependencies  #########################
+
+include(FetchContent)
+include(cmake/CPM.cmake)
+
+include(cmake/find_or_download_lua.cmake)
+find_or_download_lua()
+
+include(cmake/find_or_download_data_tamer.cmake)
+find_or_download_data_tamer()
+
+include(cmake/find_or_download_json.cmake)
+find_or_download_json()
+
+include(cmake/find_or_download_fastcdr.cmake)
+find_or_download_fastcdr()
+
+add_subdirectory( 3rdparty/qwt/src )
+add_subdirectory( 3rdparty/QCodeEditor )
+add_subdirectory( 3rdparty/color_widgets )
+add_subdirectory( 3rdparty/Qt-Advanced-Docking )
+
+if (NOT WIN32)
+  add_subdirectory( 3rdparty/backward-cpp )
+endif()
 
 #########################  BASE library  ####################################
 
@@ -191,7 +205,6 @@ if (BASE_AS_SHARED)
         ${PLOTJUGGLER_BASE_SRC}
         ${PLOTJUGGLER_BASE_MOCS}
         )
-    target_link_libraries(plotjuggler_base PRIVATE lua_objects plotjuggler_qwt_objects)
 else()
     add_library(plotjuggler_base STATIC
         ${PLOTJUGGLER_BASE_SRC}
@@ -199,11 +212,24 @@ else()
         )
 endif()
 
-# target_link_libraries(plotjuggler_base plotjuggler_qwt)
+target_include_directories(plotjuggler_base
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/sol2-3.3.0/include>
+)
 
-target_include_directories(plotjuggler_base INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include>
+target_link_libraries(plotjuggler_base
+    PUBLIC
+        plotjuggler_qwt
+    PRIVATE
+        lua::lua
+    )
+
+target_include_directories(plotjuggler_base
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler_base/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler_base/src>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/qwt/src>
+        $<INSTALL_INTERFACE:include>
 )
 
 #########################  INSTALL  ####################################
@@ -226,7 +252,6 @@ elseif(COMPILING_WITH_AMENT)
         export_plotjuggler_qwt
         HAS_LIBRARY_TARGET)
     ament_package()
-
 else()
 
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -244,52 +269,16 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/PlotJuggler.desktop
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler.svg
         DESTINATION ${DESKTOP_ICON_DIR}  )
 
-######################## Main App, Libraries and Plugins ###################################
-
-add_subdirectory( 3rdparty/qwt/src )
-add_subdirectory( 3rdparty/lz4-1.9.4 )
-add_subdirectory( 3rdparty/zstd-1.5.5 )
-add_subdirectory( 3rdparty/QCodeEditor )
-add_subdirectory( 3rdparty/color_widgets )
-add_subdirectory( 3rdparty/Qt-Advanced-Docking )
-add_subdirectory( 3rdparty/lua-5.4.3 )
-
-if (NOT WIN32)
-  add_subdirectory( 3rdparty/backward-cpp )
-endif()
+# ######################## Main App, Libraries and Plugins ###################################
 
 add_subdirectory( plotjuggler_app )
+add_subdirectory( plotjuggler_plugins)
 
-add_subdirectory( plotjuggler_plugins/DataLoadCSV )
-add_subdirectory( plotjuggler_plugins/DataLoadMCAP )
-add_subdirectory( plotjuggler_plugins/DataLoadParquet )
-add_subdirectory( plotjuggler_plugins/DataLoadULog )
-
-add_subdirectory( plotjuggler_plugins/DataStreamSample )
-add_subdirectory( plotjuggler_plugins/DataStreamWebsocket )
-add_subdirectory( plotjuggler_plugins/DataStreamUDP )
-add_subdirectory( plotjuggler_plugins/DataStreamMQTT )
-add_subdirectory( plotjuggler_plugins/DataStreamZMQ )
-
-add_subdirectory( plotjuggler_plugins/StatePublisherCSV )
-add_subdirectory( plotjuggler_plugins/VideoViewer )
-
-add_subdirectory( plotjuggler_plugins/ToolboxQuaternion )
-add_subdirectory( plotjuggler_plugins/ToolboxFFT )
-add_subdirectory( plotjuggler_plugins/ToolboxLuaEditor )
-
-add_subdirectory( plotjuggler_plugins/ParserProtobuf )
-add_subdirectory( plotjuggler_plugins/ParserROS )
-add_subdirectory( plotjuggler_plugins/ParserDataTamer )
-add_subdirectory( plotjuggler_plugins/ParserLineInflux )
-
-add_subdirectory( plotjuggler_plugins/PluginsZcm )
-
-# Install targets
+# # Install targets
 
 install(
      TARGETS
-        plotjuggler_base
+        plotjuggler_base plotjuggler_qwt
      EXPORT ${PROJECT_NAME}Targets
      LIBRARY DESTINATION lib
      ARCHIVE DESTINATION lib

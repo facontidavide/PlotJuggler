@@ -19,7 +19,12 @@ if(ZeroMQ_FOUND)
 
     add_library(DataStreamZMQ SHARED datastream_zmq.cpp ${UI_SRC}  )
 
-    target_link_libraries(DataStreamZMQ ${Qt5Widgets_LIBRARIES} plotjuggler_base)
+    target_include_directories(DataStreamZMQ PRIVATE ${ZeroMQ_INCLUDE_DIRS})
+    target_link_libraries(DataStreamZMQ
+        ${Qt5Widgets_LIBRARIES}
+        plotjuggler_base
+        ${ZeroMQ_LIBRARIES}
+    )
 
     if(BUILDING_WITH_VCPKG OR BUILDING_WITH_CONAN)
         target_link_libraries(DataStreamZMQ libzmq-static)
@@ -29,5 +34,5 @@ if(ZeroMQ_FOUND)
 
     install(TARGETS DataStreamZMQ DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
 else()
-    message("[ZeroMQ] not found. Skipping plugin DataStreamZMQ.")
+    message(WARNING "[ZeroMQ] not found. Skipping plugin DataStreamZMQ.")
 endif()

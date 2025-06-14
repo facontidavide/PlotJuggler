@@ -120,14 +120,24 @@
         </layout>
        </item>
        <item>
+        <widget class="QRadioButton" name="radioAutoTime">
+         <property name="text">
+          <string>Detect timestamp format automatically</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <property name="topMargin">
-          <number>11</number>
+          <number>0</number>
          </property>
          <item>
-          <widget class="QCheckBox" name="checkBoxDateFormat">
+          <widget class="QRadioButton" name="radioCustomTime">
            <property name="text">
-            <string>Parse Date Format</string>
+            <string>Custom Format</string>
            </property>
           </widget>
          </item>

@@ -118,7 +118,7 @@ MQTT_Dialog::MQTT_Dialog(MQTTClient::Ptr mosq_client)
   connect(_client.get(), &MQTTClient::disconnected, this, [this]() {
     onConnectionClosed();
     QMessageBox::warning(this, "Connection Lost",
-                         "Client disconnected. Maybe a problem with autentication?");
+                         "Client disconnected. Maybe a problem with authentication?");
   });
 }
 

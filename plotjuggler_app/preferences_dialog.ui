@@ -183,6 +183,69 @@
               </property>
              </widget>
             </item>
+			<item row="3" column="0">
+			<widget class="QLabel" name="label">
+				<property name="sizePolicy">
+				<sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+				<horstretch>0</horstretch>
+				<verstretch>0</verstretch>
+				</sizepolicy>
+				</property>
+				<property name="text">
+				<string>Float Precision:</string>
+				</property>
+			</widget>
+			</item>
+			<item row="3" column="1">
+			<widget class="QComboBox" name="comboBoxPrecision">
+				<property name="sizePolicy">
+				<sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+				<horstretch>0</horstretch>
+				<verstretch>0</verstretch>
+				</sizepolicy>
+				</property>
+				<item>
+				<property name="text">
+				<string>0</string>
+				</property>
+				</item>
+				<item>
+				<property name="text">
+				<string>1</string>
+				</property>
+				</item>
+				<item>
+				<property name="text">
+				<string>2</string>
+				</property>
+				</item>
+				<item>
+				<property name="text">
+				<string>3</string>
+				</property>
+				</item>
+				<item>
+				<property name="text">
+				<string>4</string>
+				</property>
+				</item>
+				<item>
+				<property name="text">
+				<string>5</string>
+				</property>
+				</item>
+				<item>
+				<property name="text">
+				<string>6</string>
+				</property>
+				</item>
+				<item>
+				<property name="text">
+				<string>7</string>
+				</property>
+				</item>
+			</widget>
+			</item>
            </layout>
           </widget>
          </item>
@@ -319,7 +382,7 @@
           <item>
            <widget class="QCheckBox" name="checkBoxTruncation">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;PlotJuggler uses double (64bits) internally.&lt;/p&gt;&lt;p&gt;This means that integer numbers with more than 52 significant bits &lt;span style=&quot; font-weight:700;&quot;&gt;can not be represented&lt;/span&gt; exactly.&lt;/p&gt;&lt;p&gt;Disabling this check, you allow static type convertion and accept some degree of  numerical errors. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;PlotJuggler uses double (64bits) internally.&lt;/p&gt;&lt;p&gt;This means that integer numbers with more than 52 significant bits &lt;span style=&quot; font-weight:700;&quot;&gt;can not be represented&lt;/span&gt; exactly.&lt;/p&gt;&lt;p&gt;Disabling this check, you allow static type conversion and accept some degree of  numerical errors. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Strict Truncation check (uncheck at your own risk)</string>

@@ -2,12 +2,15 @@
 <Package>
     <DisplayName>PlotJuggler Main App</DisplayName>
     <Description>Install PlotJuggler with basic plugins.</Description>
-    <Version>3.9.0</Version>
-    <ReleaseDate>2024-02-04</ReleaseDate>
+    <Version>3.10.0</Version>
+    <ReleaseDate>2025-04-30</ReleaseDate>
     <Licenses>
         <License name="MPL-2.0" file="license_mpl.txt" />
         <License name="LGPL" file="license_lgpl.txt" />
     </Licenses>
     <Default>script</Default>
     <Script>installscript.qs</Script>
+    <UserInterfaces>
+        <UserInterface>targetwidget.ui</UserInterface>
+    </UserInterfaces>
 </Package>

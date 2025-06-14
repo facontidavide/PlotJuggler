@@ -10,10 +10,10 @@ class IoErrorCollector : public google::protobuf::io::ErrorCollector
 {
 public:
   void AddError(int line, google::protobuf::io::ColumnNumber column,
-                const std::string& message) override;
+                const std::string& message);
 
   void AddWarning(int line, google::protobuf::io::ColumnNumber column,
-                  const std::string& message) override;
+                  const std::string& message);
 
   const QStringList& errors()
   {

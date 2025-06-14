@@ -62,6 +62,12 @@ protected:
   void parsePalStatisticsNames(const std::string& prefix, double& timestamp);
   void parsePalStatisticsValues(const std::string& prefix, double& timestamp);
 
+  void parseTSLDefinition(const std::string& prefix, double& timestamp);
+  void parseTSLValues(const std::string& prefix, double& timestamp);
+  void process_tsl_values(const std::string& prefix, const double& timestamp,
+                          const std::vector<std::string>& definition,
+                          const std::vector<double>& values);
+
   std::function<void(const std::string& prefix, double&)> _customized_parser;
 
   bool _has_header = false;

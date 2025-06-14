@@ -23,7 +23,7 @@ using PlotDataAny = TimeseriesBase<std::any>;
  * timeseries in a single place.
  */
 
-// obsolate. For back compatibility only
+// obsolete. For back compatibility only
 // using PlotDataMap = std::unordered_map<std::string, PlotData>;
 
 using TimeseriesMap = std::unordered_map<std::string, PlotData>;

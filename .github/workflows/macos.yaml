@@ -1,38 +1,38 @@
 name: macos
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize]
 
 jobs:
 
   macos-build:
-    runs-on: ${{ matrix.macos-version }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        macos-version:
-          - 'macos-latest'
+        os:
+          - macos-13
+          - macos-latest
 
     steps:
       - name: Sync repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Cache Qt
-        id: cache-qt
-        uses: actions/cache@v1  # not v2!
-        with:
-          path: '${{ github.workspace }}/qt_installation/'
-          key: ${{ runner.os }}-QtCache
+      - name: Prepare Homebrew and Install Dependencies
+        run: |
+          brew cleanup -s
+          brew update
+          brew install mosquitto zeromq qt@5 protobuf@21
 
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v2.13.0
-        with:
-          version: '5.15.2'
-          host: 'mac'
-          dir: '${{ github.workspace }}/qt_installation/'
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
-
-      - name: Build Plotjuggler
-        shell: pwsh
-        run: >
-          cmake -B build -DCMAKE_INSTALL_PREFIX=install PlotJuggler;
-          cmake --build build --target install
+      - name: Build PlotJuggler
+        run: |
+          export CMAKE_PREFIX_PATH=$(brew --prefix qt@5):$(brew --prefix zeromq)
+          export LDFLAGS="-L/usr/local/opt/zeromq/lib"
+          export CPPFLAGS="-I/usr/local/opt/zeromq/include"
+          export LIBRARY_PATH=/usr/local/opt/zeromq/lib
+          export CPATH=/usr/local/opt/zeromq/include
+          cmake -B build -DCMAKE_INSTALL_PREFIX=install PlotJuggler
