@@ -495,7 +495,7 @@ void CurveListPanel::onCustomSelectionChanged(const QItemSelection&,
   ui->buttonEditCustom->setToolTip(enabled ? "Edit the selected custom timeserie" :
                                              "Select a single custom Timeserie to Edit "
                                              "it");
-  
+
   enabled = (selected.size() > 0);
   ui->buttonDeleteCustom->setEnabled(enabled);
   ui->buttonDeleteCustom->setToolTip(enabled ? "Delete the selected custom timeseries" :
