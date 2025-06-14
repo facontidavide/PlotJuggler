@@ -105,8 +105,8 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   }
 
   ui->widthSpinBox->setValue(_plotwidget->curvesWidth());
-  connect(ui->widthSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-         this, &PlotwidgetEditor::on_widthSpinBox_changed);
+  connect(ui->widthSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &PlotwidgetEditor::on_widthSpinBox_changed);
 
   // ui->listWidget->widget_background_disabled("QListView::item:selected { background:
   // #ddeeff; }");
@@ -476,5 +476,5 @@ void PlotwidgetEditor::on_listWidget_itemSelectionChanged()
 
 void PlotwidgetEditor::on_widthSpinBox_changed(double width)
 {
-    _plotwidget->changeCurvesWidth(width);
+  _plotwidget->changeCurvesWidth(width);
 }
