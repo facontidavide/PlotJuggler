@@ -27,11 +27,11 @@ private:
 class FileErrorCollector : public google::protobuf::compiler::MultiFileErrorCollector
 {
 public:
-  void AddError(const std::string& filename, int line, int,
-                const std::string& message) override;
+  void RecordError(absl::string_view filename, int line, int,
+                   absl::string_view message) override;
 
-  void AddWarning(const std::string& filename, int line, int,
-                  const std::string& message) override;
+  void RecordWarning(absl::string_view filename, int line, int,
+                     absl::string_view message) override;
 
   const QStringList& errors()
   {
