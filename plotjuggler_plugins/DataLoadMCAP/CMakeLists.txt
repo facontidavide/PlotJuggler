@@ -3,12 +3,6 @@ add_definitions(-DQT_PLUGIN)
 
 QT5_WRAP_UI ( UI_SRC  dialog_mcap.ui  )
 
-include(${PROJECT_SOURCE_DIR}/cmake/find_or_download_lz4.cmake)
-find_or_download_lz4()
-
-include(${PROJECT_SOURCE_DIR}/cmake/find_or_download_zstd.cmake)
-find_or_download_zstd()
-
 find_package(mcap_vendor QUIET)
 
 if(mcap_vendor_FOUND)
@@ -17,6 +11,13 @@ if(mcap_vendor_FOUND)
 else()
     message(STATUS "mcap_vendor not found. Will be downloaded with CPM.")
     if(NOT TARGET mcap::mcap)
+
+        include(${PROJECT_SOURCE_DIR}/cmake/find_or_download_lz4.cmake)
+        find_or_download_lz4()
+
+        include(${PROJECT_SOURCE_DIR}/cmake/find_or_download_zstd.cmake)
+        find_or_download_zstd()
+
         ### mcap ###
         CPMAddPackage(
             NAME mcap
@@ -28,6 +29,11 @@ else()
         add_library(mcap_lib STATIC mcap.cpp)
         target_include_directories(mcap_lib
              PUBLIC $<BUILD_INTERFACE:${mcap_SOURCE_DIR}/cpp/mcap/include>
+        )
+        target_link_libraries(mcap_lib
+            PUBLIC
+                lz4::lz4
+                zstd::zstd
         )
         add_library(mcap::mcap ALIAS mcap_lib)
     endif()
@@ -47,8 +53,6 @@ target_link_libraries(DataLoadMCAP PRIVATE
         ${Qt5Xml_LIBRARIES}
         ${Qt5Concurrent_LIBRARIES}
         plotjuggler_base
-        lz4::lz4
-        zstd::zstd
         mcap::mcap
 
     )
