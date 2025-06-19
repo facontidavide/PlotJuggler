@@ -85,7 +85,7 @@ parts:
         # Include CMakeFindDependencyMacro to make sure find_dependency is found by cmake
         sed -i '/@PACKAGE_INIT@/a include(CMakeFindDependencyMacro)' cmake/Config.cmake.in
 
-        # Add namespace to Cmakelists to make sure libraries can be properly exported
+        # Add namespace to CmakeLists to make sure libraries can be properly exported
         sed -i '/FILE ${PROJECT_NAME}Targets.cmake/a\      NAMESPACE ${PROJECT_NAME}::' CMakeLists.txt
 
         # Necessary to bypass XDG desktop portals because ROS 2 bags metadata.yaml are referring db3 files relatively
@@ -338,9 +338,7 @@ parts:
       - ros-jazzy-rmw-fastrtps-cpp
       - ros-jazzy-rmw-gurumdds-cpp
       - ros-jazzy-rmw-connextdds
-      
     override-pull: |
-      # Worst case scenario: sed the include FindMacro in the cmake file
       if [ ! -d plotjuggler-ros-plugins ]; then
 
         vcs import < /root/parts/plotjuggler/src/snap/local/plotjuggler.rosinstall
