@@ -28,10 +28,10 @@ class FileErrorCollector : public google::protobuf::compiler::MultiFileErrorColl
 {
 public:
   void AddError(const std::string& filename, int line, int,
-                const std::string& message) override;
+                const std::string& message);
 
   void AddWarning(const std::string& filename, int line, int,
-                  const std::string& message) override;
+                  const std::string& message);
 
   const QStringList& errors()
   {
