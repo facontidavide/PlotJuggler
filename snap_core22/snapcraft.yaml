@@ -14,7 +14,7 @@ description: |
 issues: https://github.com/facontidavide/plotjuggler/issues
 source-code: https://github.com/facontidavide/plotjuggler
 license: MPL-2.0
-
+version: git
 confinement: strict
 base: core22
 
@@ -29,8 +29,9 @@ parts:
     plugin: cmake
     source: .
     cmake-parameters:
+      - -DBASE_AS_SHARED=ON
       - -DCMAKE_BUILD_TYPE=Release
-      - "-DCMAKE_PREFIX_PATH=$(echo $SNAPCRAFT_CMAKE_ARGS | awk -F= '{printf(\"%s/usr/lib/$CRAFT_ARCH_TRIPLET/cmake/Qt5\", $2)}')"
+      - "-DCMAKE_PREFIX_PATH=$(echo $SNAPCRAFT_CMAKE_ARGS | awk -F= '{printf(\"%s/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/cmake/Qt5\", $2)}')"
     build-packages:
       - distro-info-data
       - libpulse0
@@ -57,6 +58,11 @@ parts:
         [ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
         craftctl set version="$version"
         craftctl set grade="$grade"
+
+        # Include CMakeFindDependencyMacro to make sure find_dependency is found by cmake
+        sed -i '/@PACKAGE_INIT@/a include(CMakeFindDependencyMacro)' cmake/Config.cmake.in
+        # Add namespace to Cmakelists to make sure libraries can be properly exported
+        sed -i '/FILE ${PROJECT_NAME}Targets.cmake/a\      NAMESPACE ${PROJECT_NAME}::' CMakeLists.txt
 
         # Necessary to bypass XDG desktop portals because ROS 2 bags metadata.yaml are referring db3 files relatively
         sed -i '/QApplication app(new_argc, new_argv.data());/a QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs);' plotjuggler_app/main.cpp

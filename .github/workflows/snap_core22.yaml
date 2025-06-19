@@ -11,16 +11,22 @@ jobs:
     outputs:
       snap-file: ${{ steps.build-snap22.outputs.snap }}
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
       with:
         # full history for latest tag name
         fetch-depth: 0
-    - run: mv snap_core22 snap
-    - uses: snapcore/action-build@v1
+    - name: Rename snap_core22 to snap
+      run: mv snap_core22 snap
+    - name: Build Snap (Core22)
+      uses: snapcore/action-build@v1
+      with:
+        snapcraft-channel: 7.x/stable
       id: build-snap22
 
     # Make sure the snap is installable
-    - run: |
+    - name: Install snap
+      run: |
         sudo snap install --dangerous ${{ steps.build-snap22.outputs.snap }}
 
     - uses: actions/upload-artifact@v4
@@ -33,11 +39,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-    - uses: actions/download-artifact@v4
+    - name: Download artifact
+      uses: actions/download-artifact@v4
       with:
         name: plotjuggler-snap22
         path: .
-    - uses: snapcore/action-publish@v1
+    - name: Publish snap
+      uses: snapcore/action-publish@v1
       env:
         SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
       with:
