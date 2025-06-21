@@ -128,7 +128,11 @@ target_link_libraries(plotjuggler
         lua::lua
     )
 
-if(COMPILING_WITH_AMENT)
+if(COMPILING_WITH_CATKIN)
+    target_link_libraries(plotjuggler PRIVATE
+        ${catkin_LIBRARIES}
+    )
+elseif(COMPILING_WITH_AMENT)
 
     target_link_libraries(plotjuggler PRIVATE
         ament_index_cpp::ament_index_cpp
