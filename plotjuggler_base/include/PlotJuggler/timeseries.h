@@ -56,7 +56,22 @@ public:
   std::optional<Value> getYfromX(double x) const
   {
     int index = getIndexFromX(x);
-    return (index < 0) ? std::nullopt : std::optional(_y_data[index]);
+    if (index < 0)
+    {
+      return std::nullopt;
+    }
+
+    // Handle both storage modes like at() method
+    if (this->_const_y_value.has_value())
+    {
+      // Constant mode: return the constant value
+      return std::optional(*this->_const_y_value);
+    }
+    else
+    {
+      // Variable mode: return the specific value
+      return std::optional(this->_y_data[index]);
+    }
   }
 
   void pushBack(const Point& p) override

@@ -21,6 +21,9 @@
 
 namespace PJ
 {
+// Forward declarations
+class StringRef;
+
 struct Range
 {
   double min;
@@ -122,18 +125,6 @@ template <typename TypeX, typename Value>
 class PlotDataBase
 {
 public:
-  struct PointRef
-  {
-    TypeX& x;
-    Value& y;
-  };
-
-  struct ConstPointRef
-  {
-    const TypeX& x;
-    const Value& y;
-  };
-
   struct Point
   {
     TypeX x;
@@ -141,25 +132,7 @@ public:
     Point(TypeX _x, Value _y) : x(_x), y(_y)
     {
     }
-    Point(const PointRef& ref) : x(ref.x), y(ref.y)
-    {
-    }
-    Point(const ConstPointRef& ref) : x(ref.x), y(ref.y)
-    {
-    }
 
-    Point& operator=(const PointRef& ref)
-    {
-      x = ref.x;
-      y = ref.y;
-      return *this;
-    }
-    Point& operator=(const ConstPointRef& ref)
-    {
-      x = ref.x;
-      y = ref.y;
-      return *this;
-    }
     Point() = default;
   };
 
@@ -178,20 +151,17 @@ public:
     using pointer = Point*;
     using reference = Point&;
 
-    Iterator(typename std::deque<TypeX>::iterator x_it,
-             typename std::deque<Value>::iterator y_it)
-      : _x_it(x_it), _y_it(y_it)
+    Iterator(PlotDataBase* container, size_t index) : _container(container), _index(index)
     {
     }
 
     Point operator*()
     {
-      return Point(*_x_it, *_y_it);
+      return _container->at(_index);
     }
     Iterator& operator++()
     {
-      ++_x_it;
-      ++_y_it;
+      ++_index;
       return *this;
     }
     Iterator operator++(int)
@@ -202,8 +172,7 @@ public:
     }
     Iterator& operator--()
     {
-      --_x_it;
-      --_y_it;
+      --_index;
       return *this;
     }
     Iterator operator--(int)
@@ -214,60 +183,59 @@ public:
     }
     Iterator& operator+=(difference_type n)
     {
-      _x_it += n;
-      _y_it += n;
+      _index += n;
       return *this;
     }
     Iterator operator+(difference_type n) const
     {
-      return Iterator(_x_it + n, _y_it + n);
+      return Iterator(_container, _index + n);
     }
     Iterator& operator-=(difference_type n)
     {
-      _x_it -= n;
-      _y_it -= n;
+      _index -= n;
       return *this;
     }
     Iterator operator-(difference_type n) const
     {
-      return Iterator(_x_it - n, _y_it - n);
+      return Iterator(_container, _index - n);
     }
     difference_type operator-(const Iterator& other) const
     {
-      return _x_it - other._x_it;
+      return static_cast<difference_type>(_index) -
+             static_cast<difference_type>(other._index);
     }
     Point operator[](difference_type n)
     {
-      return Point(*(_x_it + n), *(_y_it + n));
+      return _container->at(_index + n);
     }
     bool operator==(const Iterator& other) const
     {
-      return _x_it == other._x_it;
+      return _container == other._container && _index == other._index;
     }
     bool operator!=(const Iterator& other) const
     {
-      return _x_it != other._x_it;
+      return !(*this == other);
     }
     bool operator<(const Iterator& other) const
     {
-      return _x_it < other._x_it;
+      return _container == other._container && _index < other._index;
     }
     bool operator<=(const Iterator& other) const
     {
-      return _x_it <= other._x_it;
+      return _container == other._container && _index <= other._index;
     }
     bool operator>(const Iterator& other) const
     {
-      return _x_it > other._x_it;
+      return _container == other._container && _index > other._index;
     }
     bool operator>=(const Iterator& other) const
     {
-      return _x_it >= other._x_it;
+      return _container == other._container && _index >= other._index;
     }
 
   private:
-    typename std::deque<TypeX>::iterator _x_it;
-    typename std::deque<Value>::iterator _y_it;
+    PlotDataBase* _container;
+    size_t _index;
   };
 
   class ConstIterator
@@ -279,20 +247,18 @@ public:
     using pointer = const Point*;
     using reference = const Point&;
 
-    ConstIterator(typename std::deque<TypeX>::const_iterator x_it,
-                  typename std::deque<Value>::const_iterator y_it)
-      : _x_it(x_it), _y_it(y_it)
+    ConstIterator(const PlotDataBase* container, size_t index)
+      : _container(container), _index(index)
     {
     }
 
     Point operator*() const
     {
-      return Point(*_x_it, *_y_it);
+      return _container->at(_index);
     }
     ConstIterator& operator++()
     {
-      ++_x_it;
-      ++_y_it;
+      ++_index;
       return *this;
     }
     ConstIterator operator++(int)
@@ -303,8 +269,7 @@ public:
     }
     ConstIterator& operator--()
     {
-      --_x_it;
-      --_y_it;
+      --_index;
       return *this;
     }
     ConstIterator operator--(int)
@@ -315,60 +280,59 @@ public:
     }
     ConstIterator& operator+=(difference_type n)
     {
-      _x_it += n;
-      _y_it += n;
+      _index += n;
       return *this;
     }
     ConstIterator operator+(difference_type n) const
     {
-      return ConstIterator(_x_it + n, _y_it + n);
+      return ConstIterator(_container, _index + n);
     }
     ConstIterator& operator-=(difference_type n)
     {
-      _x_it -= n;
-      _y_it -= n;
+      _index -= n;
       return *this;
     }
     ConstIterator operator-(difference_type n) const
     {
-      return ConstIterator(_x_it - n, _y_it - n);
+      return ConstIterator(_container, _index - n);
     }
     difference_type operator-(const ConstIterator& other) const
     {
-      return _x_it - other._x_it;
+      return static_cast<difference_type>(_index) -
+             static_cast<difference_type>(other._index);
     }
     Point operator[](difference_type n) const
     {
-      return Point(*(_x_it + n), *(_y_it + n));
+      return _container->at(_index + n);
     }
     bool operator==(const ConstIterator& other) const
     {
-      return _x_it == other._x_it;
+      return _container == other._container && _index == other._index;
     }
     bool operator!=(const ConstIterator& other) const
     {
-      return _x_it != other._x_it;
+      return !(*this == other);
     }
     bool operator<(const ConstIterator& other) const
     {
-      return _x_it < other._x_it;
+      return _container == other._container && _index < other._index;
     }
     bool operator<=(const ConstIterator& other) const
     {
-      return _x_it <= other._x_it;
+      return _container == other._container && _index <= other._index;
     }
     bool operator>(const ConstIterator& other) const
     {
-      return _x_it > other._x_it;
+      return _container == other._container && _index > other._index;
     }
     bool operator>=(const ConstIterator& other) const
     {
-      return _x_it >= other._x_it;
+      return _container == other._container && _index >= other._index;
     }
 
   private:
-    typename std::deque<TypeX>::const_iterator _x_it;
-    typename std::deque<Value>::const_iterator _y_it;
+    const PlotDataBase* _container;
+    size_t _index;
   };
   typedef Value ValueT;
 
@@ -387,6 +351,7 @@ public:
   {
     _x_data = other._x_data;
     _y_data = other._y_data;
+    _const_y_value = other._const_y_value;
     _range_x = other._range_x;
     _range_y = other._range_y;
     _range_x_dirty = other._range_x_dirty;
@@ -397,6 +362,7 @@ public:
   {
     _x_data = std::move(other._x_data);
     _y_data = std::move(other._y_data);
+    _const_y_value = std::move(other._const_y_value);
     _range_x = other._range_x;
     _range_y = other._range_y;
     _range_x_dirty = other._range_x_dirty;
@@ -430,30 +396,64 @@ public:
     return false;
   }
 
-  ConstPointRef at(size_t index) const
+  Point at(size_t index) const
   {
-    return { _x_data[index], _y_data[index] };
-  }
+    // Bounds check first
+    if (index >= _x_data.size())
+    {
+      throw std::out_of_range("PlotDataBase::at: index out of range");
+    }
 
-  PointRef at(size_t index)
-  {
-    return { _x_data[index], _y_data[index] };
+    if (_const_y_value.has_value())
+    {
+      // Constant mode: use the single constant value
+      return { _x_data[index], *_const_y_value };
+    }
+    else
+    {
+      // Variable mode: ensure _y_data has the right size
+      if (_y_data.size() != _x_data.size())
+      {
+        throw std::runtime_error("PlotDataBase: Inconsistent state - _y_data size != "
+                                 "_x_data size");
+      }
+      return { _x_data[index], _y_data[index] };
+    }
   }
 
   void setPoint(size_t index, const Point& p)
   {
     _x_data[index] = p.x;
-    _y_data[index] = p.y;
+
+    if (_const_y_value.has_value())
+    {
+      if constexpr (std::is_arithmetic_v<Value> || std::is_same_v<Value, StringRef>)
+      {
+        if (!(p.y == *_const_y_value))
+        {
+          // Transition to variable mode
+          transitionToVariableMode();
+          _y_data[index] = p.y;
+        }
+        // If p.y == *_const_y_value, remains constant - do nothing
+      }
+      else
+      {
+        // For types without reliable equality, always transition to variable mode
+        transitionToVariableMode();
+        _y_data[index] = p.y;
+      }
+    }
+    else
+    {
+      _y_data[index] = p.y;
+    }
+
     _range_x_dirty = true;
     _range_y_dirty = true;
   }
 
-  ConstPointRef operator[](size_t index) const
-  {
-    return at(index);
-  }
-
-  PointRef operator[](size_t index)
+  Point operator[](size_t index) const
   {
     return at(index);
   }
@@ -493,32 +493,32 @@ public:
 
   Point front() const
   {
-    return Point(_x_data.front(), _y_data.front());
+    return { _x_data.front(), _const_y_value.value_or(_y_data.front()) };
   }
 
   Point back() const
   {
-    return Point(_x_data.back(), _y_data.back());
+    return { _x_data.back(), _const_y_value.value_or(_y_data.back()) };
   }
 
   ConstIterator begin() const
   {
-    return ConstIterator(_x_data.begin(), _y_data.begin());
+    return ConstIterator(this, 0);
   }
 
   ConstIterator end() const
   {
-    return ConstIterator(_x_data.end(), _y_data.end());
+    return ConstIterator(this, _x_data.size());
   }
 
   Iterator begin()
   {
-    return Iterator(_x_data.begin(), _y_data.begin());
+    return Iterator(this, 0);
   }
 
   Iterator end()
   {
-    return Iterator(_x_data.end(), _y_data.end());
+    return Iterator(this, _x_data.size());
   }
 
   // template specialization for types that support compare operator
@@ -551,6 +551,12 @@ public:
   {
     if constexpr (std::is_arithmetic_v<Value>)
     {
+      if (_const_y_value.has_value())
+      {
+        // If in constant mode, return a range with the constant value
+        return Range{ *_const_y_value, *_const_y_value };
+      }
+
       if (_y_data.empty())
       {
         return std::nullopt;
@@ -596,8 +602,41 @@ public:
       pushUpdateRangeY(p.y);
     }
 
+    // Handle Y coordinate based on current mode BEFORE adding X coordinate
+    if (_x_data.empty())
+    {
+      // First point - enter constant mode
+      _const_y_value = p.y;  // Note: copy instead of move since we use p.y below
+    }
+    else if (_const_y_value.has_value())
+    {
+      // Check if still constant (only for types that support equality comparison)
+      if constexpr (std::is_arithmetic_v<Value> || std::is_same_v<Value, StringRef>)
+      {
+        if (!(p.y == *_const_y_value))
+        {
+          // Transition to variable mode
+          transitionToVariableMode();
+          _y_data.emplace_back(std::move(p.y));
+        }
+        // If p.y == *_const_y_value, remains constant - do nothing with y
+      }
+      else
+      {
+        // For types without reliable equality (like std::any), always transition to
+        // variable mode
+        transitionToVariableMode();
+        _y_data.emplace_back(std::move(p.y));
+      }
+    }
+    else
+    {
+      // Already in variable mode
+      _y_data.emplace_back(std::move(p.y));
+    }
+
+    // Add X coordinate AFTER handling Y coordinate
     _x_data.emplace_back(std::move(p.x));
-    _y_data.emplace_back(std::move(p.y));
   }
 
   virtual void insert(Iterator it, Point&& p)
@@ -621,9 +660,36 @@ public:
 
     size_t index = it - begin();
     auto x_it = _x_data.begin() + index;
-    auto y_it = _y_data.begin() + index;
     _x_data.insert(x_it, std::move(p.x));
-    _y_data.insert(y_it, std::move(p.y));
+
+    // Handle Y coordinate based on current mode
+    if (_const_y_value.has_value())
+    {
+      if constexpr (std::is_arithmetic_v<Value> || std::is_same_v<Value, StringRef>)
+      {
+        if (!(p.y == *_const_y_value))
+        {
+          // Transition to variable mode
+          transitionToVariableMode();
+          auto y_it = _y_data.begin() + index;
+          _y_data.insert(y_it, std::move(p.y));
+        }
+        // If p.y == *_const_y_value, stay in constant mode, no Y insertion needed
+      }
+      else
+      {
+        // For types without reliable equality, always transition to variable mode
+        transitionToVariableMode();
+        auto y_it = _y_data.begin() + index;
+        _y_data.insert(y_it, std::move(p.y));
+      }
+    }
+    else
+    {
+      // Already in variable mode
+      auto y_it = _y_data.begin() + index;
+      _y_data.insert(y_it, std::move(p.y));
+    }
   }
 
   virtual void popFront()
@@ -639,14 +705,25 @@ public:
 
     if constexpr (std::is_arithmetic_v<Value>)
     {
-      if (!_range_y_dirty &&
+      if (!_const_y_value.has_value() && !_range_y_dirty &&
           (_y_data.front() == _range_y.max || _y_data.front() == _range_y.min))
       {
         _range_y_dirty = true;
       }
     }
+
     _x_data.pop_front();
-    _y_data.pop_front();
+    if (!_const_y_value.has_value())
+    {
+      _y_data.pop_front();
+    }
+
+    // If we're removing the last point, reset to empty state
+    if (_x_data.empty())
+    {
+      _const_y_value.reset();
+      _y_data.clear();  // Ensure _y_data is also empty
+    }
   }
 
 protected:
@@ -654,6 +731,9 @@ protected:
   Attributes _attributes;
   std::deque<TypeX> _x_data;
   std::deque<Value> _y_data;
+
+  // Optimization for constant Y values
+  std::optional<Value> _const_y_value;
 
   mutable Range _range_x;
   mutable Range _range_y;
@@ -688,6 +768,19 @@ protected:
         }
       }
     }
+  }
+
+  // Helper method to transition from constant to variable mode
+  void transitionToVariableMode()
+  {
+    if (!_const_y_value.has_value())
+    {
+      return;
+    }
+
+    // Populate _y_data with the constant value for all existing points
+    _y_data.assign(_x_data.size(), *_const_y_value);
+    _const_y_value.reset();
   }
 
   // template specialization for types that support compare operator

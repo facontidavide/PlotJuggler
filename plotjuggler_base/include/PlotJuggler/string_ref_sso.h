@@ -88,6 +88,20 @@ public:
     return isSSO() ? (SSO_SIZE - _storage.sso.data[SSO_SIZE]) :
                      _storage.no_sso.size & ~TYPE_BIT;
   }
+
+  // Equality operator for constant value optimization
+  bool operator==(const StringRef& other) const
+  {
+    if (size() != other.size())
+    {
+      return false;
+    }
+    if (data() == other.data())
+    {
+      return true;  // Same pointer, same content
+    }
+    return memcmp(data(), other.data(), size()) == 0;
+  }
 };
 
 }  // namespace PJ
