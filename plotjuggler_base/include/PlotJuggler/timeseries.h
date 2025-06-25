@@ -17,7 +17,8 @@ class TimeseriesBase : public PlotDataBase<double, Value>
 {
 protected:
   double _max_range_x;
-  using PlotDataBase<double, Value>::_points;
+  using PlotDataBase<double, Value>::_x_data;
+  using PlotDataBase<double, Value>::_y_data;
 
 public:
   using Point = typename PlotDataBase<double, Value>::Point;
@@ -55,7 +56,7 @@ public:
   std::optional<Value> getYfromX(double x) const
   {
     int index = getIndexFromX(x);
-    return (index < 0) ? std::nullopt : std::optional(_points[index].y);
+    return (index < 0) ? std::nullopt : std::optional(_y_data[index]);
   }
 
   void pushBack(const Point& p) override
@@ -66,11 +67,11 @@ public:
 
   void pushBack(Point&& p) override
   {
-    bool need_sorting = (!_points.empty() && p.x < this->back().x);
+    bool need_sorting = (!_x_data.empty() && p.x < _x_data.back());
 
     if (need_sorting)
     {
-      auto it = std::upper_bound(_points.begin(), _points.end(), p,
+      auto it = std::upper_bound(this->begin(), this->end(), p,
                                  [](const auto& a, const auto& b) { return a.x < b.x; });
       PlotDataBase<double, Value>::insert(it, std::move(p));
     }
@@ -84,10 +85,10 @@ public:
 private:
   void trimRange()
   {
-    if (_max_range_x < std::numeric_limits<double>::max() && !_points.empty())
+    if (_max_range_x < std::numeric_limits<double>::max() && !_x_data.empty())
     {
-      auto const back_point_x = _points.back().x;
-      while (_points.size() > 2 && (back_point_x - _points.front().x) > _max_range_x)
+      auto const back_point_x = _x_data.back();
+      while (_x_data.size() > 2 && (back_point_x - _x_data.front()) > _max_range_x)
       {
         this->popFront();
       }
@@ -105,24 +106,23 @@ private:
 template <typename Value>
 inline int TimeseriesBase<Value>::getIndexFromX(double x) const
 {
-  if (_points.size() == 0)
+  if (_x_data.size() == 0)
   {
     return -1;
   }
-  auto lower =
-      std::lower_bound(_points.begin(), _points.end(), Point(x, {}), TimeCompare);
-  auto index = std::distance(_points.begin(), lower);
+  auto lower = std::lower_bound(_x_data.begin(), _x_data.end(), x);
+  auto index = std::distance(_x_data.begin(), lower);
 
-  if (index >= _points.size())
+  if (index >= _x_data.size())
   {
-    return _points.size() - 1;
+    return _x_data.size() - 1;
   }
   if (index < 0)
   {
     return 0;
   }
 
-  if (index > 0 && (abs(_points[index - 1].x - x) < abs(_points[index].x - x)))
+  if (index > 0 && (abs(_x_data[index - 1] - x) < abs(_x_data[index] - x)))
   {
     index = index - 1;
   }

@@ -139,8 +139,207 @@ public:
     ASYNC_BUFFER_CAPACITY = 1024
   };
 
-  typedef typename std::deque<Point>::iterator Iterator;
-  typedef typename std::deque<Point>::const_iterator ConstIterator;
+  class Iterator
+  {
+  public:
+    using iterator_category = std::random_access_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = Point;
+    using pointer = Point*;
+    using reference = Point&;
+
+    Iterator(typename std::deque<TypeX>::iterator x_it,
+             typename std::deque<Value>::iterator y_it)
+      : _x_it(x_it), _y_it(y_it)
+    {
+    }
+
+    Point operator*()
+    {
+      return Point(*_x_it, *_y_it);
+    }
+    Iterator& operator++()
+    {
+      ++_x_it;
+      ++_y_it;
+      return *this;
+    }
+    Iterator operator++(int)
+    {
+      Iterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+    Iterator& operator--()
+    {
+      --_x_it;
+      --_y_it;
+      return *this;
+    }
+    Iterator operator--(int)
+    {
+      Iterator tmp = *this;
+      --(*this);
+      return tmp;
+    }
+    Iterator& operator+=(difference_type n)
+    {
+      _x_it += n;
+      _y_it += n;
+      return *this;
+    }
+    Iterator operator+(difference_type n) const
+    {
+      return Iterator(_x_it + n, _y_it + n);
+    }
+    Iterator& operator-=(difference_type n)
+    {
+      _x_it -= n;
+      _y_it -= n;
+      return *this;
+    }
+    Iterator operator-(difference_type n) const
+    {
+      return Iterator(_x_it - n, _y_it - n);
+    }
+    difference_type operator-(const Iterator& other) const
+    {
+      return _x_it - other._x_it;
+    }
+    Point operator[](difference_type n)
+    {
+      return Point(*(_x_it + n), *(_y_it + n));
+    }
+    bool operator==(const Iterator& other) const
+    {
+      return _x_it == other._x_it;
+    }
+    bool operator!=(const Iterator& other) const
+    {
+      return _x_it != other._x_it;
+    }
+    bool operator<(const Iterator& other) const
+    {
+      return _x_it < other._x_it;
+    }
+    bool operator<=(const Iterator& other) const
+    {
+      return _x_it <= other._x_it;
+    }
+    bool operator>(const Iterator& other) const
+    {
+      return _x_it > other._x_it;
+    }
+    bool operator>=(const Iterator& other) const
+    {
+      return _x_it >= other._x_it;
+    }
+
+  private:
+    typename std::deque<TypeX>::iterator _x_it;
+    typename std::deque<Value>::iterator _y_it;
+  };
+
+  class ConstIterator
+  {
+  public:
+    using iterator_category = std::random_access_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = Point;
+    using pointer = const Point*;
+    using reference = const Point&;
+
+    ConstIterator(typename std::deque<TypeX>::const_iterator x_it,
+                  typename std::deque<Value>::const_iterator y_it)
+      : _x_it(x_it), _y_it(y_it)
+    {
+    }
+
+    Point operator*() const
+    {
+      return Point(*_x_it, *_y_it);
+    }
+    ConstIterator& operator++()
+    {
+      ++_x_it;
+      ++_y_it;
+      return *this;
+    }
+    ConstIterator operator++(int)
+    {
+      ConstIterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+    ConstIterator& operator--()
+    {
+      --_x_it;
+      --_y_it;
+      return *this;
+    }
+    ConstIterator operator--(int)
+    {
+      ConstIterator tmp = *this;
+      --(*this);
+      return tmp;
+    }
+    ConstIterator& operator+=(difference_type n)
+    {
+      _x_it += n;
+      _y_it += n;
+      return *this;
+    }
+    ConstIterator operator+(difference_type n) const
+    {
+      return ConstIterator(_x_it + n, _y_it + n);
+    }
+    ConstIterator& operator-=(difference_type n)
+    {
+      _x_it -= n;
+      _y_it -= n;
+      return *this;
+    }
+    ConstIterator operator-(difference_type n) const
+    {
+      return ConstIterator(_x_it - n, _y_it - n);
+    }
+    difference_type operator-(const ConstIterator& other) const
+    {
+      return _x_it - other._x_it;
+    }
+    Point operator[](difference_type n) const
+    {
+      return Point(*(_x_it + n), *(_y_it + n));
+    }
+    bool operator==(const ConstIterator& other) const
+    {
+      return _x_it == other._x_it;
+    }
+    bool operator!=(const ConstIterator& other) const
+    {
+      return _x_it != other._x_it;
+    }
+    bool operator<(const ConstIterator& other) const
+    {
+      return _x_it < other._x_it;
+    }
+    bool operator<=(const ConstIterator& other) const
+    {
+      return _x_it <= other._x_it;
+    }
+    bool operator>(const ConstIterator& other) const
+    {
+      return _x_it > other._x_it;
+    }
+    bool operator>=(const ConstIterator& other) const
+    {
+      return _x_it >= other._x_it;
+    }
+
+  private:
+    typename std::deque<TypeX>::const_iterator _x_it;
+    typename std::deque<Value>::const_iterator _y_it;
+  };
   typedef Value ValueT;
 
   PlotDataBase(const std::string& name, PlotGroup::Ptr group)
@@ -156,7 +355,8 @@ public:
 
   void clonePoints(const PlotDataBase& other)
   {
-    _points = other._points;
+    _x_data = other._x_data;
+    _y_data = other._y_data;
     _range_x = other._range_x;
     _range_y = other._range_y;
     _range_x_dirty = other._range_x_dirty;
@@ -165,7 +365,8 @@ public:
 
   void clonePoints(PlotDataBase&& other)
   {
-    _points = std::move(other._points);
+    _x_data = std::move(other._x_data);
+    _y_data = std::move(other._y_data);
     _range_x = other._range_x;
     _range_y = other._range_y;
     _range_x_dirty = other._range_x_dirty;
@@ -191,7 +392,7 @@ public:
 
   virtual size_t size() const
   {
-    return _points.size();
+    return _x_data.size();
   }
 
   virtual bool isTimeseries() const
@@ -199,29 +400,38 @@ public:
     return false;
   }
 
-  const Point& at(size_t index) const
+  Point at(size_t index) const
   {
-    return _points[index];
+    return Point(_x_data[index], _y_data[index]);
   }
 
-  Point& at(size_t index)
+  Point at(size_t index)
   {
-    return _points[index];
+    return Point(_x_data[index], _y_data[index]);
   }
 
-  const Point& operator[](size_t index) const
+  void setPoint(size_t index, const Point& p)
+  {
+    _x_data[index] = p.x;
+    _y_data[index] = p.y;
+    _range_x_dirty = true;
+    _range_y_dirty = true;
+  }
+
+  Point operator[](size_t index) const
   {
     return at(index);
   }
 
-  Point& operator[](size_t index)
+  Point operator[](size_t index)
   {
     return at(index);
   }
 
   virtual void clear()
   {
-    _points.clear();
+    _x_data.clear();
+    _y_data.clear();
     _range_x_dirty = true;
     _range_y_dirty = true;
   }
@@ -251,34 +461,34 @@ public:
     return (it == _attributes.end()) ? QVariant() : it->second;
   }
 
-  const Point& front() const
+  Point front() const
   {
-    return _points.front();
+    return Point(_x_data.front(), _y_data.front());
   }
 
-  const Point& back() const
+  Point back() const
   {
-    return _points.back();
+    return Point(_x_data.back(), _y_data.back());
   }
 
   ConstIterator begin() const
   {
-    return _points.begin();
+    return ConstIterator(_x_data.begin(), _y_data.begin());
   }
 
   ConstIterator end() const
   {
-    return _points.end();
+    return ConstIterator(_x_data.end(), _y_data.end());
   }
 
   Iterator begin()
   {
-    return _points.begin();
+    return Iterator(_x_data.begin(), _y_data.begin());
   }
 
   Iterator end()
   {
-    return _points.end();
+    return Iterator(_x_data.end(), _y_data.end());
   }
 
   // template specialization for types that support compare operator
@@ -286,18 +496,18 @@ public:
   {
     if constexpr (std::is_arithmetic_v<TypeX>)
     {
-      if (_points.empty())
+      if (_x_data.empty())
       {
         return std::nullopt;
       }
       if (_range_x_dirty)
       {
-        _range_x.min = front().x;
+        _range_x.min = _x_data.front();
         _range_x.max = _range_x.min;
-        for (const auto& p : _points)
+        for (const auto& x : _x_data)
         {
-          _range_x.min = std::min(_range_x.min, p.x);
-          _range_x.max = std::max(_range_x.max, p.x);
+          _range_x.min = std::min(_range_x.min, x);
+          _range_x.max = std::max(_range_x.max, x);
         }
         _range_x_dirty = false;
       }
@@ -311,18 +521,18 @@ public:
   {
     if constexpr (std::is_arithmetic_v<Value>)
     {
-      if (_points.empty())
+      if (_y_data.empty())
       {
         return std::nullopt;
       }
       if (_range_y_dirty)
       {
-        _range_y.min = front().y;
+        _range_y.min = _y_data.front();
         _range_y.max = _range_y.min;
-        for (const auto& p : _points)
+        for (const auto& y : _y_data)
         {
-          _range_y.min = std::min(_range_y.min, p.y);
-          _range_y.max = std::max(_range_y.max, p.y);
+          _range_y.min = std::min(_range_y.min, y);
+          _range_y.max = std::max(_range_y.max, y);
         }
         _range_y_dirty = false;
       }
@@ -345,7 +555,7 @@ public:
       {
         return;  // skip
       }
-      pushUpdateRangeX(p);
+      pushUpdateRangeX(p.x);
     }
     if constexpr (std::is_arithmetic_v<Value>)
     {
@@ -353,10 +563,11 @@ public:
       {
         return;  // skip
       }
-      pushUpdateRangeY(p);
+      pushUpdateRangeY(p.y);
     }
 
-    _points.emplace_back(p);
+    _x_data.emplace_back(std::move(p.x));
+    _y_data.emplace_back(std::move(p.y));
   }
 
   virtual void insert(Iterator it, Point&& p)
@@ -367,7 +578,7 @@ public:
       {
         return;  // skip
       }
-      pushUpdateRangeX(p);
+      pushUpdateRangeX(p.x);
     }
     if constexpr (std::is_arithmetic_v<Value>)
     {
@@ -375,19 +586,22 @@ public:
       {
         return;  // skip
       }
-      pushUpdateRangeY(p);
+      pushUpdateRangeY(p.y);
     }
 
-    _points.insert(it, p);
+    size_t index = it - begin();
+    auto x_it = _x_data.begin() + index;
+    auto y_it = _y_data.begin() + index;
+    _x_data.insert(x_it, std::move(p.x));
+    _y_data.insert(y_it, std::move(p.y));
   }
 
   virtual void popFront()
   {
-    const auto& p = _points.front();
-
     if constexpr (std::is_arithmetic_v<TypeX>)
     {
-      if (!_range_x_dirty && (p.x == _range_x.max || p.x == _range_x.min))
+      if (!_range_x_dirty &&
+          (_x_data.front() == _range_x.max || _x_data.front() == _range_x.min))
       {
         _range_x_dirty = true;
       }
@@ -395,18 +609,21 @@ public:
 
     if constexpr (std::is_arithmetic_v<Value>)
     {
-      if (!_range_y_dirty && (p.y == _range_y.max || p.y == _range_y.min))
+      if (!_range_y_dirty &&
+          (_y_data.front() == _range_y.max || _y_data.front() == _range_y.min))
       {
         _range_y_dirty = true;
       }
     }
-    _points.pop_front();
+    _x_data.pop_front();
+    _y_data.pop_front();
   }
 
 protected:
   std::string _name;
   Attributes _attributes;
-  std::deque<Point> _points;
+  std::deque<TypeX> _x_data;
+  std::deque<Value> _y_data;
 
   mutable Range _range_x;
   mutable Range _range_y;
@@ -415,25 +632,25 @@ protected:
   mutable std::shared_ptr<PlotGroup> _group;
 
   // template specialization for types that support compare operator
-  virtual void pushUpdateRangeX(const Point& p)
+  virtual void pushUpdateRangeX(const TypeX& x)
   {
     if constexpr (std::is_arithmetic_v<TypeX>)
     {
-      if (_points.empty())
+      if (_x_data.empty())
       {
         _range_x_dirty = false;
-        _range_x.min = p.x;
-        _range_x.max = p.x;
+        _range_x.min = x;
+        _range_x.max = x;
       }
       if (!_range_x_dirty)
       {
-        if (p.x > _range_x.max)
+        if (x > _range_x.max)
         {
-          _range_x.max = p.x;
+          _range_x.max = x;
         }
-        else if (p.x < _range_x.min)
+        else if (x < _range_x.min)
         {
-          _range_x.min = p.x;
+          _range_x.min = x;
         }
         else
         {
@@ -444,19 +661,19 @@ protected:
   }
 
   // template specialization for types that support compare operator
-  virtual void pushUpdateRangeY(const Point& p)
+  virtual void pushUpdateRangeY(const Value& y)
   {
     if constexpr (std::is_arithmetic_v<Value>)
     {
       if (!_range_y_dirty)
       {
-        if (p.y > _range_y.max)
+        if (y > _range_y.max)
         {
-          _range_y.max = p.y;
+          _range_y.max = y;
         }
-        else if (p.y < _range_y.min)
+        else if (y < _range_y.min)
         {
-          _range_y.min = p.y;
+          _range_y.min = y;
         }
         else
         {
