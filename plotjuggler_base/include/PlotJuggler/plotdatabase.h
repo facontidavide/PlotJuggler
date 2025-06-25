@@ -155,7 +155,7 @@ public:
     {
     }
 
-    Point operator*()
+    Point operator*() const
     {
       return _container->at(_index);
     }
@@ -204,7 +204,7 @@ public:
       return static_cast<difference_type>(_index) -
              static_cast<difference_type>(other._index);
     }
-    Point operator[](difference_type n)
+    Point operator[](difference_type n) const
     {
       return _container->at(_index + n);
     }
