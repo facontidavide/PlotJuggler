@@ -122,13 +122,43 @@ template <typename TypeX, typename Value>
 class PlotDataBase
 {
 public:
-  class Point
+  struct PointRef
   {
-  public:
+    TypeX& x;
+    Value& y;
+  };
+
+  struct ConstPointRef
+  {
+    const TypeX& x;
+    const Value& y;
+  };
+
+  struct Point
+  {
     TypeX x;
     Value y;
     Point(TypeX _x, Value _y) : x(_x), y(_y)
     {
+    }
+    Point(const PointRef& ref) : x(ref.x), y(ref.y)
+    {
+    }
+    Point(const ConstPointRef& ref) : x(ref.x), y(ref.y)
+    {
+    }
+
+    Point& operator=(const PointRef& ref)
+    {
+      x = ref.x;
+      y = ref.y;
+      return *this;
+    }
+    Point& operator=(const ConstPointRef& ref)
+    {
+      x = ref.x;
+      y = ref.y;
+      return *this;
     }
     Point() = default;
   };
@@ -400,14 +430,14 @@ public:
     return false;
   }
 
-  Point at(size_t index) const
+  ConstPointRef at(size_t index) const
   {
-    return Point(_x_data[index], _y_data[index]);
+    return { _x_data[index], _y_data[index] };
   }
 
-  Point at(size_t index)
+  PointRef at(size_t index)
   {
-    return Point(_x_data[index], _y_data[index]);
+    return { _x_data[index], _y_data[index] };
   }
 
   void setPoint(size_t index, const Point& p)
@@ -418,12 +448,12 @@ public:
     _range_y_dirty = true;
   }
 
-  Point operator[](size_t index) const
+  ConstPointRef operator[](size_t index) const
   {
     return at(index);
   }
 
-  Point operator[](size_t index)
+  PointRef operator[](size_t index)
   {
     return at(index);
   }
