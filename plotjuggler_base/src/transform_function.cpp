@@ -61,7 +61,7 @@ void TransformFunction_SISO::calculate()
 
   while (index < src_data->size())
   {
-    const auto& in_point = src_data->at(index);
+    const auto in_point = src_data->at(index);
 
     if (in_point.x >= _last_timestamp)
     {

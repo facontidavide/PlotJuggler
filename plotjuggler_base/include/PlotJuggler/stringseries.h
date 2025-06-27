@@ -17,7 +17,8 @@ namespace PJ
 class StringSeries : public TimeseriesBase<StringRef>
 {
 public:
-  using TimeseriesBase<StringRef>::_points;
+  using TimeseriesBase<StringRef>::_x_data;
+  using TimeseriesBase<StringRef>::_y_data;
 
   StringSeries(const std::string& name, PlotGroup::Ptr group)
     : TimeseriesBase<StringRef>(name, group)
@@ -66,7 +67,7 @@ public:
       {
         it = _storage.insert(_tmp_str).first;
       }
-      TimeseriesBase<StringRef>::pushBack({ p.x, StringRef(*it) });
+      TimeseriesBase<StringRef>::pushBack(Point(p.x, StringRef(*it)));
     }
   }
 

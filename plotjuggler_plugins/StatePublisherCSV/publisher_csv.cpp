@@ -150,7 +150,7 @@ QString StatePublisherCSV::generateStatisticsCSV(double time_start, double time_
 
     auto current_value = plot.getYfromX(_previous_time);
 
-    auto point = plot.at(index);
+    PJ::PlotData::Point point = plot.at(index);
 
     if (point.x > time_end)  // out of range
     {
