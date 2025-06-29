@@ -1456,7 +1456,8 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
   return false;
 }
 
-std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo& info, const bool mergeFiles)
+std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo& info,
+                                                             const bool mergeFiles)
 {
   ui->buttonPlay->setChecked(false);
 

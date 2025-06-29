@@ -37,10 +37,7 @@ DialogMultifilePrefix::DialogMultifilePrefix(QStringList filenames, QWidget* par
 
   ui->checkBoxClearExisting->setDisabled(!ui->mergeFilesCheckbox->isChecked());
   connect(ui->mergeFilesCheckbox, &QCheckBox::toggled, this,
-          [this](bool checked) {
-            ui->checkBoxClearExisting->setDisabled(!checked);
-          });
-
+          [this](bool checked) { ui->checkBoxClearExisting->setDisabled(!checked); });
 
   int index = 0;
   for (QString filename : filenames)
@@ -77,7 +74,6 @@ std::map<QString, QString> DialogMultifilePrefix::getPrefixes() const
 {
   return _prefixes;
 }
-
 
 DialogMultifilePrefix::~DialogMultifilePrefix()
 {

@@ -381,54 +381,68 @@ public:
     _points.insert(it, p);
   }
 
-
-  virtual void mergeWith(PlotDataBase<TypeX, Value>& other) {
+  virtual void mergeWith(PlotDataBase<TypeX, Value>& other)
+  {
     if (other._points.empty())
       return;
 
-    if (this->_points.empty()) {
+    if (this->_points.empty())
+    {
       this->_points.swap(other._points);
       this->_range_x_dirty = other._range_x_dirty;
       this->_range_y_dirty = other._range_y_dirty;
 
-      if constexpr (std::is_arithmetic_v<TypeX>) {
+      if constexpr (std::is_arithmetic_v<TypeX>)
+      {
         this->_range_x.max = other._range_x.max;
         this->_range_x.min = other._range_x.min;
       }
 
-      if constexpr (std::is_arithmetic_v<Value>) {
+      if constexpr (std::is_arithmetic_v<Value>)
+      {
         this->_range_y.min = other._range_y.min;
         this->_range_y.max = other._range_y.max;
       }
       return;
-
     }
 
-    if constexpr (std::is_arithmetic_v<TypeX>) {
+    if constexpr (std::is_arithmetic_v<TypeX>)
+    {
       // new points are all before this->_points
-      if (other._points.back().x < this->_points.front().x) {
+      if (other._points.back().x < this->_points.front().x)
+      {
         this->_points.swap(other._points);
       }
 
       // new points are all after this->_points
-      if (other._points.front().x > this->_points.back().x) {
-        std::move(other._points.begin(), other._points.end(), std::back_inserter(this->_points));
-      } else {
+      if (other._points.front().x > this->_points.back().x)
+      {
+        std::move(other._points.begin(), other._points.end(),
+                  std::back_inserter(this->_points));
+      }
+      else
+      {
         // Overlap: fallback to standard merging with move where possible
         std::deque<Point> result;
-        std::merge(std::make_move_iterator(this->_points.begin()), std::make_move_iterator(this->_points.end()),
-                   std::make_move_iterator(other._points.begin()), std::make_move_iterator(other._points.end()),
+        std::merge(std::make_move_iterator(this->_points.begin()),
+                   std::make_move_iterator(this->_points.end()),
+                   std::make_move_iterator(other._points.begin()),
+                   std::make_move_iterator(other._points.end()),
                    std::back_inserter(result),
                    [](const Point& a, const Point& b) { return a.x < b.x; });
         this->_points.swap(result);
       }
       this->_range_x.max = std::max(this->_range_x.max, other._range_x.max);
       this->_range_x.min = std::min(this->_range_x.min, other._range_x.min);
-    } else {
-      std::move(other._points.begin(), other._points.end(), std::back_inserter(this->_points));
+    }
+    else
+    {
+      std::move(other._points.begin(), other._points.end(),
+                std::back_inserter(this->_points));
     }
 
-    if constexpr (std::is_arithmetic_v<Value>) {
+    if constexpr (std::is_arithmetic_v<Value>)
+    {
       this->_range_y.max = std::max(this->_range_y.max, other._range_y.max);
       this->_range_y.min = std::min(this->_range_y.min, other._range_y.min);
     }

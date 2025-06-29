@@ -70,11 +70,15 @@ public:
     }
   }
 
-  virtual void mergeWith(PlotDataBase<double, StringRef>& other) override {
+  virtual void mergeWith(PlotDataBase<double, StringRef>& other) override
+  {
     StringSeries* otherStringSeries = dynamic_cast<StringSeries*>(&other);
-    if (otherStringSeries) {
-      for (auto& pointRef : other) {
-        if (pointRef.y.isSSO()){
+    if (otherStringSeries)
+    {
+      for (auto& pointRef : other)
+      {
+        if (pointRef.y.isSSO())
+        {
           continue;
         }
 
@@ -86,7 +90,7 @@ public:
           it = _storage.insert(_tmp_str).first;
         }
 
-        pointRef.y = std::move(StringRef(*it)); // point pointers to this here storage
+        pointRef.y = std::move(StringRef(*it));  // point pointers to this here storage
       }
     }
     PlotDataBase<double, StringRef>::mergeWith(other);
