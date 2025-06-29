@@ -70,6 +70,28 @@ public:
     }
   }
 
+  virtual void mergeWith(PlotDataBase<double, StringRef>& other) override {
+    StringSeries* otherStringSeries = dynamic_cast<StringSeries*>(&other);
+    if (otherStringSeries) {
+      for (auto& pointRef : other) {
+        if (pointRef.y.isSSO()){
+          continue;
+        }
+
+        _tmp_str.assign(pointRef.y.data(), pointRef.y.size());
+
+        auto it = _storage.find(_tmp_str);
+        if (it == _storage.end())
+        {
+          it = _storage.insert(_tmp_str).first;
+        }
+
+        pointRef.y = std::move(StringRef(*it)); // point pointers to this here storage
+      }
+    }
+    PlotDataBase<double, StringRef>::mergeWith(other);
+  }
+
 private:
   std::string _tmp_str;
   std::unordered_set<std::string> _storage;

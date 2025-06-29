@@ -382,7 +382,7 @@ public:
   }
 
 
-  void mergeWith(PlotDataBase<TypeX, Value>& other) {
+  virtual void mergeWith(PlotDataBase<TypeX, Value>& other) {
     if (other._points.empty())
       return;
 
@@ -405,17 +405,16 @@ public:
     }
 
     if constexpr (std::is_arithmetic_v<TypeX>) {
+      // new points are all before this->_points
+      if (other._points.back().x < this->_points.front().x) {
+        this->_points.swap(other._points);
+      }
 
       // new points are all after this->_points
       if (other._points.front().x > this->_points.back().x) {
         std::move(other._points.begin(), other._points.end(), std::back_inserter(this->_points));
-
-                // new points are all before this->_points
-      } else if (other._points.back().x < this->_points.front().x) {
-        std::move(this->_points.begin(), this->_points.end(), std::back_inserter(other._points));
-        this->_points.swap(other._points);
       } else {
-        // Fallback to standard merging with move where possible
+        // Overlap: fallback to standard merging with move where possible
         std::deque<Point> result;
         std::merge(std::make_move_iterator(this->_points.begin()), std::make_move_iterator(this->_points.end()),
                    std::make_move_iterator(other._points.begin()), std::make_move_iterator(other._points.end()),
