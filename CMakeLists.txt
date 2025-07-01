@@ -214,7 +214,7 @@ endif()
 
 target_include_directories(plotjuggler_base
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/sol2/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/sol2-3.5.0/include>
 )
 
 target_link_libraries(plotjuggler_base
