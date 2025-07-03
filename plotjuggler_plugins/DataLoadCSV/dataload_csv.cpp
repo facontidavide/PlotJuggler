@@ -523,7 +523,6 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
 
   //-----------------------------------
   bool interrupted = false;
-  int linecount = 0;
 
   // count the number of lines first
   int tot_lines = 0;
@@ -542,7 +541,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   progress_dialog.setWindowTitle("Loading the CSV file");
   progress_dialog.setLabelText("Loading... please wait");
   progress_dialog.setWindowModality(Qt::ApplicationModal);
-  progress_dialog.setRange(0, tot_lines - 1);
+  progress_dialog.setRange(0, tot_lines);
   progress_dialog.setAutoClose(true);
   progress_dialog.setAutoReset(true);
   progress_dialog.show();
@@ -609,9 +608,13 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   QString t_str;
   QString prev_t_str;
 
+  int linenumber = 1;
+  int samplecount = 0;
+  QVector<std::tuple<long, long, QString>> skip_list;
   while (!in.atEnd())
   {
     QString line = in.readLine();
+    linenumber++;
     SplitLine(line, _delimiter, string_items);
 
     // empty line? just try skipping
@@ -620,44 +623,15 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       continue;
     }
 
+    // corrupted line? just try skipping
     if (string_items.size() != column_names.size())
     {
-      QMessageBox msgBox;
-      msgBox.setWindowTitle(tr("Error reading file"));
-      msgBox.setText(tr("The number of values at line %1 is %2,\n"
-                        "but the expected number of columns is %3.\n"
-                        "Aborting...")
-                         .arg(linecount + 2)
-                         .arg(string_items.size())
-                         .arg(column_names.size()));
-
-      msgBox.setDetailedText(tr("File: \"%1\" \n\n"
-                                "Error reading file | Mismatched field count\n"
-                                "Delimiter: [%2]\n"
-                                "Header fields: %6\n"
-                                "Fields on line [%4]: %7\n\n"
-                                "File Preview:\n"
-                                "[1]%3\n"
-                                "[...]\n"
-                                "[%4]%5\n")
-                                 .arg(_fileInfo->filename)
-                                 .arg(_delimiter)
-                                 .arg(header_str)
-                                 .arg(linecount + 2)
-                                 .arg(line)
-                                 .arg(column_names.size())
-                                 .arg(string_items.size()));
-
-      QPushButton* abortButton = msgBox.addButton(QMessageBox::Ok);
-
-      msgBox.setIcon(QMessageBox::Warning);
-
-      msgBox.exec();
-
-      return false;
+      skip_list.append(
+          std::tuple<long, long, QString>(linenumber, string_items.size(), line));
+      continue;
     }
 
-    double timestamp = linecount;
+    double timestamp = samplecount;
 
     if (time_index >= 0)
     {
@@ -689,7 +663,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
         msgBox.setWindowTitle(tr("Error reading file"));
         msgBox.setText(tr("Couldn't parse timestamp on line %1 with string \"%2\" . "
                           "Aborting.\n")
-                           .arg(linecount + 1)
+                           .arg(linenumber)
                            .arg(t_str));
 
         msgBox.setDetailedText(tr("File: \"%1\" \n\n"
@@ -697,7 +671,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
                                   "Parsing format: [%4]\n"
                                   "Time at line %2 : [%3]\n")
                                    .arg(_fileInfo->filename)
-                                   .arg(linecount + 1)
+                                   .arg(linenumber)
                                    .arg(t_str)
                                    .arg((parse_date_format && !format_string.isEmpty()) ?
                                             format_string :
@@ -729,9 +703,9 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
                                   "Time at line %2 : %3\n"
                                   "Time at line %4 : %5")
                                    .arg(_fileInfo->filename)
-                                   .arg(linecount + 1)
+                                   .arg(linenumber - 1)
                                    .arg(prev_t_str)
-                                   .arg(linecount + 2)
+                                   .arg(linenumber)
                                    .arg(t_str)
                                    .arg(time_index)
                                    .arg(timeName));
@@ -775,9 +749,9 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       }
     }
 
-    if (linecount++ % 100 == 0)
+    if (linenumber % 100 == 0)
     {
-      progress_dialog.setValue(linecount);
+      progress_dialog.setValue(linenumber);
       QApplication::processEvents();
       if (progress_dialog.wasCanceled())
       {
@@ -785,6 +759,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
         break;
       }
     }
+    samplecount++;
   }
 
   if (interrupted)
@@ -821,6 +796,44 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       plot_data.numeric.erase(plot_data.numeric.find(name));
     }
   }
+
+  // Warn the user if some lines have been skipped.
+  if (skip_list.size() > 0)
+  {
+    QMessageBox msgBox;
+    msgBox.setWindowTitle(tr("Some line(s) have been skipped"));
+    msgBox.setText(tr("Some line(s) have been skipped due to an unexpected number of "
+                      "columns. Do you want to continue (Input file will not be "
+                      "modified)?"));
+    QString detailed_text(tr("File: \"%1\" \n\n"
+                             "Unexpected column count\n"
+                             "Delimiter: [%2]\n"
+                             "Header fields: %6\n\n")
+                              .arg(_fileInfo->filename)
+                              .arg(_delimiter)
+                              .arg(header_str));
+    for (const auto tuple : skip_list)
+    {
+      detailed_text += tr("Line %1 actual/expected column count: %2/%3\n")
+                           .arg(std::get<0>(tuple))
+                           .arg(std::get<1>(tuple))
+                           .arg(column_names.size());
+      detailed_text +=
+          tr("Line %1 content: %2\n").arg(std::get<0>(tuple)).arg(std::get<2>(tuple));
+    }
+    msgBox.setDetailedText(detailed_text);
+    QPushButton* continueButton =
+        msgBox.addButton(tr("Continue"), QMessageBox::ActionRole);
+    QPushButton* abortButton = msgBox.addButton(QMessageBox::Abort);
+    msgBox.setIcon(QMessageBox::Warning);
+    msgBox.exec();
+
+    if (msgBox.clickedButton() == abortButton)
+    {
+      return false;
+    }
+  }
+
   return true;
 }
 
