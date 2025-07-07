@@ -2,10 +2,11 @@ name: windows
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'  # Trigger on version tags like v3.10.0
   pull_request:
     types: [opened, synchronize, closed]
+  workflow_dispatch:  # Manual trigger
 
 jobs:
 
@@ -42,16 +43,63 @@ jobs:
           arch: 'win64_msvc2019_64'
           dir: '${{ github.workspace }}/qt_installation/'
           cache: 'true'
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          tools: 'tools_ifw'
+          add-tools-to-path: 'true'
 
       - name: Conan install
         shell: pwsh
         run: |
+          # Remove existing profile if it exists to avoid conflicts with cache
+          if (Test-Path "$env:USERPROFILE\.conan2\profiles\default") {
+            Remove-Item "$env:USERPROFILE\.conan2\profiles\default" -Force
+          }
           conan profile detect
-          conan install . -of build --build=missing -pr:b=default -s build_type=Release
+          conan install . -of build --build=missing -pr:b=default -s build_type=Release -s compiler.cppstd=17
 
       - name: Build Plotjuggler
         shell: pwsh
         run: |
           cmake --preset conan-default -B build -DBUILDING_WITH_CONAN=ON -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Release .
-          cmake --build build --config Release --target install
+          cmake --build build --config Release --target install --parallel
+
+      - name: Prepare installer directory
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path installer\io.plotjuggler.application\data
+          Copy-Item -Path install\bin\*.* -Destination installer\io.plotjuggler.application\data -Recurse -Force
+          windeployqt.exe --release installer\io.plotjuggler.application\data\plotjuggler.exe
+
+      - name: Create installer using QT Installation Framework
+        id: create_installer
+        shell: pwsh
+        run: |
+          # Get version from tag or use default
+          $version = if ($env:GITHUB_REF -match "refs/tags/v(.+)") { $matches[1] } else { "dev" }
+          $installer_name = "PlotJuggler-$version-Windows-x64.exe"
+
+          # Find binarycreator executable
+          $binarycreator = Get-ChildItem -Path "${{ github.workspace }}\qt_installation" -Recurse -Name "binarycreator.exe" | Select-Object -First 1
+          if (-not $binarycreator) {
+              Write-Error "binarycreator.exe not found in Qt installation"
+              exit 1
+          }
+          $binarycreator_path = Join-Path "${{ github.workspace }}\qt_installation" $binarycreator
+
+          # Create installer using existing configuration files
+          Write-Host "Creating installer: $installer_name"
+          & "$binarycreator_path" --offline-only -c installer\config\config.xml -p installer $installer_name
+
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Failed to create installer"
+              exit 1
+          }
+
+          # Set output for upload step
+          "installer_name=$installer_name" >> $env:GITHUB_OUTPUT
+          Write-Host "Installer created successfully: $installer_name"
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.create_installer.outputs.installer_name }}
+          path: ${{ steps.create_installer.outputs.installer_name }}

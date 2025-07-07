@@ -42,6 +42,11 @@ target_link_libraries(
   DataLoadMCAP PRIVATE Qt5::Widgets Qt5::Xml Qt5::Concurrent plotjuggler_base
                        mcap::mcap)
 
-target_compile_definitions(DataLoadMCAP PRIVATE QT_PLUGIN)
+add_library(DataLoadMCAP SHARED dataload_mcap.cpp dialog_mcap.cpp ${UI_SRC})
+
+# Suppress LNK4217 warnings on Windows for MCAP static library symbols
+if(WIN32 AND MSVC)
+  target_link_options(DataLoadMCAP PRIVATE /ignore:4217)
+endif()
 
 install(TARGETS DataLoadMCAP DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY})

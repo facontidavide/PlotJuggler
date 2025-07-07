@@ -18,7 +18,7 @@ if(MOSQUITTO_FOUND)
   target_compile_definitions(DataStreamMQTT_Mosquitto PRIVATE QT_PLUGIN)
 
   if(BUILDING_WITH_CONAN)
-    target_link_libraries(DataStreamMQTT_Mosquitto PRIVAT mosquitto::mosquitto)
+    target_link_libraries(DataStreamMQTT_Mosquitto PRIVATE mosquitto::mosquitto)
   else()
     target_link_libraries(DataStreamMQTT_Mosquitto
                           PRIVATE ${MOSQUITTO_LIBRARIES})
