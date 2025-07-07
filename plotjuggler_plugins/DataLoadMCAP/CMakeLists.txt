@@ -7,7 +7,7 @@ if(mcap_vendor_FOUND)
   add_library(mcap::mcap ALIAS mcap_vendor::mcap)
 else()
   message(STATUS "mcap_vendor not found. Will be downloaded with CPM.")
-  if(NOT TARGET mcap::mcap)
+  if(NOT TARGET mcap::mcap AND NOT TARGET mcap_lib)
 
     include(${PROJECT_SOURCE_DIR}/cmake/find_or_download_lz4.cmake)
     find_or_download_lz4()
