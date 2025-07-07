@@ -1,5 +1,6 @@
 qt5_wrap_ui(UI_SRC dialog_mcap.ui)
 
+# This is the ROS package
 find_package(mcap_vendor QUIET)
 
 if(mcap_vendor_FOUND)
@@ -26,10 +27,12 @@ else()
       DOWNLOAD_ONLY
       YES)
     # mcap has no CMake support, so we create our own target
+
     add_library(mcap_lib STATIC mcap.cpp)
     target_include_directories(
       mcap_lib PUBLIC $<BUILD_INTERFACE:${mcap_SOURCE_DIR}/cpp/mcap/include>)
-    target_link_libraries(mcap_lib PUBLIC lz4::lz4 zstd::zstd)
+    target_link_libraries(mcap_lib lz4::lz4 zstd::zstd)
+
     add_library(mcap::mcap ALIAS mcap_lib)
   endif()
 endif()
@@ -41,8 +44,6 @@ add_library(DataLoadMCAP SHARED dataload_mcap.cpp dialog_mcap.cpp ${UI_SRC})
 target_link_libraries(
   DataLoadMCAP PRIVATE Qt5::Widgets Qt5::Xml Qt5::Concurrent plotjuggler_base
                        mcap::mcap)
-
-add_library(DataLoadMCAP SHARED dataload_mcap.cpp dialog_mcap.cpp ${UI_SRC})
 
 # Suppress LNK4217 warnings on Windows for MCAP static library symbols
 if(WIN32 AND MSVC)
