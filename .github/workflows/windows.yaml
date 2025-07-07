@@ -87,7 +87,7 @@ jobs:
 
           # Create installer using existing configuration files
           Write-Host "Creating installer: $installer_name"
-          & "$binarycreator_path" --offline-only -c installer\config\config.xml -p installer $installer_name
+          & "$binarycreator_path" --offline-only -c installer\config.xml -p installer $installer_name
 
           if ($LASTEXITCODE -ne 0) {
               Write-Error "Failed to create installer"
