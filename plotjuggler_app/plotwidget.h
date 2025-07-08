@@ -82,6 +82,12 @@ public:
 
   void updateStatistics(bool forceUpdate = false);
 
+  bool isXYTimeFiltered() const;
+
+  void setXYTimeFiltered(bool filtered);
+  void setXYTimeFilter(Range filter);
+  Range xyTimeFilter() const;
+
 protected:
   PlotDataMapRef& _mapped_data;
 
@@ -226,6 +232,11 @@ private:
   SnippetsMap _snippets;
 
   bool _context_menu_enabled;
+
+  bool _xy_time_filtered;
+  Range _xy_time_filter;
+
+  void updateXYTimeFilter();
 
   // void updateMaximumZoomArea();
   void rescaleEqualAxisScaling();

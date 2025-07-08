@@ -80,6 +80,9 @@ PlotWidget::PlotWidget(PlotDataMapRef& datamap, QWidget* parent)
   , _time_offset(0.0)
   , _transform_select_dialog(nullptr)
   , _context_menu_enabled(true)
+  , _xy_time_filtered(false)
+  , _xy_time_filter(
+        { -std::numeric_limits<double>::max(), std::numeric_limits<double>::max() })
 {
   connect(this, &PlotWidget::curveListChanged, this,
           [this]() { this->updateMaximumZoomArea(); });
@@ -714,6 +717,11 @@ QDomElement PlotWidget::xmlSaveState(QDomDocument& doc) const
     }
   }
 
+  if (isXYPlot())
+  {
+    plot_el.setAttribute("xy_time_filtered", isXYTimeFiltered() ? "true" : "false");
+  }
+
   plot_el.setAttribute("mode", isXYPlot() ? "XYPlot" : "TimeSeries");
 
   plot_el.setAttribute("flip_x", isXYPlot() && _flip_x->isChecked() ? "true" : "false");
@@ -922,6 +930,11 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
         _background_item->attach(qwtPlot());
       }
     }
+  }
+
+  if (isXYPlot())
+  {
+    setXYTimeFiltered(plot_widget.attribute("xy_time_filtered") == "true");
   }
 
   if (autozoom)
@@ -1750,4 +1763,47 @@ QwtSeriesWrapper* PlotWidget::createTimeSeries(const PlotData* data,
   output->setTimeOffset(_time_offset);
   output->updateCache(true);
   return output;
+}
+
+bool PlotWidget::isXYTimeFiltered() const
+{
+  return _xy_time_filtered;
+}
+
+void PlotWidget::setXYTimeFiltered(bool filtered)
+{
+  _xy_time_filtered = filtered;
+  updateXYTimeFilter();
+}
+
+void PlotWidget::updateXYTimeFilter()
+{
+  for (auto& it : curveList())
+  {
+    if (auto pointSeries = dynamic_cast<PointSeriesXY*>(it.curve->data()))
+    {
+      pointSeries->setTimeFilter(_xy_time_filtered ?
+                                     _xy_time_filter :
+                                     Range({ -std::numeric_limits<double>::max(),
+                                             std::numeric_limits<double>::max() }));
+    }
+  }
+  updateMaximumZoomArea();
+  rescaleEqualAxisScaling();
+  replot();
+}
+
+void PlotWidget::setXYTimeFilter(Range filter)
+{
+  if (_xy_time_filter == filter)
+  {
+    return;
+  }
+  _xy_time_filter = filter;
+  updateXYTimeFilter();
+}
+
+Range PlotWidget::xyTimeFilter() const
+{
+  return _xy_time_filter;
 }
