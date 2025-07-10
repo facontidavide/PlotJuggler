@@ -1394,6 +1394,13 @@ void PlotWidget::updateAvailableTransformers()
 
 void PlotWidget::on_savePlotToFile()
 {
+  PlotSaveHelper save_plots_helper(default_document_dimentions, this);
+  plotOn(save_plots_helper, { 0, 0, default_document_dimentions.width(),
+                              default_document_dimentions.height() });
+}
+
+void PlotWidget::plotOn(const PlotSaveHelper& plot_save_helper, QRect paint_at)
+{
   bool tracker_enabled = _tracker->isEnabled();
   if (tracker_enabled)
   {
@@ -1401,7 +1408,7 @@ void PlotWidget::on_savePlotToFile()
     replot();
   }
 
-  savePlotToFile(default_document_dimentions, qwtPlot(), this);
+  plot_save_helper.paint(qwtPlot(), paint_at);
 
   if (tracker_enabled)
   {

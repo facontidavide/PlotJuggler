@@ -25,6 +25,7 @@
 #include "qwt_plot_legenditem.h"
 
 #include "PlotJuggler/plotwidget_base.h"
+#include "PlotJuggler/save_plot.h"
 #include "customtracker.h"
 #include "colormap_editor.h"
 
@@ -141,6 +142,8 @@ public slots:
   void onBackgroundColorRequest(QString name);
 
   void onShowDataStatistics();
+
+  void plotOn(const PlotSaveHelper& plot_save_helper, QRect paint_at);
 
 private slots:
 

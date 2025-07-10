@@ -68,14 +68,19 @@ TabbedPlotWidget::TabbedPlotWidget(QString name, QMainWindow* mainwindow,
 
   tabWidget()->tabBar()->installEventFilter(this);
 
-  // TODO _action_savePlots = new QAction(tr("&Save plots to file"), this);
-  // TODO connect(_action_savePlots, &QAction::triggered, this,
-  // &TabbedPlotWidget::on_savePlotsToFile);
+  _action_savePlots = new QAction(tr("&Save plots to file"), this);
+  connect(_action_savePlots, &QAction::triggered, this,
+          &TabbedPlotWidget::on_savePlotsToFile);
 
-  //  _tab_menu = new QMenu(this);
-  //  _tab_menu->addSeparator();
-  //  //_tab_menu->addAction(_action_savePlots);
-  //  _tab_menu->addSeparator();
+  _tab_menu = new QMenu(this);
+  _tab_menu->addSeparator();
+  _tab_menu->addAction(_action_savePlots);
+  _tab_menu->addSeparator();
+
+  QSettings settings;
+  QString theme = settings.value("StyleSheet::theme", "light").toString();
+
+  _action_savePlots->setIcon(LoadSvg(":/resources/svg/save.svg", theme));
 
   connect(this, &TabbedPlotWidget::destroyed, main_window,
           &MainWindow::on_tabbedAreaDestroyed);
@@ -257,6 +262,11 @@ void TabbedPlotWidget::on_renameCurrentTab()
   }
 }
 
+void TabbedPlotWidget::on_savePlotsToFile()
+{
+  currentTab()->savePlotsToFile();
+}
+
 void TabbedPlotWidget::on_stylesheetChanged(QString theme)
 {
   _buttonAddTab->setIcon(LoadSvg(":/resources/svg/add_tab.svg", theme));
@@ -366,6 +376,8 @@ bool TabbedPlotWidget::eventFilter(QObject* obj, QEvent* event)
 
       if (mouse_event->button() == Qt::RightButton)
       {
+        _tab_menu->exec(mouse_event->globalPos());
+
         // QMenu* submenu = new QMenu("Move tab to...");
         // _tab_menu->addMenu(submenu);
 
@@ -394,15 +406,10 @@ bool TabbedPlotWidget::eventFilter(QObject* obj, QEvent* event)
         //        SLOT(on_requestTabMovement(QString)));
 
         //        //-------------------------------
-        ////        QIcon iconSave;
-        ////        iconSave.addFile(tr(":/%1/save.png").arg(theme), QSize(26, 26));
-        ////        _action_savePlots->setIcon(iconSave);
-
         ////        QIcon iconNewWin;
         ////        iconNewWin.addFile(tr(":/%1/stacks.png").arg(theme), QSize(16, 16));
         ////        action_new_window->setIcon(iconNewWin);
 
-        //        _tab_menu->exec(mouse_event->globalPos());
         //        //-------------------------------
         //        submenu->deleteLater();
       }
