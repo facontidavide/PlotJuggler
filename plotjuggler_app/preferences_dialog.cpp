@@ -9,6 +9,7 @@
 #include <QSettings>
 #include <QDir>
 #include <QFileDialog>
+#include "PlotJuggler/save_plot.h"
 #include "PlotJuggler/svg_util.h"
 
 PreferencesDialog::PreferencesDialog(QWidget* parent)
@@ -61,6 +62,12 @@ PreferencesDialog::PreferencesDialog(QWidget* parent)
   bool truncation_check = settings.value("Preferences::truncation_check", true).toBool();
   ui->checkBoxTruncation->setChecked(truncation_check);
 
+  QSize export_plot =
+      settings.value("Preferences::export_plot_size", default_document_dimentions)
+          .toSize();
+  ui->spinBoxExportX->setValue(export_plot.width());
+  ui->spinBoxExportY->setValue(export_plot.height());
+
   //---------------
   auto custom_plugin_folders =
       settings.value("Preferences::plugin_folders", true).toStringList();
@@ -108,6 +115,8 @@ void PreferencesDialog::on_buttonBox_accepted()
   settings.setValue("Preferences::autozoom_filter_applied",
                     ui->checkBoxAutoZoomFilter->isChecked());
   settings.setValue("Preferences::truncation_check", ui->checkBoxTruncation->isChecked());
+  settings.setValue("Preferences::export_plot_size",
+                    QSize{ ui->spinBoxExportX->value(), ui->spinBoxExportY->value() });
 
   QStringList plugin_folders;
   for (int row = 0; row < ui->listWidgetCustom->count(); row++)

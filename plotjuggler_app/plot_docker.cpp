@@ -279,12 +279,12 @@ void PlotDocker::on_stylesheetChanged(QString theme)
   }
 }
 
-QRect PlotDocker::plotRelativeFootprint(int index) const
+QRect PlotDocker::plotRelativeFootprint(int index, QSize plot_size) const
 {
-  const auto factor_x = static_cast<float>(default_document_dimentions.width()) /
-                        static_cast<float>(rect().width());
-  const auto factor_y = static_cast<float>(default_document_dimentions.height()) /
-                        static_cast<float>(rect().height());
+  const auto factor_x =
+      static_cast<float>(plot_size.width()) / static_cast<float>(rect().width());
+  const auto factor_y =
+      static_cast<float>(plot_size.height()) / static_cast<float>(rect().height());
 
   const auto* dock_area = dockArea(index);
   const auto plot_pos = mapFromGlobal(
@@ -306,13 +306,14 @@ QRect PlotDocker::plotRelativeFootprint(int index) const
 
 void PlotDocker::savePlotsToFile()
 {
-  PlotSaveHelper save_plots_helper(default_document_dimentions, this);
+  const auto plot_size = plotSize();
+  PlotSaveHelper save_plots_helper(plot_size, this);
 
   for (int index = 0; index < plotCount(); index++)
   {
     const auto* dock_area = dockArea(index);
 
-    const auto plot_footprint = plotRelativeFootprint(index);
+    const auto plot_footprint = plotRelativeFootprint(index, plot_size);
     auto* plot_at = plotAt(index);
     plot_at->plotOn(save_plots_helper, plot_footprint);
 

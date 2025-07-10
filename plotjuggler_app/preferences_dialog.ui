@@ -374,6 +374,49 @@
         </widget>
        </item>
        <item>
+        <widget class="QGroupBox" name="gridGroupBox">
+         <property name="title">
+          <string>Export Plots:</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="1" column="0">
+           <widget class="QLabel" name="labelExportY">
+            <property name="text">
+             <string>Height</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="labelExportX">
+            <property name="text">
+             <string>Width</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="spinBoxExportX">
+            <property name="maximum">
+             <number>10000</number>
+            </property>
+            <property name="value">
+             <number>1200</number>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QSpinBox" name="spinBoxExportY">
+            <property name="maximum">
+             <number>10000</number>
+            </property>
+            <property name="value">
+             <number>900</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <widget class="QGroupBox" name="groupBox_2">
          <property name="title">
           <string>Parsing</string>

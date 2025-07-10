@@ -1394,9 +1394,9 @@ void PlotWidget::updateAvailableTransformers()
 
 void PlotWidget::on_savePlotToFile()
 {
-  PlotSaveHelper save_plots_helper(default_document_dimentions, this);
-  plotOn(save_plots_helper, { 0, 0, default_document_dimentions.width(),
-                              default_document_dimentions.height() });
+  const auto plot_size = plotSize();
+  PlotSaveHelper save_plots_helper(plot_size, this);
+  plotOn(save_plots_helper, { 0, 0, plot_size.width(), plot_size.height() });
 }
 
 void PlotWidget::plotOn(const PlotSaveHelper& plot_save_helper, QRect paint_at)

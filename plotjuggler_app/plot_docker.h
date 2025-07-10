@@ -80,7 +80,7 @@ public slots:
 private:
   void restoreSplitter(QDomElement elem, DockWidget* widget);
 
-  QRect plotRelativeFootprint(int index) const;
+  QRect plotRelativeFootprint(int index, QSize plot_size) const;
 
   QString _name;
 

@@ -13,6 +13,7 @@
 #include <QPaintDevice>
 #include <QPainter>
 #include <QRect>
+#include <QSettings>
 #include <QSize>
 #include <QString>
 #include <QWidget>
@@ -22,6 +23,16 @@
 const static QSize default_document_dimentions{ 1200, 900 };
 
 void savePlotToFile(QSize dims, QwtPlot* plot, QWidget* parent);
+
+inline auto plotSize()
+{
+  QSettings settings;
+  QSize result =
+      settings.value("Preferences::export_plot_size", default_document_dimentions)
+          .toSize();
+
+  return result;
+}
 
 class PlotSaveHelper
 {
