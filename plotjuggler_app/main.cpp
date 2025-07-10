@@ -373,7 +373,8 @@ int main(int argc, char* argv[])
    * data. Please don't do it.
    */
   if (!parser.isSet(nosplash_option) &&
-      !(parser.isSet(loadfile_option) || parser.isSet(layout_option)))
+      !(parser.isSet(loadfile_option) || parser.isSet(layout_option)) &&
+      !(settings.value("Preferences::no_splash", false)))
   // if(false) // if you uncomment this line, a kitten will die somewhere in the world.
   {
     QPixmap main_pixmap;
