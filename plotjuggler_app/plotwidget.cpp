@@ -48,6 +48,7 @@
 #include "plotmagnifier.h"
 #include "plotlegend.h"
 
+#include "PlotJuggler/save_plot.h"
 #include "PlotJuggler/svg_util.h"
 #include "point_series_xy.h"
 #include "colormap_selector.h"
@@ -1393,80 +1394,19 @@ void PlotWidget::updateAvailableTransformers()
 
 void PlotWidget::on_savePlotToFile()
 {
-  QString fileName;
-
-  QFileDialog saveDialog(qwtPlot());
-  saveDialog.setAcceptMode(QFileDialog::AcceptSave);
-
-  QStringList filters;
-  filters << "png (*.png)"
-          << "jpg (*.jpg *.jpeg)"
-          << "svg (*.svg)";
-
-  saveDialog.setNameFilters(filters);
-  saveDialog.exec();
-
-  if (saveDialog.result() == QDialog::Accepted && !saveDialog.selectedFiles().empty())
+  bool tracker_enabled = _tracker->isEnabled();
+  if (tracker_enabled)
   {
-    fileName = saveDialog.selectedFiles().first();
+    this->enableTracker(false);
+    replot();
+  }
 
-    if (fileName.isEmpty())
-    {
-      return;
-    }
+  savePlotToFile(default_document_dimentions, qwtPlot(), this);
 
-    bool is_svg = false;
-    QFileInfo fileinfo(fileName);
-    if (fileinfo.suffix().isEmpty())
-    {
-      auto filter = saveDialog.selectedNameFilter();
-      if (filter == filters[0])
-      {
-        fileName.append(".png");
-      }
-      else if (filter == filters[1])
-      {
-        fileName.append(".jpg");
-      }
-      else if (filter == filters[2])
-      {
-        fileName.append(".svg");
-        is_svg = true;
-      }
-    }
-
-    bool tracker_enabled = _tracker->isEnabled();
-    if (tracker_enabled)
-    {
-      this->enableTracker(false);
-      replot();
-    }
-
-    QRect documentRect(0, 0, 1200, 900);
-    QwtPlotRenderer rend;
-
-    if (is_svg)
-    {
-      QSvgGenerator generator;
-      generator.setFileName(fileName);
-      generator.setResolution(80);
-      generator.setViewBox(documentRect);
-      QPainter painter(&generator);
-      rend.render(qwtPlot(), &painter, documentRect);
-    }
-    else
-    {
-      QPixmap pixmap(1200, 900);
-      QPainter painter(&pixmap);
-      rend.render(qwtPlot(), &painter, documentRect);
-      pixmap.save(fileName);
-    }
-
-    if (tracker_enabled)
-    {
-      this->enableTracker(true);
-      replot();
-    }
+  if (tracker_enabled)
+  {
+    this->enableTracker(true);
+    replot();
   }
 }
 
