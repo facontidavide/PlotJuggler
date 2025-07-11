@@ -7,10 +7,11 @@ function(find_or_download_lz4)
 
     if(NOT TARGET lz4::lz4)
       add_library(lz4::lz4 INTERFACE IMPORTED)
-      set_target_properties(
-        lz4::lz4 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${LZ4_INCLUDE_DIR}"
-                            INTERFACE_LINK_LIBRARIES "${LZ4_LIBRARY}")
+      set_target_properties(lz4::lz4 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                "${LZ4_INCLUDE_DIR}")
+      target_link_libraries(lz4::lz4 INTERFACE ${LZ4_LIBRARY})
     endif()
+
   elseif(NOT TARGET lz4_static)
     # lz4 ###
     cpmaddpackage(
@@ -23,9 +24,11 @@ function(find_or_download_lz4)
     set(LZ4_FOUND TRUE)
 
     add_library(lz4::lz4 INTERFACE IMPORTED)
+
     set_target_properties(
       lz4::lz4 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${lz4_SOURCE_DIR}/lib
                           INTERFACE_LINK_LIBRARIES lz4_static)
+
   endif()
 
   if(NOT TARGET lz4::lz4)
