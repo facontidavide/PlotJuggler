@@ -28,6 +28,8 @@
     <depend>libqt5-opengl-dev</depend>
     <depend>libqt5x11extras5-dev</depend>
 
+    <depend>fmt</depend>
+
     <!-- needed for backward_cpp -->
     <depend>binutils</depend>
 

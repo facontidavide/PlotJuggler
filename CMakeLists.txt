@@ -30,8 +30,6 @@ if(NOT WIN32 AND ENABLE_ASAN)
       "${CMAKE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
-# FMT_HEADER_ONLY will be added to targets that need it
-
 if(VCPKG_TOOLCHAIN)
   set(BUILDING_WITH_VCPKG ON)
   message(STATUS "BUILDING_WITH_VCPKG")
@@ -166,6 +164,9 @@ find_or_download_data_tamer()
 include(cmake/find_or_download_json.cmake)
 find_or_download_json()
 
+include(cmake/find_or_download_fmt.cmake)
+find_or_download_fmt()
+
 include(cmake/find_or_download_fastcdr.cmake)
 find_or_download_fastcdr()
 
@@ -217,7 +218,7 @@ target_include_directories(
 target_link_libraries(
   plotjuggler_base
   PUBLIC plotjuggler_qwt
-  PRIVATE lua::lua)
+  PRIVATE fmt::fmt lua::lua)
 
 # Add compile definitions to plotjuggler_base
 target_compile_definitions(
