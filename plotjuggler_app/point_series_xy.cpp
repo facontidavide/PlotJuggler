@@ -13,6 +13,8 @@ PointSeriesXY::PointSeriesXY(const PlotData* x_axis, const PlotData* y_axis)
   , _x_axis(x_axis)
   , _y_axis(y_axis)
   , _cached_curve("", x_axis->group())
+  , _time_filter(
+        { -std::numeric_limits<double>::max(), std::numeric_limits<double>::max() })
 {
   updateCache(true);
 }
@@ -68,12 +70,25 @@ void PointSeriesXY::updateCache(bool reset_old_data)
       throw std::runtime_error("X and Y axis don't share the same time axis");
     }
 
-    const QPointF p(_x_axis->at(i).y, _y_axis->at(i).y);
-    _cached_curve.pushBack({ p.x(), p.y() });
+    if (_x_axis->at(i).x >= _time_filter.min && _x_axis->at(i).x <= _time_filter.max)
+    {
+      const QPointF p(_x_axis->at(i).y, _y_axis->at(i).y);
+      _cached_curve.pushBack({ p.x(), p.y() });
+    }
   }
 }
 
 RangeOpt PointSeriesXY::getVisualizationRangeX()
 {
   return _cached_curve.rangeX();
+}
+
+void PointSeriesXY::setTimeFilter(Range filter)
+{
+  if (_time_filter == filter)
+  {
+    return;
+  }
+  _time_filter = filter;
+  updateCache(true);
 }

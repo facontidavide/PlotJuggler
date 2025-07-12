@@ -199,6 +199,16 @@
            </property>
           </widget>
          </item>
+        <item>
+         <widget class="QCheckBox" name="checkBoxXYTimeFiltered">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
+          <property name="text">
+           <string>X/Y time filter</string>
+          </property>
+         </widget>
+        </item>
          <item>
           <spacer name="verticalSpacer_2">
            <property name="orientation">

@@ -37,6 +37,7 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   _plotwidget->xmlLoadState(saved_state);
   _plotwidget->on_changeTimeOffset(plotwidget->timeOffset());
   _plotwidget->setContextMenuEnabled(false);
+  _plotwidget->setXYTimeFilter(plotwidget->xyTimeFilter());
 
   _bounding_rect_original = _plotwidget_origin->currentBoundingRect();
 
@@ -111,6 +112,9 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   {
     ui->listWidget->item(0)->setSelected(true);
   }
+
+  ui->checkBoxXYTimeFiltered->setChecked(plotwidget->isXYTimeFiltered());
+  ui->checkBoxXYTimeFiltered->setVisible(plotwidget->isXYPlot());
 }
 
 PlotwidgetEditor::~PlotwidgetEditor()
@@ -330,6 +334,11 @@ void PlotwidgetEditor::on_radioStepsInv_toggled(bool checked)
   {
     _plotwidget->changeCurvesStyle(PlotWidgetBase::STEPSINV);
   }
+}
+
+void PlotwidgetEditor::on_checkBoxXYTimeFiltered_toggled(bool checked)
+{
+  _plotwidget->setXYTimeFiltered(checked);
 }
 
 void PlotwidgetEditor::on_checkBoxMax_toggled(bool checked)

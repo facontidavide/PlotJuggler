@@ -44,10 +44,13 @@ public:
     return &_cached_curve;
   }
 
+  void setTimeFilter(Range filter);
+
 protected:
   const PlotData* _x_axis;
   const PlotData* _y_axis;
   PlotDataXY _cached_curve;
+  Range _time_filter;
 };
 
 #endif  // POINT_SERIES_H

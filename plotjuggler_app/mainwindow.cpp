@@ -1000,6 +1000,10 @@ void MainWindow::onPlotZoomChanged(PlotWidget* modified_plot, QRectF new_range)
         plot->on_zoomOutVertical_triggered(false);
         plot->replot();
       }
+      if (!modified_plot->isXYPlot() && plot->isXYPlot())
+      {
+        plot->setXYTimeFilter(Range({ new_range.left(), new_range.right() }));
+      }
     };
     this->forEachWidget(visitor);
   }
