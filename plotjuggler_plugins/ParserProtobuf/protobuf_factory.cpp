@@ -3,7 +3,7 @@
 #include <QSettings>
 #include <QMessageBox>
 
-#include "PlotJuggler/contrib/fmt/format.h"
+#include "fmt/format.h"
 #include "PlotJuggler/svg_util.h"
 
 namespace gp = google::protobuf;

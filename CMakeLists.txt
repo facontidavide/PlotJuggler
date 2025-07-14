@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 project(
   plotjuggler
   LANGUAGES C CXX
-  VERSION 3.10.9)
+  VERSION 3.10.10)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -29,8 +29,6 @@ if(NOT WIN32 AND ENABLE_ASAN)
   set(CMAKE_LINKER_FLAGS
       "${CMAKE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 endif()
-
-# FMT_HEADER_ONLY will be added to targets that need it
 
 if(VCPKG_TOOLCHAIN)
   set(BUILDING_WITH_VCPKG ON)
@@ -166,6 +164,9 @@ find_or_download_data_tamer()
 include(cmake/find_or_download_json.cmake)
 find_or_download_json()
 
+include(cmake/find_or_download_fmt.cmake)
+find_or_download_fmt()
+
 include(cmake/find_or_download_fastcdr.cmake)
 find_or_download_fastcdr()
 
@@ -190,7 +191,8 @@ set(PLOTJUGGLER_BASE_SRC
     plotjuggler_base/src/plotlegend.cpp
     plotjuggler_base/src/plotpanner.cpp
     plotjuggler_base/src/timeseries_qwt.cpp
-    plotjuggler_base/src/reactive_function.cpp)
+    plotjuggler_base/src/reactive_function.cpp
+    plotjuggler_base/src/save_plot.cpp)
 
 qt5_wrap_cpp(
   PLOTJUGGLER_BASE_MOCS
@@ -217,7 +219,7 @@ target_include_directories(
 target_link_libraries(
   plotjuggler_base
   PUBLIC plotjuggler_qwt
-  PRIVATE lua::lua)
+  PRIVATE fmt::fmt lua::lua)
 
 # Add compile definitions to plotjuggler_base
 target_compile_definitions(

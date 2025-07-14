@@ -1,6 +1,7 @@
  [requires]
  protobuf/3.21.12
  mosquitto/2.0.18
+ fmt/11.2.0
  zeromq/4.3.5
  arrow/20.0.0
 

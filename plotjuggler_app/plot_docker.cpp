@@ -5,6 +5,7 @@
  */
 
 #include "plot_docker.h"
+#include "PlotJuggler/save_plot.h"
 #include "plotwidget_editor.h"
 #include "Qads/DockSplitter.h"
 #include <QPushButton>
@@ -278,6 +279,54 @@ void PlotDocker::on_stylesheetChanged(QString theme)
   }
 }
 
+QRect PlotDocker::plotRelativeFootprint(int index, QSize plot_size) const
+{
+  const auto factor_x =
+      static_cast<float>(plot_size.width()) / static_cast<float>(rect().width());
+  const auto factor_y =
+      static_cast<float>(plot_size.height()) / static_cast<float>(rect().height());
+
+  const auto* dock_area = dockArea(index);
+  const auto plot_pos = mapFromGlobal(
+      dock_area->currentDockWidget()->mapToGlobal(dock_area->currentDockWidget()->pos()));
+  const auto plot_rect = dock_area->currentDockWidget()->rect();
+
+  const static float title_margin = 10.f;
+  const static float plot_margin = 5.f;
+  const auto x = (static_cast<float>(plot_pos.x()) * factor_x) + plot_margin;
+  const auto y =
+      (static_cast<float>(plot_pos.y()) * factor_y) + title_margin + plot_margin;
+  const auto w = (static_cast<float>(plot_rect.width()) * factor_x) - 2 * plot_margin;
+  const auto h = (static_cast<float>(plot_rect.height()) * factor_y) - title_margin -
+                 2 * plot_margin;
+
+  return { static_cast<int>(x), static_cast<int>(y), static_cast<int>(w),
+           static_cast<int>(h) };
+}
+
+void PlotDocker::savePlotsToFile()
+{
+  const auto plot_size = plotSize();
+  PlotSaveHelper save_plots_helper(plot_size, this);
+
+  for (int index = 0; index < plotCount(); index++)
+  {
+    const auto* dock_area = dockArea(index);
+
+    const auto plot_footprint = plotRelativeFootprint(index, plot_size);
+    auto* plot_at = plotAt(index);
+    plot_at->plotOn(save_plots_helper, plot_footprint);
+
+    const static float title_margin = 10.f;
+    const auto title_footprint =
+        QRectF{ static_cast<qreal>(plot_footprint.x()), plot_footprint.y() - title_margin,
+                static_cast<qreal>(plot_footprint.width()), title_margin };
+    save_plots_helper.paintTitle(
+        static_cast<const DockWidget*>(dock_area->currentDockWidget())->name(),
+        title_footprint, this);
+  }
+}
+
 DockWidget::DockWidget(PlotDataMapRef& datamap, QWidget* parent)
   : ads::CDockWidget("Plot", parent), _datamap(datamap)
 {
@@ -391,4 +440,9 @@ PlotWidget* DockWidget::plotWidget()
 DockToolbar* DockWidget::toolBar()
 {
   return _toolbar;
+}
+
+QString DockWidget::name() const
+{
+  return _toolbar->label()->text();
 }

@@ -2,6 +2,16 @@
 Changelog for package plotjuggler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.10.10 (2025-07-11)
+--------------------
+* cosmetic change in Preferences
+* Fmt cpm (`#1120 <https://github.com/facontidavide/PlotJuggler/issues/1120>`_)
+* Make export plot size an application param
+* Add an action to plot a whole tab
+* fix missing submodule
+* fix Win CI
+* Contributors: Blaise Le Coquil, Davide Faconti
+
 3.10.9 (2025-07-08)
 -------------------
 * add Arrow to conan and fix Windows CI (`#1109 <https://github.com/facontidavide/PlotJuggler/issues/1109>`_)

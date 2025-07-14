@@ -110,6 +110,7 @@ target_link_libraries(
           plotjuggler_qwt
           QCodeEditor
           nlohmann_json::nlohmann_json
+          fmt::fmt
           lua::lua)
 
 if(COMPILING_WITH_CATKIN)

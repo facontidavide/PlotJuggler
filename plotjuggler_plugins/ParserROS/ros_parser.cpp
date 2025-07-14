@@ -1,6 +1,6 @@
 #include "ros_parser.h"
 #include "data_tamer_parser/data_tamer_parser.hpp"
-#include "PlotJuggler/contrib/fmt/core.h"
+#include "fmt//core.h"
 #include <queue>
 #include <algorithm>
 #include <unordered_map>
