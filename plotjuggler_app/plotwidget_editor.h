@@ -88,6 +88,8 @@ private slots:
 
   void on_radioStepsInv_toggled(bool checked);
 
+  void on_checkBoxXYTimeFiltered_toggled(bool checked);
+
 private:
   Ui::PlotWidgetEditor* ui;
 

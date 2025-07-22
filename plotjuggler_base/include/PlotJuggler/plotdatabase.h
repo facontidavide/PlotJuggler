@@ -25,6 +25,10 @@ struct Range
 {
   double min;
   double max;
+  bool operator==(const Range& other) const
+  {
+    return min == other.min && max == other.max;
+  }
 };
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
