@@ -115,6 +115,11 @@ target_link_libraries(
 
 if(COMPILING_WITH_CATKIN)
   target_link_libraries(plotjuggler PRIVATE ${catkin_LIBRARIES})
+  install(
+    TARGETS plotjuggler
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 elseif(COMPILING_WITH_AMENT)
 
   target_link_libraries(plotjuggler PRIVATE ament_index_cpp::ament_index_cpp
