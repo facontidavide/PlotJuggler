@@ -359,7 +359,7 @@ int main(int argc, char* argv[])
   manager_new_release.get(request_new_release);
 
   MainWindow* window = nullptr;
-
+  
   /*
    * You, fearless code reviewer, decided to start a journey into my source code.
    * For your bravery, you deserve to know the truth.
@@ -374,7 +374,7 @@ int main(int argc, char* argv[])
    */
   if (!parser.isSet(nosplash_option) &&
       !(parser.isSet(loadfile_option) || parser.isSet(layout_option)) &&
-      !(settings.value("Preferences::no_splash", false)))
+      !(settings.value("Preferences::no_splash", false).toBool()))
   // if(false) // if you uncomment this line, a kitten will die somewhere in the world.
   {
     QPixmap main_pixmap;

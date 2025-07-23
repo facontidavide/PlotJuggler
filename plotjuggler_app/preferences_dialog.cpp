@@ -46,6 +46,9 @@ PreferencesDialog::PreferencesDialog(QWidget* parent)
 
   bool use_opengl = settings.value("Preferences::use_opengl", true).toBool();
   ui->checkBoxOpenGL->setChecked(use_opengl);
+  
+  bool no_splash = settings.value("Preferences::no_splash", false).toBool();
+  ui->checkBoxSkipSplash->setChecked(no_splash);
 
   bool autozoom_visibility =
       settings.value("Preferences::autozoom_visibility", true).toBool();
@@ -108,6 +111,7 @@ void PreferencesDialog::on_buttonBox_accepted()
   settings.setValue("Preferences::precision", ui->comboBoxPrecision->currentIndex());
   settings.setValue("Preferences::use_separator", ui->checkBoxSeparator->isChecked());
   settings.setValue("Preferences::use_opengl", ui->checkBoxOpenGL->isChecked());
+  settings.setValue("Preferences::no_splash", ui->checkBoxSkipSplash->isChecked());
   settings.setValue("Preferences::autozoom_visibility",
                     ui->checkBoxAutoZoomVisibility->isChecked());
   settings.setValue("Preferences::autozoom_curve_added",
