@@ -68,6 +68,9 @@ protected:
                           const std::vector<std::string>& definition,
                           const std::vector<double>& values);
 
+  /// @brief Remove "/values" or "/names" suffix from a topic string
+  std::string parsePalStatisticsPrefix(const std::string& in_prefix);
+
   std::function<void(const std::string& prefix, double&)> _customized_parser;
 
   bool _has_header = false;

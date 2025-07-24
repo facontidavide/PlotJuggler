@@ -552,10 +552,12 @@ void ParserROS::parseDataTamerSnapshot(const std::string& prefix, double& timest
   DataTamerParser::ParseSnapshot(dt_schema, snapshot, callback);
 }
 
-static std::unordered_map<uint32_t, std::vector<std::string>> _pal_statistics_names;
+static std::unordered_map<std::string, std::unordered_map<uint32_t, std::vector<std::string>>>
+    _pal_statistics_names_per_topic;
 
 void ParserROS::parsePalStatisticsNames(const std::string& prefix, double& timestamp)
 {
+  auto parsed_prefix = parsePalStatisticsPrefix(prefix);
   const auto header = readHeader(timestamp);
   std::vector<std::string> names;
   const size_t vector_size = _deserializer->deserializeUInt32();
@@ -565,11 +567,12 @@ void ParserROS::parsePalStatisticsNames(const std::string& prefix, double& times
     _deserializer->deserializeString(name);
   }
   uint32_t names_version = _deserializer->deserializeUInt32();
-  _pal_statistics_names[names_version] = std::move(names);
+  _pal_statistics_names_per_topic[parsed_prefix][names_version] = std::move(names);
 }
 
 void ParserROS::parsePalStatisticsValues(const std::string& prefix, double& timestamp)
 {
+  auto parsed_prefix = parsePalStatisticsPrefix(prefix);
   const auto header = readHeader(timestamp);
   std::vector<double> values;
   const size_t vector_size = _deserializer->deserializeUInt32();
@@ -580,8 +583,9 @@ void ParserROS::parsePalStatisticsValues(const std::string& prefix, double& time
     value = _deserializer->deserialize(BuiltinType::FLOAT64).convert<double>();
   }
   uint32_t names_version = _deserializer->deserializeUInt32();
-  auto it = _pal_statistics_names.find(names_version);
-  if (it != _pal_statistics_names.end())
+  auto it = _pal_statistics_names_per_topic[parsed_prefix].find(names_version);
+  auto end_it = _pal_statistics_names_per_topic[parsed_prefix].end();
+  if (it != end_it)
   {
     const auto& names = it->second;
     const size_t N = std::min(names.size(), values.size());
@@ -591,6 +595,19 @@ void ParserROS::parsePalStatisticsValues(const std::string& prefix, double& time
       series.pushBack({ timestamp, values[i] });
     }
   }
+}
+
+std::string ParserROS::parsePalStatisticsPrefix(const std::string& in_prefix)
+{
+  std::string prefix = in_prefix;
+  const std::vector<std::string> suffixes = {"/values", "/names"};
+  for (const auto& suffix : suffixes) {
+      if (prefix.size() >= suffix.size() &&
+          prefix.compare(prefix.size() - suffix.size(), suffix.size(), suffix) == 0) {
+          return prefix.substr(0, prefix.size() - suffix.size());
+      }
+  }
+  return prefix;
 }
 
 constexpr static std::array<BuiltinType, 11> _tsl_type_order = {
