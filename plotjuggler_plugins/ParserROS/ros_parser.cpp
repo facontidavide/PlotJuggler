@@ -552,7 +552,8 @@ void ParserROS::parseDataTamerSnapshot(const std::string& prefix, double& timest
   DataTamerParser::ParseSnapshot(dt_schema, snapshot, callback);
 }
 
-static std::unordered_map<std::string, std::unordered_map<uint32_t, std::vector<std::string>>>
+static std::unordered_map<std::string,
+                          std::unordered_map<uint32_t, std::vector<std::string>>>
     _pal_statistics_names_per_topic;
 
 void ParserROS::parsePalStatisticsNames(const std::string& prefix, double& timestamp)
@@ -600,12 +601,14 @@ void ParserROS::parsePalStatisticsValues(const std::string& prefix, double& time
 std::string ParserROS::parsePalStatisticsPrefix(const std::string& in_prefix)
 {
   std::string prefix = in_prefix;
-  const std::vector<std::string> suffixes = {"/values", "/names"};
-  for (const auto& suffix : suffixes) {
-      if (prefix.size() >= suffix.size() &&
-          prefix.compare(prefix.size() - suffix.size(), suffix.size(), suffix) == 0) {
-          return prefix.substr(0, prefix.size() - suffix.size());
-      }
+  const std::vector<std::string> suffixes = { "/values", "/names" };
+  for (const auto& suffix : suffixes)
+  {
+    if (prefix.size() >= suffix.size() &&
+        prefix.compare(prefix.size() - suffix.size(), suffix.size(), suffix) == 0)
+    {
+      return prefix.substr(0, prefix.size() - suffix.size());
+    }
   }
   return prefix;
 }
