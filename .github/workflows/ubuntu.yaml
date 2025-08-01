@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
   pull_request:
     types: [opened, synchronize]
 
@@ -50,7 +52,6 @@ jobs:
 
       - name: Build AppImage
         working-directory: ${{ github.workspace }}
-        if: github.event_name == 'release'
         run: |
             wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
             wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
@@ -63,7 +64,14 @@ jobs:
               --plugin qt --output appimage
 
       - name: Upload AppImage
-        if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v1
+        uses: actions/upload-artifact@v4
+        with:
+          name: PlotJuggler-x86_64.AppImage
+          path: PlotJuggler-x86_64.AppImage
+
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
         with:
           files: PlotJuggler-x86_64.AppImage
+          generate_release_notes: true
