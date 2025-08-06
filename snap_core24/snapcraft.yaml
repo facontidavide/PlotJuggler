@@ -1,0 +1,355 @@
+name: plotjuggler
+adopt-info: plotjuggler # parse metadata from the plotjuggler part
+summary: The timeseries visualization tool that you deserve
+description: |
+  QT5 based application to display time series in plots,
+  using an intuitive "drag and drop" interface.
+
+  The snap comes with only ROS 2 plugins.
+  You can launch it with:
+
+    $ plotjuggler
+
+version: git
+
+issues: https://github.com/facontidavide/plotjuggler/issues
+source-code: https://github.com/facontidavide/plotjuggler
+license: MPL-2.0
+
+confinement: strict
+base: core24
+
+platforms:
+    amd64:
+        build-on: [amd64]
+        build-for: [amd64]
+
+apps:
+  plotjuggler:
+    command: usr/bin/launcher-plotjuggler-ros2
+    command-chain: [qt_snap_environment.sh]
+    plugs:
+      - network
+      - network-bind
+      - home
+      - desktop
+      - opengl
+      - wayland
+      - x11
+    extensions: [ros2-jazzy]
+
+parts:
+  plotjuggler:
+    plugin: cmake
+    source: .
+    cmake-parameters:
+      - -DBASE_AS_SHARED=ON
+      - -DCMAKE_BUILD_TYPE=Release
+    build-packages:
+      - libpulse0
+      - libdw-dev
+      - libbfd-dev
+      - libdwarf-dev
+      - libprotoc-dev
+      - libgl-dev
+      - libmosquitto-dev
+      - libqt5svg5-dev
+      - libqt5opengl5-dev
+      - libqt5websockets5-dev
+      - libqt5x11extras5-dev
+      - libzmq3-dev
+      - libzstd-dev
+      - qtbase5-dev
+      - qtbase5-dev-tools
+      - qttools5-dev
+      - qttools5-dev-tools
+    stage-packages:
+      - libdw1
+      - libmosquitto1
+      - libprotobuf-dev
+      - libzmq5
+      - libzstd1
+      - libfreetype6
+      - libqt5svg5-dev
+      - libqt5opengl5-dev
+      - libqt5websockets5-dev
+      - libqt5x11extras5-dev
+    override-pull: |
+        craftctl default
+        git config --global --add safe.directory '*'
+        version="$(git describe --always --tags| sed -e 's/^v//;s/-/+git/;y/-/./')"
+        [ -n "$(echo $version | grep "+git")" ] && grade=devel || grade=stable
+        craftctl set version="$version"
+        craftctl set grade="$grade"
+
+        # Include CMakeFindDependencyMacro to make sure find_dependency is found by cmake
+        sed -i '/@PACKAGE_INIT@/a include(CMakeFindDependencyMacro)' cmake/Config.cmake.in
+
+        # Add namespace to CmakeLists to make sure libraries can be properly exported
+        sed -i '/FILE ${PROJECT_NAME}Targets.cmake/a\      NAMESPACE ${PROJECT_NAME}::' CMakeLists.txt
+
+        # Necessary to bypass XDG desktop portals because ROS 2 bags metadata.yaml are referring db3 files relatively
+        sed -i '/QApplication app(new_argc, new_argv.data());/a QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs);' plotjuggler_app/main.cpp
+  plotjuggler-ros2:
+    after: [plotjuggler]
+    plugin: colcon
+    source: .
+    colcon-cmake-args:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DBUILD_TESTING=OFF
+      - -DBUILD_DOCS=OFF
+      - -Dplotjuggler_DIR:PATH=$CRAFT_STAGE/usr/local/lib/cmake/plotjuggler
+      # Due to https://github.com/ament/ament_cmake/issues/189 implicitly OpenSSL link breaks. So we change CMAKE_PREFIX_PATH and not CMAKE_FIND_ROOT_PATH
+      - -DCMAKE_PREFIX_PATH=${CRAFT_STAGE}/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/cmake/Qt5
+      - --event-handlers=console_direct+
+    build-packages:
+      - git
+      - python3-vcstool
+      - ros-jazzy-ros-core
+      - patchelf
+    stage-packages:
+      - libqt5svg5-dev
+      - libqt5opengl5-dev
+      - libqt5websockets5-dev
+      - libqt5x11extras5-dev
+      # ROS 2 plugin need to source messages to plot them
+      # No custom message is going to be support for now
+      - ros-jazzy-ackermann-msgs
+      - ros-jazzy-action-msgs
+      - ros-jazzy-actionlib-msgs
+      - ros-jazzy-actuator-msgs
+      - ros-jazzy-apriltag-msgs
+      - ros-jazzy-aruco-msgs
+      - ros-jazzy-aruco-opencv-msgs
+      - ros-jazzy-automotive-autonomy-msgs
+      - ros-jazzy-automotive-navigation-msgs
+      - ros-jazzy-automotive-platform-msgs
+      - ros-jazzy-autoware-adapi-v1-msgs
+      - ros-jazzy-autoware-adapi-version-msgs
+      - ros-jazzy-autoware-auto-msgs
+      - ros-jazzy-autoware-common-msgs
+      - ros-jazzy-autoware-control-msgs
+      - ros-jazzy-autoware-internal-debug-msgs
+      - ros-jazzy-autoware-internal-metric-msgs
+      - ros-jazzy-autoware-internal-msgs
+      - ros-jazzy-autoware-internal-perception-msgs
+      - ros-jazzy-autoware-internal-planning-msgs
+      - ros-jazzy-autoware-localization-msgs
+      - ros-jazzy-autoware-map-msgs
+      - ros-jazzy-autoware-msgs
+      - ros-jazzy-autoware-perception-msgs
+      - ros-jazzy-autoware-planning-msgs
+      - ros-jazzy-autoware-sensing-msgs
+      - ros-jazzy-autoware-system-msgs
+      - ros-jazzy-autoware-v2x-msgs
+      - ros-jazzy-autoware-vehicle-msgs
+      - ros-jazzy-axis-msgs
+      - ros-jazzy-camera-aravis2-msgs
+      - ros-jazzy-can-msgs
+      - ros-jazzy-cartographer-ros-msgs
+      - ros-jazzy-cascade-lifecycle-msgs
+      - ros-jazzy-clearpath-motor-msgs
+      - ros-jazzy-clearpath-msgs
+      - ros-jazzy-clearpath-platform-msgs
+      - ros-jazzy-cob-msgs
+      - ros-jazzy-control-msgs
+      - ros-jazzy-controller-manager-msgs
+      - ros-jazzy-create3-examples-msgs
+      - ros-jazzy-data-tamer-msgs
+      - ros-jazzy-dataspeed-can-msgs
+      - ros-jazzy-delphi-esr-msgs
+      - ros-jazzy-delphi-mrr-msgs
+      - ros-jazzy-delphi-srr-msgs
+      - ros-jazzy-depth-obstacle-detect-ros-msgs
+      - ros-jazzy-depthai-ros-msgs
+      - ros-jazzy-derived-object-msgs
+      - ros-jazzy-diagnostic-msgs
+      - ros-jazzy-ds-dbw-msgs
+      - ros-jazzy-dwb-msgs
+      - ros-jazzy-dynamixel-workbench-msgs
+      - ros-jazzy-etsi-its-cam-msgs
+      - ros-jazzy-etsi-its-cam-ts-msgs
+      - ros-jazzy-etsi-its-cpm-ts-msgs
+      - ros-jazzy-etsi-its-denm-msgs
+      - ros-jazzy-etsi-its-denm-ts-msgs
+      - ros-jazzy-etsi-its-mapem-ts-msgs
+      - ros-jazzy-etsi-its-mcm-uulm-msgs
+      - ros-jazzy-etsi-its-msgs
+      - ros-jazzy-etsi-its-msgs-utils
+      - ros-jazzy-etsi-its-spatem-ts-msgs
+      - ros-jazzy-etsi-its-vam-ts-msgs
+      - ros-jazzy-event-camera-msgs
+      - ros-jazzy-ffmpeg-image-transport-msgs
+      - ros-jazzy-flexbe-msgs
+      - ros-jazzy-flir-camera-msgs
+      - ros-jazzy-four-wheel-steering-msgs
+      - ros-jazzy-foxglove-msgs
+      - ros-jazzy-fuse-msgs
+      - ros-jazzy-gazebo-msgs
+      - ros-jazzy-geographic-msgs
+      - ros-jazzy-geometry-msgs
+      - ros-jazzy-gps-msgs
+      - ros-jazzy-graph-msgs
+      - ros-jazzy-grasping-msgs
+      - ros-jazzy-grbl-msgs
+      - ros-jazzy-grid-map-msgs
+      - ros-jazzy-gz-msgs-vendor
+      - ros-jazzy-ibeo-msgs
+      - ros-jazzy-irobot-create-msgs
+      - ros-jazzy-kartech-linear-actuator-msgs
+      - ros-jazzy-leo-msgs
+      - ros-jazzy-lgsvl-msgs
+      - ros-jazzy-lifecycle-msgs
+      - ros-jazzy-map-msgs
+      - ros-jazzy-marine-acoustic-msgs
+      - ros-jazzy-marine-sensor-msgs
+      - ros-jazzy-marker-msgs
+      - ros-jazzy-marti-can-msgs
+      - ros-jazzy-marti-common-msgs
+      - ros-jazzy-marti-dbw-msgs
+      - ros-jazzy-marti-introspection-msgs
+      - ros-jazzy-marti-nav-msgs
+      - ros-jazzy-marti-perception-msgs
+      - ros-jazzy-marti-sensor-msgs
+      - ros-jazzy-marti-status-msgs
+      - ros-jazzy-marti-visualization-msgs
+      - ros-jazzy-mavros-msgs
+      - ros-jazzy-micro-ros-diagnostic-msgs
+      - ros-jazzy-micro-ros-msgs
+      - ros-jazzy-microstrain-inertial-msgs
+      - ros-jazzy-mobileye-560-660-msgs
+      - ros-jazzy-mola-msgs
+      - ros-jazzy-moveit-msgs
+      - ros-jazzy-mrpt-msgs
+      - ros-jazzy-mrpt-msgs-bridge
+      - ros-jazzy-nao-command-msgs
+      - ros-jazzy-nao-lola-command-msgs
+      - ros-jazzy-nao-lola-sensor-msgs
+      - ros-jazzy-nao-sensor-msgs
+      - ros-jazzy-nav-2d-msgs
+      - ros-jazzy-nav-msgs
+      - ros-jazzy-nav2-msgs
+      - ros-jazzy-neobotix-usboard-msgs
+      - ros-jazzy-nmea-msgs
+      - ros-jazzy-novatel-gps-msgs
+      - ros-jazzy-novatel-oem7-msgs
+      - ros-jazzy-object-recognition-msgs
+      - ros-jazzy-octomap-msgs
+      - ros-jazzy-open-sound-control-msgs
+      - ros-jazzy-ouster-sensor-msgs
+      - ros-jazzy-pal-statistics-msgs
+      - ros-jazzy-pcl-msgs
+      - ros-jazzy-pendulum-msgs
+      - ros-jazzy-phidgets-msgs
+      - ros-jazzy-plansys2-msgs
+      - ros-jazzy-plotjuggler-msgs
+      - ros-jazzy-polygon-msgs
+      - ros-jazzy-ptz-action-server-msgs
+      - ros-jazzy-radar-msgs
+      - ros-jazzy-raspimouse-msgs
+      - ros-jazzy-rc-common-msgs
+      - ros-jazzy-rc-reason-msgs
+      - ros-jazzy-rclpy-message-converter-msgs
+      - ros-jazzy-rcss3d-agent-msgs
+      - ros-jazzy-rcss3d-agent-msgs-to-soccer-interfaces
+      - ros-jazzy-realsense2-camera-msgs
+      - ros-jazzy-rmf-api-msgs
+      - ros-jazzy-rmf-building-map-msgs
+      - ros-jazzy-rmf-charger-msgs
+      - ros-jazzy-rmf-dispenser-msgs
+      - ros-jazzy-rmf-door-msgs
+      - ros-jazzy-rmf-fleet-msgs
+      - ros-jazzy-rmf-ingestor-msgs
+      - ros-jazzy-rmf-lift-msgs
+      - ros-jazzy-rmf-obstacle-msgs
+      - ros-jazzy-rmf-scheduler-msgs
+      - ros-jazzy-rmf-site-map-msgs
+      - ros-jazzy-rmf-task-msgs
+      - ros-jazzy-rmf-traffic-msgs
+      - ros-jazzy-rmf-visualization-msgs
+      - ros-jazzy-rmf-workcell-msgs
+      - ros-jazzy-robot-calibration-msgs
+      - ros-jazzy-ros-babel-fish-test-msgs
+      - ros-jazzy-ros2-socketcan-msgs
+      - ros-jazzy-rosapi-msgs
+      - ros-jazzy-rosbag2-performance-benchmarking-msgs
+      - ros-jazzy-rosbridge-msgs
+      - ros-jazzy-rosbridge-test-msgs
+      - ros-jazzy-rosgraph-monitor-msgs
+      - ros-jazzy-rosgraph-msgs
+      - ros-jazzy-rtabmap-msgs
+      - ros-jazzy-rtcm-msgs
+      - ros-jazzy-rviz-2d-overlay-msgs
+      - ros-jazzy-sensor-msgs
+      - ros-jazzy-sensor-msgs-py
+      - ros-jazzy-service-msgs
+      - ros-jazzy-shape-msgs
+      - ros-jazzy-slg-msgs
+      - ros-jazzy-smach-msgs
+      - ros-jazzy-soccer-geometry-msgs
+      - ros-jazzy-soccer-model-msgs
+      - ros-jazzy-soccer-vision-2d-msgs
+      - ros-jazzy-soccer-vision-3d-msgs
+      - ros-jazzy-soccer-vision-attribute-msgs
+      - ros-jazzy-statistics-msgs
+      - ros-jazzy-std-msgs
+      - ros-jazzy-stereo-msgs
+      - ros-jazzy-system-modes-msgs
+      - ros-jazzy-teleop-tools-msgs
+      - ros-jazzy-test-msgs
+      - ros-jazzy-tf2-geometry-msgs
+      - ros-jazzy-tf2-msgs
+      - ros-jazzy-tf2-sensor-msgs
+      - ros-jazzy-trajectory-msgs
+      - ros-jazzy-turtlebot3-applications-msgs
+      - ros-jazzy-turtlebot3-msgs
+      - ros-jazzy-turtlebot4-msgs
+      - ros-jazzy-tuw-airskin-msgs
+      - ros-jazzy-tuw-geo-msgs
+      - ros-jazzy-tuw-geometry-msgs
+      - ros-jazzy-tuw-graph-msgs
+      - ros-jazzy-tuw-msgs
+      - ros-jazzy-tuw-multi-robot-msgs
+      - ros-jazzy-tuw-nav-msgs
+      - ros-jazzy-tuw-object-map-msgs
+      - ros-jazzy-tuw-object-msgs
+      - ros-jazzy-tuw-std-msgs
+      - ros-jazzy-twist-mux-msgs
+      - ros-jazzy-ublox-msgs
+      - ros-jazzy-ublox-ubx-msgs
+      - ros-jazzy-udp-msgs
+      - ros-jazzy-unique-identifier-msgs
+      - ros-jazzy-ur-dashboard-msgs
+      - ros-jazzy-ur-msgs
+      - ros-jazzy-urg-node-msgs
+      - ros-jazzy-velodyne-msgs
+      - ros-jazzy-vision-msgs
+      - ros-jazzy-vision-msgs-layers
+      - ros-jazzy-vision-msgs-rviz-plugins
+      - ros-jazzy-visualization-msgs
+      - ros-jazzy-webots-ros2-msgs
+      - ros-jazzy-wiimote-msgs
+      - ros-jazzy-wireless-msgs
+      - ros-jazzy-yasmin-msgs
+      - ros-jazzy-zed-msgs
+
+      # Additional DDS vendors
+      - ros-jazzy-rmw-cyclonedds-cpp
+      - ros-jazzy-rmw-fastrtps-cpp
+      - ros-jazzy-rmw-gurumdds-cpp
+      - ros-jazzy-rmw-connextdds
+    override-pull: |
+      if [ ! -d plotjuggler-ros-plugins ]; then
+
+        vcs import < /root/parts/plotjuggler/src/snap/local/plotjuggler.rosinstall
+
+        # prevent rosdep from installing plotjuggler
+        sed -i "s|<depend>plotjuggler</depend>||" plotjuggler-ros-plugins/package.xml
+      fi
+
+  fastdds-no-shared-memory:
+    plugin: dump
+    source: snap/local/
+    organize:
+      'fastdds_no_shared_memory.xml': usr/share/
+      'launcher-plotjuggler*': usr/bin/
