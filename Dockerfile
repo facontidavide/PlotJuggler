@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 as builder
+FROM ubuntu:22.04 AS builder
 
 RUN apt-get update && \
     apt-get -y install git cmake build-essential wget file qtbase5-dev libqt5svg5-dev \
