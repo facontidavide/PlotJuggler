@@ -172,7 +172,12 @@ char* ULogParser::parseSimpleDataMessage(Timeseries& timeseries, const Format* f
     bool timestamp_done = false;
     for (int array_pos = 0; array_pos < field.array_size; array_pos++)
     {
-      if (*index == format->timestamp_idx && !timestamp_done)
+      if (format->timestamp_idx < 0)
+      {
+        // No timestamps defined in this message
+        timeseries.timestamps.push_back(std::nullopt);
+      }
+      else if (*index == format->timestamp_idx && !timestamp_done)
       {
         timestamp_done = true;
         uint64_t time_val = *reinterpret_cast<uint64_t*>(message);
@@ -627,12 +632,6 @@ bool ULogParser::readFormat(DataStream& datastream, uint16_t msg_size)
       field.field_name = field_name.to_string();
       format.fields.push_back(field);
     }
-  }
-
-  if (format.timestamp_idx < 0)
-  {
-    // Required timestamp is not found in definition
-    return false;
   }
 
   format.name = name;

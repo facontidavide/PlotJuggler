@@ -6,6 +6,7 @@
 #include <set>
 #include <string.h>
 #include <cstdint>
+#include <optional>
 
 #include "string_view.hpp"
 
@@ -109,7 +110,7 @@ public:
 
   struct Timeseries
   {
-    std::vector<uint64_t> timestamps;
+    std::vector<std::optional<uint64_t>> timestamps;
     std::vector<std::pair<std::string, std::vector<double>>> data;
   };
 
