@@ -9,6 +9,10 @@
 
 #include <QDialog>
 #include <QKeyEvent>
+#include <QSlider>
+#include <QDoubleSpinBox>
+
+
 #include "plotwidget.h"
 #include "color_wheel.hpp"
 #include "color_preview.hpp"
@@ -96,6 +100,9 @@ private:
   PlotWidget* _plotwidget;
   PlotWidget* _plotwidget_origin;
   QRectF _bounding_rect_original;
+  QWidget*       _lwPanel = nullptr;
+  QSlider*       _lwSlider = nullptr;
+  QDoubleSpinBox* _lwSpin  = nullptr;
 
   std::set<QWidget*> _connected_transform_widgets;
 
@@ -104,6 +111,8 @@ private:
   void updateLimits();
   void onDeleteRow(QWidget* w);
   void disableWidgets();
+  void buildLineWidthUnderColorCode();
+  void applyLineWidthTo(PlotWidget* pw, double w);
 
   std::unordered_map<std::string, std::shared_ptr<TransformFunction>> _transforms;
 };

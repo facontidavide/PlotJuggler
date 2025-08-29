@@ -6,6 +6,9 @@
 
 #include "plotwidget_editor.h"
 #include "ui_plotwidget_editor.h"
+#include <cmath>
+#include <algorithm>
+
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QSettings>
@@ -15,7 +18,13 @@
 #include <QPushButton>
 #include <QDialogButtonBox>
 #include <QDebug>
+#include <QSlider>
+#include <QDoubleSpinBox>
+#include <QPen>
+#include <QApplication>
+
 #include "qwt_text.h"
+#include "qwt_plot_curve.h"
 
 const double MAX_DOUBLE = std::numeric_limits<double>::max() / 2;
 
@@ -29,6 +38,7 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   //  setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
 
   setupColorWidget();
+  buildLineWidthUnderColorCode();
 
   QDomDocument doc;
   auto saved_state = plotwidget->xmlSaveState(doc);
@@ -46,6 +56,8 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   layout->setMargin(6);
 
   _plotwidget->zoomOut(false);
+
+  if (_lwSpin) { applyLineWidthTo(_plotwidget, _lwSpin->value()); }
 
   setupTable();
 
@@ -106,6 +118,7 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
 
   // ui->listWidget->widget_background_disabled("QListView::item:selected { background:
   // #ddeeff; }");
+
 
   if (ui->listWidget->count() != 0)
   {
@@ -169,6 +182,7 @@ void PlotwidgetEditor::setupColorWidget()
   });
 
   _color_wheel->setColor(Qt::blue);
+
 }
 
 void PlotwidgetEditor::onDeleteRow(QWidget* w)
@@ -287,6 +301,7 @@ void PlotwidgetEditor::on_radioLines_toggled(bool checked)
   if (checked)
   {
     _plotwidget->changeCurvesStyle(PlotWidgetBase::LINES);
+    applyLineWidthTo(_plotwidget, _lwSpin->value());
   }
 }
 
@@ -295,6 +310,7 @@ void PlotwidgetEditor::on_radioPoints_toggled(bool checked)
   if (checked)
   {
     _plotwidget->changeCurvesStyle(PlotWidgetBase::DOTS);
+    applyLineWidthTo(_plotwidget, _lwSpin->value());
   }
 }
 
@@ -303,6 +319,7 @@ void PlotwidgetEditor::on_radioBoth_toggled(bool checked)
   if (checked)
   {
     _plotwidget->changeCurvesStyle(PlotWidgetBase::LINES_AND_DOTS);
+    applyLineWidthTo(_plotwidget, _lwSpin->value());
   }
 }
 
@@ -311,6 +328,7 @@ void PlotwidgetEditor::on_radioSticks_toggled(bool checked)
   if (checked)
   {
     _plotwidget->changeCurvesStyle(PlotWidgetBase::STICKS);
+    applyLineWidthTo(_plotwidget, _lwSpin->value());
   }
 }
 
@@ -319,6 +337,7 @@ void PlotwidgetEditor::on_radioSteps_toggled(bool checked)
   if (checked)
   {
     _plotwidget->changeCurvesStyle(PlotWidgetBase::STEPS);
+    applyLineWidthTo(_plotwidget, _lwSpin->value());
   }
 }
 
@@ -327,6 +346,7 @@ void PlotwidgetEditor::on_radioStepsInv_toggled(bool checked)
   if (checked)
   {
     _plotwidget->changeCurvesStyle(PlotWidgetBase::STEPSINV);
+    applyLineWidthTo(_plotwidget, _lwSpin->value());
   }
 }
 
@@ -378,6 +398,13 @@ void PlotwidgetEditor::on_pushButtonSave_pressed()
   _plotwidget->setZoomRectangle(_bounding_rect_original, false);
   auto elem = _plotwidget->xmlSaveState(doc);
   _plotwidget_origin->xmlLoadState(elem);
+
+  const double w = _lwSpin ? _lwSpin->value() : 1.3;
+  applyLineWidthTo(_plotwidget_origin, w);
+  {
+    QSettings s;
+    s.setValue("PlotwidgetEditor.line_width", w);
+  }
   this->accept();
 }
 
@@ -463,4 +490,115 @@ void PlotwidgetEditor::on_listWidget_itemSelectionChanged()
   {
     ui->editColotText->setText(row_widget->color().name());
   }
+}
+
+void PlotwidgetEditor::buildLineWidthUnderColorCode()
+{
+  if (_lwPanel) return;
+
+  QWidget* parent = ui->editColotText->parentWidget();
+  if (!parent) return;
+
+  _lwPanel  = new QWidget(parent);
+  auto grid = new QGridLayout(_lwPanel);
+  grid->setContentsMargins(0, 6, 0, 0);
+  grid->setHorizontalSpacing(8);
+  grid->setVerticalSpacing(4);
+
+  auto title   = new QLabel(tr("Line width"), _lwPanel);
+  _lwSlider    = new QSlider(Qt::Horizontal, _lwPanel);
+  _lwSpin      = new QDoubleSpinBox(_lwPanel);
+
+  _lwSlider->setRange(1, 100);
+  _lwSlider->setSingleStep(1);
+  _lwSlider->setPageStep(5);
+
+  _lwSpin->setRange(0.1, 10.0);
+  _lwSpin->setDecimals(1);
+  _lwSpin->setSingleStep(0.1);
+  _lwSpin->setAlignment(Qt::AlignRight);
+
+  const int ctrlH = std::max(28, int(QApplication::fontMetrics().height() * 1.6));
+  _lwSpin->setMinimumHeight(ctrlH);
+  _lwSpin->setMinimumWidth(72);
+  _lwSpin->setMaximumWidth(96);
+  _lwSlider->setMinimumHeight(ctrlH - 2);
+
+  double initW = 1.3;
+  {
+    QSettings s;
+    initW = s.value("PlotwidgetEditor.line_width", initW).toDouble();
+  }
+  _lwSpin->setValue(initW);
+  _lwSlider->setValue(int(std::round(initW * 10.0)));
+
+  grid->addWidget(title, 0, 0, 1, 1);
+  grid->addWidget(_lwSpin, 0, 1, 1, 1);
+
+  grid->addWidget(_lwSlider, 1, 0, 1, 2);
+
+  if (auto v = qobject_cast<QVBoxLayout*>(parent->layout()))
+  {
+    int idx = -1;
+    for (int i = 0; i < v->count(); ++i)
+      if (v->itemAt(i) && v->itemAt(i)->widget() == ui->editColotText) { idx = i; break; }
+    if (idx >= 0) v->insertWidget(idx + 1, _lwPanel);
+    else          v->addWidget(_lwPanel);
+  }
+  else if (auto g = qobject_cast<QGridLayout*>(parent->layout()))
+  {
+    int target = -1;
+    for (int i = 0; i < g->count(); ++i)
+      if (g->itemAt(i) && g->itemAt(i)->widget() == ui->editColotText) { target = i; break; }
+
+    if (target >= 0)
+    {
+      int r, c, rs, cs;
+      g->getItemPosition(target, &r, &c, &rs, &cs);
+      g->addWidget(_lwPanel, r + rs, c, 1, cs);
+    }
+    else
+    {
+      g->addWidget(_lwPanel, g->rowCount(), 0, 1, g->columnCount() > 0 ? g->columnCount() : 2);
+    }
+  }
+  else
+  {
+    auto v = new QVBoxLayout(parent);
+    v->setContentsMargins(0,0,0,0);
+    v->addWidget(ui->editColotText);
+    v->addWidget(_lwPanel);
+  }
+
+  connect(_lwSlider, &QSlider::valueChanged, this, [this](int v){
+    const double w = v / 10.0;
+    if (_lwSpin) _lwSpin->setValue(w);
+    applyLineWidthTo(_plotwidget, w);
+  });
+  connect(_lwSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](double w){
+    if (_lwSlider) _lwSlider->setValue(int(std::round(w * 10.0)));
+    applyLineWidthTo(_plotwidget, w);
+  });
+}
+
+void PlotwidgetEditor::applyLineWidthTo(PlotWidget* pw, double w)
+{
+  if (!pw) return;
+
+  w = std::clamp(w, 0.1, 10.0);
+
+  const auto& curves = pw->curveList();
+  for (const auto& info : curves)
+  {
+    if (!info.curve) continue;
+
+    QPen pen = info.curve->pen();
+    const qreal width = (info.curve->style() == QwtPlotCurve::Dots)
+                          ? std::max<qreal>(1.0, w * 3.0)
+                          : w;
+    pen.setWidthF(width);
+    info.curve->setPen(pen);
+  }
+
+  pw->replot();
 }
