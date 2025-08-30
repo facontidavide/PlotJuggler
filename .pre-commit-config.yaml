@@ -53,7 +53,4 @@ repos:
         args:
             [--toml=./tools/pyproject.toml]
         exclude_types: [svg]
-  - repo: https://github.com/cheshirekow/cmake-format-precommit
-    rev: v0.6.13 # Use the latest stable version
-    hooks:
-      - id: cmake-format
+

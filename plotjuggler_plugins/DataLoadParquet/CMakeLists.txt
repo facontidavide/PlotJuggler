@@ -1,8 +1,8 @@
-find_package(Arrow QUIET)
-find_package(Parquet QUIET)
+find_package(Arrow QUIET CONFIG)
 
-if(Arrow_FOUND)
-  message(STATUS "[Parquet] found")
+if(TARGET Parquet::parquet_static)
+
+  message(STATUS "[Arrow] found")
 
   qt5_wrap_ui(UI_SRC dataload_parquet.ui)
 

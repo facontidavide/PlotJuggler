@@ -1,14 +1,5 @@
-if(BUILDING_WITH_VCPKG)
-  message(STATUS "Finding Zcm with vcpkg")
-  set(Zcm_LIBRARIES libzcm)
-elseif(BUILDING_WITH_CONAN)
-  message(STATUS "Finding Zcm with conan")
-  set(Zcm_LIBRARIES libzcm)
-else()
-  message(STATUS "Finding Zcm without package managers")
-  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-endif()
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 find_package(Zcm QUIET)
 
 if(Zcm_FOUND)

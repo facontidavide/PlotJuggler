@@ -1,12 +1,3 @@
-if(BUILDING_WITH_VCPKG)
-  message(STATUS "Finding ZeroMQ with vcpkg")
-elseif(BUILDING_WITH_CONAN)
-  message(STATUS "Finding ZeroMQ with conan")
-else()
-  message(STATUS "Finding ZeroMQ without package managers")
-  set(ZeroMQ_LIBS ${ZeroMQ_LIBRARIES})
-endif()
-
 find_package(ZeroMQ QUIET)
 
 if(ZeroMQ_FOUND)
@@ -22,7 +13,7 @@ if(ZeroMQ_FOUND)
 
   target_compile_definitions(DataStreamZMQ PRIVATE QT_PLUGIN)
 
-  if(BUILDING_WITH_VCPKG OR BUILDING_WITH_CONAN)
+  if(TARGET libzmq-static)
     target_link_libraries(DataStreamZMQ PRIVATE libzmq-static)
   else()
     target_link_libraries(DataStreamZMQ PRIVATE ${ZeroMQ_LIBRARIES})

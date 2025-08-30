@@ -21,7 +21,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 option(ENABLE_ASAN "Enable Address Sanitizer" OFF)
 option(BASE_AS_SHARED "Build the base library as a shared library" OFF)
-option(BUILDING_WITH_CONAN "Using Conan for dependencies" OFF)
 
 if(NOT WIN32 AND ENABLE_ASAN)
   set(CMAKE_CXX_FLAGS
@@ -68,6 +67,7 @@ elseif(ament_cmake_FOUND)
   find_package(ament_cmake REQUIRED)
   find_package(ament_index_cpp REQUIRED)
   find_package(rclcpp REQUIRED)
+
   include_directories(${ament_index_cpp_INCLUDE_DIRS})
 
   message(STATUS "--------------------------------------------------")

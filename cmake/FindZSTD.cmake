@@ -14,10 +14,10 @@
 
 #
 # * Try to find Facebook zstd library This will define ZSTD_FOUND
-#   ZSTD_INCLUDE_DIR ZSTD_LIBRARY
+#   ZSTD_INCLUDE_DIRS ZSTD_LIBRARY
 #
 
-find_path(ZSTD_INCLUDE_DIR NAMES zstd.h)
+find_path(ZSTD_INCLUDE_DIRS NAMES zstd.h)
 
 find_library(ZSTD_LIBRARY_DEBUG NAMES zstdd zstd_staticd)
 find_library(ZSTD_LIBRARY_RELEASE NAMES zstd zstd_static)
@@ -27,10 +27,10 @@ select_library_configurations(ZSTD)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(ZSTD DEFAULT_MSG ZSTD_LIBRARY
-                                  ZSTD_INCLUDE_DIR)
+                                  ZSTD_INCLUDE_DIRS)
 
 if(ZSTD_FOUND)
   message(STATUS "Found Zstd: ${ZSTD_LIBRARY}")
 endif()
 
-mark_as_advanced(ZSTD_INCLUDE_DIR ZSTD_LIBRARY)
+mark_as_advanced(ZSTD_INCLUDE_DIRS ZSTD_LIBRARY)
