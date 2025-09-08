@@ -104,6 +104,10 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
     ui->lineLimitMax->setText(QString::number(suggested_limits.max));
   }
 
+  ui->widthSpinBox->setValue(_plotwidget->curvesWidth());
+  connect(ui->widthSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &PlotwidgetEditor::on_widthSpinBox_changed);
+
   // ui->listWidget->widget_background_disabled("QListView::item:selected { background:
   // #ddeeff; }");
 
@@ -204,6 +208,7 @@ void PlotwidgetEditor::disableWidgets()
 
   ui->frameLimits->setEnabled(false);
   ui->frameStyle->setEnabled(false);
+  ui->frameWidth->setEnabled(false);
 }
 
 void PlotwidgetEditor::setupTable()
@@ -451,6 +456,7 @@ void PlotwidgetEditor::on_listWidget_itemSelectionChanged()
   }
 
   ui->widgetColor->setEnabled(true);
+  ui->widthSpinBox->setValue(_plotwidget->curvesWidth());
 
   if (selected.size() != 1)
   {
@@ -463,4 +469,9 @@ void PlotwidgetEditor::on_listWidget_itemSelectionChanged()
   {
     ui->editColotText->setText(row_widget->color().name());
   }
+}
+
+void PlotwidgetEditor::on_widthSpinBox_changed(double width)
+{
+  _plotwidget->changeCurvesWidth(width);
 }
