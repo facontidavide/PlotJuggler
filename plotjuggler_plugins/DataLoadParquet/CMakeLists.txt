@@ -16,9 +16,13 @@ if(TARGET Parquet::parquet_static)
 
   add_library(DataLoadParquet SHARED ${SRC} ${UI_SRC})
 
-  target_link_libraries(
-    DataLoadParquet PRIVATE Qt5::Widgets Qt5::Xml Arrow::arrow_static
-                            Parquet::parquet_static plotjuggler_base)
+  target_link_libraries(DataLoadParquet
+     PRIVATE
+      Qt5::Widgets
+      Qt5::Xml
+      Arrow::arrow_static
+      Parquet::parquet_static
+      plotjuggler_base)
 
   target_compile_definitions(DataLoadParquet PRIVATE QT_PLUGIN)
 
