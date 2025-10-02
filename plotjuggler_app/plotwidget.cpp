@@ -682,6 +682,8 @@ QDomElement PlotWidget::xmlSaveState(QDomDocument& doc) const
     plot_el.setAttribute("style", "StepsInv");
   }
 
+  plot_el.setAttribute("curve_width", QString::number(curvesWidth()));
+
   for (auto& it : curveList())
   {
     auto& name = it.src_name;
@@ -888,6 +890,17 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
     {
       changeCurvesStyle(PlotWidgetBase::STEPSINV);
     }
+  }
+
+  if (plot_widget.hasAttribute("curve_width"))
+  {
+    double curve_width = plot_widget.attribute("curve_width").toDouble();
+    if (curve_width <= 0.0)
+    {
+      curve_width = 1.3;
+    }
+
+    changeCurvesWidth(curve_width);
   }
 
   QString bg_data = plot_widget.attribute("background_data");
