@@ -212,12 +212,14 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
   //-----------------------------
   // Time to parse
   int timestamp_column = -1;
+  auto timestamp_arrow_type = arrow::Type::NA;
 
   for (const auto& info : columns_info)
   {
     if (info.name == selected_stamp.toStdString())
     {
       timestamp_column = info.column_index;
+      timestamp_arrow_type = info.arrow_type;
       break;
     }
   }
@@ -254,8 +256,7 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
       auto timestamp_array = batch->column(timestamp_column);
       for (int64_t row = 0; row < batch_rows; row++)
       {
-        const auto ts =
-            get_arrow_value(timestamp_array, row, columns_info[timestamp_column].arrow_type);
+        const auto ts = get_arrow_value(timestamp_array, row, timestamp_arrow_type);
         timestamp_to_row_index[row] = { ts, row };
       }
     }
