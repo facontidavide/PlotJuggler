@@ -22,7 +22,7 @@
 
 if(UNIX)
   find_package(PkgConfig QUIET)
-  pkg_search_module(PC_LZ4 lz4)
+  pkg_search_module(PC_LZ4 lz4 liblz4)
 endif()
 
 find_path(LZ4_INCLUDE_DIR
@@ -55,7 +55,7 @@ find_package_handle_standard_args(LZ4
   LZ4_STATIC_LIBRARY
 )
 
-if(LZ4_FOUND)
+if(PC_LZ4_FOUND)
   message(STATUS "Found LZ4: shared=${LZ4_SHARED_LIBRARY}, static=${LZ4_STATIC_LIBRARY}")
 else()
   message(WARNING "LZ4 not found")
