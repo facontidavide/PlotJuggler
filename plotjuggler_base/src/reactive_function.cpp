@@ -114,6 +114,7 @@ void ReactiveLuaFunction::prepareLua()
   _timeseries_ref["at"] = &TimeseriesRef::at;
   _timeseries_ref["set"] = &TimeseriesRef::set;
   _timeseries_ref["atTime"] = &TimeseriesRef::atTime;
+  _timeseries_ref["getRawIndexAtTime"] = &TimeseriesRef::getRawIndexAtTime;
   _timeseries_ref["clear"] = &TimeseriesRef::clear;
 
   //---------------------------------------
@@ -184,10 +185,33 @@ void TimeseriesRef::set(unsigned index, double x, double y)
   p = { x, y };
 }
 
-double TimeseriesRef::atTime(double t) const
+double TimeseriesRef::atTime(double t, MatchType match_type) const
 {
-  int i = _plot_data->getIndexFromX(t);
-  return _plot_data->at(i).y;
+  auto index = getRawIndexAtTime(t, match_type);
+  if (!index)
+  {
+    throw std::runtime_error("Time point not found for exact match requirement");
+  }
+  return _plot_data->at(*index).y;
+}
+
+std::optional<unsigned> TimeseriesRef::getRawIndexAtTime(double t,
+                                                         MatchType match_type) const
+{
+  if (match_type == MatchType::Exact)
+  {
+    auto it = std::find_if(_plot_data->begin(), _plot_data->end(),
+                           [t](const auto& point) { return point.x == t; });
+    if (it != _plot_data->end())
+    {
+      return std::distance(_plot_data->begin(), it);
+    }
+    return std::nullopt;  // Exact time not found
+  }
+  else
+  {
+    return _plot_data->getIndexFromX(t);  // Nearest match
+  }
 }
 
 unsigned TimeseriesRef::size() const
