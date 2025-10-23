@@ -46,7 +46,8 @@ public:
 
   bool loadLayoutFromFile(QString filename);
   bool loadDataFromFiles(QStringList filenames);
-  std::unordered_set<std::string> loadDataFromFile(const FileLoadInfo& info);
+  std::unordered_set<std::string> loadDataFromFile(const FileLoadInfo& info,
+                                                   const bool mergeFiles = false);
 
   void stopStreamingPlugin();
   void startStreamingPlugin(QString streamer_name);
