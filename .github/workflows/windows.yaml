@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Sync repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install Conan
         uses: conan-io/setup-conan@v1
