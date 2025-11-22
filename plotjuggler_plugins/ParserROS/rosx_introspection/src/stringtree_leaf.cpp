@@ -25,7 +25,6 @@
 
 namespace RosMsgParser
 {
-
 FieldsVector::FieldsVector(const FieldLeaf& leaf)
 {
   auto node = leaf.node;

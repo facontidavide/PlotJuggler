@@ -1,6 +1,7 @@
 #ifndef ROS_PARSER_H
 #define ROS_PARSER_H
 
+#include <cstdlib>
 #include "fmt/core.h"
 #include "PlotJuggler/messageparser_base.h"
 #include "rosx_introspection/ros_parser.hpp"

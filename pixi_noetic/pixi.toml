@@ -1,0 +1,3 @@
+[package.build]
+backend = { name = "pixi-build-ros", version = "*" }
+source = { path = "../" }

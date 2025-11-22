@@ -8,8 +8,8 @@ target_include_directories(DataLoadMCAP PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/3rdp
 
 target_link_libraries(DataLoadMCAP
    PRIVATE
-    LZ4::lz4_static
-    zstd::libzstd_static)
+    LZ4::lz4
+    zstd::zstd)
 
 target_link_libraries(DataLoadMCAP
    PRIVATE

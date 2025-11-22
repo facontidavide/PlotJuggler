@@ -1,0 +1,14 @@
+[package]
+[package.build]
+backend = { name = "pixi-build-ros", version = "*" }
+source = { path = "../" }
+
+[package.build.config]
+# For debugging recipe output and other debug data
+debug_dir = "./debug"
+
+[package.host-dependencies]
+ros2-distro-mutex = ">=0.11.0,<0.12.0"
+
+[package.run-dependencies]
+ros2-distro-mutex = ">=0.11.0,<0.12.0"
