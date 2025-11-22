@@ -277,6 +277,8 @@ public slots:
   void on_buttonUseDateTime_toggled(bool checked);
   void on_buttonTimeTracker_pressed();
   void on_buttonRemoveTimeOffset_toggled(bool checked);
+  void on_buttonDots_toggled(bool checked);
+  void on_buttonStep_toggled(bool checked);
 
   void on_buttonStreamingStart_clicked();
 
@@ -309,8 +311,12 @@ private slots:
   void on_buttonReferencePoint_toggled(bool checked);
 
   void on_buttonShowpoint_toggled(bool checked);
+  void on_buttonUseUtc_toggled(bool checked);
+  void on_buttonShowTimeAsISO_toggled(bool checked);
 
 private:
+  bool _use_utc_time;
+  bool _show_time_as_iso;
   QStringList readAllCurvesFromXML(QDomElement root_node);
   void loadAllPlugins(QStringList command_line_plugin_folders);
 };

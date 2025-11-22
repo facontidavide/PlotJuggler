@@ -130,6 +130,8 @@
         <file>resources/svg/colored_charts.svg</file>
         <file>resources/svg/copy.svg</file>
         <file>resources/svg/datetime.svg</file>
+        <file>resources/svg/utc.svg</file>
+        <file>resources/svg/iso.svg</file>
         <file>resources/svg/expand.svg</file>
         <file>resources/svg/export.svg</file>
         <file>resources/svg/fullscreen.svg</file>
@@ -148,6 +150,8 @@
         <file>resources/svg/play_arrow.svg</file>
         <file>resources/svg/plot_image.svg</file>
         <file>resources/svg/point_chart.svg</file>
+        <file>resources/svg/line_chart.svg</file>
+        <file>resources/svg/step_chart.svg</file>
         <file>resources/svg/ratio.svg</file>
         <file>resources/svg/red_circle.svg</file>
         <file>resources/svg/reference_line.svg</file>

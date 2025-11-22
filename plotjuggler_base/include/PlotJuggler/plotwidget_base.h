@@ -85,6 +85,10 @@ public:
 
   void changeCurvesStyle(CurveStyle style);
 
+  void changeDots(bool enabled);
+
+  void changeStep(bool enabled);
+
   bool isXYPlot() const;
 
   QRectF currentBoundingRect() const;
