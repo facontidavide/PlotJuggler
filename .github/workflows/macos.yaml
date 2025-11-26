@@ -30,11 +30,11 @@ jobs:
         with:
           cache_packages: true
 
-      - name: Prepare Homebrew and Install macOS-specific tools
-        run: |
-          brew cleanup -s
-          brew update
-          brew install qt@5 create-dmg
+      - name: Install and cache Homebrew tools
+        uses: tecolicom/actions-use-homebrew-tools@v1
+        with:
+          tools: qt@5 create-dmg
+          cache: yes
 
       - name: Conan install
         run: |
@@ -43,7 +43,7 @@ jobs:
       - name: Build PlotJuggler
         run: |
           export CMAKE_PREFIX_PATH=$(brew --prefix qt@5)
-          cmake --preset conan-default -S . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="macos"
+          cmake --preset conan-release -S . -B build -DPJ_INSTALLATION="macos"
           cmake --build build --config Release
 
       - name: Create .app bundle
