@@ -18,27 +18,32 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - { os: macos-14-large, arch: x64 }
+          - { os: macos-14, arch: x64 }
           - { os: macos-14, arch: arm64 }
 
     steps:
       - name: Sync repository
         uses: actions/checkout@v6
 
-      - name: Prepare Homebrew and Install Dependencies
+      - name: Install Conan
+        uses: conan-io/setup-conan@v1
+        with:
+          cache_packages: true
+
+      - name: Prepare Homebrew and Install macOS-specific tools
         run: |
           brew cleanup -s
           brew update
-          brew install mosquitto zeromq qt@5 protobuf@21 create-dmg
+          brew install qt@5 create-dmg
+
+      - name: Conan install
+        run: |
+          conan install . -of build --build=missing -pr:b=default -s build_type=Release -s compiler.cppstd=17
 
       - name: Build PlotJuggler
         run: |
-          export CMAKE_PREFIX_PATH=$(brew --prefix qt@5):$(brew --prefix zeromq)
-          export LDFLAGS="-L/usr/local/opt/zeromq/lib"
-          export CPPFLAGS="-I/usr/local/opt/zeromq/include"
-          export LIBRARY_PATH=/usr/local/opt/zeromq/lib
-          export CPATH=/usr/local/opt/zeromq/include
-          cmake -B build -DPJ_INSTALLATION="macos" -DCMAKE_INSTALL_PREFIX=install PlotJuggler
+          export CMAKE_PREFIX_PATH=$(brew --prefix qt@5)
+          cmake --preset conan-default -S . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="macos"
           cmake --build build --config Release
 
       - name: Create .app bundle
