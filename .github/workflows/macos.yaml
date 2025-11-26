@@ -52,8 +52,8 @@ jobs:
           mkdir -p PlotJuggler.app/Contents/MacOS
           mkdir -p PlotJuggler.app/Contents/Resources
 
-          # Copy binary
-          cp build/bin/plotjuggler PlotJuggler.app/Contents/MacOS/
+          # Copy binary and all plugins from build/bin
+          cp -r build/bin/* PlotJuggler.app/Contents/MacOS/
 
           # Copy icon (macOS supports PNG directly)
           cp plotjuggler.png PlotJuggler.app/Contents/Resources/plotjuggler.png
