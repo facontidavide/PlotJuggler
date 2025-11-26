@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      snap-file: ${{ steps.build-snap22.outputs.snap }}
+      snap-file: ${{ steps.build-snap24.outputs.snap }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
