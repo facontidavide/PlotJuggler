@@ -777,6 +777,22 @@ bool PlotWidgetBase::isZoomEnabled() const
   return p->zoom_enabled;
 }
 
+void PlotWidgetBase::setSwapZoomPan(bool swapped)
+{
+  if (swapped)
+  {
+    // Swap: Left button for pan, Ctrl+Left for zoom
+    p->zoomer->setMousePattern(QwtEventPattern::MouseSelect1, Qt::LeftButton, Qt::ControlModifier);
+    p->panner1->setMouseButton(Qt::LeftButton, Qt::NoModifier);
+  }
+  else
+  {
+    // Default: Left button for zoom, Ctrl+Left for pan
+    p->zoomer->setMousePattern(QwtEventPattern::MouseSelect1, Qt::LeftButton, Qt::NoModifier);
+    p->panner1->setMouseButton(Qt::LeftButton, Qt::ControlModifier);
+  }
+}
+
 void PlotWidgetBase::overrideCurvesStyle(std::optional<CurveStyle> style)
 {
   p->overridden_curve_style = style;
@@ -815,6 +831,7 @@ PlotLegend* PlotWidgetBase::legend()
 {
   return p->legend;
 }
+
 PlotZoomer* PlotWidgetBase::zoomer()
 {
   return p->zoomer;
@@ -823,6 +840,16 @@ PlotZoomer* PlotWidgetBase::zoomer()
 PlotMagnifier* PlotWidgetBase::magnifier()
 {
   return p->magnifier;
+}
+
+PlotPanner* PlotWidgetBase::panner1()
+{
+  return p->panner1;
+}
+
+PlotPanner* PlotWidgetBase::panner2()
+{
+  return p->panner2;
 }
 
 void PlotWidgetBase::updateMaximumZoomArea()

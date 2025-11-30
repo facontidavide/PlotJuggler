@@ -83,6 +83,8 @@ public:
 
   bool isZoomEnabled() const;
 
+  void setSwapZoomPan(bool swapped);
+
   bool isXYPlot() const;
 
   QRectF currentBoundingRect() const;
@@ -138,6 +140,8 @@ protected:
   PlotLegend* legend();
   PlotZoomer* zoomer();
   PlotMagnifier* magnifier();
+  PlotPanner* panner1();
+  PlotPanner* panner2();
 
   void updateMaximumZoomArea();
 
