@@ -11,6 +11,8 @@
 #include <QDrag>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
+#include <QDir>
+#include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
@@ -223,6 +225,9 @@ void PlotWidget::buildActions()
 
   _action_data_statistics = new QAction("&Show data statistics", this);
   connect(_action_data_statistics, &QAction::triggered, this, &PlotWidget::onShowDataStatistics);
+
+  _action_exportDataToCSV = new QAction("&Export Data to CSV", this);
+  connect(_action_exportDataToCSV, &QAction::triggered, this, &PlotWidget::onExportDataToCSV);
 }
 
 void PlotWidget::canvasContextMenuTriggered(const QPoint& pos)
@@ -247,6 +252,7 @@ void PlotWidget::canvasContextMenuTriggered(const QPoint& pos)
   _action_paste->setIcon(LoadSvg(":/resources/svg/paste.svg", theme));
   _action_saveToFile->setIcon(LoadSvg(":/resources/svg/save.svg", theme));
   _action_image_to_clipboard->setIcon(LoadSvg(":/resources/svg/plot_image.svg", theme));
+  _action_exportDataToCSV->setIcon(LoadSvg(":/resources/svg/export.svg", theme));
 
   QMenu menu(qwtPlot());
 
@@ -273,6 +279,7 @@ void PlotWidget::canvasContextMenuTriggered(const QPoint& pos)
   menu.addAction(_action_image_to_clipboard);
   menu.addAction(_action_saveToFile);
   menu.addAction(_action_data_statistics);
+  menu.addAction(_action_exportDataToCSV);
 
   // check the clipboard
   QClipboard* clipboard = QGuiApplication::clipboard();
@@ -286,6 +293,7 @@ void PlotWidget::canvasContextMenuTriggered(const QPoint& pos)
 
   _action_removeAllCurves->setEnabled(!curveList().empty());
   _action_formula->setEnabled(!curveList().empty() && !isXYPlot());
+  _action_exportDataToCSV->setEnabled(!curveList().empty());
 
   menu.exec(qwtPlot()->canvas()->mapToGlobal(pos));
 }
@@ -1347,6 +1355,149 @@ void PlotWidget::onShowDataStatistics()
   connect(_statistics_dialog, &QDialog::rejected, this, setToNull);
 
   connect(this, &PlotWidgetBase::curveListChanged, this, [this]() { updateStatistics(); });
+}
+
+void PlotWidget::onExportDataToCSV()
+{
+  auto rect = currentBoundingRect();
+  double time_start = rect.left();
+  double time_end = rect.right();
+
+  // Collect series names and data pointers
+  using CurveData = std::pair<QString, const QwtSeriesData<QPointF>*>;
+  std::vector<CurveData> curves;
+
+  for (const auto& info : curveList())
+  {
+    curves.emplace_back(info.curve->title().text(), info.curve->data());
+  }
+
+  if (curves.empty())
+  {
+    return;
+  }
+
+  // Sort curves by name for consistent output
+  std::sort(curves.begin(), curves.end(),
+            [](const CurveData& a, const CurveData& b) { return a.first < b.first; });
+
+  const size_t curve_count = curves.size();
+  const auto NaN = std::numeric_limits<double>::quiet_NaN();
+
+  // Build header
+  QString csv_text = "__time";
+  for (const auto& curve : curves)
+  {
+    csv_text += "," + curve.first;
+  }
+  csv_text += "\n";
+
+  // Build indices for each curve pointing to first valid sample in range
+  std::vector<size_t> indices(curve_count, 0);
+  for (size_t i = 0; i < curve_count; i++)
+  {
+    const auto* data = curves[i].second;
+    size_t idx = 0;
+    while (idx < data->size() && data->sample(idx).x() < time_start)
+    {
+      idx++;
+    }
+    indices[i] = idx;
+  }
+
+  // Generate rows by finding minimum timestamp across all curves
+  std::vector<double> row_values(curve_count, NaN);
+  bool done = false;
+
+  while (!done)
+  {
+    done = true;
+    double min_time = std::numeric_limits<double>::max();
+
+    // Find minimum time across all curves and collect values at that time
+    for (size_t i = 0; i < curve_count; i++)
+    {
+      row_values[i] = NaN;
+      const auto* data = curves[i].second;
+      size_t idx = indices[i];
+
+      if (idx >= data->size())
+      {
+        continue;
+      }
+
+      const auto point = data->sample(idx);
+      if (point.x() > time_end)
+      {
+        continue;
+      }
+
+      done = false;
+
+      if (min_time > point.x())
+      {
+        min_time = point.x();
+        // Reset previous values since we found a new minimum
+        std::fill(row_values.begin(), row_values.begin() + i, NaN);
+        row_values[i] = point.y();
+      }
+      else if (std::abs(min_time - point.x()) < std::numeric_limits<double>::epsilon())
+      {
+        row_values[i] = point.y();
+      }
+    }
+
+    if (done || min_time > time_end)
+    {
+      break;
+    }
+
+    // Build the row string
+    QString row_str = QString::number(min_time, 'f', 6);
+    for (size_t i = 0; i < curve_count; i++)
+    {
+      row_str += ",";
+      if (!std::isnan(row_values[i]))
+      {
+        row_str += QString::number(row_values[i], 'f', 9);
+        indices[i]++;  // Move to next sample for curves that contributed
+      }
+    }
+    csv_text += row_str + "\n";
+  }
+
+  // Show save file dialog
+  QSettings settings;
+  QString directory_path =
+      settings.value("PlotWidget.exportCSVDirectory", QDir::currentPath()).toString();
+
+  QString fileName =
+      QFileDialog::getSaveFileName(qwtPlot(), tr("Export Data to CSV"), directory_path,
+                                   tr("CSV files (*.csv)"));
+
+  if (fileName.isEmpty())
+  {
+    return;
+  }
+
+  if (!fileName.endsWith(".csv"))
+  {
+    fileName.append(".csv");
+  }
+
+  QFile file(fileName);
+  if (!file.open(QIODevice::WriteOnly))
+  {
+    QMessageBox::warning(qwtPlot(), tr("Error"),
+                         QString(tr("Failed to open the file [%1]")).arg(fileName));
+    return;
+  }
+
+  file.write(csv_text.toUtf8());
+  file.close();
+
+  directory_path = QFileInfo(fileName).absolutePath();
+  settings.setValue("PlotWidget.exportCSVDirectory", directory_path);
 }
 
 void PlotWidget::on_externallyResized(const QRectF& rect)

@@ -149,6 +149,8 @@ public slots:
 
   void onShowDataStatistics();
 
+  void onExportDataToCSV();
+
   void plotOn(const PlotSaveHelper& plot_save_helper, QRect paint_at);
 
 private slots:
@@ -188,6 +190,7 @@ private:
   QAction* _action_copy;
   QAction* _action_paste;
   QAction* _action_image_to_clipboard;
+  QAction* _action_exportDataToCSV;
 
   QAction* _flip_x;
   QAction* _flip_y;
