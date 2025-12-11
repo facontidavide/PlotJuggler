@@ -94,7 +94,7 @@ if(wasmtime_FOUND)
   list(APPEND PLOTJUGGLER_SRC wasm_runtime.cpp wasm_parser.cpp)
 endif()
 
-add_executable(plotjuggler ${PLOTJUGGLER_SRC} ${RES_SRC} ${UI_SRC}
+add_executable(plotjuggler ${GUI_TYPE} ${PLOTJUGGLER_SRC} ${RES_SRC} ${UI_SRC}
                            ${BACKWARD_ENABLE})
 
 if(wasmtime_FOUND)
@@ -134,6 +134,26 @@ target_link_libraries(
           lua::lua
         )
 
+# macOS bundle properties
+if(APPLE AND GUI_TYPE STREQUAL "MACOSX_BUNDLE")
+  set_target_properties(plotjuggler PROPERTIES
+    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
+    MACOSX_BUNDLE_ICON_FILE "${MACOSX_BUNDLE_ICON_FILE}"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "${MACOSX_BUNDLE_GUI_IDENTIFIER}"
+    MACOSX_BUNDLE_BUNDLE_NAME "${MACOSX_BUNDLE_BUNDLE_NAME}"
+    MACOSX_BUNDLE_EXECUTABLE_NAME "${MACOSX_BUNDLE_EXECUTABLE_NAME}"
+    MACOSX_BUNDLE_BUNDLE_VERSION "${MACOSX_BUNDLE_BUNDLE_VERSION}"
+    MACOSX_BUNDLE_SHORT_VERSION_STRING "${MACOSX_BUNDLE_SHORT_VERSION_STRING}"
+  )
+
+  # Copy icon file into bundle Resources
+  set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler.icns" PROPERTIES
+    MACOSX_PACKAGE_LOCATION "Resources"
+  )
+
+  target_sources(plotjuggler PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler.icns")
+endif()
+
 if(COMPILING_WITH_CATKIN)
   target_link_libraries(plotjuggler PRIVATE ${catkin_LIBRARIES})
   install(
@@ -148,5 +168,12 @@ elseif(COMPILING_WITH_AMENT)
 
   install(TARGETS plotjuggler DESTINATION lib/${PROJECT_NAME})
 else()
-  install(TARGETS plotjuggler DESTINATION bin)
+  if(APPLE AND GUI_TYPE STREQUAL "MACOSX_BUNDLE")
+    install(TARGETS plotjuggler
+      BUNDLE DESTINATION .
+      RUNTIME DESTINATION bin
+    )
+  else()
+    install(TARGETS plotjuggler DESTINATION bin)
+  endif()
 endif()
