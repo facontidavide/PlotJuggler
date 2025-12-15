@@ -87,7 +87,7 @@ jobs:
           Write-Host "Installer created successfully: $installer_name"
 
       - name: Upload installer
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.create_installer.outputs.installer_name }}
           path: ${{ steps.create_installer.outputs.installer_name }}

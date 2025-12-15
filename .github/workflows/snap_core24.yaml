@@ -28,7 +28,7 @@ jobs:
         sudo snap install --dangerous ${{ steps.build-snap24.outputs.snap }}
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: plotjuggler-snap24
         path: ${{ steps.build-snap24.outputs.snap }}

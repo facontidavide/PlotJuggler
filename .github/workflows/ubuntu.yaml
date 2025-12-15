@@ -74,7 +74,7 @@ jobs:
               --plugin qt --output appimage
 
       - name: Upload AppImage
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: PlotJuggler-x86_64.AppImage
           path: PlotJuggler-x86_64.AppImage

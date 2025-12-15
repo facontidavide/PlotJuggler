@@ -121,7 +121,7 @@ jobs:
 
       - name: Upload DMG artifact
         if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.DMG_NAME }}
           path: ${{ env.DMG_NAME }}
