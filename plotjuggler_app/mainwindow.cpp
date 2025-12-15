@@ -510,6 +510,7 @@ void MainWindow::loadAllPlugins(QStringList command_line_plugin_folders)
   plugin_folders += command_line_plugin_folders;
   plugin_folders += settings.value("Preferences::plugin_folders", QStringList()).toStringList();
   builtin_folders += QCoreApplication::applicationDirPath();
+  builtin_folders += PJ_PLUGIN_INSTALL_DIRECTORY;
 
   try
   {
