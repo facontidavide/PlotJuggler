@@ -247,7 +247,6 @@ private:
 
   // void updateMaximumZoomArea();
   void rescaleEqualAxisScaling();
-  void overrideCursonMove();
 
   void setAxisScale(QwtAxisId axisId, double min, double max);
 };
