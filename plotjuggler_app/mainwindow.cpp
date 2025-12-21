@@ -822,6 +822,10 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
   plot->setDefaultStyle(ui->buttonDots->isChecked() ? PlotWidgetBase::LINES_AND_DOTS :
                                                       PlotWidgetBase::LINES);
 
+  QSettings settings;
+  bool swap_pan_zoom = settings.value("Preferences::swap_pan_zoom", false).toBool();
+  plot->setSwapZoomPan(swap_pan_zoom);
+
   if (ui->buttonReferencePoint->isChecked() && _reference_tracker_time.has_value())
   {
     plot->onReferenceLineChecked(ui->buttonReferencePoint->isChecked(),
@@ -3134,6 +3138,7 @@ void MainWindow::on_actionPreferences_triggered()
 {
   QSettings settings;
   QString prev_style = settings.value("Preferences::theme", "light").toString();
+  bool prev_swap_pan_zoom = settings.value("Preferences::swap_pan_zoom", false).toBool();
 
   PreferencesDialog dialog;
   dialog.exec();
@@ -3143,6 +3148,16 @@ void MainWindow::on_actionPreferences_triggered()
   if (!theme.isEmpty() && theme != prev_style)
   {
     loadStyleSheet(tr(":/resources/stylesheet_%1.qss").arg(theme));
+  }
+
+  // Apply swap pan/zoom preference to all existing plots
+  bool swap_pan_zoom = settings.value("Preferences::swap_pan_zoom", false).toBool();
+  if (swap_pan_zoom != prev_swap_pan_zoom)
+  {
+    auto visitor = [swap_pan_zoom](PlotWidget* plot) {
+      plot->setSwapZoomPan(swap_pan_zoom);
+    };
+    forEachWidget(visitor);
   }
 }
 

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>545</width>
-    <height>545</height>
+    <height>600</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -446,6 +446,28 @@
             </property>
             <property name="value">
              <number>900</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBoxMouseInteraction">
+         <property name="title">
+          <string>Mouse Interaction:</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_8">
+          <item>
+           <widget class="QCheckBox" name="checkBoxSwapPanZoom">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Default: Left-click to zoom, Ctrl+Left-click to pan&lt;/p&gt;&lt;p&gt;Swapped: Left-click to pan, Ctrl+Left-click to zoom&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Swap pan/zoom mouse action modifiers</string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
