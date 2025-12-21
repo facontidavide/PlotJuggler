@@ -6,8 +6,8 @@ using namespace PJ;
 class MsgParserImpl : public MessageParser
 {
 public:
-  MsgParserImpl(const std::string& topic_name, const std::string& type_name,
-                const std::string&, PJ::PlotDataMapRef& data)
+  MsgParserImpl(const std::string& topic_name, const std::string& type_name, const std::string&,
+                PJ::PlotDataMapRef& data)
     : MessageParser(topic_name, data), topic_name_(topic_name)
   {
   }
@@ -67,8 +67,8 @@ public:
         if (value.startsWith('"') && value.endsWith('"'))
         {
           auto& data = _plot_data.getOrCreateStringSeries(key);
-          data.pushBack(PJ::StringSeries::Point(
-              ts_sec, StringRef(value.data() + 1, value.size() - 2)));
+          data.pushBack(
+              PJ::StringSeries::Point(ts_sec, StringRef(value.data() + 1, value.size() - 2)));
         }
         else if (value == "t" || value == "T" || value == "true" || value == "True" ||
                  value == "TRUE")
@@ -107,8 +107,7 @@ private:
 };
 
 MessageParserPtr ParserLine::createParser(const std::string& topic_name,
-                                          const std::string& type_name,
-                                          const std::string& schema,
+                                          const std::string& type_name, const std::string& schema,
                                           PJ::PlotDataMapRef& data)
 {
   return std::make_shared<MsgParserImpl>(topic_name, type_name, schema, data);

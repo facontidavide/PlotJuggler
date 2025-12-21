@@ -1,6 +1,5 @@
 #include "dataload_mcap.h"
 
-#include "data_tamer_parser/data_tamer_parser.hpp"
 #include "PlotJuggler/messageparser_base.h"
 
 #include "mcap/reader.hpp"
@@ -17,6 +16,7 @@
 #include <QPushButton>
 #include <QElapsedTimer>
 #include <QStandardItemModel>
+#include <QtConcurrent>
 
 #include <set>
 
@@ -37,6 +37,7 @@ bool DataLoadMCAP::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) 
   QDomElement elem = doc.createElement("parameters");
   const auto& params = *_dialog_parameters;
   elem.setAttribute("use_timestamp", int(params.use_timestamp));
+  elem.setAttribute("use_mcap_log_time", int(params.use_mcap_log_time));
   elem.setAttribute("clamp_large_arrays", int(params.clamp_large_arrays));
   elem.setAttribute("max_array_size", params.max_array_size);
   elem.setAttribute("selected_topics", params.selected_topics.join(';'));
@@ -55,6 +56,7 @@ bool DataLoadMCAP::xmlLoadState(const QDomElement& parent_element)
   }
   mcap::LoadParams params;
   params.use_timestamp = bool(elem.attribute("use_timestamp").toInt());
+  params.use_mcap_log_time = bool(elem.attribute("use_mcap_log_time").toInt());
   params.clamp_large_arrays = bool(elem.attribute("clamp_large_arrays").toInt());
   params.max_array_size = elem.attribute("max_array_size").toInt();
   params.selected_topics = elem.attribute("selected_topics").split(';');
@@ -96,13 +98,15 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
                              .arg(QString::fromStdString(status.message)));
     return false;
   }
-  auto statistics = reader.statistics();
+  plot_data.addUserDefined("plotjuggler::mcap::file_path")
+      ->second.pushBack({ 0, std::any(info->filename.toStdString()) });
+
+  const std::optional<mcap::Statistics> statistics = reader.statistics();
 
   std::unordered_map<int, mcap::SchemaPtr> mcap_schemas;         // schema_id
   std::unordered_map<int, mcap::ChannelPtr> channels;            // channel_id
   std::unordered_map<int, MessageParserPtr> parsers_by_channel;  // channel_id
 
-  std::unordered_map<int, DataTamerParser::Schema> dt_schames;
   int total_dt_schemas = 0;
 
   std::unordered_set<mcap::ChannelId> channels_containing_datatamer_schema;
@@ -113,18 +117,67 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
     mcap_schemas.insert({ schema_id, schema_ptr });
   }
 
+  if (!info->plugin_config.hasChildNodes())
+  {
+    _dialog_parameters = std::nullopt;
+  }
+
+  for (const auto& [channel_id, channel_ptr] : reader.channels())
+  {
+    channels.insert({ channel_id, channel_ptr });
+  }
+
+  // don't show the dialog if we already loaded the parameters with xmlLoadState
+  if (!_dialog_parameters)
+  {
+    std::unordered_map<uint16_t, uint64_t> msg_count;
+    if (statistics)
+    {
+      msg_count = statistics->channelMessageCounts;
+    }
+    DialogMCAP dialog(channels, mcap_schemas, msg_count, _dialog_parameters);
+    auto ret = dialog.exec();
+    if (ret != QDialog::Accepted)
+    {
+      return false;
+    }
+    _dialog_parameters = dialog.getParams();
+  }
+
   std::set<QString> notified_encoding_problem;
 
   QElapsedTimer timer;
   timer.start();
 
-  for (const auto& [channel_id, channel_ptr] : reader.channels())
+  struct FailedParserInfo
   {
-    channels.insert({ channel_id, channel_ptr });
-    const auto& schema = mcap_schemas.at(channel_ptr->schemaId);
+    std::set<std::string> topics;
+    std::string error_message;
+  };
+
+  std::map<std::string, FailedParserInfo> parsers_blacklist;
+
+  for (const auto& [channel_id, channel_ptr] : channels)
+  {
     const auto& topic_name = channel_ptr->topic;
-    std::string definition(reinterpret_cast<const char*>(schema->data.data()),
-                           schema->data.size());
+    const QString topic_name_qt = QString::fromStdString(topic_name);
+    // skip topics that haven't been selected
+    if (!_dialog_parameters->selected_topics.contains(topic_name_qt))
+    {
+      continue;
+    }
+    const auto& schema = mcap_schemas.at(channel_ptr->schemaId);
+
+    // check if this schema is in the blacklist
+    auto blacklist_it = parsers_blacklist.find(schema->name);
+    if (blacklist_it != parsers_blacklist.end())
+    {
+      blacklist_it->second.topics.insert(channel_ptr->topic);
+      continue;
+    }
+
+    const std::string definition(reinterpret_cast<const char*>(schema->data.data()),
+                                 schema->data.size());
 
     if (schema->name == "data_tamer_msgs/msg/Schemas")
     {
@@ -160,30 +213,43 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
       continue;
     }
 
-    auto& parser_factory = it->second;
-    auto parser =
-        parser_factory->createParser(topic_name, schema->name, definition, plot_data);
-    parsers_by_channel.insert({ channel_ptr->id, parser });
+    try
+    {
+      auto& parser_factory = it->second;
+      auto parser = parser_factory->createParser(topic_name, schema->name, definition, plot_data);
+
+      parsers_by_channel.insert({ channel_ptr->id, parser });
+    }
+    catch (std::exception& e)
+    {
+      FailedParserInfo failed_parser_info;
+      failed_parser_info.error_message = e.what();
+      failed_parser_info.topics.insert(channel_ptr->topic);
+      parsers_blacklist.insert({ schema->name, failed_parser_info });
+    }
   };
 
-  if (!info->plugin_config.hasChildNodes())
+  // If any parser failed, show a message box with the error
+  if (!parsers_blacklist.empty())
   {
-    _dialog_parameters = std::nullopt;
-  }
-
-  // don't show the dialog if we already loaded the parameters with xmlLoadState
-  if (!_dialog_parameters)
-  {
-    DialogMCAP dialog(channels, mcap_schemas, _dialog_parameters);
-    auto ret = dialog.exec();
-    if (ret != QDialog::Accepted)
+    QString error_message;
+    for (const auto& [schema_name, failed_parser_info] : parsers_blacklist)
     {
-      return false;
+      error_message += QString("Schema: %1\n").arg(QString::fromStdString(schema_name));
+      error_message +=
+          QString("Error: %1\n").arg(QString::fromStdString(failed_parser_info.error_message));
+      error_message += QString("Topics affected: \n");
+      for (const auto& topic : failed_parser_info.topics)
+      {
+        error_message += QString(" - %1\n").arg(QString::fromStdString(topic));
+      }
+      error_message += "------------------\n";
     }
-    _dialog_parameters = dialog.getParams();
+    QMessageBox::warning(nullptr, "Parser Error", error_message);
   }
 
   std::unordered_set<int> enabled_channels;
+  size_t total_msgs = 0;
 
   for (const auto& [channel_id, parser] : parsers_by_channel)
   {
@@ -195,6 +261,11 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
     if (_dialog_parameters->selected_topics.contains(topic_name))
     {
       enabled_channels.insert(channel_id);
+      auto mcap_channel = channels[channel_id]->id;
+      if (statistics->channelMessageCounts.count(mcap_channel) != 0)
+      {
+        total_msgs += statistics->channelMessageCounts.at(channel_id);
+      }
     }
   }
 
@@ -209,14 +280,14 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
 
   QProgressDialog progress_dialog("Loading... please wait", "Cancel", 0, 0, nullptr);
   progress_dialog.setWindowTitle("Loading the MCAP file");
-  progress_dialog.setModal(true);
-  progress_dialog.setAutoClose(true);
-  progress_dialog.setAutoReset(true);
-  progress_dialog.setMinimumDuration(0);
+  progress_dialog.setWindowModality(Qt::ApplicationModal);
+  progress_dialog.setRange(0, std::max<size_t>(total_msgs, 1) - 1);
   progress_dialog.show();
   progress_dialog.setValue(0);
 
   size_t msg_count = 0;
+
+  auto new_progress_update = std::chrono::steady_clock::now() + std::chrono::milliseconds(100);
 
   for (const auto& msg_view : messages)
   {
@@ -227,6 +298,10 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
 
     // MCAP always represents publishTime in nanoseconds
     double timestamp_sec = double(msg_view.message.publishTime) * 1e-9;
+    if (_dialog_parameters->use_mcap_log_time)
+    {
+      timestamp_sec = double(msg_view.message.logTime) * 1e-9;
+    }
     auto parser_it = parsers_by_channel.find(msg_view.channel->id);
     if (parser_it == parsers_by_channel.end())
     {
@@ -238,8 +313,10 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
     MessageRef msg(msg_view.message.data, msg_view.message.dataSize);
     parser->parseMessage(msg, timestamp_sec);
 
-    if (msg_count++ % 1000 == 0)
+    if (msg_count++ % 100 == 0 && std::chrono::steady_clock::now() > new_progress_update)
     {
+      new_progress_update += std::chrono::milliseconds(500);
+      progress_dialog.setValue(msg_count);
       QApplication::processEvents();
       if (progress_dialog.wasCanceled())
       {

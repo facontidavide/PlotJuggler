@@ -23,7 +23,7 @@ using PlotDataAny = TimeseriesBase<std::any>;
  * timeseries in a single place.
  */
 
-// obsolate. For back compatibility only
+// obsolete. For back compatibility only
 // using PlotDataMap = std::unordered_map<std::string, PlotData>;
 
 using TimeseriesMap = std::unordered_map<std::string, PlotData>;
@@ -55,18 +55,15 @@ struct PlotDataMapRef
 
   TimeseriesMap::iterator addNumeric(const std::string& name, PlotGroup::Ptr group = {});
 
-  AnySeriesMap::iterator addUserDefined(const std::string& name,
-                                        PlotGroup::Ptr group = {});
+  AnySeriesMap::iterator addUserDefined(const std::string& name, PlotGroup::Ptr group = {});
 
-  StringSeriesMap::iterator addStringSeries(const std::string& name,
-                                            PlotGroup::Ptr group = {});
+  StringSeriesMap::iterator addStringSeries(const std::string& name, PlotGroup::Ptr group = {});
 
   PlotDataXY& getOrCreateScatterXY(const std::string& name, PlotGroup::Ptr group = {});
 
   PlotData& getOrCreateNumeric(const std::string& name, PlotGroup::Ptr group = {});
 
-  StringSeries& getOrCreateStringSeries(const std::string& name,
-                                        PlotGroup::Ptr group = {});
+  StringSeries& getOrCreateStringSeries(const std::string& name, PlotGroup::Ptr group = {});
 
   PlotDataAny& getOrCreateUserDefined(const std::string& name, PlotGroup::Ptr group = {});
 

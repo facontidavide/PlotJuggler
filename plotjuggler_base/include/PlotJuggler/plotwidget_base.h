@@ -83,21 +83,27 @@ public:
 
   bool isZoomEnabled() const;
 
-  void changeCurvesStyle(CurveStyle style);
-
   bool isXYPlot() const;
 
   QRectF currentBoundingRect() const;
 
   QRectF maxZoomRect() const;
 
-  CurveStyle curveStyle() const;
-
   bool keepRatioXY() const;
 
   void setKeepRatioXY(bool active);
 
   void setAcceptDrops(bool accept);
+
+  void overrideCurvesStyle(std::optional<CurveStyle> style);
+  std::optional<CurveStyle> overriddenCurvesStyle() const;
+
+  void setDefaultStyle(CurveStyle default_style);
+  CurveStyle defaultCurveStyle() const;
+
+  CurveStyle curveStyle() const;
+
+  void updateCurvesStyle();
 
 public slots:
 

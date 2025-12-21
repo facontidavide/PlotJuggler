@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="svg1"
+   sodipodi:docname="reference_line.svg"
+   viewBox="0 0 100 100"
+   sodipodi:version="0.32"
+   _SVGFile__filename="oldscale/actions/checkedbox.svg"
+   version="1.0"
+   y="0"
+   x="0"
+   inkscape:version="1.4.2 (2aeb623e1d, 2025-05-12)"
+   width="100"
+   height="100"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <defs
+     id="defs1242" />
+  <sodipodi:namedview
+     id="base"
+     bordercolor="#666666"
+     inkscape:pageshadow="2"
+     inkscape:window-y="32"
+     pagecolor="#ffffff"
+     inkscape:window-height="1011"
+     inkscape:zoom="3.6908545"
+     inkscape:window-x="66"
+     borderopacity="1.0"
+     inkscape:current-layer="svg1"
+     inkscape:cx="8.128199"
+     inkscape:cy="74.373021"
+     inkscape:window-width="1854"
+     inkscape:pageopacity="0.0000000"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     inkscape:window-maximized="1"
+     inkscape:pagecheckerboard="true"
+     inkscape:showpageshadow="2"
+     inkscape:deskcolor="#d1d1d1" />
+  <g
+     id="g1100-3"
+     transform="matrix(0.67555829,0,0,0.71342,11.791946,40.996423)"
+     style="stroke:#000000;stroke-width:7.00849;stroke-miterlimit:0;stroke-dasharray:none;stroke-dashoffset:10.7222;stroke-opacity:1">
+    <path
+       id="path1815-6"
+       sodipodi:nodetypes="cc"
+       style="fill:none;stroke:#000000;stroke-width:9.67547;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:0;stroke-dasharray:none;stroke-dashoffset:10.5731;stroke-opacity:1"
+       transform="matrix(1.0141,0,0,1.0141,0.36301,-0.46831)"
+       d="M 118.5288,71.415875 H -5.8700768" />
+  </g>
+  <path
+     id="path831"
+     style="fill:none;stroke:#000000;stroke-width:6.23154;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="m 8.1392511,50.548239 c 0,0 2.9059399,-25.348119 21.8323169,-25.163892 21.477725,-0.161059 20.787448,50.641308 41.301119,50.39424 17.023666,0.252615 21.67308,-25.230348 21.67308,-25.230348"
+     sodipodi:nodetypes="cccc" />
+  <metadata
+     id="metadata1239">
+    <rdf:RDF>
+      <cc:Work>
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <cc:license
+           rdf:resource="http://creativecommons.org/publicdomain/zero/1.0/" />
+        <dc:publisher>
+          <cc:Agent
+             rdf:about="http://openclipart.org/">
+            <dc:title>Openclipart</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="g1100-7"
+     transform="matrix(0,0.66160924,-0.71342,0,59.450047,12.502604)"
+     style="stroke:#000000;stroke-width:7.00849;stroke-miterlimit:0;stroke-dasharray:none;stroke-dashoffset:10.7222;stroke-opacity:1">
+    <path
+       id="path1815-5"
+       sodipodi:nodetypes="cc"
+       style="fill:none;stroke:#000000;stroke-width:9.67547;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:0;stroke-dasharray:none;stroke-dashoffset:10.5731;stroke-opacity:1"
+       transform="matrix(1.0141,0,0,1.0141,0.36301,-0.46831)"
+       d="M 118.5288,71.415875 H -5.8700768" />
+  </g>
+  <rect
+     style="fill:#295aff;fill-opacity:1;stroke:none;stroke-width:0.0171594;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+     id="rect250-6"
+     width="7.8608298"
+     height="95.633972"
+     x="46.935898"
+     y="0.34015796" />
+</svg>

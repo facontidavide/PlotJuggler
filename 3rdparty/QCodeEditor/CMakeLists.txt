@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.16)
 project(QCodeEditor)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -81,7 +81,7 @@ add_library(QCodeEditor STATIC
 )
 
 target_include_directories(QCodeEditor PUBLIC
-    include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
 if(CMAKE_COMPILER_IS_GNUCXX)

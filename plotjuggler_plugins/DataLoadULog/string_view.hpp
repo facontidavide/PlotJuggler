@@ -15,8 +15,8 @@
 #define string_view_lite_MINOR 1
 #define string_view_lite_PATCH 0
 
-#define string_view_lite_VERSION                                                         \
-  nssv_STRINGIFY(string_view_lite_MAJOR) "." nssv_STRINGIFY(                             \
+#define string_view_lite_VERSION                                                                   \
+  nssv_STRINGIFY(string_view_lite_MAJOR) "." nssv_STRINGIFY(                                       \
       string_view_lite_MINOR) "." nssv_STRINGIFY(string_view_lite_PATCH)
 
 #define nssv_STRINGIFY(x) nssv_STRINGIFY_(x)
@@ -29,12 +29,11 @@
 #define nssv_STRING_VIEW_STD 2
 
 #if !defined(nssv_CONFIG_SELECT_STRING_VIEW)
-#define nssv_CONFIG_SELECT_STRING_VIEW                                                   \
+#define nssv_CONFIG_SELECT_STRING_VIEW                                                             \
   (nssv_HAVE_STD_STRING_VIEW ? nssv_STRING_VIEW_STD : nssv_STRING_VIEW_NONSTD)
 #endif
 
-#if defined(nssv_CONFIG_SELECT_STD_STRING_VIEW) ||                                       \
-    defined(nssv_CONFIG_SELECT_NONSTD_STRING_VIEW)
+#if defined(nssv_CONFIG_SELECT_STD_STRING_VIEW) || defined(nssv_CONFIG_SELECT_NONSTD_STRING_VIEW)
 #error nssv_CONFIG_SELECT_STD_STRING_VIEW and nssv_CONFIG_SELECT_NONSTD_STRING_VIEW are deprecated and removed, please use nssv_CONFIG_SELECT_STRING_VIEW=nssv_STRING_VIEW_...
 #endif
 
@@ -79,10 +78,9 @@
 
 #define nssv_HAVE_STD_STRING_VIEW 0
 
-#define nssv_USES_STD_STRING_VIEW                                                        \
-  ((nssv_CONFIG_SELECT_STRING_VIEW == nssv_STRING_VIEW_STD) ||                           \
-   ((nssv_CONFIG_SELECT_STRING_VIEW == nssv_STRING_VIEW_DEFAULT) &&                      \
-    nssv_HAVE_STD_STRING_VIEW))
+#define nssv_USES_STD_STRING_VIEW                                                                  \
+  ((nssv_CONFIG_SELECT_STRING_VIEW == nssv_STRING_VIEW_STD) ||                                     \
+   ((nssv_CONFIG_SELECT_STRING_VIEW == nssv_STRING_VIEW_DEFAULT) && nssv_HAVE_STD_STRING_VIEW))
 
 #define nssv_HAVE_STARTS_WITH (nssv_CPP20_OR_GREATER || !nssv_USES_STD_STRING_VIEW)
 #define nssv_HAVE_ENDS_WITH nssv_HAVE_STARTS_WITH
@@ -103,8 +101,8 @@ namespace nonstd
 {
 
 template <class CharT, class Traits, class Allocator = std::allocator<CharT> >
-std::basic_string<CharT, Traits, Allocator>
-to_string(std::basic_string_view<CharT, Traits> v, Allocator const& a = Allocator())
+std::basic_string<CharT, Traits, Allocator> to_string(std::basic_string_view<CharT, Traits> v,
+                                                      Allocator const& a = Allocator())
 {
   return std::basic_string<CharT, Traits, Allocator>(v.begin(), v.end(), a);
 }
@@ -215,14 +213,14 @@ using std::operator<<;
 #define nssv_COMPILER_VERSION(major, minor, patch) (10 * (10 * major + minor) + patch)
 
 #if defined(__clang__)
-#define nssv_COMPILER_CLANG_VERSION                                                      \
+#define nssv_COMPILER_CLANG_VERSION                                                                \
   nssv_COMPILER_VERSION(__clang_major__, __clang_minor__, __clang_patchlevel__)
 #else
 #define nssv_COMPILER_CLANG_VERSION 0
 #endif
 
 #if defined(__GNUC__) && !defined(__clang__)
-#define nssv_COMPILER_GNUC_VERSION                                                       \
+#define nssv_COMPILER_GNUC_VERSION                                                                 \
   nssv_COMPILER_VERSION(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
 #else
 #define nssv_COMPILER_GNUC_VERSION 0
@@ -269,7 +267,7 @@ using std::operator<<;
 #define nssv_HAVE_WCHAR16_T nssv_CPP11_100
 #define nssv_HAVE_WCHAR32_T nssv_CPP11_100
 
-#if !((nssv_CPP11 && nssv_COMPILER_CLANG_VERSION) ||                                     \
+#if !((nssv_CPP11 && nssv_COMPILER_CLANG_VERSION) ||                                               \
       nssv_BETWEEN(nssv_COMPILER_CLANG_VERSION, 300, 400))
 #define nssv_HAVE_STD_DEFINED_LITERALS nssv_CPP11_140
 #endif
@@ -366,8 +364,7 @@ using std::operator<<;
 #if nssv_COMPILER_MSVC_VERSION >= 140
 #define nssv_SUPPRESS_MSGSL_WARNING(expr) [[gsl::suppress(expr)]]
 #define nssv_SUPPRESS_MSVC_WARNING(code, descr) __pragma(warning(suppress : code))
-#define nssv_DISABLE_MSVC_WARNINGS(codes)                                                \
-  __pragma(warning(push)) __pragma(warning(disable : codes))
+#define nssv_DISABLE_MSVC_WARNINGS(codes) __pragma(warning(push)) __pragma(warning(disable : codes))
 #else
 #define nssv_SUPPRESS_MSGSL_WARNING(expr)
 #define nssv_SUPPRESS_MSVC_WARNING(code, descr)
@@ -437,8 +434,7 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
     }
 
 #if nssv_CPP11_OR_GREATER
-    nssv_constexpr
-    basic_string_view(basic_string_view const& other) nssv_noexcept = default;
+    nssv_constexpr basic_string_view(basic_string_view const& other) nssv_noexcept = default;
 #else
     nssv_constexpr basic_string_view(basic_string_view const& other) nssv_noexcept
       : data_(other.data_),
@@ -447,8 +443,7 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
     }
 #endif
 
-    nssv_constexpr basic_string_view(CharT const* s, size_type count)
-      : data_(s), size_(count)
+    nssv_constexpr basic_string_view(CharT const* s, size_type count) : data_(s), size_(count)
     {
     }
 
@@ -462,8 +457,7 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
     nssv_constexpr14 basic_string_view&
     operator=(basic_string_view const& other) nssv_noexcept = default;
 #else
-    nssv_constexpr14 basic_string_view&
-    operator=(basic_string_view const& other) nssv_noexcept
+    nssv_constexpr14 basic_string_view& operator=(basic_string_view const& other) nssv_noexcept
     {
       data_ = other.data_;
       size_ = other.size_;
@@ -686,9 +680,9 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
                                     size_type pos = 0) const nssv_noexcept  // (1)
     {
       return assert(v.size() == 0 || v.data() != nssv_nullptr),
-             pos >= size() ? npos :
-                             to_pos(std::search(cbegin() + pos, cend(), v.cbegin(),
-                                                v.cend(), Traits::eq));
+             pos >= size() ?
+                 npos :
+                 to_pos(std::search(cbegin() + pos, cend(), v.cbegin(), v.cend(), Traits::eq));
     }
 
     nssv_constexpr14 size_type find(CharT c,
@@ -720,8 +714,7 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
         return (std::min)(size(), pos);
 
       const_iterator last = cbegin() + (std::min)(size() - v.size(), pos) + v.size();
-      const_iterator result =
-          std::find_end(cbegin(), last, v.cbegin(), v.cend(), Traits::eq);
+      const_iterator result = std::find_end(cbegin(), last, v.cbegin(), v.cend(), Traits::eq);
 
       return result != last ? size_type(result - cbegin()) : npos;
     }
@@ -749,8 +742,8 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
                                            size_type pos = 0) const nssv_noexcept  // (1)
     {
       return pos >= size() ? npos :
-                             to_pos(std::find_first_of(cbegin() + pos, cend(), v.cbegin(),
-                                                       v.cend(), Traits::eq));
+                             to_pos(std::find_first_of(cbegin() + pos, cend(), v.cbegin(), v.cend(),
+                                                       Traits::eq));
     }
 
     nssv_constexpr size_type find_first_of(CharT c,
@@ -773,19 +766,16 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
 
     // find_last_of(), 4x:
 
-    nssv_constexpr size_type
-    find_last_of(basic_string_view v, size_type pos = npos) const nssv_noexcept  // (1)
+    nssv_constexpr size_type find_last_of(basic_string_view v,
+                                          size_type pos = npos) const nssv_noexcept  // (1)
     {
-      return empty() ?
-                 npos :
-             pos >= size() ?
-                 find_last_of(v, size() - 1) :
-                 to_pos(std::find_first_of(const_reverse_iterator(cbegin() + pos + 1),
-                                           crend(), v.cbegin(), v.cend(), Traits::eq));
+      return empty()       ? npos :
+             pos >= size() ? find_last_of(v, size() - 1) :
+                             to_pos(std::find_first_of(const_reverse_iterator(cbegin() + pos + 1),
+                                                       crend(), v.cbegin(), v.cend(), Traits::eq));
     }
 
-    nssv_constexpr size_type
-    find_last_of(CharT c, size_type pos = npos) const nssv_noexcept  // (2)
+    nssv_constexpr size_type find_last_of(CharT c, size_type pos = npos) const nssv_noexcept  // (2)
     {
       return find_last_of(basic_string_view(&c, 1), pos);
     }
@@ -804,15 +794,14 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
 
     // find_first_not_of(), 4x:
 
-    nssv_constexpr size_type
-    find_first_not_of(basic_string_view v, size_type pos = 0) const nssv_noexcept  // (1)
+    nssv_constexpr size_type find_first_not_of(basic_string_view v,
+                                               size_type pos = 0) const nssv_noexcept  // (1)
     {
-      return pos >= size() ? npos :
-                             to_pos(std::find_if(cbegin() + pos, cend(), not_in_view(v)));
+      return pos >= size() ? npos : to_pos(std::find_if(cbegin() + pos, cend(), not_in_view(v)));
     }
 
-    nssv_constexpr size_type
-    find_first_not_of(CharT c, size_type pos = 0) const nssv_noexcept  // (2)
+    nssv_constexpr size_type find_first_not_of(CharT c,
+                                               size_type pos = 0) const nssv_noexcept  // (2)
     {
       return find_first_not_of(basic_string_view(&c, 1), pos);
     }
@@ -831,18 +820,17 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
 
     // find_last_not_of(), 4x:
 
-    nssv_constexpr size_type find_last_not_of(
-        basic_string_view v, size_type pos = npos) const nssv_noexcept  // (1)
+    nssv_constexpr size_type find_last_not_of(basic_string_view v,
+                                              size_type pos = npos) const nssv_noexcept  // (1)
     {
-      return empty() ? npos :
-             pos >= size() ?
-                       find_last_not_of(v, size() - 1) :
-                       to_pos(std::find_if(const_reverse_iterator(cbegin() + pos + 1),
-                                           crend(), not_in_view(v)));
+      return empty()       ? npos :
+             pos >= size() ? find_last_not_of(v, size() - 1) :
+                             to_pos(std::find_if(const_reverse_iterator(cbegin() + pos + 1),
+                                                 crend(), not_in_view(v)));
     }
 
-    nssv_constexpr size_type
-    find_last_not_of(CharT c, size_type pos = npos) const nssv_noexcept  // (2)
+    nssv_constexpr size_type find_last_not_of(CharT c,
+                                              size_type pos = npos) const nssv_noexcept  // (2)
     {
       return find_last_not_of(basic_string_view(&c, 1), pos);
     }
@@ -936,8 +924,7 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
 #if nssv_CPP11_OR_GREATER
 
     template <class Allocator = std::allocator<CharT> >
-    std::basic_string<CharT, Traits, Allocator>
-    to_string(Allocator const& a = Allocator()) const
+    std::basic_string<CharT, Traits, Allocator> to_string(Allocator const& a = Allocator()) const
     {
       return std::basic_string<CharT, Traits, Allocator>(begin(), end(), a);
     }
@@ -1028,8 +1015,7 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
 
   template <class CharT, class Traits nssv_MSVC_ORDER(1)>
   nssv_constexpr bool operator==(basic_string_view<CharT, Traits> lhs,
-                                 nssv_BASIC_STRING_VIEW_I(CharT, Traits)
-                                     rhs) nssv_noexcept
+                                 nssv_BASIC_STRING_VIEW_I(CharT, Traits) rhs) nssv_noexcept
   {
     return lhs.compare(rhs) == 0;
   }
@@ -1045,8 +1031,7 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
 
   template <class CharT, class Traits nssv_MSVC_ORDER(1)>
   nssv_constexpr bool operator!=(basic_string_view<CharT, Traits> lhs,
-                                 nssv_BASIC_STRING_VIEW_I(CharT, Traits)
-                                     rhs) nssv_noexcept
+                                 nssv_BASIC_STRING_VIEW_I(CharT, Traits) rhs) nssv_noexcept
   {
     return lhs.size() != rhs.size() || lhs.compare(rhs) != 0;
   }
@@ -1078,8 +1063,7 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
 
   template <class CharT, class Traits nssv_MSVC_ORDER(1)>
   nssv_constexpr bool operator<=(basic_string_view<CharT, Traits> lhs,
-                                 nssv_BASIC_STRING_VIEW_I(CharT, Traits)
-                                     rhs) nssv_noexcept
+                                 nssv_BASIC_STRING_VIEW_I(CharT, Traits) rhs) nssv_noexcept
   {
     return lhs.compare(rhs) <= 0;
   }
@@ -1111,8 +1095,7 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
 
   template <class CharT, class Traits nssv_MSVC_ORDER(1)>
   nssv_constexpr bool operator>=(basic_string_view<CharT, Traits> lhs,
-                                 nssv_BASIC_STRING_VIEW_I(CharT, Traits)
-                                     rhs) nssv_noexcept
+                                 nssv_BASIC_STRING_VIEW_I(CharT, Traits) rhs) nssv_noexcept
   {
     return lhs.compare(rhs) >= 0;
   }
@@ -1153,8 +1136,7 @@ nssv_DISABLE_MSVC_WARNINGS(4455 26481 26472)
 
     // Whether, and how, to pad:
     const bool pad = (length < os.width());
-    const bool left_pad =
-        pad && (os.flags() & std::ios_base::adjustfield) == std::ios_base::right;
+    const bool left_pad = pad && (os.flags() & std::ios_base::adjustfield) == std::ios_base::right;
 
     if (left_pad)
       write_padding(os, os.width() - length);
@@ -1213,20 +1195,20 @@ nssv_inline_ns namespace literals
       return nonstd::sv_lite::string_view{ str, len };
     }
 
-    nssv_constexpr nonstd::sv_lite::u16string_view operator"" sv(
-        const char16_t* str, size_t len) nssv_noexcept  // (2)
+    nssv_constexpr nonstd::sv_lite::u16string_view operator"" sv(const char16_t* str, size_t len)
+        nssv_noexcept  // (2)
     {
       return nonstd::sv_lite::u16string_view{ str, len };
     }
 
-    nssv_constexpr nonstd::sv_lite::u32string_view operator"" sv(
-        const char32_t* str, size_t len) nssv_noexcept  // (3)
+    nssv_constexpr nonstd::sv_lite::u32string_view operator"" sv(const char32_t* str, size_t len)
+        nssv_noexcept  // (3)
     {
       return nonstd::sv_lite::u32string_view{ str, len };
     }
 
-    nssv_constexpr nonstd::sv_lite::wstring_view operator"" sv(
-        const wchar_t* str, size_t len) nssv_noexcept  // (4)
+    nssv_constexpr nonstd::sv_lite::wstring_view operator"" sv(const wchar_t* str, size_t len)
+        nssv_noexcept  // (4)
     {
       return nonstd::sv_lite::wstring_view{ str, len };
     }
@@ -1235,26 +1217,26 @@ nssv_inline_ns namespace literals
 
 #if nssv_CONFIG_USR_SV_OPERATOR
 
-    nssv_constexpr nonstd::sv_lite::string_view operator"" _sv(
-        const char* str, size_t len) nssv_noexcept  // (1)
+    nssv_constexpr nonstd::sv_lite::string_view operator"" _sv(const char* str, size_t len)
+        nssv_noexcept  // (1)
     {
       return nonstd::sv_lite::string_view{ str, len };
     }
 
-    nssv_constexpr nonstd::sv_lite::u16string_view operator"" _sv(
-        const char16_t* str, size_t len) nssv_noexcept  // (2)
+    nssv_constexpr nonstd::sv_lite::u16string_view operator"" _sv(const char16_t* str, size_t len)
+        nssv_noexcept  // (2)
     {
       return nonstd::sv_lite::u16string_view{ str, len };
     }
 
-    nssv_constexpr nonstd::sv_lite::u32string_view operator"" _sv(
-        const char32_t* str, size_t len) nssv_noexcept  // (3)
+    nssv_constexpr nonstd::sv_lite::u32string_view operator"" _sv(const char32_t* str, size_t len)
+        nssv_noexcept  // (3)
     {
       return nonstd::sv_lite::u32string_view{ str, len };
     }
 
-    nssv_constexpr nonstd::sv_lite::wstring_view operator"" _sv(
-        const wchar_t* str, size_t len) nssv_noexcept  // (4)
+    nssv_constexpr nonstd::sv_lite::wstring_view operator"" _sv(const wchar_t* str, size_t len)
+        nssv_noexcept  // (4)
     {
       return nonstd::sv_lite::wstring_view{ str, len };
     }

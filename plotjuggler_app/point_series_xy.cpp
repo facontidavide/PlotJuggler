@@ -9,10 +9,7 @@
 #include <cstdlib>
 
 PointSeriesXY::PointSeriesXY(const PlotData* x_axis, const PlotData* y_axis)
-  : QwtTimeseries(nullptr)
-  , _x_axis(x_axis)
-  , _y_axis(y_axis)
-  , _cached_curve("", x_axis->group())
+  : QwtTimeseries(nullptr), _x_axis(x_axis), _y_axis(y_axis), _cached_curve("", x_axis->group())
 {
   updateCache(true);
 }

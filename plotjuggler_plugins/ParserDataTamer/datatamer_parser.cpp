@@ -1,7 +1,7 @@
 
 #include "datatamer_parser.h"
 #include "data_tamer_parser/data_tamer_parser.hpp"
-#include "PlotJuggler/contrib/fmt/core.h"
+#include "fmt/core.h"
 
 using namespace PJ;
 
@@ -30,8 +30,7 @@ public:
     DataTamerParser::SnapshotView snapshot;
     snapshot.schema_hash = schema_.hash;
 
-    DataTamerParser::BufferSpan msg_buffer = { serialized_msg.data(),
-                                               serialized_msg.size() };
+    DataTamerParser::BufferSpan msg_buffer = { serialized_msg.data(), serialized_msg.size() };
 
     const uint32_t mask_size = DataTamerParser::Deserialize<uint32_t>(msg_buffer);
     snapshot.active_mask.data = msg_buffer.data;
@@ -62,8 +61,7 @@ private:
 
 MessageParserPtr ParserDataTamer::createParser(const std::string& topic_name,
                                                const std::string& type_name,
-                                               const std::string& schema,
-                                               PJ::PlotDataMapRef& data)
+                                               const std::string& schema, PJ::PlotDataMapRef& data)
 {
   return std::make_shared<MsgParserImpl>(topic_name, type_name, schema, data);
 }

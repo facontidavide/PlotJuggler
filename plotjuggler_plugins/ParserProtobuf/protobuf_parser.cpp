@@ -1,13 +1,12 @@
 #include <QSettings>
 #include <QMessageBox>
 #include "protobuf_parser.h"
-#include "PlotJuggler/contrib/fmt/core.h"
+#include "fmt/core.h"
 
 namespace gp = google::protobuf;
 
 ProtobufParser::ProtobufParser(const std::string& topic_name, const std::string type_name,
-                               const gp::FileDescriptorSet& descriptor_set,
-                               PlotDataMapRef& data)
+                               const gp::FileDescriptorSet& descriptor_set, PlotDataMapRef& data)
   : MessageParser(topic_name, data), _proto_pool(&_proto_database)
 {
   gp::FileDescriptorProto unused;
@@ -35,8 +34,7 @@ ProtobufParser::ProtobufParser(const std::string& topic_name, const std::string 
 
 bool ProtobufParser::parseMessage(const MessageRef serialized_msg, double& timestamp)
 {
-  const google::protobuf::Message* prototype_msg =
-      _msg_factory.GetPrototype(_msg_descriptor);
+  const google::protobuf::Message* prototype_msg = _msg_factory.GetPrototype(_msg_descriptor);
 
   google::protobuf::Message* mutable_msg = prototype_msg->New();
   if (!mutable_msg->ParseFromArray(serialized_msg.data(), serialized_msg.size()))
@@ -44,8 +42,7 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg, double& times
     return false;
   }
 
-  std::function<void(const google::protobuf::Message&, const std::string&, const bool)>
-      ParseImpl;
+  std::function<void(const google::protobuf::Message&, const std::string&, const bool)> ParseImpl;
 
   ParseImpl = [&](const google::protobuf::Message& msg, const std::string& prefix,
                   const bool is_map) {
@@ -59,7 +56,7 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg, double& times
       auto field = descriptor->field(index);
 
       std::string key =
-          prefix.empty() ? field->name() : fmt::format("{}/{}", prefix, field->name());
+          prefix.empty() ? std::string(field->name()) : fmt::format("{}/{}", prefix, field->name());
       if (is_map)
       {
         // Map messages only have 2 fields: key and value. The key will be represented in
@@ -159,7 +156,7 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg, double& times
                                    reflection->GetRepeatedEnum(msg, field, index);
 
             auto& series = this->getStringSeries(key + suffix);
-            series.pushBack({ timestamp, tmp->name() });
+            series.pushBack({ timestamp, std::string(tmp->name()) });
             is_double = false;
           }
           break;
@@ -181,9 +178,8 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg, double& times
 // Fix macro issue in Windows
 #pragma push_macro("GetMessage")
 #undef GetMessage
-            const auto& new_msg = repeated ?
-                                      reflection->GetRepeatedMessage(msg, field, index) :
-                                      reflection->GetMessage(msg, field);
+            const auto& new_msg = repeated ? reflection->GetRepeatedMessage(msg, field, index) :
+                                             reflection->GetMessage(msg, field);
 #pragma pop_macro("GetMessage")
             if (field->is_map())
             {
@@ -196,28 +192,23 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg, double& times
               {
                 // A map's key is a scalar type (except floats and bytes) or a string
                 case gp::FieldDescriptor::CPPTYPE_STRING: {
-                  suffix =
-                      fmt::format("/{}", map_reflection->GetString(new_msg, key_field));
+                  suffix = fmt::format("/{}", map_reflection->GetString(new_msg, key_field));
                 }
                 break;
                 case gp::FieldDescriptor::CPPTYPE_INT32: {
-                  suffix =
-                      fmt::format("/{}", map_reflection->GetInt32(new_msg, key_field));
+                  suffix = fmt::format("/{}", map_reflection->GetInt32(new_msg, key_field));
                 }
                 break;
                 case gp::FieldDescriptor::CPPTYPE_INT64: {
-                  suffix =
-                      fmt::format("/{}", map_reflection->GetInt64(new_msg, key_field));
+                  suffix = fmt::format("/{}", map_reflection->GetInt64(new_msg, key_field));
                 }
                 break;
                 case gp::FieldDescriptor::CPPTYPE_UINT32: {
-                  suffix =
-                      fmt::format("/{}", map_reflection->GetUInt32(new_msg, key_field));
+                  suffix = fmt::format("/{}", map_reflection->GetUInt32(new_msg, key_field));
                 }
                 break;
                 case gp::FieldDescriptor::CPPTYPE_UINT64: {
-                  suffix =
-                      fmt::format("/{}", map_reflection->GetUInt64(new_msg, key_field));
+                  suffix = fmt::format("/{}", map_reflection->GetUInt64(new_msg, key_field));
                 }
                 break;
               }

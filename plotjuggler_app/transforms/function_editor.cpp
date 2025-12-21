@@ -107,8 +107,7 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
   numericPlotNames.sort(Qt::CaseInsensitive);
 
   QByteArray saved_xml =
-      settings.value("FunctionEditorWidget.recentSnippetsXML", QByteArray())
-          .toByteArray();
+      settings.value("FunctionEditorWidget.recentSnippetsXML", QByteArray()).toByteArray();
   restoreGeometry(settings.value("FunctionEditorWidget.geometry").toByteArray());
 
   if (saved_xml.isEmpty())
@@ -136,8 +135,7 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
   ui->functionText->setPlainText(
       settings.value("FunctionEditorWidget.previousFunction", "return value").toString());
   ui->functionTextBatch->setPlainText(
-      settings.value("FunctionEditorWidget.previousFunctionBatch", "return value")
-          .toString());
+      settings.value("FunctionEditorWidget.previousFunctionBatch", "return value").toString());
 
   ui->lineEditSource->installEventFilter(this);
   ui->listAdditionalSources->installEventFilter(this);
@@ -170,8 +168,7 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
       break;
   }
 
-  bool use_batch_prefix =
-      settings.value("FunctionEditorWidget.batchPrefix", false).toBool();
+  bool use_batch_prefix = settings.value("FunctionEditorWidget.batchPrefix", false).toBool();
   ui->radioButtonPrefix->setChecked(use_batch_prefix);
 }
 
@@ -181,13 +178,11 @@ void FunctionEditorWidget::saveSettings()
   settings.setValue("FunctionEditorWidget.recentSnippetsXML", exportSnippets());
   settings.setValue("FunctionEditorWidget.geometry", saveGeometry());
 
-  settings.setValue("FunctionEditorWidget.previousGlobals",
-                    ui->globalVarsText->toPlainText());
+  settings.setValue("FunctionEditorWidget.previousGlobals", ui->globalVarsText->toPlainText());
   settings.setValue("FunctionEditorWidget.previousGlobalsBatch",
                     ui->globalVarsTextBatch->toPlainText());
 
-  settings.setValue("FunctionEditorWidget.previousFunction",
-                    ui->functionText->toPlainText());
+  settings.setValue("FunctionEditorWidget.previousFunction", ui->functionText->toPlainText());
   settings.setValue("FunctionEditorWidget.previousFunctionBatch",
                     ui->functionTextBatch->toPlainText());
   int batch_filter_type = 0;
@@ -205,8 +200,7 @@ void FunctionEditorWidget::saveSettings()
   }
   settings.setValue("FunctionEditorWidget.filterType", batch_filter_type);
 
-  settings.setValue("FunctionEditorWidget.batchPrefix",
-                    ui->radioButtonPrefix->isChecked());
+  settings.setValue("FunctionEditorWidget.batchPrefix", ui->radioButtonPrefix->isChecked());
 }
 
 FunctionEditorWidget::~FunctionEditorWidget()
@@ -476,8 +470,8 @@ void FunctionEditorWidget::on_buttonLoadFunctions_clicked()
   QString directory_path =
       settings.value("AddCustomPlotDialog.loadDirectory", QDir::currentPath()).toString();
 
-  QString fileName = QFileDialog::getOpenFileName(
-      this, tr("Open Snippet Library"), directory_path, tr("Snippets (*.snippets.xml)"));
+  QString fileName = QFileDialog::getOpenFileName(this, tr("Open Snippet Library"), directory_path,
+                                                  tr("Snippets (*.snippets.xml)"));
   if (fileName.isEmpty())
   {
     return;
@@ -487,8 +481,7 @@ void FunctionEditorWidget::on_buttonLoadFunctions_clicked()
 
   if (!file.open(QIODevice::ReadOnly))
   {
-    QMessageBox::critical(this, "Error",
-                          QString("Failed to open the file [%1]").arg(fileName));
+    QMessageBox::critical(this, "Error", QString("Failed to open the file [%1]").arg(fileName));
     return;
   }
 
@@ -504,8 +497,8 @@ void FunctionEditorWidget::on_buttonSaveFunctions_clicked()
   QString directory_path =
       settings.value("AddCustomPlotDialog.loadDirectory", QDir::currentPath()).toString();
 
-  QString fileName = QFileDialog::getSaveFileName(
-      this, tr("Open Snippet Library"), directory_path, tr("Snippets (*.snippets.xml)"));
+  QString fileName = QFileDialog::getSaveFileName(this, tr("Open Snippet Library"), directory_path,
+                                                  tr("Snippets (*.snippets.xml)"));
 
   if (fileName.isEmpty())
   {
@@ -519,8 +512,7 @@ void FunctionEditorWidget::on_buttonSaveFunctions_clicked()
   QFile file(fileName);
   if (!file.open(QIODevice::WriteOnly))
   {
-    QMessageBox::critical(this, "Error",
-                          QString("Failed to open the file [%1]").arg(fileName));
+    QMessageBox::critical(this, "Error", QString("Failed to open the file [%1]").arg(fileName));
     return;
   }
   auto data = exportSnippets();
@@ -542,8 +534,8 @@ void FunctionEditorWidget::on_buttonSaveCurrent_clicked()
     name = selected_snippets.front()->text();
   }
   bool ok = false;
-  name = QInputDialog::getText(this, tr("Name of the Function"), tr("Name:"),
-                               QLineEdit::Normal, name, &ok);
+  name = QInputDialog::getText(this, tr("Name of the Function"), tr("Name:"), QLineEdit::Normal,
+                               name, &ok);
 
   if (!ok || name.isEmpty())
   {
@@ -647,8 +639,7 @@ void FunctionEditorWidget::on_pushButtonCreate_clicked()
       snippet.linked_source = getLinkedData();
       for (int row = 0; row < ui->listAdditionalSources->rowCount(); row++)
       {
-        snippet.additional_sources.push_back(
-            ui->listAdditionalSources->item(row, 1)->text());
+        snippet.additional_sources.push_back(ui->listAdditionalSources->item(row, 1)->text());
       }
       created_plots.push_back(std::make_unique<LuaCustomFunction>(snippet));
     }
@@ -678,8 +669,7 @@ void FunctionEditorWidget::on_pushButtonCreate_clicked()
   catch (const std::runtime_error& e)
   {
     QMessageBox::critical(this, "Error",
-                          "Failed to create math plot : " +
-                              QString::fromStdString(e.what()));
+                          "Failed to create math plot : " + QString::fromStdString(e.what()));
   }
 }
 

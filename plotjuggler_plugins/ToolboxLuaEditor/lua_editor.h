@@ -81,8 +81,7 @@ private:
 
   SavedData getItemData(const QListWidgetItem* item) const;
 
-  void setItemData(QListWidgetItem* item, QString name, QString global_code,
-                   QString function_code);
+  void setItemData(QListWidgetItem* item, QString name, QString global_code, QString function_code);
 };
 
 #endif  // LUA_EDITOR_H

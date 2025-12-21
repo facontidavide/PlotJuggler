@@ -8,11 +8,11 @@ sudo apt -y install qtbase5-dev libqt5svg5-dev libqt5websockets5-dev \
       liblz4-dev libzstd-dev
 ```
 
-On Fedora:
+On Fedora (42):
 
 ```shell
-sudo dnf install qt5-qtbase-devel qt5-qtsvg-devel qt5-websockets-devel \
-      qt5-qtopendl-devel qt5-qtx11extras-devel
+sudo dnf install qt5-qtbase-devel qt5-qtsvg-devel qt5-qtwebsockets-devel \
+      qt5-qtx11extras-devel
 ```
 
 Clone the repository into **~/plotjuggler_ws**:
@@ -82,19 +82,19 @@ cp -v install/bin/* AppDir/usr/bin
 docker buildx build -o . .
 ```
 
-# Compile in Mac
+# Compile in macOS
 
-On Mac, the dependencies can be installed using [brew](https://brew.sh/) with the following command:
+On macOS, the dependencies can be installed using [brew](https://brew.sh/) with the following command:
 
 ```shell
-brew install cmake qt@5 protobuf mosquitto zeromq zstd
+brew install cmake qt@5 protobuf mosquitto zeromq zstd git-lfs
 ```
 
 If a newer version of qt is installed, you may need to temporarily link to qt5
 
 ```shell
-brew link qt@5 --override
-# brew link qt --override # Run once you are done building to restore the original linking
+brew link qt@5 --overwrite
+# brew link qt --overwrite  # Run once you are done building to restore the original linking
 ```
 
 Add CMake into your env-vars to be detected by cmake
@@ -103,7 +103,7 @@ Add CMake into your env-vars to be detected by cmake
 echo  'QT_HOME=$(brew --prefix qt@5) \
 export CPPFLAGS="-I $QT_HOME/include" \
 export PKG_CONFIG_PATH="$QT_HOME/lib/pkgconfig" \
-export LDFLAGS="$QT_HOME/lib"' >> $HOME/.zshrc
+export LDFLAGS="-L$QT_HOME/lib"' >> $HOME/.zshrc
 ```
 
 If you don't want to permanently add them into your main file, you can try by just exporting locally in the current terminal with:
@@ -112,7 +112,7 @@ If you don't want to permanently add them into your main file, you can try by ju
 QT_HOME=$(brew --prefix qt@5)
 export CPPFLAGS="-I $QT_HOME/include"
 export PKG_CONFIG_PATH="$QT_HOME/lib/pkgconfig"
-export LDFLAGS="$QT_HOME/lib"
+export LDFLAGS="-L$QT_HOME/lib"
 ```
 
 Clone the repository into **~/plotjuggler_ws**:
@@ -125,7 +125,7 @@ cd ~/plotjuggler_ws
 Then compile using cmake:
 
 ```shell
-cmake -S src/PlotJuggler -B build/PlotJuggler -DCMAKE_INSTALL_PREFIX=install
+cmake -S src/PlotJuggler -B build/PlotJuggler -DCMAKE_INSTALL_PREFIX=install -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 cmake --build build/PlotJuggler --config RelWithDebInfo --target install
 ```
 

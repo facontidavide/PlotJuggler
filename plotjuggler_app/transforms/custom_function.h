@@ -75,8 +75,7 @@ public:
 
   void calculateAndAdd(PlotDataMapRef& src_data);
 
-  virtual void calculatePoints(const std::vector<const PlotData*>& src_data,
-                               size_t point_index,
+  virtual void calculatePoints(const std::vector<const PlotData*>& src_data, size_t point_index,
                                std::vector<PlotData::Point>& new_points) = 0;
 
 protected:

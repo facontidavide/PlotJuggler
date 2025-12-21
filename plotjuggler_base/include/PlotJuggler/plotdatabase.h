@@ -23,8 +23,8 @@ namespace PJ
 {
 struct Range
 {
-  double min;
-  double max;
+  double min = std::numeric_limits<double>::lowest();
+  double max = std::numeric_limits<double>::max();
 };
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
@@ -157,6 +157,15 @@ public:
   void clonePoints(const PlotDataBase& other)
   {
     _points = other._points;
+    _range_x = other._range_x;
+    _range_y = other._range_y;
+    _range_x_dirty = other._range_x_dirty;
+    _range_y_dirty = other._range_y_dirty;
+  }
+
+  void clonePoints(PlotDataBase&& other)
+  {
+    _points = std::move(other._points);
     _range_x = other._range_x;
     _range_y = other._range_y;
     _range_x_dirty = other._range_x_dirty;

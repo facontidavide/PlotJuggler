@@ -17,8 +17,7 @@ DataStreamSample::DataStreamSample()
 
   connect(_dummy_notification, &QAction::triggered, this, [this]() {
     QMessageBox::warning(nullptr, "Dummy Notifications",
-                         QString("%1 notifications").arg(_notifications_count),
-                         QMessageBox::Ok);
+                         QString("%1 notifications").arg(_notifications_count), QMessageBox::Ok);
 
     if (_notifications_count > 0)
     {
@@ -96,14 +95,12 @@ void DataStreamSample::pushSingleCycle()
 
   using namespace std::chrono;
   static auto initial_time = high_resolution_clock::now();
-  const double offset =
-      duration_cast<duration<double>>(initial_time.time_since_epoch()).count();
+  const double offset = duration_cast<duration<double>>(initial_time.time_since_epoch()).count();
 
   auto now = high_resolution_clock::now();
   std::string colors[] = { "RED", "BLUE", "GREEN" };
 
-  const double stamp =
-      duration_cast<duration<double>>(now - initial_time).count() + offset;
+  const double stamp = duration_cast<duration<double>>(now - initial_time).count() + offset;
 
   for (auto& it : _parameters)
   {

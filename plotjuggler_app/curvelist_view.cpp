@@ -13,8 +13,7 @@
 #include <QScrollBar>
 #include "curvelist_panel.h"
 
-CurveTableView::CurveTableView(CurveListPanel* parent)
-  : QTableWidget(parent), CurvesView(parent)
+CurveTableView::CurveTableView(CurveListPanel* parent) : QTableWidget(parent), CurvesView(parent)
 {
   setColumnCount(2);
   setEditTriggers(NoEditTriggers);
@@ -222,8 +221,7 @@ bool CurvesView::eventFilterBase(QObject* object, QEvent* event)
     table_widget = qobject_cast<QAbstractItemView*>(obj);
   }
 
-  bool ctrl_modifier_pressed =
-      (QGuiApplication::keyboardModifiers() == Qt::ControlModifier);
+  bool ctrl_modifier_pressed = (QGuiApplication::keyboardModifiers() == Qt::ControlModifier);
 
   if (event->type() == QEvent::MouseButtonPress)
   {
@@ -251,8 +249,7 @@ bool CurvesView::eventFilterBase(QObject* object, QEvent* event)
     QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
     double distance_from_click = (mouse_event->pos() - _drag_start_pos).manhattanLength();
 
-    if ((mouse_event->buttons() == Qt::LeftButton ||
-         mouse_event->buttons() == Qt::RightButton) &&
+    if ((mouse_event->buttons() == Qt::LeftButton || mouse_event->buttons() == Qt::RightButton) &&
         distance_from_click >= QApplication::startDragDistance() && !_dragging)
     {
       _dragging = true;

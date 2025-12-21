@@ -53,8 +53,7 @@ void LuaCustomFunction::initEngine()
 }
 
 void LuaCustomFunction::calculatePoints(const std::vector<const PlotData*>& src_data,
-                                        size_t point_index,
-                                        std::vector<PlotData::Point>& points)
+                                        size_t point_index, std::vector<PlotData::Point>& points)
 {
   std::unique_lock<std::mutex> lk(mutex_);
 
@@ -108,8 +107,7 @@ void LuaCustomFunction::calculatePoints(const std::vector<const PlotData*>& src_
       result = _lua_function(old_point.x, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
       break;
     case 8:
-      result = _lua_function(old_point.x, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7],
-                             v[8]);
+      result = _lua_function(old_point.x, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]);
       break;
     default:
       throw std::runtime_error("Lua Engine: maximum number of additional data sources is "

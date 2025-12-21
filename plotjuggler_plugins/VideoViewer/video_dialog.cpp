@@ -51,8 +51,7 @@ void ImageLabel::paintEvent(QPaintEvent* event)
   QPoint corner((rect_size.width() - pix_size.width()) / 2,
                 (rect_size.height() - pix_size.height()) / 2);
 
-  QPixmap scaled_pix =
-      pix.scaled(pix_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  QPixmap scaled_pix = pix.scaled(pix_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   painter.drawPixmap(corner, scaled_pix);
 }
 

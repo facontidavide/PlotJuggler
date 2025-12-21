@@ -8,11 +8,10 @@
 #include "rosx_introspection/builtin_types.hpp"
 #include "rosx_introspection/variant.hpp"
 
-namespace eprosima::fastcdr
+namespace nanocdr
 {
-class FastBuffer;
-class Cdr;
-}  // namespace eprosima::fastcdr
+class Decoder;
+}  // namespace nanocdr
 
 namespace RosMsgParser
 {
@@ -105,7 +104,7 @@ protected:
 
 // Specialization od deserializer that works with ROS2
 // wrapping FastCDR
-class FastCDR_Deserializer : public Deserializer
+class NanoCDR_Deserializer : public Deserializer
 {
 public:
   Variant deserialize(BuiltinType type) override;
@@ -128,11 +127,10 @@ public:
   }
 
 protected:
-  std::shared_ptr<eprosima::fastcdr::FastBuffer> _cdr_buffer;
-  std::shared_ptr<eprosima::fastcdr::Cdr> _cdr;
+  std::shared_ptr<nanocdr::Decoder> _cdr_decoder;
 };
 
-using ROS2_Deserializer = FastCDR_Deserializer;
+using ROS2_Deserializer = NanoCDR_Deserializer;
 
 }  // namespace RosMsgParser
 

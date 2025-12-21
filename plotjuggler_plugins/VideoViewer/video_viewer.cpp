@@ -56,8 +56,7 @@ bool PublisherVideo::xmlSaveState(QDomDocument& doc, QDomElement& parent_element
   QDomElement config = doc.createElement("config");
   config.setAttribute("video_file", _dialog->ui->lineFilename->text());
   config.setAttribute("curve_name", _dialog->ui->lineEditReference->text());
-  config.setAttribute("use_frame",
-                      _dialog->ui->radioButtonFrame->isChecked() ? "true" : "false");
+  config.setAttribute("use_frame", _dialog->ui->radioButtonFrame->isChecked() ? "true" : "false");
 
   parent_element.appendChild(config);
   return true;

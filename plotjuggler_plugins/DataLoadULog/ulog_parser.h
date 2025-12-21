@@ -6,6 +6,7 @@
 #include <set>
 #include <string.h>
 #include <cstdint>
+#include <optional>
 
 #include "string_view.hpp"
 
@@ -79,12 +80,13 @@ public:
 
   struct Format
   {
-    Format() : padding(0)
+    Format() : padding(0), timestamp_idx(-1)
     {
     }
     std::string name;
     std::vector<Field> fields;
     int padding;
+    int timestamp_idx;
   };
 
   struct MessageLog
@@ -108,7 +110,7 @@ public:
 
   struct Timeseries
   {
-    std::vector<uint64_t> timestamps;
+    std::vector<std::optional<uint64_t>> timestamps;
     std::vector<std::pair<std::string, std::vector<double>>> data;
   };
 
@@ -150,8 +152,7 @@ private:
 
   std::streampos _data_section_start;  ///< first ADD_LOGGED_MSG message
 
-  int64_t _read_until_file_position =
-      1ULL << 60;  ///< read limit if log contains appended data
+  int64_t _read_until_file_position = 1ULL << 60;  ///< read limit if log contains appended data
 
   std::set<std::string> _overridden_params;
 
@@ -171,6 +172,6 @@ private:
 
   void parseDataMessage(const Subscription& sub, char* message);
 
-  char* parseSimpleDataMessage(Timeseries& timeseries, const Format* format,
-                               char* message, size_t* index);
+  char* parseSimpleDataMessage(Timeseries& timeseries, const Format* format, char* message,
+                               size_t* index);
 };

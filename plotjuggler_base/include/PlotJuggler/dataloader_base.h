@@ -41,8 +41,7 @@ public:
   /// Provide a list of file extensions that this plugin can open
   virtual const std::vector<const char*>& compatibleFileExtensions() const = 0;
 
-  virtual bool readDataFromFile(FileLoadInfo* fileload_info,
-                                PlotDataMapRef& destination) = 0;
+  virtual bool readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef& destination) = 0;
 
   void setParserFactories(ParserFactories* parsers)
   {

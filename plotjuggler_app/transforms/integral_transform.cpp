@@ -109,10 +109,12 @@ bool IntegralTransform::xmlLoadState(const QDomElement& parent_element)
   if (widget_el.attribute("radioChecked") == "radioActual")
   {
     ui->radioActual->setChecked(true);
+    _dT = 0.0;
   }
   else
   {
     ui->radioCustom->setChecked(true);
+    _dT = ui->lineEditCustom->text().toDouble();
   }
   return true;
 }

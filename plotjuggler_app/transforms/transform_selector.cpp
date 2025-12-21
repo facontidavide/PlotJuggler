@@ -7,8 +7,7 @@
 #include <QDebug>
 
 TransformSelector::TransformSelector(QStringList builtin_transform,
-                                     QStringList available_transforms,
-                                     QString* default_tansform,
+                                     QStringList available_transforms, QString* default_tansform,
                                      std::map<std::string, QString>* curve_transforms,
                                      QWidget* parent)
   : QDialog(parent)

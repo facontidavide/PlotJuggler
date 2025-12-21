@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ln -s /usr/lib/plotjuggler/plotjuggler /usr/bin/plotjuggler

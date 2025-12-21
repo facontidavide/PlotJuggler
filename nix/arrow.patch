@@ -1,0 +1,14 @@
+diff --git a/plotjuggler_plugins/DataLoadParquet/CMakeLists.txt b/plotjuggler_plugins/DataLoadParquet/CMakeLists.txt
+index cf101343..3368e555 100644
+--- a/plotjuggler_plugins/DataLoadParquet/CMakeLists.txt
++++ b/plotjuggler_plugins/DataLoadParquet/CMakeLists.txt
+@@ -11,8 +11,8 @@ if(Arrow_FOUND)
+   add_library(DataLoadParquet SHARED ${SRC} ${UI_SRC})
+
+   target_link_libraries(
+-    DataLoadParquet PRIVATE Qt5::Widgets Qt5::Xml Arrow::arrow_static
+-                            Parquet::parquet_static plotjuggler_base)
++    DataLoadParquet PRIVATE Qt5::Widgets Qt5::Xml Arrow::arrow_shared
++                            Parquet::parquet_shared plotjuggler_base)
+
+   target_compile_definitions(DataLoadParquet PRIVATE QT_PLUGIN)

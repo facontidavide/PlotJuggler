@@ -3,8 +3,7 @@
 
 #include <QSpinBox>
 
-SamplesCountFilter::SamplesCountFilter()
-  : ui(new Ui::SamplesCount), _widget(new QWidget())
+SamplesCountFilter::SamplesCountFilter() : ui(new Ui::SamplesCount), _widget(new QWidget())
 {
   ui->setupUi(_widget);
 
@@ -23,8 +22,7 @@ QWidget* SamplesCountFilter::optionsWidget()
   return _widget;
 }
 
-bool SamplesCountFilter::xmlSaveState(QDomDocument& doc,
-                                      QDomElement& parent_element) const
+bool SamplesCountFilter::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const
 {
   QDomElement widget_el = doc.createElement("options");
   widget_el.setAttribute("milliseconds", ui->spinBoxMilliseconds->value());

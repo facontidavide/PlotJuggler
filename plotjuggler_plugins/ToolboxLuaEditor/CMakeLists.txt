@@ -1,26 +1,13 @@
+include_directories(../)
 
-include_directories( ../  )
+qt5_wrap_ui(UI_SRC lua_editor.ui)
 
-add_definitions(${QT_DEFINITIONS})
-add_definitions(-DQT_PLUGIN)
+add_library(ToolboxLuaEditor SHARED lua_editor.cpp lua_editor.h ${UI_SRC})
 
+target_link_libraries(
+  ToolboxLuaEditor PRIVATE Qt5::Widgets Qt5::Xml plotjuggler_base
+                           plotjuggler_qwt QCodeEditor lua::lua)
 
-QT5_WRAP_UI ( UI_SRC
-    lua_editor.ui
-    )
+target_compile_definitions(ToolboxLuaEditor PRIVATE QT_PLUGIN)
 
-add_library(ToolboxLuaEditor SHARED
-    lua_editor.cpp
-    lua_editor.h
-    ${UI_SRC}  )
-
-target_link_libraries(ToolboxLuaEditor
-    ${Qt5Widgets_LIBRARIES}
-    ${Qt5Xml_LIBRARIES}
-    plotjuggler_base
-    plotjuggler_qwt
-    lua_static
-    QCodeEditor
-    )
-
-install(TARGETS ToolboxLuaEditor DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
+install(TARGETS ToolboxLuaEditor DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY})

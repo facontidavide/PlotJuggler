@@ -29,18 +29,15 @@ public:
     return "ros2msg";
   }
 
-  MessageParserPtr createParser(const std::string& topic_name,
-                                const std::string& type_name, const std::string& schema,
-                                PlotDataMapRef& data) override
+  MessageParserPtr createParser(const std::string& topic_name, const std::string& type_name,
+                                const std::string& schema, PlotDataMapRef& data) override
   {
-    std::string msg_type =
-        QString::fromStdString(type_name).replace("/msg/", "/").toStdString();
+    std::string msg_type = QString::fromStdString(type_name).replace("/msg/", "/").toStdString();
 
-    auto parser = std::make_shared<ParserROS>(
-        topic_name, msg_type, schema, new RosMsgParser::ROS2_Deserializer(), data);
+    auto parser = std::make_shared<ParserROS>(topic_name, msg_type, schema,
+                                              new RosMsgParser::ROS2_Deserializer(), data);
     QSettings settings;
-    parser->enableTruncationCheck(
-        settings.value("Preferences::truncation_check", true).toBool());
+    parser->enableTruncationCheck(settings.value("Preferences::truncation_check", true).toBool());
     return parser;
   }
 };

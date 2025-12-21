@@ -52,7 +52,7 @@ public:
     }
     if (str.isSSO())
     {
-      // the object stroed the string already, just push it
+      // the object stored the string already, just push it
       TimeseriesBase<StringRef>::pushBack(std::move(p));
     }
     else

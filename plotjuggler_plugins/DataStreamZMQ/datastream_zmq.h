@@ -1,12 +1,14 @@
 #pragma once
 #include <QDialog>
 
-#include <QtPlugin>
-#include <thread>
 #include "PlotJuggler/datastreamer_base.h"
 #include "PlotJuggler/messageparser_base.h"
 #include "ui_datastream_zmq.h"
 #include "zmq.hpp"
+#include <QtPlugin>
+#include <map>
+#include <string>
+#include <thread>
 
 class StreamZMQDialog : public QDialog
 {
@@ -57,9 +59,12 @@ private:
   std::string _socket_address;
   std::thread _receive_thread;
   std::vector<std::string> _topic_filters;
-
+  std::map<std::string, PJ::MessageParserPtr> _parsers;
+  PJ::ParserFactoryPlugin::Ptr _parser_creator;
+  bool _is_connect = false;
   void receiveLoop();
   bool parseMessage(const PJ::MessageRef& msg, double& timestamp);
+  bool parseMessage(const std::string& topic, const PJ::MessageRef& msg, double& timestamp);
   void parseTopicFilters(const QString& filters);
   void subscribeTopics();
   void unsubscribeTopics();

@@ -5,6 +5,7 @@
  */
 
 #include "plot_docker.h"
+#include "PlotJuggler/save_plot.h"
 #include "plotwidget_editor.h"
 #include "Qads/DockSplitter.h"
 #include <QPushButton>
@@ -19,8 +20,7 @@
 class SplittableComponentsFactory : public ads::CDockComponentsFactory
 {
 public:
-  ads::CDockAreaTitleBar*
-  createDockAreaTitleBar(ads::CDockAreaWidget* dock_area) const override
+  ads::CDockAreaTitleBar* createDockAreaTitleBar(ads::CDockAreaWidget* dock_area) const override
   {
     auto title_bar = new ads::CDockAreaTitleBar(dock_area);
     title_bar->setVisible(false);
@@ -148,16 +148,14 @@ void PlotDocker::restoreSplitter(QDomElement elem, DockWidget* widget)
     return;
   }
 
-  Qt::Orientation orientation =
-      orientation_str.startsWith("|") ? Qt::Horizontal : Qt::Vertical;
+  Qt::Orientation orientation = orientation_str.startsWith("|") ? Qt::Horizontal : Qt::Vertical;
 
   std::vector<DockWidget*> widgets(splitter_count);
 
   widgets[0] = widget;
   for (int i = 1; i < splitter_count; i++)
   {
-    widget = (orientation == Qt::Horizontal) ? widget->splitHorizontal() :
-                                               widget->splitVertical();
+    widget = (orientation == Qt::Horizontal) ? widget->splitHorizontal() : widget->splitVertical();
     widgets[i] = widget;
   }
 
@@ -165,8 +163,7 @@ void PlotDocker::restoreSplitter(QDomElement elem, DockWidget* widget)
 
   for (int i = 0; i < splitter_count; i++)
   {
-    tot_size +=
-        (orientation == Qt::Horizontal) ? widgets[i]->width() : widgets[i]->height();
+    tot_size += (orientation == Qt::Horizontal) ? widgets[i]->width() : widgets[i]->height();
   }
 
   auto sizes_str = elem.attribute("sizes").split(";");
@@ -216,10 +213,10 @@ bool PlotDocker::xmlLoadState(QDomElement& tab_element)
     hide();
   }
 
-  for (auto container_elem = tab_element.firstChildElement("Container");
-       !container_elem.isNull(); container_elem = container_elem.nextSiblingElement("Cont"
-                                                                                    "aine"
-                                                                                    "r"))
+  for (auto container_elem = tab_element.firstChildElement("Container"); !container_elem.isNull();
+       container_elem = container_elem.nextSiblingElement("Cont"
+                                                          "aine"
+                                                          "r"))
   {
     auto splitter_elem = container_elem.firstChildElement("DockSplitter");
     if (!splitter_elem.isNull())
@@ -243,8 +240,7 @@ int PlotDocker::plotCount() const
 
 PlotWidget* PlotDocker::plotAt(int index)
 {
-  DockWidget* dock_widget =
-      dynamic_cast<DockWidget*>(dockArea(index)->currentDockWidget());
+  DockWidget* dock_widget = dynamic_cast<DockWidget*>(dockArea(index)->currentDockWidget());
   return static_cast<PlotWidget*>(dock_widget->plotWidget());
 }
 
@@ -278,6 +274,51 @@ void PlotDocker::on_stylesheetChanged(QString theme)
   }
 }
 
+QRect PlotDocker::plotRelativeFootprint(int index, QSize plot_size) const
+{
+  const auto factor_x = static_cast<float>(plot_size.width()) / static_cast<float>(rect().width());
+  const auto factor_y =
+      static_cast<float>(plot_size.height()) / static_cast<float>(rect().height());
+
+  const auto* dock_area = dockArea(index);
+  const auto plot_pos = mapFromGlobal(
+      dock_area->currentDockWidget()->mapToGlobal(dock_area->currentDockWidget()->pos()));
+  const auto plot_rect = dock_area->currentDockWidget()->rect();
+
+  const static float title_margin = 10.f;
+  const static float plot_margin = 5.f;
+  const auto x = (static_cast<float>(plot_pos.x()) * factor_x) + plot_margin;
+  const auto y = (static_cast<float>(plot_pos.y()) * factor_y) + title_margin + plot_margin;
+  const auto w = (static_cast<float>(plot_rect.width()) * factor_x) - 2 * plot_margin;
+  const auto h =
+      (static_cast<float>(plot_rect.height()) * factor_y) - title_margin - 2 * plot_margin;
+
+  return { static_cast<int>(x), static_cast<int>(y), static_cast<int>(w), static_cast<int>(h) };
+}
+
+void PlotDocker::savePlotsToFile()
+{
+  const auto plot_size = plotSize();
+  PlotSaveHelper save_plots_helper(plot_size, this);
+
+  for (int index = 0; index < plotCount(); index++)
+  {
+    const auto* dock_area = dockArea(index);
+
+    const auto plot_footprint = plotRelativeFootprint(index, plot_size);
+    auto* plot_at = plotAt(index);
+    plot_at->plotOn(save_plots_helper, plot_footprint);
+
+    const static float title_margin = 10.f;
+    const auto title_footprint =
+        QRectF{ static_cast<qreal>(plot_footprint.x()), plot_footprint.y() - title_margin,
+                static_cast<qreal>(plot_footprint.width()), title_margin };
+    save_plots_helper.paintTitle(
+        static_cast<const DockWidget*>(dock_area->currentDockWidget())->name(), title_footprint,
+        this);
+  }
+}
+
 DockWidget::DockWidget(PlotDataMapRef& datamap, QWidget* parent)
   : ads::CDockWidget("Plot", parent), _datamap(datamap)
 {
@@ -297,8 +338,7 @@ DockWidget::DockWidget(PlotDataMapRef& datamap, QWidget* parent)
   connect(_toolbar->buttonSplitHorizontal(), &QPushButton::clicked, this,
           &DockWidget::splitHorizontal);
 
-  connect(_toolbar->buttonSplitVertical(), &QPushButton::clicked, this,
-          &DockWidget::splitVertical);
+  connect(_toolbar->buttonSplitVertical(), &QPushButton::clicked, this, &DockWidget::splitVertical);
 
   connect(_toolbar, &DockToolbar::backgroundColorRequest, _plot_widget,
           &PlotWidget::onBackgroundColorRequest);
@@ -350,8 +390,7 @@ DockWidget* DockWidget::splitHorizontal()
   auto new_widget = new DockWidget(_datamap, qobject_cast<QWidget*>(parent()));
 
   PlotDocker* parent_docker = static_cast<PlotDocker*>(dockManager());
-  auto area = parent_docker->addDockWidget(ads::RightDockWidgetArea, new_widget,
-                                           dockAreaWidget());
+  auto area = parent_docker->addDockWidget(ads::RightDockWidgetArea, new_widget, dockAreaWidget());
 
   area->setAllowedAreas(ads::OuterDockAreas);
 
@@ -370,8 +409,7 @@ DockWidget* DockWidget::splitVertical()
 
   PlotDocker* parent_docker = static_cast<PlotDocker*>(dockManager());
 
-  auto area = parent_docker->addDockWidget(ads::BottomDockWidgetArea, new_widget,
-                                           dockAreaWidget());
+  auto area = parent_docker->addDockWidget(ads::BottomDockWidgetArea, new_widget, dockAreaWidget());
 
   area->setAllowedAreas(ads::OuterDockAreas);
   parent_docker->plotWidgetAdded(new_widget->plotWidget());
@@ -391,4 +429,9 @@ PlotWidget* DockWidget::plotWidget()
 DockToolbar* DockWidget::toolBar()
 {
   return _toolbar;
+}
+
+QString DockWidget::name() const
+{
+  return _toolbar->label()->text();
 }

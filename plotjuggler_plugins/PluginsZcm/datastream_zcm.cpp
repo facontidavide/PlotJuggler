@@ -88,8 +88,7 @@ bool DataStreamZcm::start(QStringList*)
     }
     catch (std::exception& ex)
     {
-      QMessageBox::warning(nullptr, "Error",
-                           tr("Exception from zcm::ZCM() :\n%1").arg(ex.what()));
+      QMessageBox::warning(nullptr, "Error", tr("Exception from zcm::ZCM() :\n%1").arg(ex.what()));
       return false;
     }
     if (!_zcm->good())
@@ -122,8 +121,7 @@ bool DataStreamZcm::start(QStringList*)
     {
       _zcm->unsubscribe(_subs);
     }
-    _subs =
-        _zcm->subscribe(_subscribe_string.toStdString(), &DataStreamZcm::handler, this);
+    _subs = _zcm->subscribe(_subscribe_string.toStdString(), &DataStreamZcm::handler, this);
     if (!_subs)
     {
       QMessageBox::warning(nullptr, "Error", "Failed to subscribe");
@@ -185,8 +183,8 @@ bool DataStreamZcm::xmlLoadState(const QDomElement& parent_element)
   return true;
 }
 
-void DataStreamZcm::processData(const string& name, zcm_field_type_t type,
-                                const void* data, void* usr)
+void DataStreamZcm::processData(const string& name, zcm_field_type_t type, const void* data,
+                                void* usr)
 {
   DataStreamZcm* me = (DataStreamZcm*)usr;
   switch (type)
@@ -219,14 +217,14 @@ void DataStreamZcm::processData(const string& name, zcm_field_type_t type,
       me->_strings.emplace_back(name, string((const char*)data));
       break;
     case ZCM_FIELD_USER_TYPE:
-      assert(false && "Should not be possble");
+      assert(false && "Should not be possible");
   }
 };
 
 void DataStreamZcm::handler(const zcm::ReceiveBuffer* rbuf, const string& channel)
 {
-  zcm::Introspection::processEncodedType(channel, rbuf->data, rbuf->data_size, "/",
-                                         *_types.get(), processData, this);
+  zcm::Introspection::processEncodedType(channel, rbuf->data, rbuf->data_size, "/", *_types.get(),
+                                         processData, this);
   {
     std::lock_guard<std::mutex> lock(mutex());
 
@@ -261,8 +259,7 @@ void DataStreamZcm::on_pushButtonUrl_clicked()
   QString url = getenv("ZCM_DEFAULT_URL");
   if (url.isEmpty())
   {
-    QMessageBox::warning(nullptr, "Error",
-                         "Environment variable ZCM_DEFAULT_URL not set");
+    QMessageBox::warning(nullptr, "Error", "Environment variable ZCM_DEFAULT_URL not set");
   }
   else
   {

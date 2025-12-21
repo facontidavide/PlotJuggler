@@ -23,8 +23,7 @@ ToolboxQuaternion::ToolboxQuaternion()
 
   connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &ToolboxQuaternion::onClosed);
 
-  connect(ui->checkBoxUnwrap, &QCheckBox::toggled, this,
-          &ToolboxQuaternion::onParametersChanged);
+  connect(ui->checkBoxUnwrap, &QCheckBox::toggled, this, &ToolboxQuaternion::onParametersChanged);
 
   connect(ui->radioButtonDegrees, &QRadioButton::toggled, this,
           &ToolboxQuaternion::onParametersChanged);
@@ -37,8 +36,7 @@ ToolboxQuaternion::~ToolboxQuaternion()
 {
 }
 
-void ToolboxQuaternion::init(PJ::PlotDataMapRef& src_data,
-                             PJ::TransformsMap& transform_map)
+void ToolboxQuaternion::init(PJ::PlotDataMapRef& src_data, PJ::TransformsMap& transform_map)
 {
   _plot_data = &src_data;
   _transforms = &transform_map;
@@ -50,8 +48,7 @@ void ToolboxQuaternion::init(PJ::PlotDataMapRef& src_data,
   preview_layout->addWidget(_plot_widget);
 }
 
-std::pair<QWidget*, PJ::ToolboxPlugin::WidgetType>
-ToolboxQuaternion::providedWidget() const
+std::pair<QWidget*, PJ::ToolboxPlugin::WidgetType> ToolboxQuaternion::providedWidget() const
 {
   return { _widget, PJ::ToolboxPlugin::FIXED };
 }
@@ -185,8 +182,7 @@ bool ToolboxQuaternion::generateRPY(GenerateType type)
   _preview_data_pitch.reset(new PlotData(prefix + "pitch", {}));
   _preview_data_yaw.reset(new PlotData(prefix + "yaw", {}));
 
-  std::vector<PlotData*> dst_vector = { _preview_data_roll.get(),
-                                        _preview_data_pitch.get(),
+  std::vector<PlotData*> dst_vector = { _preview_data_roll.get(), _preview_data_pitch.get(),
                                         _preview_data_yaw.get() };
   if (type == SAVE)
   {

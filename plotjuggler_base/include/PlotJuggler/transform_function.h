@@ -148,13 +148,12 @@ public:
       auto trans = std::make_shared<T>();
       T* transform = trans.get();
 
-      connect(transform, &TransformFunction_SISO::parametersChanged,
-              [transform, document]() {
-                *document = {};
-                auto root = document->createElement("root");
-                document->appendChild(root);
-                transform->xmlSaveState(*document, root);
-              });
+      connect(transform, &TransformFunction_SISO::parametersChanged, [transform, document]() {
+        *document = {};
+        auto root = document->createElement("root");
+        document->appendChild(root);
+        transform->xmlSaveState(*document, root);
+      });
       auto root = document->firstChildElement("root");
       if (!root.isNull())
       {

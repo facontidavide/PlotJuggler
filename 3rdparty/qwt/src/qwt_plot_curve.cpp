@@ -462,7 +462,7 @@ void QwtPlotCurve::drawCurve( QPainter* painter, int style,
 
           QPen prev_pen = painter->pen();
           QPen new_pen = prev_pen;
-          new_pen.setWidth(prev_pen.width() * 3);
+          new_pen.setWidth(prev_pen.width() * 4);
 
           painter->setPen(new_pen);
           drawDots(painter, xMap, yMap, canvasRect, from, to);

@@ -16,15 +16,9 @@ class CurveTreeView : public QTreeWidget, public CurvesView
 public:
   CurveTreeView(CurveListPanel* parent);
 
-  void clear() override
-  {
-    QTreeWidget::clear();
-    _leaf_count = 0;
-    _hidden_count = 0;
-  }
+  void clear() override;
 
-  void addItem(const QString& prefix, const QString& tree_name,
-               const QString& plot_ID) override;
+  void addItem(const QString& prefix, const QString& tree_name, const QString& plot_ID) override;
 
   void refreshColumns() override;
 
@@ -58,6 +52,10 @@ private:
 
   int _hidden_count = 0;
   int _leaf_count = 0;
+
+  QTimer* _tooltip_timer = nullptr;
+  QTreeWidgetItem* _tooltip_item = nullptr;
+  QPoint _tooltip_pos;
 };
 
 #endif  // CURVETREE_VIEW_H

@@ -26,10 +26,10 @@
 
 #include "rosx_introspection/stringtree_leaf.hpp"
 #include "rosx_introspection/deserializer.hpp"
+#include "rosx_introspection/serializer.hpp"
 
 namespace RosMsgParser
 {
-
 struct FlatMessage
 {
   std::shared_ptr<MessageSchema> schema;
@@ -112,7 +112,7 @@ public:
   }
 
   /**
-   * @brief getSchema provides some metadata amout a registered ROSMessage.
+   * @brief getSchema provides some metadata amount a registered ROSMessage.
    */
   const std::shared_ptr<MessageSchema>& getSchema() const;
 
@@ -128,7 +128,7 @@ public:
    * IMPORTANT: this approach is not meant to be used with use arrays such as maps,
    * point clouds and images.For this reason the argument max_array_size is used.
    *
-   * This funtion is almost always followed by CreateRenamedValues,
+   * This function is almost always followed by CreateRenamedValues,
    * which provide a more human-readable key-value representation.
    *
    * @param buffer         raw memory to be parsed.
@@ -142,6 +142,16 @@ public:
   bool deserialize(Span<const uint8_t> buffer, FlatMessage* flat_output,
                    Deserializer* deserializer) const;
 
+#ifdef ROSX_JSON_PARSER
+
+  bool deserializeIntoJson(Span<const uint8_t> buffer, std::string* json_txt,
+                           Deserializer* deserializer, int indent = 0,
+                           bool ignore_constants = false) const;
+
+  bool serializeFromJson(const std::string_view json_string,
+                         Serializer* serializer) const;
+#endif
+
   typedef std::function<void(const ROSType&, Span<uint8_t>&)> VisitingCallback;
 
   /**
@@ -154,7 +164,7 @@ public:
    *
    * @param msg_identifier    String ID to identify the registered message (use
    * registerMessageDefinition first).
-   * @param monitored_type    ROSType that triggers the invokation to the callback
+   * @param monitored_type    ROSType that triggers the invocation to the callback
    * @param buffer            Original buffer, passed as mutable since it might be
    * modified.
    * @param callback          The callback.
@@ -185,6 +195,8 @@ private:
 
   std::unique_ptr<Deserializer> _deserializer;
 };
+
+//--------------------------------------------------------------------------
 
 typedef std::vector<std::pair<std::string, double>> RenamedValues;
 

@@ -57,8 +57,7 @@ public:
 WebsocketServer::WebsocketServer()
   : _running(false), _server("plotJuggler", QWebSocketServer::NonSecureMode)
 {
-  connect(&_server, &QWebSocketServer::newConnection, this,
-          &WebsocketServer::onNewConnection);
+  connect(&_server, &QWebSocketServer::newConnection, this, &WebsocketServer::onNewConnection);
 }
 
 WebsocketServer::~WebsocketServer()
@@ -75,8 +74,8 @@ bool WebsocketServer::start(QStringList*)
 
   if (parserFactories() == nullptr || parserFactories()->empty())
   {
-    QMessageBox::warning(nullptr, tr("Websocket Server"),
-                         tr("No available MessageParsers"), QMessageBox::Ok);
+    QMessageBox::warning(nullptr, tr("Websocket Server"), tr("No available MessageParsers"),
+                         QMessageBox::Ok);
     _running = false;
     return false;
   }
@@ -105,9 +104,8 @@ bool WebsocketServer::start(QStringList*)
 
   ParserFactoryPlugin::Ptr parser_creator;
 
-  connect(dialog->ui->comboBoxProtocol,
-          qOverload<const QString&>(&QComboBox::currentIndexChanged), this,
-          [&](const QString& selected_protocol) {
+  connect(dialog->ui->comboBoxProtocol, qOverload<const QString&>(&QComboBox::currentIndexChanged),
+          this, [&](const QString& selected_protocol) {
             if (parser_creator)
             {
               if (auto prev_widget = parser_creator->optionsWidget())
@@ -150,8 +148,7 @@ bool WebsocketServer::start(QStringList*)
   else
   {
     QMessageBox::warning(nullptr, tr("Websocket Server"),
-                         tr("Couldn't open websocket on port %1").arg(port),
-                         QMessageBox::Ok);
+                         tr("Couldn't open websocket on port %1").arg(port), QMessageBox::Ok);
     _running = false;
   }
 
@@ -171,8 +168,7 @@ void WebsocketServer::shutdown()
 void WebsocketServer::onNewConnection()
 {
   QWebSocket* pSocket = _server.nextPendingConnection();
-  connect(pSocket, &QWebSocket::textMessageReceived, this,
-          &WebsocketServer::processMessage);
+  connect(pSocket, &QWebSocket::textMessageReceived, this, &WebsocketServer::processMessage);
   connect(pSocket, &QWebSocket::disconnected, this, &WebsocketServer::socketDisconnected);
   _clients << pSocket;
 }
@@ -212,10 +208,8 @@ void WebsocketServer::socketDisconnected()
   QWebSocket* pClient = qobject_cast<QWebSocket*>(sender());
   if (pClient)
   {
-    disconnect(pClient, &QWebSocket::textMessageReceived, this,
-               &WebsocketServer::processMessage);
-    disconnect(pClient, &QWebSocket::disconnected, this,
-               &WebsocketServer::socketDisconnected);
+    disconnect(pClient, &QWebSocket::textMessageReceived, this, &WebsocketServer::processMessage);
+    disconnect(pClient, &QWebSocket::disconnected, this, &WebsocketServer::socketDisconnected);
     _clients.removeAll(pClient);
     pClient->deleteLater();
   }

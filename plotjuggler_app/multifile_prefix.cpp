@@ -21,8 +21,7 @@ DialogMultifilePrefix::DialogMultifilePrefix(QStringList filenames, QWidget* par
 
   QSettings settings;
 
-  QStringList prev_prefixes =
-      settings.value("DialogMultifilePrefix::previous").toStringList();
+  QStringList prev_prefixes = settings.value("DialogMultifilePrefix::previous").toStringList();
 
   for (int i = 0; i < prev_prefixes.size(); i += 2)
   {

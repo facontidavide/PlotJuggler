@@ -1,0 +1,40 @@
+FROM ros:humble AS builder
+
+RUN apt-get update && \
+    apt-get -y install git cmake build-essential wget file qtbase5-dev libqt5svg5-dev \
+                       libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev \
+                       libprotoc-dev libzmq3-dev liblz4-dev libzstd-dev libmosquittopp-dev
+
+RUN mkdir -p /opt/ws_plotjuggler/src
+RUN mkdir -p /opt/AppDir/usr/bin
+RUN mkdir -p /opt/linuxdeploy
+RUN mkdir -p /opt/linuxdeploy-plugin-qt
+
+WORKDIR /opt/ws_plotjuggler/src
+RUN git clone https://github.com/PlotJuggler/plotjuggler_msgs.git
+RUN git clone -b appimage-ros https://github.com/facontidavide/PlotJuggler.git
+RUN git clone https://github.com/PlotJuggler/plotjuggler-ros-plugins.git
+
+WORKDIR /opt/ws_plotjuggler
+
+RUN rosdep update && rosdep install -y --from-paths src --ignore-src
+RUN bash -c "source /opt/ros/humble/setup.bash && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release -DAPPIMAGE_BUILD=ON"
+RUN cp -v install/plotjuggler/lib/plotjuggler/* /opt/AppDir/usr/bin
+RUN cp -v install/plotjuggler_ros/lib/plotjuggler_ros/* /opt/AppDir/usr/bin
+
+WORKDIR /opt/linuxdeploy
+RUN wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+RUN chmod +x linuxdeploy-x86_64.AppImage
+RUN ./linuxdeploy-x86_64.AppImage --appimage-extract
+
+WORKDIR /opt/linuxdeploy-plugin-qt
+RUN wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+RUN chmod +x linuxdeploy-plugin-qt-x86_64.AppImage
+RUN ./linuxdeploy-plugin-qt-x86_64.AppImage --appimage-extract && mv squashfs-root/AppRun squashfs-root/linuxdeploy-plugin-qt
+
+WORKDIR /opt/ws_plotjuggler
+RUN bash -c "source install/setup.bash && PATH=$PATH:/opt/linuxdeploy-plugin-qt/squashfs-root /opt/linuxdeploy/squashfs-root/AppRun --appdir /opt/AppDir -d src/PlotJuggler/PlotJuggler.desktop -i src/PlotJuggler/plotjuggler.png --plugin qt --output appimage"
+RUN chmod +x /opt/ws_plotjuggler/PlotJuggler-x86_64.AppImage && mv /opt/ws_plotjuggler/PlotJuggler-x86_64.AppImage /opt/ws_plotjuggler/PlotJuggler-x86_64-ROS2.AppImage
+
+FROM scratch AS exporter
+COPY --from=builder /opt/ws_plotjuggler/PlotJuggler-x86_64-ROS2.AppImage /

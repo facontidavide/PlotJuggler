@@ -1,16 +1,8 @@
+add_library(ParserDataTamer SHARED datatamer_parser.cpp datatamer_parser.h)
 
-add_definitions(${QT_DEFINITIONS})
-add_definitions(-DQT_PLUGIN)
+target_link_libraries(ParserDataTamer PRIVATE Qt5::Widgets plotjuggler_base
+                                              data_tamer::parser fmt::fmt)
 
+target_compile_definitions(ParserDataTamer PRIVATE QT_PLUGIN)
 
-add_library(ParserDataTamer SHARED
-    datatamer_parser.cpp
-    datatamer_parser.h )
-
-target_link_libraries(ParserDataTamer
-    ${Qt5Widgets_LIBRARIES}
-    plotjuggler_base)
-
-
-install(TARGETS ParserDataTamer
-    DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
+install(TARGETS ParserDataTamer DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY})

@@ -51,8 +51,7 @@ void PlotZoomer::widgetMouseMoveEvent(QMouseEvent* me)
       QRect rect(me->pos(), _initial_pos);
       QRectF zoomRect = invTransform(rect.normalized());
 
-      if (zoomRect.width() > minZoomSize().width() &&
-          zoomRect.height() > minZoomSize().height())
+      if (zoomRect.width() > minZoomSize().width() && zoomRect.height() > minZoomSize().height())
       {
         if (!_zoom_enabled)
         {
@@ -99,8 +98,7 @@ bool PlotZoomer::accept(QPolygon& pa) const
   QRect rect = QRect(pa[0], pa[int(pa.count()) - 1]);
   QRectF zoomRect = invTransform(rect.normalized());
 
-  if (zoomRect.width() < minZoomSize().width() &&
-      zoomRect.height() < minZoomSize().height())
+  if (zoomRect.width() < minZoomSize().width() && zoomRect.height() < minZoomSize().height())
   {
     return false;
   }

@@ -37,8 +37,8 @@ void QuaternionToRollPitchYaw::calculate()
   data_pitch.clear();
   data_yaw.clear();
 
-  if (data_x.size() == 0 || data_x.size() != data_y.size() ||
-      data_y.size() != data_z.size() || data_z.size() != data_w.size())
+  if (data_x.size() == 0 || data_x.size() != data_y.size() || data_y.size() != data_z.size() ||
+      data_z.size() != data_w.size())
   {
     return;
   }
@@ -70,8 +70,7 @@ void QuaternionToRollPitchYaw::calculate()
   }
 }
 
-void QuaternionToRollPitchYaw::calculateNextPoint(size_t index,
-                                                  const std::array<double, 4>& quat,
+void QuaternionToRollPitchYaw::calculateNextPoint(size_t index, const std::array<double, 4>& quat,
                                                   std::array<double, 3>& rpy)
 {
   double q_x = quat[0];

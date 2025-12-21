@@ -1,40 +1,29 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
-project(rosx_introspection  LANGUAGES C CXX VERSION 2.0.0)
+project(rosx_introspection LANGUAGES CXX VERSION 1.0.2)
 
-# Build flags
-#---- Enable C++17 ----
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# create compile_commands.json
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-if(NOT fastcdr_FOUND )
-    message(STATUS "[FastCdr] not found, create shared libraries")
-    # Override Fast-CDR option: compile as static lib
-    SET(BUILD_SHARED_LIBS OFF CACHE BOOL "Create shared libraries by default")
-    add_subdirectory(3rdparty/Fast-CDR)
-    include_directories(3rdparty/Fast-CDR/include)
-else()
-    # Mention that FastCdr has been found on system
-    message(STATUS "[FastCdr] found, version: ${fastcdr_VERSION}")
-endif()
+# Enable PIC only for the rosx_introspection target
 
 ###############################################
 ## Declare a C++ library
 ###############################################
 add_library(rosx_introspection STATIC
-    ${SRC_FILES}
     src/ros_type.cpp
     src/ros_field.cpp
     src/stringtree_leaf.cpp
     src/ros_message.cpp
     src/ros_parser.cpp
     src/deserializer.cpp
+    src/serializer.cpp
     )
-target_link_libraries(rosx_introspection
-    fastcdr )
+
+set_target_properties(rosx_introspection PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(rosx_introspection PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    )
+    $<INSTALL_INTERFACE:include>)
+
+target_compile_features(rosx_introspection PUBLIC cxx_std_17)

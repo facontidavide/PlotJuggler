@@ -24,8 +24,6 @@ public:
     return "data_tamer";
   }
 
-  PJ::MessageParserPtr createParser(const std::string& topic_name,
-                                    const std::string& type_name,
-                                    const std::string& schema,
-                                    PJ::PlotDataMapRef& data) override;
+  PJ::MessageParserPtr createParser(const std::string& topic_name, const std::string& type_name,
+                                    const std::string& schema, PJ::PlotDataMapRef& data) override;
 };

@@ -21,8 +21,7 @@ class FunctionEditorWidget : public QWidget
 
 public:
   explicit FunctionEditorWidget(PlotDataMapRef& plotMapData,
-                                const TransformsMap& mapped_custom_plots,
-                                QWidget* parent);
+                                const TransformsMap& mapped_custom_plots, QWidget* parent);
 
   virtual ~FunctionEditorWidget() override;
 

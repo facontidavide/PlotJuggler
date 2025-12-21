@@ -79,6 +79,7 @@ private:
 signals:
   void backgroundColorRequest(QString name);
   void titleChanged(QString title);
+
 private slots:
   void on_buttonBackground_clicked();
 };

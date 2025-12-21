@@ -14,8 +14,7 @@ class TransformSelector : public QDialog
 
 public:
   TransformSelector(QStringList builtin_transform, QStringList available_transforms,
-                    QString* default_tansform,
-                    std::map<std::string, QString>* curve_transforms,
+                    QString* default_tansform, std::map<std::string, QString>* curve_transforms,
                     QWidget* parent = nullptr);
   ~TransformSelector();
 

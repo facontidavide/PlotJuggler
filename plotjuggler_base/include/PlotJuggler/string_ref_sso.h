@@ -60,6 +60,10 @@ public:
   {
   }
 
+  StringRef(const std::string_view& str) : StringRef(str.data(), str.size())
+  {
+  }
+
   explicit StringRef(const char* data_ptr, size_t length)
   {
     _storage.no_sso.data = nullptr;
@@ -85,8 +89,7 @@ public:
 
   size_t size() const
   {
-    return isSSO() ? (SSO_SIZE - _storage.sso.data[SSO_SIZE]) :
-                     _storage.no_sso.size & ~TYPE_BIT;
+    return isSSO() ? (SSO_SIZE - _storage.sso.data[SSO_SIZE]) : _storage.no_sso.size & ~TYPE_BIT;
   }
 };
 

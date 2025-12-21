@@ -138,9 +138,7 @@ bool DataLoadZcm::refreshChannels(const string& filepath)
   _all_channels.clear();
   _all_channels_filepath = filepath;
 
-  auto processEvent = [&](const zcm::LogEvent* evt) {
-    _all_channels.insert(evt->channel);
-  };
+  auto processEvent = [&](const zcm::LogEvent* evt) { _all_channels.insert(evt->channel); };
 
   return processInputLog(filepath, processEvent) == 0;
 }
@@ -203,8 +201,7 @@ struct ProcessUsr
   vector<pair<string, double>>& numerics;
   vector<pair<string, string>>& strings;
 };
-static void processData(const string& name, zcm_field_type_t type, const void* data,
-                        void* usr)
+static void processData(const string& name, zcm_field_type_t type, const void* data, void* usr)
 {
   ProcessUsr* v = (ProcessUsr*)usr;
   switch (type)
@@ -237,7 +234,7 @@ static void processData(const string& name, zcm_field_type_t type, const void* d
       v->strings.emplace_back(name, string((const char*)data));
       break;
     case ZCM_FIELD_USER_TYPE:
-      assert(false && "Should not be possble");
+      assert(false && "Should not be possible");
   }
 };
 
@@ -284,8 +281,8 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       return;
     }
 
-    zcm::Introspection::processEncodedType(evt->channel, evt->data, evt->datalen, "/",
-                                           types, processData, &usr);
+    zcm::Introspection::processEncodedType(evt->channel, evt->data, evt->datalen, "/", types,
+                                           processData, &usr);
     for (auto& n : usr.numerics)
     {
       auto itr = plot_data.numeric.find(n.first);

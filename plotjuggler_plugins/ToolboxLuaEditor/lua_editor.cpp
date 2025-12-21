@@ -74,8 +74,7 @@ ToolboxLuaEditor::ToolboxLuaEditor()
 
   // restore recent functions
   QSettings settings;
-  auto previous_functions =
-      settings.value("ToolboxLuaEditor/recent_functions", "").toString();
+  auto previous_functions = settings.value("ToolboxLuaEditor/recent_functions", "").toString();
   if (previous_functions.isEmpty() == false)
   {
     QDomDocument xml_doc;
@@ -187,8 +186,8 @@ bool ToolboxLuaEditor::xmlLoadState(const QDomElement& parent_element)
       setItemData(item, name, global, function);
       ui->listWidgetFunctions->addItem(item);
 
-      auto lua_function = std::make_shared<ReactiveLuaFunction>(
-          _plot_data, global, function, ui->textLibrary->toPlainText());
+      auto lua_function = std::make_shared<ReactiveLuaFunction>(_plot_data, global, function,
+                                                                ui->textLibrary->toPlainText());
 
       (*_transforms)[name.toStdString()] = lua_function;
     }
@@ -209,8 +208,7 @@ bool ToolboxLuaEditor::onShowWidget()
     {
       QString name = QString::fromStdString(it.first);
       auto item = new QListWidgetItem(name);
-      setItemData(item, name, lua_function->getGlobalCode(),
-                  lua_function->getFunctionCode());
+      setItemData(item, name, lua_function->getGlobalCode(), lua_function->getFunctionCode());
       ui->listWidgetFunctions->addItem(item);
     }
     ui->listWidgetFunctions->sortItems();
@@ -230,8 +228,8 @@ bool ToolboxLuaEditor::onShowWidget()
   ui->textFunction->setFont(fixedFont);
   ui->textLibrary->setFont(fixedFont);
 
-  auto style_path = (theme == "light") ? ":/resources/lua_style_light.xml" :
-                                         ":/resources/lua_style_dark.xml";
+  auto style_path =
+      (theme == "light") ? ":/resources/lua_style_light.xml" : ":/resources/lua_style_dark.xml";
 
   QFile fl(style_path);
   if (fl.open(QIODevice::ReadOnly))
@@ -283,8 +281,7 @@ void ToolboxLuaEditor::onSave()
     }
 
     auto item = ui->listWidgetFunctions->findItems(name, Qt::MatchExactly).first();
-    setItemData(item, name, ui->textGlobal->toPlainText(),
-                ui->textFunction->toPlainText());
+    setItemData(item, name, ui->textGlobal->toPlainText(), ui->textFunction->toPlainText());
 
     for (auto& new_name : lua_function->createdCurves())
     {
@@ -293,8 +290,7 @@ void ToolboxLuaEditor::onSave()
   }
   catch (std::runtime_error& err)
   {
-    QMessageBox::warning(nullptr, "Error in Lua code", QString(err.what()),
-                         QMessageBox::Cancel);
+    QMessageBox::warning(nullptr, "Error in Lua code", QString(err.what()), QMessageBox::Cancel);
   }
 
   auto prev_items = ui->listWidgetRecent->findItems(name, Qt::MatchExactly);
@@ -315,8 +311,7 @@ void ToolboxLuaEditor::onSave()
 
   // save recent functions
   auto new_item = new QListWidgetItem(name);
-  setItemData(new_item, name, ui->textGlobal->toPlainText(),
-              ui->textFunction->toPlainText());
+  setItemData(new_item, name, ui->textGlobal->toPlainText(), ui->textFunction->toPlainText());
   ui->listWidgetRecent->addItem(new_item);
 
   QDomDocument xml_doc;
@@ -400,8 +395,7 @@ void ToolboxLuaEditor::onLibraryUpdated()
   file.open(QFile::ReadOnly | QFile::Text);
   QByteArray content(file.readAll());
   QSvgRenderer rr(content);
-  QImage image(ui->labelSemaphore->width(), ui->labelSemaphore->height(),
-               QImage::Format_ARGB32);
+  QImage image(ui->labelSemaphore->width(), ui->labelSemaphore->height(), QImage::Format_ARGB32);
   QPainter painter(&image);
   image.fill(Qt::transparent);
   rr.render(&painter);
@@ -418,15 +412,13 @@ void ToolboxLuaEditor::onReloadLibrary()
     try
     {
       auto lua_function = std::make_shared<ReactiveLuaFunction>(
-          _plot_data, fields.global_code, fields.function_code,
-          ui->textLibrary->toPlainText());
+          _plot_data, fields.global_code, fields.function_code, ui->textLibrary->toPlainText());
 
       (*_transforms)[fields.name.toStdString()] = lua_function;
     }
     catch (std::runtime_error& err)
     {
-      QMessageBox::warning(nullptr, "Error in Lua code", QString(err.what()),
-                           QMessageBox::Cancel);
+      QMessageBox::warning(nullptr, "Error in Lua code", QString(err.what()), QMessageBox::Cancel);
     }
   }
   ui->pushButtonApplyLibrary->setEnabled(false);
@@ -484,8 +476,7 @@ bool ToolboxLuaEditor::eventFilter(QObject* obj, QEvent* ev)
   else if (ev->type() == QEvent::Wheel)
   {
     QWheelEvent* wheel_event = dynamic_cast<QWheelEvent*>(ev);
-    bool ctrl_modifier_pressed =
-        (QGuiApplication::keyboardModifiers() == Qt::ControlModifier);
+    bool ctrl_modifier_pressed = (QGuiApplication::keyboardModifiers() == Qt::ControlModifier);
 
     if (ctrl_modifier_pressed)
     {
@@ -515,8 +506,7 @@ bool ToolboxLuaEditor::eventFilter(QObject* obj, QEvent* ev)
   return false;
 }
 
-ToolboxLuaEditor::SavedData
-ToolboxLuaEditor::getItemData(const QListWidgetItem* item) const
+ToolboxLuaEditor::SavedData ToolboxLuaEditor::getItemData(const QListWidgetItem* item) const
 {
   auto fields = item->data(Qt::UserRole).toStringList();
   SavedData data;
@@ -526,8 +516,8 @@ ToolboxLuaEditor::getItemData(const QListWidgetItem* item) const
   return data;
 }
 
-void ToolboxLuaEditor::setItemData(QListWidgetItem* item, QString name,
-                                   QString global_code, QString function_code)
+void ToolboxLuaEditor::setItemData(QListWidgetItem* item, QString name, QString global_code,
+                                   QString function_code)
 {
   QStringList save_fields;
   save_fields.push_back(name);

@@ -11,8 +11,7 @@
 #include <QUrl>
 #include <QDialogButtonBox>
 
-NewReleaseDialog::NewReleaseDialog(QWidget* parent, QString release, QString title,
-                                   QString url)
+NewReleaseDialog::NewReleaseDialog(QWidget* parent, QString release, QString title, QString url)
   : QDialog(parent), ui(new Ui::NewReleaseDialog)
 {
   ui->setupUi(this);

@@ -8,10 +8,7 @@
 #include "PlotJuggler/svg_util.h"
 
 DockToolbar::DockToolbar(ads::CDockWidget* parent)
-  : QWidget(parent)
-  , _parent(parent)
-  , ui(new Ui::DraggableToolbar)
-  , _fullscreen_mode(false)
+  : QWidget(parent), _parent(parent), ui(new Ui::DraggableToolbar), _fullscreen_mode(false)
 {
   ui->setupUi(this);
 
@@ -95,9 +92,8 @@ bool DockToolbar::eventFilter(QObject* object, QEvent* event)
   if (event->type() == QEvent::MouseButtonDblClick)
   {
     bool ok = true;
-    QString newName =
-        QInputDialog::getText(this, tr("Change name of the Area"), tr("New name:"),
-                              QLineEdit::Normal, ui->label->text(), &ok);
+    QString newName = QInputDialog::getText(this, tr("Change name of the Area"), tr("New name:"),
+                                            QLineEdit::Normal, ui->label->text(), &ok);
     if (ok)
     {
       ui->label->setText(newName);
@@ -117,8 +113,7 @@ void DockToolbar::on_stylesheetChanged(QString theme)
   _collapse_icon = LoadSvg(":/resources/svg/collapse.svg", theme);
   setButtonIcon(ui->buttonFullscreen, _fullscreen_mode ? _collapse_icon : _expand_icon);
   setButtonIcon(ui->buttonClose, LoadSvg(":/resources/svg/close-button.svg", theme));
-  setButtonIcon(ui->buttonSplitHorizontal,
-                LoadSvg(":/resources/svg/add_column.svg", theme));
+  setButtonIcon(ui->buttonSplitHorizontal, LoadSvg(":/resources/svg/add_column.svg", theme));
   setButtonIcon(ui->buttonSplitVertical, LoadSvg(":/resources/svg/add_row.svg", theme));
 }
 

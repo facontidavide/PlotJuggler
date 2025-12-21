@@ -195,8 +195,8 @@ template <typename lT, typename rT>
 int alphanum_comp(const lT& left, const rT& right)
 {
 #ifdef DOJDEBUG
-  std::clog << "alphanum_comp<" << typeid(left).name() << "," << typeid(right).name()
-            << "> " << left << "," << right << std::endl;
+  std::clog << "alphanum_comp<" << typeid(left).name() << "," << typeid(right).name() << "> "
+            << left << "," << right << std::endl;
 #endif
   std::ostringstream l;
   l << left;

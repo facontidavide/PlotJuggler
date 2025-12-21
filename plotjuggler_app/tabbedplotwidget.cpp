@@ -17,6 +17,7 @@
 #include <QTabWidget>
 #include <QPushButton>
 #include <QHBoxLayout>
+#include <algorithm>
 #include "qwt_plot_renderer.h"
 #include "mainwindow.h"
 #include "tabbedplotwidget.h"
@@ -68,20 +69,22 @@ TabbedPlotWidget::TabbedPlotWidget(QString name, QMainWindow* mainwindow,
 
   tabWidget()->tabBar()->installEventFilter(this);
 
-  // TODO _action_savePlots = new QAction(tr("&Save plots to file"), this);
-  // TODO connect(_action_savePlots, &QAction::triggered, this,
-  // &TabbedPlotWidget::on_savePlotsToFile);
+  _action_savePlots = new QAction(tr("&Save plots to file"), this);
+  connect(_action_savePlots, &QAction::triggered, this, &TabbedPlotWidget::on_savePlotsToFile);
 
-  //  _tab_menu = new QMenu(this);
-  //  _tab_menu->addSeparator();
-  //  //_tab_menu->addAction(_action_savePlots);
-  //  _tab_menu->addSeparator();
+  _tab_menu = new QMenu(this);
+  _tab_menu->addSeparator();
+  _tab_menu->addAction(_action_savePlots);
+  _tab_menu->addSeparator();
 
-  connect(this, &TabbedPlotWidget::destroyed, main_window,
-          &MainWindow::on_tabbedAreaDestroyed);
+  QSettings settings;
+  QString theme = settings.value("StyleSheet::theme", "light").toString();
+
+  _action_savePlots->setIcon(LoadSvg(":/resources/svg/save.svg", theme));
+
+  connect(this, &TabbedPlotWidget::destroyed, main_window, &MainWindow::on_tabbedAreaDestroyed);
   connect(this, &TabbedPlotWidget::tabAdded, main_window, &MainWindow::onPlotTabAdded);
-  connect(this, &TabbedPlotWidget::undoableChange, main_window,
-          &MainWindow::onUndoableChange);
+  connect(this, &TabbedPlotWidget::undoableChange, main_window, &MainWindow::onUndoableChange);
 
   // TODO connect(_tabWidget, &TabWidget::movingPlotWidgetToTab, this,
   // &TabbedPlotWidget::onMoveWidgetIntoNewTab);
@@ -93,16 +96,18 @@ TabbedPlotWidget::TabbedPlotWidget(QString name, QMainWindow* mainwindow,
   _buttonAddTab->setFixedSize(QSize(32, 32));
   _buttonAddTab->setFocusPolicy(Qt::NoFocus);
 
-  connect(_buttonAddTab, &QPushButton::pressed, this,
-          &TabbedPlotWidget::on_addTabButton_pressed);
+  connect(_buttonAddTab, &QPushButton::pressed, this, &TabbedPlotWidget::on_addTabButton_pressed);
 }
 
 void TabbedPlotWidget::paintEvent(QPaintEvent* event)
 {
   QWidget::paintEvent(event);
-
-  auto size = tabWidget()->tabBar()->size();
-  _buttonAddTab->move(QPoint(size.width() + 5, 0));
+  const int margin = 5;
+  int width_tabbar = tabWidget()->tabBar()->width();
+  int max_width_tabbar = std::max(0, width() - _buttonAddTab->width() - margin);
+  int button_pos = std::min(width_tabbar + margin, max_width_tabbar);
+  tabWidget()->tabBar()->setMaximumWidth(max_width_tabbar);
+  _buttonAddTab->move(QPoint(button_pos, 0));
 }
 
 PlotDocker* TabbedPlotWidget::currentTab()
@@ -160,9 +165,8 @@ PlotDocker* TabbedPlotWidget::addTab(QString tab_name)
 
   close_button->setFixedSize(QSize(16, 16));
   close_button->setFlat(true);
-  connect(close_button, &QPushButton::pressed, this, [this]() {
-    on_tabWidget_tabCloseRequested(tabWidget()->tabBar()->currentIndex());
-  });
+  connect(close_button, &QPushButton::pressed, this,
+          [this]() { on_tabWidget_tabCloseRequested(tabWidget()->tabBar()->currentIndex()); });
 
   layout->addWidget(close_button);
   tabWidget()->tabBar()->setTabButton(index, QTabBar::RightSide, button_widget);
@@ -247,14 +251,18 @@ void TabbedPlotWidget::on_renameCurrentTab()
   int idx = tabWidget()->tabBar()->currentIndex();
 
   bool ok = true;
-  QString newName =
-      QInputDialog::getText(this, tr("Change the tab name"), tr("New name:"),
-                            QLineEdit::Normal, tabWidget()->tabText(idx), &ok);
+  QString newName = QInputDialog::getText(this, tr("Change the tab name"), tr("New name:"),
+                                          QLineEdit::Normal, tabWidget()->tabText(idx), &ok);
   if (ok)
   {
     tabWidget()->setTabText(idx, newName);
     currentTab()->setName(newName);
   }
+}
+
+void TabbedPlotWidget::on_savePlotsToFile()
+{
+  currentTab()->savePlotsToFile();
 }
 
 void TabbedPlotWidget::on_stylesheetChanged(QString theme)
@@ -366,6 +374,8 @@ bool TabbedPlotWidget::eventFilter(QObject* obj, QEvent* event)
 
       if (mouse_event->button() == Qt::RightButton)
       {
+        _tab_menu->exec(mouse_event->globalPos());
+
         // QMenu* submenu = new QMenu("Move tab to...");
         // _tab_menu->addMenu(submenu);
 
@@ -394,15 +404,10 @@ bool TabbedPlotWidget::eventFilter(QObject* obj, QEvent* event)
         //        SLOT(on_requestTabMovement(QString)));
 
         //        //-------------------------------
-        ////        QIcon iconSave;
-        ////        iconSave.addFile(tr(":/%1/save.png").arg(theme), QSize(26, 26));
-        ////        _action_savePlots->setIcon(iconSave);
-
         ////        QIcon iconNewWin;
         ////        iconNewWin.addFile(tr(":/%1/stacks.png").arg(theme), QSize(16, 16));
         ////        action_new_window->setIcon(iconNewWin);
 
-        //        _tab_menu->exec(mouse_event->globalPos());
         //        //-------------------------------
         //        submenu->deleteLater();
       }

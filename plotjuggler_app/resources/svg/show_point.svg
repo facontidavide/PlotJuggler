@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   class="ionicon"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg984"
+   sodipodi:docname="show_point.svg"
+   inkscape:version="1.4.2 (2aeb623e1d, 2025-05-12)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <metadata
+     id="metadata990">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>Expand</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs988" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1854"
+     inkscape:window-height="1011"
+     id="namedview986"
+     showgrid="false"
+     inkscape:zoom="0.2927864"
+     inkscape:cx="-239.08214"
+     inkscape:cy="274.94446"
+     inkscape:window-x="66"
+     inkscape:window-y="32"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg984"
+     inkscape:document-rotation="0"
+     inkscape:showpageshadow="2"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
+  <title
+     id="title980">Expand</title>
+  <path
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="ccccc"
+     style="fill:none;stroke:#000000;stroke-width:51.717;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     id="path982-5-2"
+     d="M 243.63707,151.82536 207.83951,306.15478 365.01082,285.14419 M 224.62027,290.86438 423.67696,110.00832" />
+  <ellipse
+     style="fill:#000000;fill-opacity:1;stroke-width:9.50557"
+     id="path1"
+     cx="119.56495"
+     cy="393.52127"
+     rx="69.398415"
+     ry="66.690323" />
+</svg>

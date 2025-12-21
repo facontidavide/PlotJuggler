@@ -51,8 +51,7 @@ bool MovingRMS::xmlLoadState(const QDomElement& parent_element)
 
 std::optional<PJ::PlotData::Point> MovingRMS::calculateNextPoint(size_t index)
 {
-  size_t buffer_size =
-      std::min(size_t(ui->spinBoxSamples->value()), size_t(dataSource()->size()));
+  size_t buffer_size = std::min(size_t(ui->spinBoxSamples->value()), size_t(dataSource()->size()));
   if (buffer_size != _buffer.size())
   {
     _buffer.resize(buffer_size);

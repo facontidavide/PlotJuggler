@@ -13,8 +13,7 @@ MovingVarianceFilter::MovingVarianceFilter()
   connect(ui->spinBoxSamples, qOverload<int>(&QSpinBox::valueChanged), this,
           [=](int) { emit parametersChanged(); });
 
-  connect(ui->checkBoxStdDev, &QCheckBox::toggled, this,
-          [=]() { emit parametersChanged(); });
+  connect(ui->checkBoxStdDev, &QCheckBox::toggled, this, [=]() { emit parametersChanged(); });
 }
 
 MovingVarianceFilter::~MovingVarianceFilter()
@@ -31,8 +30,7 @@ void MovingVarianceFilter::reset()
 
 std::optional<PlotData::Point> MovingVarianceFilter::calculateNextPoint(size_t index)
 {
-  size_t buffer_size =
-      std::min(size_t(ui->spinBoxSamples->value()), size_t(dataSource()->size()));
+  size_t buffer_size = std::min(size_t(ui->spinBoxSamples->value()), size_t(dataSource()->size()));
   if (buffer_size != _buffer.size())
   {
     _buffer.resize(buffer_size);
@@ -74,8 +72,7 @@ QWidget* MovingVarianceFilter::optionsWidget()
   return _widget;
 }
 
-bool MovingVarianceFilter::xmlSaveState(QDomDocument& doc,
-                                        QDomElement& parent_element) const
+bool MovingVarianceFilter::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const
 {
   QDomElement widget_el = doc.createElement("options");
   if (widget_el.isNull())
@@ -83,8 +80,7 @@ bool MovingVarianceFilter::xmlSaveState(QDomDocument& doc,
     return false;
   }
   widget_el.setAttribute("value", ui->spinBoxSamples->value());
-  widget_el.setAttribute("apply_sqrt",
-                         ui->checkBoxStdDev->isChecked() ? "true" : "false");
+  widget_el.setAttribute("apply_sqrt", ui->checkBoxStdDev->isChecked() ? "true" : "false");
   parent_element.appendChild(widget_el);
   return true;
 }

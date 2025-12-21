@@ -9,6 +9,7 @@
 #include <QSettings>
 #include <QDir>
 #include <QFileDialog>
+#include "PlotJuggler/save_plot.h"
 #include "PlotJuggler/svg_util.h"
 
 PreferencesDialog::PreferencesDialog(QWidget* parent)
@@ -26,8 +27,10 @@ PreferencesDialog::PreferencesDialog(QWidget* parent)
     ui->comboBoxTheme->setCurrentIndex(0);
   }
 
-  bool use_plot_color_index =
-      settings.value("Preferences::use_plot_color_index", false).toBool();
+  int precision = settings.value("Preferences::precision", 3).toInt();
+  ui->comboBoxPrecision->setCurrentIndex(precision);
+
+  bool use_plot_color_index = settings.value("Preferences::use_plot_color_index", false).toBool();
   bool remember_color = settings.value("Preferences::remember_color", true).toBool();
 
   ui->checkBoxRememberColor->setChecked(remember_color);
@@ -43,12 +46,13 @@ PreferencesDialog::PreferencesDialog(QWidget* parent)
   bool use_opengl = settings.value("Preferences::use_opengl", true).toBool();
   ui->checkBoxOpenGL->setChecked(use_opengl);
 
-  bool autozoom_visibility =
-      settings.value("Preferences::autozoom_visibility", true).toBool();
+  bool no_splash = settings.value("Preferences::no_splash", false).toBool();
+  ui->checkBoxSkipSplash->setChecked(no_splash);
+
+  bool autozoom_visibility = settings.value("Preferences::autozoom_visibility", true).toBool();
   ui->checkBoxAutoZoomVisibility->setChecked(autozoom_visibility);
 
-  bool autozoom_curve_added =
-      settings.value("Preferences::autozoom_curve_added", true).toBool();
+  bool autozoom_curve_added = settings.value("Preferences::autozoom_curve_added", true).toBool();
   ui->checkBoxAutoZoomAdded->setChecked(autozoom_curve_added);
 
   bool autozoom_filter_applied =
@@ -58,9 +62,13 @@ PreferencesDialog::PreferencesDialog(QWidget* parent)
   bool truncation_check = settings.value("Preferences::truncation_check", true).toBool();
   ui->checkBoxTruncation->setChecked(truncation_check);
 
+  QSize export_plot =
+      settings.value("Preferences::export_plot_size", default_document_dimentions).toSize();
+  ui->spinBoxExportX->setValue(export_plot.width());
+  ui->spinBoxExportY->setValue(export_plot.height());
+
   //---------------
-  auto custom_plugin_folders =
-      settings.value("Preferences::plugin_folders", true).toStringList();
+  auto custom_plugin_folders = settings.value("Preferences::plugin_folders", true).toStringList();
   for (const auto& folder : custom_plugin_folders)
   {
     QDir dir(folder);
@@ -91,19 +99,20 @@ void PreferencesDialog::on_buttonBox_accepted()
   QSettings settings;
   settings.setValue("Preferences::theme",
                     ui->comboBoxTheme->currentIndex() == 1 ? "dark" : "light");
-  settings.setValue("Preferences::remember_color",
-                    ui->checkBoxRememberColor->isChecked());
-  settings.setValue("Preferences::use_plot_color_index",
-                    ui->radioLocalColorIndex->isChecked());
+  settings.setValue("Preferences::remember_color", ui->checkBoxRememberColor->isChecked());
+  settings.setValue("Preferences::use_plot_color_index", ui->radioLocalColorIndex->isChecked());
+  settings.setValue("Preferences::precision", ui->comboBoxPrecision->currentIndex());
   settings.setValue("Preferences::use_separator", ui->checkBoxSeparator->isChecked());
   settings.setValue("Preferences::use_opengl", ui->checkBoxOpenGL->isChecked());
+  settings.setValue("Preferences::no_splash", ui->checkBoxSkipSplash->isChecked());
   settings.setValue("Preferences::autozoom_visibility",
                     ui->checkBoxAutoZoomVisibility->isChecked());
-  settings.setValue("Preferences::autozoom_curve_added",
-                    ui->checkBoxAutoZoomAdded->isChecked());
+  settings.setValue("Preferences::autozoom_curve_added", ui->checkBoxAutoZoomAdded->isChecked());
   settings.setValue("Preferences::autozoom_filter_applied",
                     ui->checkBoxAutoZoomFilter->isChecked());
   settings.setValue("Preferences::truncation_check", ui->checkBoxTruncation->isChecked());
+  settings.setValue("Preferences::export_plot_size",
+                    QSize{ ui->spinBoxExportX->value(), ui->spinBoxExportY->value() });
 
   QStringList plugin_folders;
   for (int row = 0; row < ui->listWidgetCustom->count(); row++)
@@ -117,9 +126,9 @@ void PreferencesDialog::on_buttonBox_accepted()
 
 void PreferencesDialog::on_pushButtonAdd_clicked()
 {
-  QString dir = QFileDialog::getExistingDirectory(
-      this, tr("Select a Directory"), QDir::homePath(),
-      QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+  QString dir = QFileDialog::getExistingDirectory(this, tr("Select a Directory"), QDir::homePath(),
+                                                  QFileDialog::ShowDirsOnly |
+                                                      QFileDialog::DontResolveSymlinks);
   auto item = new QListWidgetItem(dir);
   ui->listWidgetCustom->addItem(item);
 }

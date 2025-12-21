@@ -22,8 +22,8 @@ public:
   {
   } MainWindowArea;
 
-  explicit TabbedPlotWidget(QString name, QMainWindow* main_window,
-                            PlotDataMapRef& mapped_data, QMainWindow* parent);
+  explicit TabbedPlotWidget(QString name, QMainWindow* main_window, PlotDataMapRef& mapped_data,
+                            QMainWindow* parent);
 
   PlotDocker* currentTab();
 
@@ -62,7 +62,7 @@ private slots:
 
   void on_renameCurrentTab();
 
-  // void on_savePlotsToFile();
+  void on_savePlotsToFile();
 
   void on_addTabButton_pressed();
 
@@ -87,9 +87,9 @@ private:
   QPushButton* _buttonLegend;
   QPushButton* _buttonAddTab;
 
-  // TODO QAction* _action_savePlots;
+  QAction* _action_savePlots;
 
-  // QMenu* _tab_menu;
+  QMenu* _tab_menu;
 
   const QString _name;
 

@@ -25,7 +25,8 @@
 #include "qwt_plot_legenditem.h"
 
 #include "PlotJuggler/plotwidget_base.h"
-#include "customtracker.h"
+#include "PlotJuggler/save_plot.h"
+#include "curve_tracker.h"
 #include "colormap_editor.h"
 
 #include "transforms/transform_selector.h"
@@ -81,6 +82,8 @@ public:
   void setStatisticsTitle(QString title);
 
   void updateStatistics(bool forceUpdate = false);
+
+  void changeDots(bool force_dots);
 
 protected:
   PlotDataMapRef& _mapped_data;
@@ -140,7 +143,13 @@ public slots:
 
   void onBackgroundColorRequest(QString name);
 
+  void onReferenceLineChecked(bool checked, double reference_tracker_position);
+
+  void onShowPlot(bool checked);
+
   void onShowDataStatistics();
+
+  void plotOn(const PlotSaveHelper& plot_save_helper, QRect paint_at);
 
 private slots:
 
@@ -155,6 +164,8 @@ private slots:
   void on_copyAction_triggered();
 
   void on_pasteAction_triggered();
+
+  void showPointValues(QPoint point);
 
 private slots:
 
@@ -182,7 +193,12 @@ private:
   QAction* _flip_y;
 
   CurveTracker* _tracker;
+  CurveTracker* _reference_tracker;
   QwtPlotGrid* _grid;
+
+  bool _show_point_enabled = false;
+  QwtPlotMarker* _show_point_marker;
+  QwtPlotMarker* _show_point_text;
 
   QString _statistics_window_title = "";
 
@@ -218,6 +234,8 @@ private:
                                      const QString& transform_ID = {}) override;
 
   double _time_offset;
+
+  double _tracker_position;
 
   Range _custom_Y_limits;
 

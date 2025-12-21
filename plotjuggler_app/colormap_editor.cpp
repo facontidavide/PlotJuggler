@@ -13,8 +13,7 @@
 #include "stylesheet.h"
 #include "color_map.h"
 
-ColorMapEditor::ColorMapEditor(QWidget* parent)
-  : QDialog(parent), ui(new Ui::colormap_editor)
+ColorMapEditor::ColorMapEditor(QWidget* parent) : QDialog(parent), ui(new Ui::colormap_editor)
 {
   ui->setupUi(this);
 
@@ -65,9 +64,8 @@ void ColorMapEditor::on_buttonSave_clicked()
     default_name = selected.front()->text();
   }
 
-  QString name =
-      QInputDialog::getText(this, tr("ColorMap Name"), tr("Name of the function:"),
-                            QLineEdit::Normal, default_name, &ok);
+  QString name = QInputDialog::getText(this, tr("ColorMap Name"), tr("Name of the function:"),
+                                       QLineEdit::Normal, default_name, &ok);
   if (!ok || name.isEmpty())
   {
     return;
@@ -121,8 +119,8 @@ void ColorMapEditor::on_buttonDelete_clicked()
 void ColorMapEditor::selectRow(int row)
 {
   ui->listWidget->clearSelection();
-  ui->listWidget->selectionModel()->setCurrentIndex(
-      ui->listWidget->model()->index(row, 0), QItemSelectionModel::SelectionFlag::Select);
+  ui->listWidget->selectionModel()->setCurrentIndex(ui->listWidget->model()->index(row, 0),
+                                                    QItemSelectionModel::SelectionFlag::Select);
 }
 
 void ColorMapEditor::on_listWidget_itemDoubleClicked(QListWidgetItem* item)

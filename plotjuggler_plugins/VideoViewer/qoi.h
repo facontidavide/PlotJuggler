@@ -335,8 +335,8 @@ Implementation */
 #define QOI_MASK_2 0xc0 /* 11000000 */
 
 #define QOI_COLOR_HASH(C) (C.rgba.r * 3 + C.rgba.g * 5 + C.rgba.b * 7 + C.rgba.a * 11)
-#define QOI_MAGIC                                                                        \
-  (((unsigned int)'q') << 24 | ((unsigned int)'o') << 16 | ((unsigned int)'i') << 8 |    \
+#define QOI_MAGIC                                                                                  \
+  (((unsigned int)'q') << 24 | ((unsigned int)'o') << 16 | ((unsigned int)'i') << 8 |              \
    ((unsigned int)'f'))
 #define QOI_HEADER_SIZE 14
 
@@ -383,15 +383,15 @@ void* qoi_encode(const void* data, const qoi_desc* desc, int* out_len)
   qoi_rgba_t index[64];
   qoi_rgba_t px, px_prev;
 
-  if (data == NULL || out_len == NULL || desc == NULL || desc->width == 0 ||
-      desc->height == 0 || desc->channels < 3 || desc->channels > 4 ||
-      desc->colorspace > 1 || desc->height >= QOI_PIXELS_MAX / desc->width)
+  if (data == NULL || out_len == NULL || desc == NULL || desc->width == 0 || desc->height == 0 ||
+      desc->channels < 3 || desc->channels > 4 || desc->colorspace > 1 ||
+      desc->height >= QOI_PIXELS_MAX / desc->width)
   {
     return NULL;
   }
 
-  max_size = desc->width * desc->height * (desc->channels + 1) + QOI_HEADER_SIZE +
-             sizeof(qoi_padding);
+  max_size =
+      desc->width * desc->height * (desc->channels + 1) + QOI_HEADER_SIZE + sizeof(qoi_padding);
 
   p = 0;
   bytes = (unsigned char*)QOI_MALLOC(max_size);

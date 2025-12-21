@@ -13,8 +13,7 @@ MovingAverageFilter::MovingAverageFilter()
   connect(ui->spinBoxSamples, qOverload<int>(&QSpinBox::valueChanged), this,
           [=](int) { emit parametersChanged(); });
 
-  connect(ui->checkBoxTimeOffset, &QCheckBox::toggled, this,
-          [=]() { emit parametersChanged(); });
+  connect(ui->checkBoxTimeOffset, &QCheckBox::toggled, this, [=]() { emit parametersChanged(); });
 }
 
 MovingAverageFilter::~MovingAverageFilter()
@@ -31,8 +30,7 @@ void MovingAverageFilter::reset()
 
 std::optional<PlotData::Point> MovingAverageFilter::calculateNextPoint(size_t index)
 {
-  size_t buffer_size =
-      std::min(size_t(ui->spinBoxSamples->value()), size_t(dataSource()->size()));
+  size_t buffer_size = std::min(size_t(ui->spinBoxSamples->value()), size_t(dataSource()->size()));
   if (buffer_size != _buffer.size())
   {
     _buffer.resize(buffer_size);
@@ -69,8 +67,7 @@ QWidget* MovingAverageFilter::optionsWidget()
   return _widget;
 }
 
-bool MovingAverageFilter::xmlSaveState(QDomDocument& doc,
-                                       QDomElement& parent_element) const
+bool MovingAverageFilter::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const
 {
   QDomElement widget_el = doc.createElement("options");
   widget_el.setAttribute("value", ui->spinBoxSamples->value());

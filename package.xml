@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
     <name>plotjuggler</name>
-    <version>3.9.1</version>
+    <version>3.14.4</version>
     <description>PlotJuggler: juggle with data</description>
 
     <maintainer email="davide.faconti@gmail.com">Davide Faconti</maintainer>
@@ -19,20 +19,28 @@
 
     <depend  condition="$ROS_VERSION == 2">ament_index_cpp</depend>
     <depend  condition="$ROS_VERSION == 2">rclcpp</depend>
-    <depend  condition="$ROS_VERSION == 2">fastcdr</depend>
+    <depend  condition="$ROS_VERSION == 2">data_tamer_cpp</depend>
 
-    <!-- common dependancies -->
+    <!-- Qt dependencies -->
     <depend>qtbase5-dev</depend>
     <depend>libqt5-svg-dev</depend>
     <depend>libqt5-websockets-dev</depend>
     <depend>libqt5-opengl-dev</depend>
     <depend>libqt5x11extras5-dev</depend>
+
+    <depend>fmt</depend>
+
+    <!-- needed for backward_cpp -->
     <depend>binutils</depend>
+
+    <!-- general dependencies -->
     <depend>boost</depend>
     <depend>libzmq3-dev</depend>
     <depend>lz4</depend>
     <depend>libzstd-dev</depend>
     <depend>protobuf-dev</depend>
+    <depend>lua-dev</depend>
+    <depend>nlohmann-json-dev</depend>
 
     <!-- The export tag contains other, unspecified, tags -->
     <export>

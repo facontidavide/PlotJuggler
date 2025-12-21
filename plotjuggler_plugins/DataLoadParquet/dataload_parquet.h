@@ -7,7 +7,9 @@
 
 #define QT_NO_KEYWORDS
 #undef signals
-#include <parquet/stream_reader.h>
+#include <parquet/arrow/reader.h>
+#include <arrow/api.h>
+#include <arrow/io/api.h>
 
 using namespace PJ;
 
@@ -33,8 +35,7 @@ public:
 
   QString selectedSeries() const;
 
-  virtual bool xmlSaveState(QDomDocument& doc,
-                            QDomElement& parent_element) const override;
+  virtual bool xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const override;
 
   virtual bool xmlLoadState(const QDomElement& parent_element) override;
 
@@ -45,7 +46,7 @@ private:
 
   QString _default_time_axis;
 
-  std::unique_ptr<parquet::ParquetFileReader> parquet_reader_;
+  std::unique_ptr<parquet::arrow::FileReader> arrow_reader_;
 
   QDialog* _dialog;
 };

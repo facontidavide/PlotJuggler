@@ -7,9 +7,12 @@
 [![ROS2](https://github.com/facontidavide/PlotJuggler/workflows/ros2/badge.svg)](https://github.com/facontidavide/PlotJuggler/actions?query=workflow%3Aros2)
 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=I%20use%20PlotJuggler%20and%20it%20is%20amazing%0D%0A&url=https://github.com/facontidavide/PlotJuggler&via=facontidavide&hashtags=dataviz,plotjuggler,GoROS,PX4)
 
-**Gold Sponsor**: [Greenzie](https://www.greenzie.com/)
+## Gold Sponsor:
+[![Greenzie](docs/sponsor_greenzie.png)](https://www.greenzie.com/)
+[![Intermodalics](docs/sponsor_intermodalics.png)](https://www.intermodalics.ai/)
+[![Greenzie](docs/sponsor_ark.png)](https://arkelectron.com/)
 
-# PlotJuggler 3.9
+# PlotJuggler 3.14
 
 PlotJuggler is a tool to visualize time series that is **fast**, **powerful** and  **intuitive**.
 
@@ -18,7 +21,7 @@ Noteworthy features:
 - Simple Drag & Drop user interface.
 - Load __data from file__.
 - Connect to live __streaming__ of data.
-- Save the visualization layout and configurations to re-use them later.
+- Save the visualization layout and configurations to reuse them later.
 - Fast **OpenGL** visualization.
 - Can handle **thousands** of timeseries and **millions** of data points.
 - Transform your data using a simple editor: derivative, moving average, integral, etc…
@@ -30,7 +33,7 @@ Noteworthy features:
 ## Data sources (file and streaming)
 
 - Load CSV files.
-- Load [ULog](https://dev.px4.io/v1.9.0/en/log/ulog_file_format.html) (PX4).
+- Load [ULog](https://docs.px4.io/main/en/dev_log/ulog_file_format) (PX4).
 - Subscribe to many different streaming sources: MQTT, WebSockets, ZeroMQ, UDP, etc.
 - Understand data formats such as JSON, CBOR, BSON, Message Pack, etc.
 - Well integrated with [ROS](https://www.ros.org/): open *rosbags* and/or subscribe to ROS *topics* (both ROS1 and ROS2).
@@ -100,7 +103,7 @@ sudo snap install plotjuggler-ros
 This installer does __not__ include ROS plugins.
 
 **Windows Installer**:
-[PlotJuggler-Windows-3.9.0-installer](https://github.com/facontidavide/PlotJuggler/releases/download/3.9.0/PlotJuggler-Windows-3.9.0-installer.exe)
+Check the  [Release page](https://github.com/facontidavide/PlotJuggler/releases) to download the latest installer.
 
 ### Debian packages for ROS User
 

@@ -224,8 +224,8 @@ void StatePublisherCSV::saveFile(QString text)
   QString directory_path =
       settings.value("StatePublisherCSV.saveDirectory", QDir::currentPath()).toString();
 
-  QString fileName = QFileDialog::getSaveFileName(
-      nullptr, tr("Save as CSV file"), directory_path, tr("CSV files (*.csv)"));
+  QString fileName = QFileDialog::getSaveFileName(nullptr, tr("Save as CSV file"), directory_path,
+                                                  tr("CSV files (*.csv)"));
 
   if (fileName.isEmpty())
   {
@@ -239,8 +239,7 @@ void StatePublisherCSV::saveFile(QString text)
   QFile file(fileName);
   if (!file.open(QIODevice::WriteOnly))
   {
-    QMessageBox::warning(nullptr, "Error",
-                         QString("Failed to open the file [%1]").arg(fileName));
+    QMessageBox::warning(nullptr, "Error", QString("Failed to open the file [%1]").arg(fileName));
     return;
   }
 
@@ -259,8 +258,7 @@ QString StatePublisherCSV::generateRangeCSV(double time_start, double time_end)
 
   for (const auto& it : _datamap->numeric)
   {
-    if (it.second.size() == 0 || it.second.front().x > time_end ||
-        it.second.back().x < time_start)
+    if (it.second.size() == 0 || it.second.front().x > time_end || it.second.back().x < time_start)
     {
       continue;
     }

@@ -27,8 +27,7 @@ ULogParametersDialog::ULogParametersDialog(const ULogParser& parser, QWidget* pa
   row = 0;
   for (const auto& param : parser.getParameters())
   {
-    table_params->setItem(row, 0,
-                          new QTableWidgetItem(QString::fromStdString(param.name)));
+    table_params->setItem(row, 0, new QTableWidgetItem(QString::fromStdString(param.name)));
     QString value_str = (param.val_type == ULogParser::FLOAT) ?
                             QString::number(param.value.val_real) :
                             QString::number(param.value.val_int);
@@ -73,8 +72,7 @@ ULogParametersDialog::ULogParametersDialog(const ULogParser& parser, QWidget* pa
       default:
         table_logs->setItem(row, 1, new QTableWidgetItem(QString::number(log_msg.level)));
     }
-    table_logs->setItem(row, 2,
-                        new QTableWidgetItem(QString::fromStdString(log_msg.msg)));
+    table_logs->setItem(row, 2, new QTableWidgetItem(QString::fromStdString(log_msg.msg)));
     row++;
   }
 }
@@ -105,8 +103,7 @@ ULogParametersDialog::~ULogParametersDialog()
 
   QSettings settings;
   settings.setValue("ULogParametersDialog/geometry", this->saveGeometry());
-  settings.setValue("ULogParametersDialog/info/state",
-                    table_info->horizontalHeader()->saveState());
+  settings.setValue("ULogParametersDialog/info/state", table_info->horizontalHeader()->saveState());
   settings.setValue("ULogParametersDialog/params/state",
                     table_params->horizontalHeader()->saveState());
 

@@ -1,12 +1,28 @@
  [requires]
  protobuf/3.21.12
  mosquitto/2.0.18
+ fmt/11.2.0
  zeromq/4.3.5
- zlib/1.2.13
+ arrow/21.0.0
+ lz4/1.9.4
+ zstd/1.5.7
+ abseil/20250814.0
 
  [options]
  zeromq*:shared=False
 
+ arrow/*:shared=False
+ arrow/*:with_brotli=True
+ arrow/*:with_csv=True
+ arrow/*:with_lz4=True
+ arrow/*:with_snappy=True
+ arrow/*:with_zlib=True
+ arrow/*:with_zstd=True
+ arrow/*:with_protobuf=True
+
  [generators]
  CMakeDeps
  CMakeToolchain
+
+ [tool_requires]
+ cmake/3.31.8

@@ -71,7 +71,7 @@
     <widget class="QWidget" name="widgetButtons" native="true">
      <property name="minimumSize">
       <size>
-       <width>110</width>
+       <width>130</width>
        <height>24</height>
       </size>
      </property>
@@ -131,8 +131,14 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset>
-         <normaloff>:/resources/svg/color_background.svg</normaloff>:/resources/svg/color_background.svg</iconset>
+         <iconset resource="resource.qrc">
+          <normaloff>:/resources/svg/color_background.svg</normaloff>:/resources/svg/color_background.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>18</width>
+          <height>18</height>
+         </size>
         </property>
         <property name="checkable">
          <bool>false</bool>
@@ -163,7 +169,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset>
+         <iconset resource="resource.qrc">
           <normaloff>:/resources/svg/add_column.svg</normaloff>:/resources/svg/add_column.svg</iconset>
         </property>
         <property name="iconSize">
@@ -198,7 +204,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset>
+         <iconset resource="resource.qrc">
           <normaloff>:/resources/svg/add_row.svg</normaloff>:/resources/svg/add_row.svg</iconset>
         </property>
         <property name="iconSize">
@@ -236,7 +242,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset>
+         <iconset resource="resource.qrc">
           <normaloff>:/resources/svg/expand.svg</normaloff>:/resources/svg/expand.svg</iconset>
         </property>
         <property name="iconSize">
@@ -280,7 +286,7 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
+      <iconset resource="resource.qrc">
        <normaloff>:/resources/svg/close-button.svg</normaloff>:/resources/svg/close-button.svg</iconset>
      </property>
      <property name="iconSize">
@@ -296,6 +302,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

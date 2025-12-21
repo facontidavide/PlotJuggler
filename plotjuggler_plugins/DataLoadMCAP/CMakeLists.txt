@@ -1,19 +1,26 @@
-add_definitions(${QT_DEFINITIONS})
-add_definitions(-DQT_PLUGIN)
 
-QT5_WRAP_UI ( UI_SRC  dialog_mcap.ui  )
 
-add_library(DataLoadMCAP SHARED
-    mcap.cpp
-    dataload_mcap.cpp
-    dialog_mcap.cpp
-    ${UI_SRC}  )
+
+qt5_wrap_ui(UI_SRC dialog_mcap.ui)
+
+add_library(DataLoadMCAP SHARED dataload_mcap.cpp dialog_mcap.cpp ${UI_SRC})
+target_include_directories(DataLoadMCAP PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty)
 
 target_link_libraries(DataLoadMCAP
-    ${Qt5Widgets_LIBRARIES}
-    ${Qt5Xml_LIBRARIES}
-    libzstd_static
-    lz4_static
-    plotjuggler_base )
+   PRIVATE
+    LZ4::lz4_static
+    zstd::libzstd_static)
 
-install(TARGETS DataLoadMCAP DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY}  )
+target_link_libraries(DataLoadMCAP
+   PRIVATE
+    Qt5::Widgets
+    Qt5::Xml
+    Qt5::Concurrent
+    plotjuggler_base)
+
+# Suppress LNK4217 warnings on Windows for MCAP static library symbols
+if(WIN32 AND MSVC)
+  target_link_options(DataLoadMCAP PRIVATE /ignore:4217)
+endif()
+
+install(TARGETS DataLoadMCAP DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY})

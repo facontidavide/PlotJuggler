@@ -8,8 +8,7 @@
 #include "suggest_dialog.h"
 #include "ui_suggest_dialog.h"
 
-SuggestDialog::SuggestDialog(const std::string& name_x, const std::string& name_y,
-                             QWidget* parent)
+SuggestDialog::SuggestDialog(const std::string& name_x, const std::string& name_y, QWidget* parent)
   : QDialog(parent), ui(new Ui::SuggestDialog)
 {
   ui->setupUi(this);
@@ -54,8 +53,8 @@ void SuggestDialog::updateSuggestion()
   {
     std::swap(name_x, name_y);
   }
-  common_prefix = std::string(
-      name_x.begin(), std::mismatch(name_x.begin(), name_x.end(), name_y.begin()).first);
+  common_prefix = std::string(name_x.begin(),
+                              std::mismatch(name_x.begin(), name_x.end(), name_y.begin()).first);
 
   std::string suffix_x = name_x.substr(common_prefix.size());
   std::string suffix_y = name_y.substr(common_prefix.size());

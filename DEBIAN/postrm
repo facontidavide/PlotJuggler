@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Remove the symbolic link to the plotjuggler binary if it exists
+if [ -L /usr/bin/plotjuggler ]; then
+    rm /usr/bin/plotjuggler
+fi

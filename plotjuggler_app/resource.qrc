@@ -29,6 +29,9 @@
         <file>resources/memes/meme_08.jpg</file>
         <file>resources/memes/meme_09.jpg</file>
         <file>resources/memes/meme_10.jpg</file>
+        <file>resources/memes/meme_100.jpg</file>
+        <file>resources/memes/meme_101.jpg</file>
+        <file>resources/memes/meme_102.jpg</file>
         <file>resources/memes/meme_11.jpg</file>
         <file>resources/memes/meme_12.jpg</file>
         <file>resources/memes/meme_13.jpg</file>
@@ -110,6 +113,11 @@
         <file>resources/memes/meme_92.jpg</file>
         <file>resources/memes/meme_93.jpg</file>
         <file>resources/memes/meme_94.jpg</file>
+        <file>resources/memes/meme_95.jpg</file>
+        <file>resources/memes/meme_96.jpg</file>
+        <file>resources/memes/meme_97.jpg</file>
+        <file>resources/memes/meme_98.jpg</file>
+        <file>resources/memes/meme_99.jpg</file>
         <file>resources/office_chart_line_stacked.png</file>
         <file>resources/plotjuggler.svg</file>
         <file>resources/skin/about_window_body.html</file>
@@ -150,6 +158,7 @@
         <file>resources/svg/point_chart.svg</file>
         <file>resources/svg/ratio.svg</file>
         <file>resources/svg/red_circle.svg</file>
+        <file>resources/svg/reference_line.svg</file>
         <file>resources/svg/reload.svg</file>
         <file>resources/svg/remove_list.svg</file>
         <file>resources/svg/remove_red.svg</file>
@@ -157,6 +166,7 @@
         <file>resources/svg/save.svg</file>
         <file>resources/svg/scatter.svg</file>
         <file>resources/svg/settings_cog.svg</file>
+        <file>resources/svg/show_point.svg</file>
         <file>resources/svg/t0.svg</file>
         <file>resources/svg/trash.svg</file>
         <file>resources/svg/tree.svg</file>

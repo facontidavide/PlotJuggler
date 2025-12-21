@@ -169,8 +169,7 @@ void CurveListPanel::updateAppearance()
         if (it != _plot_data.groups.end())
         {
           QVariant color_var = it->second->attribute(PJ::TEXT_COLOR);
-          QColor text_color =
-              color_var.isValid() ? color_var.value<QColor>() : default_color;
+          QColor text_color = color_var.isValid() ? color_var.value<QColor>() : default_color;
 
           QVariant style_var = it->second->attribute(PJ::ITALIC_FONTS);
           bool italic = (style_var.isValid() && style_var.value<bool>());
@@ -191,8 +190,7 @@ void CurveListPanel::updateAppearance()
     auto ChangeLeavesVisitor = [&](QTreeWidgetItem* cell) {
       if (cell->childCount() == 0)
       {
-        const std::string& curve_name =
-            cell->data(0, CustomRoles::Name).toString().toStdString();
+        const std::string& curve_name = cell->data(0, CustomRoles::Name).toString().toStdString();
 
         QVariant text_color;
 
@@ -250,6 +248,7 @@ void CurveListPanel::refreshColumns()
 void CurveListPanel::updateFilter()
 {
   on_lineEditFilter_textChanged(ui->lineEditFilter->text());
+  on_lineEditCustomFilter_textChanged(ui->lineEditCustomFilter->text());
 }
 
 void CurveListPanel::keyPressEvent(QKeyEvent* event)
@@ -286,7 +285,9 @@ void CurveListPanel::refreshValues()
   auto default_foreground = _custom_view->palette().foreground();
 
   auto FormattedNumber = [](double value) {
-    QString num_text = QString::number(value, 'f', 3);
+    QSettings settings;
+    int prec = settings.value("Preferences::precision", 3).toInt();
+    QString num_text = QString::number(value, 'f', prec);
     if (num_text.contains('.'))
     {
       int idx = num_text.length() - 1;
@@ -423,18 +424,22 @@ QString CurveListPanel::getTreeName(QString name)
 
 void CurveListPanel::on_lineEditFilter_textChanged(const QString& search_string)
 {
-  bool updated = _tree_view->applyVisibilityFilter(search_string) |
-                 _custom_view->applyVisibilityFilter(search_string);
+  bool updated = _tree_view->applyVisibilityFilter(search_string);
 
-  std::pair<int, int> hc_1 = _tree_view->hiddenItemsCount();
-  std::pair<int, int> hc_2 = _custom_view->hiddenItemsCount();
-
-  int item_count = hc_1.second + hc_2.second;
-  int visible_count = item_count - hc_1.first - hc_2.first;
+  const auto& [hidden_count, item_count] = _tree_view->hiddenItemsCount();
+  const int visible_count = item_count - hidden_count;
 
   ui->labelNumberDisplayed->setText(QString::number(visible_count) + QString(" of ") +
                                     QString::number(item_count));
   if (updated)
+  {
+    emit hiddenItemsChanged();
+  }
+}
+
+void CurveListPanel::on_lineEditCustomFilter_textChanged(const QString& search_string)
+{
+  if (_custom_view->applyVisibilityFilter(search_string))
   {
     emit hiddenItemsChanged();
   }
@@ -480,11 +485,10 @@ void CurveListPanel::on_buttonAddCustom_clicked()
   }
 
   emit createMathPlot(suggested_name);
-  on_lineEditFilter_textChanged(ui->lineEditFilter->text());
+  updateFilter();
 }
 
-void CurveListPanel::onCustomSelectionChanged(const QItemSelection&,
-                                              const QItemSelection&)
+void CurveListPanel::onCustomSelectionChanged(const QItemSelection&, const QItemSelection&)
 {
   auto selected = _custom_view->getSelectedNames();
 
@@ -493,6 +497,12 @@ void CurveListPanel::onCustomSelectionChanged(const QItemSelection&,
   ui->buttonEditCustom->setToolTip(enabled ? "Edit the selected custom timeserie" :
                                              "Select a single custom Timeserie to Edit "
                                              "it");
+
+  enabled = (selected.size() > 0);
+  ui->buttonDeleteCustom->setEnabled(enabled);
+  ui->buttonDeleteCustom->setToolTip(enabled ? "Delete the selected custom timeseries" :
+                                               "Select one or more custom timeseries to"
+                                               " delete them");
 }
 
 void CurveListPanel::on_buttonEditCustom_clicked()
@@ -501,6 +511,18 @@ void CurveListPanel::on_buttonEditCustom_clicked()
   if (selected.size() == 1)
   {
     editMathPlot(selected.front());
+  }
+}
+
+void CurveListPanel::on_buttonDeleteCustom_clicked()
+{
+  auto selected = _custom_view->getSelectedNames();
+  if (selected.size() >= 1)
+  {
+    for (const auto& curve_name : selected)
+    {
+      removeCurve(curve_name);
+    }
   }
 }
 
@@ -523,6 +545,7 @@ void CurveListPanel::on_stylesheetChanged(QString theme)
   _style_dir = theme;
   ui->buttonAddCustom->setIcon(LoadSvg(":/resources/svg/add_tab.svg", theme));
   ui->buttonEditCustom->setIcon(LoadSvg(":/resources/svg/pencil-edit.svg", theme));
+  ui->buttonDeleteCustom->setIcon(LoadSvg(":/resources/svg/trash.svg", theme));
   ui->pushButtonTrash->setIcon(LoadSvg(":/resources/svg/trash.svg", theme));
 
   auto ChangeIconVisitor = [&](QTreeWidgetItem* cell) {
@@ -561,12 +584,10 @@ void CurveListPanel::on_pushButtonTrash_clicked(bool)
   QSettings settings;
   QString theme = settings.value("StyleSheet::theme", "light").toString();
 
-  QPushButton* buttonAll =
-      msgBox.addButton(tr("Delete All"), QMessageBox::DestructiveRole);
+  QPushButton* buttonAll = msgBox.addButton(tr("Delete All"), QMessageBox::DestructiveRole);
   buttonAll->setIcon(LoadSvg(":/resources/svg/clear.svg"));
 
-  QPushButton* buttonPoints =
-      msgBox.addButton(tr("Delete Points"), QMessageBox::DestructiveRole);
+  QPushButton* buttonPoints = msgBox.addButton(tr("Delete Points"), QMessageBox::DestructiveRole);
   buttonPoints->setIcon(LoadSvg(":/resources/svg/point_chart.svg"));
 
   msgBox.addButton(QMessageBox::Cancel);
