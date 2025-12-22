@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 project(
   plotjuggler
   LANGUAGES C CXX
-  VERSION 3.14.4)
+  VERSION 3.14.5)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -23,6 +23,7 @@ option(ENABLE_ASAN "Enable Address Sanitizer" OFF)
 option(BASE_AS_SHARED "Build the base library as a shared library" OFF)
 option(BUILDING_WITH_CONAN "Using Conan for dependencies" OFF)
 option(PJ_INSTALLATION "Installation type" "undefined")
+option(PJ_PLUGINS_DIRECTORY "Plugins directory" "lib/plotjuggler/plugins")
 
 if(NOT WIN32 AND ENABLE_ASAN)
   set(CMAKE_CXX_FLAGS
@@ -239,9 +240,7 @@ else()
                                       ${PLOTJUGGLER_BASE_MOCS})
 endif()
 
-if(NOT PJ_PLUGIN_INSTALL_DIRECTORY)
-  set(PJ_PLUGIN_INSTALL_DIRECTORY "${CMAKE_INSTALL_PREFIX}/lib/plotjuggler-plugins")
-endif()
+set(PJ_PLUGIN_INSTALL_DIRECTORY "${CMAKE_INSTALL_PREFIX}/${PJ_PLUGINS_DIRECTORY}")
 
 target_include_directories(
   plotjuggler_base

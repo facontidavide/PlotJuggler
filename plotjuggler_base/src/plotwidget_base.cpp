@@ -30,6 +30,7 @@
 #include "qwt_symbol.h"
 #include "qwt_text.h"
 
+#include <array>
 #include <QBoxLayout>
 #include <QMessageBox>
 #include <QSettings>
@@ -697,7 +698,9 @@ std::map<QString, QColor> PlotWidgetBase::getCurveColors() const
 
 void PlotWidgetBase::setStyle(QwtPlotCurve* curve, CurveStyle style)
 {
-  curve->setPen(curve->pen().color(), (style == DOTS) ? 4.0 : 1.3);
+  const auto line_width =
+      (style == DOTS) ? dotWidthValue(lineWidth()) : lineWidthValue(lineWidth());
+  curve->setPen(curve->pen().color(), line_width);
 
   switch (style)
   {
@@ -897,6 +900,18 @@ void PlotWidgetBase::updateMaximumZoomArea()
     zoomer()->keepAspectRatio(false);
   }
   _max_zoom_rect = max_rect;
+}
+
+void PlotWidgetBase::setLineWidth(LineWidth width)
+{
+  _line_width = width;
+  const double width_value = lineWidthValue(width);
+
+  for (auto& it : p->curve_list)
+  {
+    it.curve->setPen(it.curve->pen().color(), width_value);
+  }
+  replot();
 }
 
 }  // namespace PJ

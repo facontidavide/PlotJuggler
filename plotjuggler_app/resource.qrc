@@ -146,6 +146,10 @@
         <file>resources/svg/import.svg</file>
         <file>resources/svg/left-arrow.svg</file>
         <file>resources/svg/legend.svg</file>
+        <file>resources/svg/line_width_1_0.svg</file>
+        <file>resources/svg/line_width_1_5.svg</file>
+        <file>resources/svg/line_width_2_0.svg</file>
+        <file>resources/svg/line_width_3_0.svg</file>
         <file>resources/svg/link.svg</file>
         <file>resources/svg/list.svg</file>
         <file>resources/svg/loop.svg</file>

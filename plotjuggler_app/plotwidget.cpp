@@ -719,6 +719,22 @@ QDomElement PlotWidget::xmlSaveState(QDomDocument& doc) const
   plot_el.setAttribute("flip_x", isXYPlot() && _flip_x->isChecked() ? "true" : "false");
   plot_el.setAttribute("flip_y", _flip_y->isChecked() ? "true" : "false");
 
+  switch (lineWidth())
+  {
+    case POINTS_1_0:
+      plot_el.setAttribute("line_width", "1.0");
+      break;
+    case POINTS_1_5:
+      plot_el.setAttribute("line_width", "1.5");
+      break;
+    case POINTS_2_0:
+      plot_el.setAttribute("line_width", "2.0");
+      break;
+    case POINTS_3_0:
+      plot_el.setAttribute("line_width", "3.0");
+      break;
+  }
+
   if (_background_item)
   {
     plot_el.setAttribute("background_data", _background_item->dataName());
@@ -737,6 +753,24 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
 
   _flip_x->setChecked(plot_widget.attribute("flip_x") == "true");
   _flip_y->setChecked(plot_widget.attribute("flip_y") == "true");
+
+  auto line_width_str = plot_widget.attribute("line_width", QString("1.0"));
+  if (line_width_str == "1.0")
+  {
+    setLineWidth(LineWidth::POINTS_1_0);
+  }
+  else if (line_width_str == "1.5")
+  {
+    setLineWidth(LineWidth::POINTS_1_5);
+  }
+  else if (line_width_str == "2.0")
+  {
+    setLineWidth(LineWidth::POINTS_2_0);
+  }
+  else if (line_width_str == "3.0")
+  {
+    setLineWidth(LineWidth::POINTS_3_0);
+  }
 
   QDomElement limitY_el = plot_widget.firstChildElement("limitY");
 
@@ -795,7 +829,6 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
           continue;
         }
         auto& curve = curve_info->curve;
-        curve->setPen(color, 1.3);
         added_curve_names.insert(curve_name_std);
 
         auto ts = dynamic_cast<TransformedTimeseries*>(curve->data());

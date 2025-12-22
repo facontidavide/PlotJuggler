@@ -76,6 +76,8 @@ private slots:
 
   void on_lineLimitMax_textChanged(const QString& text);
 
+  void onComboWidthChanged(int index);
+
 private:
   Ui::PlotWidgetEditor* ui;
 

@@ -200,6 +200,87 @@
           </widget>
          </item>
          <item>
+          <layout class="QFormLayout" name="formLayout_2">
+           <property name="topMargin">
+            <number>11</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QComboBox" name="comboBoxWidth">
+             <property name="minimumSize">
+              <size>
+               <width>50</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="insertPolicy">
+              <enum>QComboBox::NoInsert</enum>
+             </property>
+             <property name="sizeAdjustPolicy">
+              <enum>QComboBox::AdjustToContents</enum>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>22</width>
+               <height>22</height>
+              </size>
+             </property>
+             <property name="frame">
+              <bool>true</bool>
+             </property>
+             <item>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="resource.qrc">
+                <normaloff>:/resources/svg/line_width_1_0.svg</normaloff>:/resources/svg/line_width_1_0.svg</iconset>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="resource.qrc">
+                <normaloff>:/resources/svg/line_width_1_5.svg</normaloff>:/resources/svg/line_width_1_5.svg</iconset>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="resource.qrc">
+                <normaloff>:/resources/svg/line_width_2_0.svg</normaloff>:/resources/svg/line_width_2_0.svg</iconset>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="resource.qrc">
+                <normaloff>:/resources/svg/line_width_3_0.svg</normaloff>:/resources/svg/line_width_3_0.svg</iconset>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>: width</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
           <spacer name="verticalSpacer_2">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
@@ -572,6 +653,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

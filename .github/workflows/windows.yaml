@@ -47,7 +47,7 @@ jobs:
       - name: Build Plotjuggler
         shell: pwsh
         run: |
-          cmake --preset conan-default -S . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="windows"
+          cmake --preset conan-default -S . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="windows" -DPJ_PLUGINS_DIRECTORY="bin"
           cmake --build build --config Release
 
       - name: Prepare installer directory

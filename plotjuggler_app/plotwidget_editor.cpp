@@ -126,6 +126,9 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
     }
   };
 
+  auto line_width = _plotwidget->lineWidth();
+  ui->comboBoxWidth->setCurrentIndex(static_cast<int>(line_width));
+
   connect(ui->radioDefault, &QRadioButton::toggled, this,
           [=](bool toggled) { on_radio_toggled(std::nullopt, toggled); });
 
@@ -143,6 +146,10 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
 
   connect(ui->radioSticks, &QRadioButton::toggled, this,
           [=](bool toggled) { on_radio_toggled(PlotWidgetBase::STICKS, toggled); });
+
+  connect(ui->comboBoxWidth,
+          static_cast<void (QComboBox::*)(int index)>(&QComboBox::currentIndexChanged), this,
+          &PlotwidgetEditor::onComboWidthChanged);
 }
 
 PlotwidgetEditor::~PlotwidgetEditor()
@@ -344,6 +351,11 @@ void PlotwidgetEditor::on_pushButtonReset_clicked()
 void PlotwidgetEditor::on_lineLimitMax_textChanged(const QString&)
 {
   updateLimits();
+}
+
+void PlotwidgetEditor::onComboWidthChanged(int index)
+{
+  _plotwidget->setLineWidth(static_cast<LineWidth>(index));
 }
 
 void PlotwidgetEditor::on_lineLimitMin_textChanged(const QString&)

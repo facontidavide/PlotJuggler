@@ -1906,12 +1906,18 @@ bool MainWindow::loadLayoutFromFile(QString filename)
     return false;
   }
 
+  // Read file content with explicit UTF-8 encoding to handle Unicode characters
+  QTextStream stream(&file);
+  stream.setCodec("UTF-8");
+  QString fileContent = stream.readAll();
+  file.close();
+
   QString errorStr;
   int errorLine, errorColumn;
 
   QDomDocument domDocument;
 
-  if (!domDocument.setContent(&file, true, &errorStr, &errorLine, &errorColumn))
+  if (!domDocument.setContent(fileContent, true, &errorStr, &errorLine, &errorColumn))
   {
     QMessageBox::information(window(), tr("XML Layout"),
                              tr("Parse error at line %1:\n%2").arg(errorLine).arg(errorStr));
@@ -3059,6 +3065,7 @@ void MainWindow::on_buttonSaveLayout_clicked()
   if (file.open(QIODevice::WriteOnly))
   {
     QTextStream stream(&file);
+    stream.setCodec("UTF-8");
     stream << doc.toString() << "\n";
   }
 }
