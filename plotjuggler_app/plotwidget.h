@@ -83,6 +83,8 @@ public:
 
   void updateStatistics(bool forceUpdate = false);
 
+  void changeDots(bool force_dots);
+
 protected:
   PlotDataMapRef& _mapped_data;
 

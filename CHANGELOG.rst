@@ -2,6 +2,142 @@
 Changelog for package plotjuggler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.14.5 (2025-12-22)
+-------------------
+* add option to change width of lines in PlotWidget Editor
+* fix snap build
+* Contributors: Davide Faconti
+
+3.14.4 (2025-12-19)
+-------------------
+* change ID
+* Install plugins into lib tree (`#1228 <https://github.com/facontidavide/PlotJuggler/issues/1228>`_)
+  Fixes `#1153 <https://github.com/facontidavide/PlotJuggler/issues/1153>`_
+* 🛠️ Bump actions/download-artifact from 6 to 7 (`#1229 <https://github.com/facontidavide/PlotJuggler/issues/1229>`_)
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* 🛠️ Bump actions/upload-artifact from 5 to 6 (`#1230 <https://github.com/facontidavide/PlotJuggler/issues/1230>`_)
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* fix issue `#1226 <https://github.com/facontidavide/PlotJuggler/issues/1226>`_
+* 🛠️ Bump actions/cache from 4 to 5 (`#1225 <https://github.com/facontidavide/PlotJuggler/issues/1225>`_)
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* Contributors: Davide Faconti, SammysHP, dependabot[bot]
+
+3.14.3 (2025-12-07)
+-------------------
+* refactored CSV plugin for robust date/time
+* fix ULOG link in README
+* add 3rdparty date parsing
+* add margin to collapsed QSplitter
+* add new name filter for custom series
+* Contributors: Davide Faconti
+
+3.14.2 (2025-12-06)
+-------------------
+* add new binary filter
+* add code of conduct and remove old issue template
+* Update issue templates
+* fix data merging
+* new memes
+* Contributors: Davide Faconti
+
+3.14.0 (2025-11-22)
+-------------------
+* bug fix in multiple curves filter
+* Merge pull request `#1192 <https://github.com/facontidavide/PlotJuggler/issues/1192>`_ from MichelJansson/feature/transform-multiselect
+  Support curve multi-selection in Transform Editor
+* Merge branch 'main' of github.com:facontidavide/PlotJuggler
+* add new anonymous telemetry
+* Merge pull request `#1199 <https://github.com/facontidavide/PlotJuggler/issues/1199>`_ from af-maad/fix/parquet-timestamp-selection
+  Fix parquet timestamp selection when some columns are invalid types
+* Merge pull request `#1211 <https://github.com/facontidavide/PlotJuggler/issues/1211>`_ from gvz/merging_data_loading
+  data series with the same name can be mergered
+* Update plotjuggler_app/mainwindow.ui
+* Merge pull request `#1209 <https://github.com/facontidavide/PlotJuggler/issues/1209>`_ from gvz/parquet_loading_timestamping
+  Parquet loading
+* Update macos.yaml
+* Fix detection of system-provided liblz4 and zstd (`#1200 <https://github.com/facontidavide/PlotJuggler/issues/1200>`_)
+  Without this, cmake tries to download lz4 and zstd from the internet
+  even if they are available in the system.
+* Added a script to remove orphaned link upon uninstall on debian (`#1205 <https://github.com/facontidavide/PlotJuggler/issues/1205>`_)
+  The symbolic link that gets created on postinst is left behind
+  upon package removal. This was also causing reinstallation to
+  display an error stating that the link already exists.
+  Change-Id: I6a85baa63ee61e843ad1accdd08e5b632a76d2e9
+* Update compile instructions for Fedora (`#1206 <https://github.com/facontidavide/PlotJuggler/issues/1206>`_)
+  I just tried installing deps and compiling on Fedora 42,
+  and I had to make these changes to get it to build.
+  Not sure which Fedora version these instructions were
+  written for, so I specified that this is Fedora 42.
+* 🛠️ Bump actions/download-artifact from 5 to 6 (`#1202 <https://github.com/facontidavide/PlotJuggler/issues/1202>`_)
+  Bumps [actions/download-artifact](https://github.com/actions/download-artifact) from 5 to 6.
+  - [Release notes](https://github.com/actions/download-artifact/releases)
+  - [Commits](https://github.com/actions/download-artifact/compare/v5...v6)
+  ---
+  updated-dependencies:
+  - dependency-name: actions/download-artifact
+  dependency-version: '6'
+  dependency-type: direct:production
+  update-type: version-update:semver-major
+  ...
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* 🛠️ Bump github/codeql-action from 3 to 4 (`#1196 <https://github.com/facontidavide/PlotJuggler/issues/1196>`_)
+  Bumps [github/codeql-action](https://github.com/github/codeql-action) from 3 to 4.
+  - [Release notes](https://github.com/github/codeql-action/releases)
+  - [Changelog](https://github.com/github/codeql-action/blob/main/CHANGELOG.md)
+  - [Commits](https://github.com/github/codeql-action/compare/v3...v4)
+  ---
+  updated-dependencies:
+  - dependency-name: github/codeql-action
+  dependency-version: '4'
+  dependency-type: direct:production
+  update-type: version-update:semver-major
+  ...
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* 🛠️ Bump actions/upload-artifact from 4 to 5 (`#1203 <https://github.com/facontidavide/PlotJuggler/issues/1203>`_)
+  Bumps [actions/upload-artifact](https://github.com/actions/upload-artifact) from 4 to 5.
+  - [Release notes](https://github.com/actions/upload-artifact/releases)
+  - [Commits](https://github.com/actions/upload-artifact/compare/v4...v5)
+  ---
+  updated-dependencies:
+  - dependency-name: actions/upload-artifact
+  dependency-version: '5'
+  dependency-type: direct:production
+  update-type: version-update:semver-major
+  ...
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* 🛠️ Bump actions/checkout from 5 to 6 (`#1214 <https://github.com/facontidavide/PlotJuggler/issues/1214>`_)
+  Bumps [actions/checkout](https://github.com/actions/checkout) from 5 to 6.
+  - [Release notes](https://github.com/actions/checkout/releases)
+  - [Changelog](https://github.com/actions/checkout/blob/main/CHANGELOG.md)
+  - [Commits](https://github.com/actions/checkout/compare/v5...v6)
+  ---
+  updated-dependencies:
+  - dependency-name: actions/checkout
+  dependency-version: '6'
+  dependency-type: direct:production
+  update-type: version-update:semver-major
+  ...
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* data_loading: timeseries with the same name are merged by default
+* parquet_loading: fix timestamp handling for arrow::TIMESTAMP
+* parquet_loading: fix Boolean display
+* Fix parquet timestamp selection when some columns are invalid types
+* Support curve multi-selection in Transform Editor
+  Enhanced plotwidget transforms (Transform Editor) to support curve
+  multi-selection, enabling batch operations of curve transforms.
+  - Updated curve list to handle multi-selection.
+  - Changed curve selection mode to `ExtendedSelection`.
+  - When multi-selection is started, the transform selection UI is
+  cleared to make batch manipulation explicit (ie. batch transform
+  not applied until explicitly selected).
+  - Changed transform list for multi-curve updates.
+  - Transform state is applied to all selected curves using existing
+  XML serialization api.
+  - Alias logic updated to better stay in sync with currently
+  selected transform unless manually changed by checking it the
+  current alias is the default alias for the previous transform.
+* Contributors: Davide Faconti, Georg von Zengen, Laki Dantanarayana, Mattias Adolfsson, Michal Sojka, Michel Jansson, Morten Fyhn Amundsen, dependabot[bot]
+
 3.13.2 (2025-10-07)
 -------------------
 * Fix issue `#1194 <https://github.com/facontidavide/PlotJuggler/issues/1194>`_

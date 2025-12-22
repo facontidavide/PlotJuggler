@@ -52,29 +52,35 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   QSettings settings;
   restoreGeometry(settings.value("PlotwidgetEditor.geometry").toByteArray());
 
-  if (_plotwidget->curveStyle() == PlotWidgetBase::LINES)
+  const auto overriden_style = _plotwidget->overriddenCurvesStyle();
+  if (overriden_style.has_value())
   {
-    ui->radioLines->setChecked(true);
-  }
-  else if (_plotwidget->curveStyle() == PlotWidgetBase::DOTS)
-  {
-    ui->radioPoints->setChecked(true);
-  }
-  else if (_plotwidget->curveStyle() == PlotWidgetBase::STICKS)
-  {
-    ui->radioSticks->setChecked(true);
-  }
-  else if (_plotwidget->curveStyle() == PlotWidgetBase::STEPS)
-  {
-    ui->radioSteps->setChecked(true);
-  }
-  else if (_plotwidget->curveStyle() == PlotWidgetBase::STEPSINV)
-  {
-    ui->radioStepsInv->setChecked(true);
-  }
-  else
-  {
-    ui->radioBoth->setChecked(true);
+    switch (overriden_style.value())
+    {
+      case PlotWidgetBase::LINES:
+        ui->radioDefault->setChecked(true);
+        break;
+
+      case PlotWidgetBase::DOTS:
+        ui->radioPoints->setChecked(true);
+        break;
+
+      case PlotWidgetBase::LINES_AND_DOTS:
+        ui->radioBoth->setChecked(true);
+        break;
+
+      case PlotWidgetBase::STICKS:
+        ui->radioSticks->setChecked(true);
+        break;
+
+      case PlotWidgetBase::STEPS:
+        ui->radioSteps->setChecked(true);
+        break;
+
+      case PlotWidgetBase::STEPSINV:
+        ui->radioStepsInv->setChecked(true);
+        break;
+    }
   }
 
   ui->lineLimitMax->setValidator(new QDoubleValidator(this));
@@ -111,6 +117,39 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   {
     ui->listWidget->item(0)->setSelected(true);
   }
+
+  auto on_radio_toggled = [this](std::optional<PlotWidgetBase::CurveStyle> style, bool toggled) {
+    if (toggled)
+    {
+      _plotwidget->overrideCurvesStyle(style);
+      _plotwidget->updateCurvesStyle();
+    }
+  };
+
+  auto line_width = _plotwidget->lineWidth();
+  ui->comboBoxWidth->setCurrentIndex(static_cast<int>(line_width));
+
+  connect(ui->radioDefault, &QRadioButton::toggled, this,
+          [=](bool toggled) { on_radio_toggled(std::nullopt, toggled); });
+
+  connect(ui->radioPoints, &QRadioButton::toggled, this,
+          [=](bool toggled) { on_radio_toggled(PlotWidgetBase::DOTS, toggled); });
+
+  connect(ui->radioBoth, &QRadioButton::toggled, this,
+          [=](bool toggled) { on_radio_toggled(PlotWidgetBase::LINES_AND_DOTS, toggled); });
+
+  connect(ui->radioSteps, &QRadioButton::toggled, this,
+          [=](bool toggled) { on_radio_toggled(PlotWidgetBase::STEPS, toggled); });
+
+  connect(ui->radioStepsInv, &QRadioButton::toggled, this,
+          [=](bool toggled) { on_radio_toggled(PlotWidgetBase::STEPSINV, toggled); });
+
+  connect(ui->radioSticks, &QRadioButton::toggled, this,
+          [=](bool toggled) { on_radio_toggled(PlotWidgetBase::STICKS, toggled); });
+
+  connect(ui->comboBoxWidth,
+          static_cast<void (QComboBox::*)(int index)>(&QComboBox::currentIndexChanged), this,
+          &PlotwidgetEditor::onComboWidthChanged);
 }
 
 PlotwidgetEditor::~PlotwidgetEditor()
@@ -282,54 +321,6 @@ void PlotwidgetEditor::on_editColotText_textChanged(const QString& text)
   }
 }
 
-void PlotwidgetEditor::on_radioLines_toggled(bool checked)
-{
-  if (checked)
-  {
-    _plotwidget->changeCurvesStyle(PlotWidgetBase::LINES);
-  }
-}
-
-void PlotwidgetEditor::on_radioPoints_toggled(bool checked)
-{
-  if (checked)
-  {
-    _plotwidget->changeCurvesStyle(PlotWidgetBase::DOTS);
-  }
-}
-
-void PlotwidgetEditor::on_radioBoth_toggled(bool checked)
-{
-  if (checked)
-  {
-    _plotwidget->changeCurvesStyle(PlotWidgetBase::LINES_AND_DOTS);
-  }
-}
-
-void PlotwidgetEditor::on_radioSticks_toggled(bool checked)
-{
-  if (checked)
-  {
-    _plotwidget->changeCurvesStyle(PlotWidgetBase::STICKS);
-  }
-}
-
-void PlotwidgetEditor::on_radioSteps_toggled(bool checked)
-{
-  if (checked)
-  {
-    _plotwidget->changeCurvesStyle(PlotWidgetBase::STEPS);
-  }
-}
-
-void PlotwidgetEditor::on_radioStepsInv_toggled(bool checked)
-{
-  if (checked)
-  {
-    _plotwidget->changeCurvesStyle(PlotWidgetBase::STEPSINV);
-  }
-}
-
 void PlotwidgetEditor::on_checkBoxMax_toggled(bool checked)
 {
   ui->lineLimitMax->setEnabled(checked);
@@ -360,6 +351,11 @@ void PlotwidgetEditor::on_pushButtonReset_clicked()
 void PlotwidgetEditor::on_lineLimitMax_textChanged(const QString&)
 {
   updateLimits();
+}
+
+void PlotwidgetEditor::onComboWidthChanged(int index)
+{
+  _plotwidget->setLineWidth(static_cast<LineWidth>(index));
 }
 
 void PlotwidgetEditor::on_lineLimitMin_textChanged(const QString&)

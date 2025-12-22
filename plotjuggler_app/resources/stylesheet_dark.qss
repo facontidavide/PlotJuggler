@@ -821,7 +821,8 @@ QPushButton#buttonHideStreamingFrame {
 }
 
 
-QLineEdit#lineEditFilter{
+QLineEdit#lineEditFilter,
+QLineEdit#lineEditCustomFilter{
   background-color: transparent;
   border: 0px;
   border-radius: 0px;
@@ -835,7 +836,8 @@ QLineEdit#lineEditPrefix{
   border-bottom: 2px solid ${border_hover};
 }
 
-QLineEdit#lineEditFilter:focus{
+QLineEdit#lineEditFilter:focus,
+QLineEdit#lineEditCustomFilter:focus{
   border-bottom: 2px solid ${border_checked};
 }
 

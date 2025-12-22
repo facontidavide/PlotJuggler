@@ -4,35 +4,132 @@ on:
   push:
     branches:
       - main
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
   pull_request:
     types: [opened, synchronize]
+  workflow_dispatch:
 
 jobs:
 
   macos-build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - macos-13
-          - macos-latest
+        config:
+          - { os: macos-14, arch: x64 }
+          - { os: macos-14, arch: arm64 }
 
     steps:
       - name: Sync repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
-      - name: Prepare Homebrew and Install Dependencies
+      - name: Install Conan
+        uses: conan-io/setup-conan@v1
+        with:
+          cache_packages: true
+
+      - name: Install and cache Homebrew tools
+        uses: tecolicom/actions-use-homebrew-tools@v1
+        with:
+          tools: qt@5 create-dmg
+          cache: yes
+
+      - name: Conan install
         run: |
-          brew cleanup -s
-          brew update
-          brew install mosquitto zeromq qt@5 protobuf@21
+          conan install . -of build --build=missing -pr:b=default -s build_type=Release -s compiler.cppstd=17
 
       - name: Build PlotJuggler
         run: |
-          export CMAKE_PREFIX_PATH=$(brew --prefix qt@5):$(brew --prefix zeromq)
-          export LDFLAGS="-L/usr/local/opt/zeromq/lib"
-          export CPPFLAGS="-I/usr/local/opt/zeromq/include"
-          export LIBRARY_PATH=/usr/local/opt/zeromq/lib
-          export CPATH=/usr/local/opt/zeromq/include
-          cmake -B build -DCMAKE_INSTALL_PREFIX=install PlotJuggler
+          export CMAKE_PREFIX_PATH=$(brew --prefix qt@5)
+          cmake --preset conan-release -S . -B build -DPJ_INSTALLATION="macos"
+          cmake --build build --config Release
+
+      - name: Create .app bundle
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          mkdir -p PlotJuggler.app/Contents/MacOS
+          mkdir -p PlotJuggler.app/Contents/Resources
+
+          # Copy binary and all plugins from build/bin
+          cp -r build/bin/* PlotJuggler.app/Contents/MacOS/
+
+          # Copy icon (macOS supports PNG directly)
+          cp plotjuggler.png PlotJuggler.app/Contents/Resources/plotjuggler.png
+
+          # Create Info.plist
+          cat > PlotJuggler.app/Contents/Info.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key>
+            <string>plotjuggler</string>
+            <key>CFBundleIdentifier</key>
+            <string>io.plotjuggler.application</string>
+            <key>CFBundleName</key>
+            <string>PlotJuggler</string>
+            <key>CFBundleVersion</key>
+            <string>${GITHUB_REF#refs/tags/}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${GITHUB_REF#refs/tags/}</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleIconFile</key>
+            <string>plotjuggler.png</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>10.15</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Bundle Qt dependencies
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          export PATH="$(brew --prefix qt@5)/bin:$PATH"
+          macdeployqt PlotJuggler.app -verbose=2
+
+      - name: Create DMG
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          DMG_NAME="PlotJuggler-${VERSION}-macOS-${{ matrix.config.arch }}.dmg"
+
+          create-dmg \
+            --volname "PlotJuggler" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --icon "PlotJuggler.app" 200 190 \
+            --hide-extension "PlotJuggler.app" \
+            --app-drop-link 600 185 \
+            --no-internet-enable \
+            "$DMG_NAME" \
+            "PlotJuggler.app" || true
+
+          # create-dmg may fail if DMG already exists, but creates it anyway
+          # Verify DMG was created
+          if [ ! -f "$DMG_NAME" ]; then
+            echo "DMG creation failed, trying fallback method"
+            hdiutil create -volname "PlotJuggler" -srcfolder PlotJuggler.app -ov -format UDZO "$DMG_NAME"
+          fi
+
+          echo "DMG_NAME=$DMG_NAME" >> $GITHUB_ENV
+
+      - name: Upload DMG artifact
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ env.DMG_NAME }}
+          path: ${{ env.DMG_NAME }}
+
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.DMG_NAME }}
+          generate_release_notes: false
+          fail_on_unmatched_files: false

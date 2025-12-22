@@ -1,4 +1,5 @@
 #include "dataload_parquet.h"
+#include <arrow/type_fwd.h>
 #include <QTextStream>
 #include <QFile>
 #include <QMessageBox>
@@ -8,6 +9,7 @@
 #include <QDateTime>
 #include <QInputDialog>
 #include <QListWidget>
+#include <QTimeZone>
 #include <cmath>
 
 DataLoadParquet::DataLoadParquet()
@@ -73,6 +75,8 @@ double get_arrow_value(const std::shared_ptr<arrow::Array>& array, int64_t index
 {
   switch (arrow_type)
   {
+    case arrow::Type::BOOL:
+      return get_arrow_value<arrow::BooleanArray>(array, index);
     case arrow::Type::INT8:
       return get_arrow_value<arrow::Int8Array>(array, index);
     case arrow::Type::INT16:
@@ -93,6 +97,43 @@ double get_arrow_value(const std::shared_ptr<arrow::Array>& array, int64_t index
       return get_arrow_value<arrow::FloatArray>(array, index);
     case arrow::Type::DOUBLE:
       return get_arrow_value<arrow::DoubleArray>(array, index);
+    case arrow::Type::TIMESTAMP: {
+      auto timestamp_array = std::static_pointer_cast<arrow::TimestampArray>(array);
+      if (timestamp_array->IsNull(index))
+      {
+        return std::numeric_limits<double>::quiet_NaN();
+      }
+      const auto timestamp_type =
+          std::static_pointer_cast<arrow::TimestampType>(timestamp_array->type());
+      const int64_t value = timestamp_array->Value(index);
+      double seconds = 0;
+      switch (timestamp_type->unit())
+      {
+        case arrow::TimeUnit::SECOND:
+          seconds = static_cast<double>(value);
+          break;
+        case arrow::TimeUnit::MILLI:
+          seconds = static_cast<double>(value) / 1000.0;
+          break;
+        case arrow::TimeUnit::MICRO:
+          seconds = static_cast<double>(value) / 1000000.0;
+          break;
+        case arrow::TimeUnit::NANO:
+          seconds = static_cast<double>(value) / 1000000000.0;
+          break;
+      }
+      const std::string& timezone_str = timestamp_type->timezone();
+      if (!timezone_str.empty() && timezone_str != "UTC")
+      {
+        QTimeZone tz(QByteArray::fromStdString(timezone_str));
+        if (tz.isValid())
+        {
+          QDateTime utc_dt = QDateTime::fromSecsSinceEpoch(static_cast<qint64>(seconds));
+          seconds -= tz.offsetFromUtc(utc_dt);
+        }
+      }
+      return seconds;
+    }
     default:
       break;
   }
@@ -158,7 +199,7 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
          info.arrow_type == arrow::Type::INT64 || info.arrow_type == arrow::Type::UINT8 ||
          info.arrow_type == arrow::Type::UINT16 || info.arrow_type == arrow::Type::UINT32 ||
          info.arrow_type == arrow::Type::UINT64 || info.arrow_type == arrow::Type::FLOAT ||
-         info.arrow_type == arrow::Type::DOUBLE);
+         info.arrow_type == arrow::Type::TIMESTAMP || info.arrow_type == arrow::Type::DOUBLE);
 
     if (is_valid)
     {
@@ -212,12 +253,14 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
   //-----------------------------
   // Time to parse
   int timestamp_column = -1;
+  auto timestamp_arrow_type = arrow::Type::NA;
 
   for (const auto& info : columns_info)
   {
     if (info.name == selected_stamp.toStdString())
     {
       timestamp_column = info.column_index;
+      timestamp_arrow_type = info.arrow_type;
       break;
     }
   }
@@ -254,8 +297,7 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
       auto timestamp_array = batch->column(timestamp_column);
       for (int64_t row = 0; row < batch_rows; row++)
       {
-        const auto ts =
-            get_arrow_value(timestamp_array, row, columns_info[timestamp_column].arrow_type);
+        const auto ts = get_arrow_value(timestamp_array, row, timestamp_arrow_type);
         timestamp_to_row_index[row] = { ts, row };
       }
     }

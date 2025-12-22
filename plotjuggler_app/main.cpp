@@ -19,10 +19,13 @@
 #include <QJsonDocument>
 #include <QDir>
 #include <QDialog>
-#include <QUuid>
 #include <QDesktopServices>
+#include <QHostInfo>
+#include <QSslConfiguration>
+#include <QSslSocket>
 
 #include "PlotJuggler/transform_function.h"
+#include "transforms/binary_filter.h"
 #include "transforms/first_derivative.h"
 #include "transforms/samples_count.h"
 #include "transforms/scale_transform.h"
@@ -63,7 +66,7 @@ void OpenNewReleaseDialog(QNetworkReply* reply)
 {
   if (reply->error())
   {
-    qDebug() << "reply error";
+    qDebug() << "GitHub release check error:" << reply->error() << reply->errorString();
     return;
   }
 
@@ -79,6 +82,8 @@ void OpenNewReleaseDialog(QNetworkReply* reply)
   int dontshow_number = GetVersionNumber(dont_show);
   int current_number = GetVersionNumber(VERSION_STRING);
 
+  qDebug() << "Current version:" << VERSION_STRING << ". Latest release version :" << tag_name;
+
   if (online_number > current_number && online_number > dontshow_number)
   {
     NewReleaseDialog* dialog = new NewReleaseDialog(nullptr, tag_name, name, url);
@@ -92,9 +97,10 @@ QPixmap getFunnySplashscreen()
   srand(time(nullptr));
 
   auto getNum = []() {
-    const int last_image_num = 94;
+    const int last_image_num = 103;
     return rand() % (last_image_num);
   };
+
   std::set<int> previous_set;
   std::list<int> previous_nums;
 
@@ -220,6 +226,7 @@ int main(int argc, char* argv[])
   TransformFactory::registerTransform<TimeSincePreviousPointTranform>();
   TransformFactory::registerTransform<MovingVarianceFilter>();
   TransformFactory::registerTransform<SamplesCountFilter>();
+  TransformFactory::registerTransform<BinaryFilter>();
   //---------------------------
 
   QCommandLineParser parser;
@@ -261,52 +268,36 @@ int main(int argc, char* argv[])
                                    "directory_paths");
   parser.addOption(folder_option);
 
-  QCommandLineOption buffersize_option(QStringList() << "buffer_size",
-                                       QCoreApplication::translate("main", "Change the "
-                                                                           "maximum size "
-                                                                           "of the "
-                                                                           "streaming "
-                                                                           "buffer "
-                                                                           "(minimum: 10 "
-                                                                           "default: "
-                                                                           "60)"),
-                                       QCoreApplication::translate("main", "seconds"));
-
+  QCommandLineOption buffersize_option(
+      QStringList() << "buffer_size",
+      QCoreApplication::translate(
+          "main", "Change the maximum size of the streaming buffer (minimum: 10 default: 60)"),
+      QCoreApplication::translate("main", "seconds"));
   parser.addOption(buffersize_option);
 
-  QCommandLineOption nogl_option(QStringList() << "disable_opengl", "Disable OpenGL "
-                                                                    "display before "
-                                                                    "starting the "
-                                                                    "application. "
-                                                                    "You can enable it "
-                                                                    "again in the "
-                                                                    "'Preferences' "
-                                                                    "menu.");
-
+  QCommandLineOption nogl_option(
+      QStringList() << "disable_opengl",
+      "Disable OpenGL display before starting the application. You can enable it again in the 'Preferences' menu.");
   parser.addOption(nogl_option);
 
-  QCommandLineOption enabled_plugins_option(QStringList() << "enabled_plugins",
-                                            "Limit the loaded plugins to ones in the "
-                                            "semicolon-separated list",
-                                            "name_list");
+  QCommandLineOption enabled_plugins_option(
+      QStringList() << "enabled_plugins",
+      "Limit the loaded plugins to ones in the semicolon-separated list", "name_list");
   parser.addOption(enabled_plugins_option);
 
-  QCommandLineOption disabled_plugins_option(QStringList() << "disabled_plugins",
-                                             "Do not load any of the plugins in the "
-                                             "semicolon separated list",
-                                             "name_list");
+  QCommandLineOption disabled_plugins_option(
+      QStringList() << "disabled_plugins",
+      "Do not load any of the plugins in the semicolon separated list", "name_list");
   parser.addOption(disabled_plugins_option);
 
-  QCommandLineOption skin_path_option(QStringList() << "skin_path",
-                                      "New \"skin\". Refer to the sample in "
-                                      "[plotjuggler_app/resources/skin]",
-                                      "path to folder");
+  QCommandLineOption skin_path_option(
+      QStringList() << "skin_path",
+      "New \"skin\". Refer to the sample in [plotjuggler_app/resources/skin] path to folder");
   parser.addOption(skin_path_option);
 
-  QCommandLineOption start_streamer(QStringList() << "start_streamer",
-                                    "Automatically start a Streaming Plugin with the "
-                                    "give filename",
-                                    "file_name (no extension)");
+  QCommandLineOption start_streamer(
+      QStringList() << "start_streamer",
+      "Automatically start a Streaming Plugin with the given file_name (no extension)");
   parser.addOption(start_streamer);
 
   QCommandLineOption window_title(QStringList() << "window_title", "Set the window title",
@@ -317,16 +308,14 @@ int main(int argc, char* argv[])
 
   if (parser.isSet(publish_option) && !parser.isSet(layout_option))
   {
-    std::cerr << "Option [ -p / --publish ] is invalid unless [ -l / --layout ] is used "
-                 "too."
+    std::cerr << "Option [ -p / --publish ] is invalid unless [ -l / --layout ] is used too."
               << std::endl;
     return -1;
   }
 
   if (parser.isSet(enabled_plugins_option) && parser.isSet(disabled_plugins_option))
   {
-    std::cerr << "Option [ --enabled_plugins ] and [ --disabled_plugins ] can't be used "
-                 "together."
+    std::cerr << "Option [ --enabled_plugins ] and [ --disabled_plugins ] can't be used together."
               << std::endl;
     return -1;
   }
@@ -355,6 +344,12 @@ int main(int argc, char* argv[])
   QNetworkRequest request_new_release;
   request_new_release.setUrl(QUrl("https://api.github.com/repos/facontidavide/"
                                   "PlotJuggler/releases/latest"));
+
+  // Disable SSL peer verification for GitHub API (workaround for Qt5/OpenSSL 3.0 incompatibility)
+  QSslConfiguration sslConfig_release = request_new_release.sslConfiguration();
+  sslConfig_release.setPeerVerifyMode(QSslSocket::VerifyNone);
+  request_new_release.setSslConfiguration(sslConfig_release);
+
   manager_new_release.get(request_new_release);
 
   MainWindow* window = nullptr;
@@ -430,22 +425,54 @@ int main(int argc, char* argv[])
   }
 
   QNetworkAccessManager manager_message;
-  QObject::connect(&manager_message, &QNetworkAccessManager::finished,
-                   [window](QNetworkReply* reply) {
-                     if (reply->error())
-                     {
-                       return;
-                     }
-                     QString answer = reply->readAll();
-                     QJsonDocument document = QJsonDocument::fromJson(answer.toUtf8());
-                     QJsonObject data = document.object();
-                     QString message = data["message"].toString();
-                     window->setStatusBarMessage(message);
-                   });
+  QObject::connect(
+      &manager_message, &QNetworkAccessManager::finished, [window](QNetworkReply* reply) {
+        if (reply->error())
+        {
+          qDebug() << "Telemetry reply error:" << reply->error() << reply->errorString();
+          return;
+        }
+        qDebug() << "Telemetry reply received";
+        QString answer = reply->readAll();
+        QJsonDocument document = QJsonDocument::fromJson(answer.toUtf8());
+        QJsonObject data = document.object();
+        QString message = data["message"].toString();
+        window->setStatusBarMessage(message);
+      });
 
+  // These are 100% anonymous requests; no personal data is sent.
+  // We collect your statistics to improve PlotJuggler.
+  // Create JSON payload
+  QJsonObject payload;
+  payload["user_id"] = QString::fromLatin1(QSysInfo::machineUniqueId());
+  payload["os"] = QSysInfo::productType();
+  payload["version"] = VERSION_STRING;
+  payload["installation"] = QString(PJ_INSTALLATION);
+
+  QJsonDocument doc(payload);
+  QByteArray jsonData = doc.toJson();
+
+  // Test DNS resolution first
+  QHostInfo hostInfo = QHostInfo::fromName("app.plotjuggler.io");
+  if (hostInfo.error() != QHostInfo::NoError)
+  {
+    qDebug() << "DNS lookup failed:" << hostInfo.errorString()
+             << " Addresses found:" << hostInfo.addresses();
+  }
+
+  // Create network request
   QNetworkRequest request_message;
-  request_message.setUrl(QUrl("https://fastapi-example-7kz3.onrender.com"));
-  manager_message.get(request_message);
+  request_message.setUrl(QUrl("https://app.plotjuggler.io/telemetry"));
+  request_message.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+  // Disable SSL peer verification for telemetry (workaround for Qt5/OpenSSL 3.0 incompatibility)
+  // This is acceptable for anonymous telemetry data
+  QSslConfiguration sslConfig = request_message.sslConfiguration();
+  sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
+  request_message.setSslConfiguration(sslConfig);
+
+  // Send POST request
+  manager_message.post(request_message, jsonData);
 
   return app.exec();
 }

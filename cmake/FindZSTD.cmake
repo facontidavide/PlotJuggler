@@ -50,7 +50,7 @@ find_package_handle_standard_args(ZSTD
   ZSTD_STATIC_LIBRARY
 )
 
-if(ZSTD_FOUND)
+if(PC_ZSTD_FOUND)
   message(STATUS "Found Zstd: shared=${ZSTD_SHARED_LIBRARY}, static=${ZSTD_STATIC_LIBRARY}")
 endif()
 

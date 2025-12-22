@@ -31,6 +31,8 @@ parts:
     cmake-parameters:
       - -DBASE_AS_SHARED=ON
       - -DCMAKE_BUILD_TYPE=Release
+      - -DPJ_INSTALLATION="snap-humble"
+      - -DPJ_PLUGINS_DIRECTORY="bin"
       - "-DCMAKE_PREFIX_PATH=$(echo $SNAPCRAFT_CMAKE_ARGS | awk -F= '{printf(\"%s/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/cmake/Qt5\", $2)}')"
     build-packages:
       - distro-info-data

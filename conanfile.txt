@@ -6,6 +6,7 @@
  arrow/21.0.0
  lz4/1.9.4
  zstd/1.5.7
+ abseil/20250814.0
 
  [options]
  zeromq*:shared=False

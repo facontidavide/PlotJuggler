@@ -7,21 +7,108 @@
 #include "utils.h"
 #include <QDebug>
 
+namespace PJ
+{
+
+template <typename Value>
+void MergeData(TimeseriesBase<Value>& src_plot, TimeseriesBase<Value>& dst_plot)
+{
+  if (src_plot.size() == 0)
+  {
+    return;
+  }
+  if (dst_plot.size() == 0)
+  {
+    std::swap(dst_plot, src_plot);
+    return;
+  }
+
+  // special case: is the same data being overwritten?
+  if (dst_plot.size() == src_plot.size() && isEqual(dst_plot.back().x, src_plot.back().x) &&
+      isEqual(dst_plot.front().x, src_plot.front().x))
+  {
+    bool need_sorting = false;
+    for (size_t i = 0; i < src_plot.size(); i++)
+    {
+      auto& src_point = src_plot[i];
+      auto& dst_point = dst_plot[i];
+      if (isEqual(src_point.x, dst_point.x))
+      {
+        // update only
+        dst_point.y = src_point.y;
+      }
+      else
+      {
+        dst_plot.pushUnsorted(std::move(src_point));
+        need_sorting = true;
+      }
+    }
+    src_plot.clear();
+    if (need_sorting)
+    {
+      dst_plot.sort();
+    }
+    return;
+  }
+
+  // append
+  if (dst_plot.back().x < src_plot.front().x)
+  {
+    for (size_t i = 0; i < src_plot.size(); i++)
+    {
+      dst_plot.pushBack(std::move(src_plot.at(i)));
+    }
+    src_plot.clear();
+    return;
+  }
+  // prepend
+  if (src_plot.back().x < dst_plot.front().x)
+  {
+    // swap and append
+    std::swap(dst_plot, src_plot);
+    for (size_t i = 0; i < src_plot.size(); i++)
+    {
+      dst_plot.pushBack(std::move(src_plot.at(i)));
+    }
+    src_plot.clear();
+    return;
+  }
+  // LAST CASE: merging
+  for (size_t i = 0; i < src_plot.size(); i++)
+  {
+    dst_plot.pushUnsorted(std::move(src_plot.at(i)));
+  }
+  dst_plot.sort();
+  src_plot.clear();
+}
+
+void MergeData(PlotDataXY& src_plot, PlotDataXY& dst_plot)
+{
+  if (dst_plot.size() == 0)
+  {
+    std::swap(dst_plot, src_plot);
+    return;
+  }
+  for (const auto& p : src_plot)
+  {
+    dst_plot.pushBack(p);
+  }
+  src_plot.clear();
+}
+
 MoveDataRet MoveData(PlotDataMapRef& source, PlotDataMapRef& destination, bool remove_older)
 {
   MoveDataRet ret;
 
   auto moveDataImpl = [&](auto& source_series, auto& destination_series) {
-    for (auto& it : source_series)
+    for (auto& [source_ID, source_plot] : source_series)
     {
-      const std::string& ID = it.first;
-      auto& source_plot = it.second;
       const std::string& plot_name = source_plot.plotName();
 
-      auto dest_plot_it = destination_series.find(ID);
+      auto dest_plot_it = destination_series.find(source_ID);
       if (dest_plot_it == destination_series.end())
       {
-        ret.added_curves.push_back(ID);
+        ret.added_curves.push_back(source_ID);
 
         PlotGroup::Ptr group;
         if (source_plot.group())
@@ -29,7 +116,7 @@ MoveDataRet MoveData(PlotDataMapRef& source, PlotDataMapRef& destination, bool r
           destination.getOrCreateGroup(source_plot.group()->name());
         }
         dest_plot_it = destination_series
-                           .emplace(std::piecewise_construct, std::forward_as_tuple(ID),
+                           .emplace(std::piecewise_construct, std::forward_as_tuple(source_ID),
                                     std::forward_as_tuple(plot_name, group))
                            .first;
         ret.curves_updated = true;
@@ -71,11 +158,6 @@ MoveDataRet MoveData(PlotDataMapRef& source, PlotDataMapRef& destination, bool r
         destination_plot.clear();
       }
 
-      if (source_plot.size() > 0)
-      {
-        ret.data_pushed = true;
-      }
-
       if constexpr (std::is_same_v<PlotData, decltype(source_plot)> ||
                     std::is_same_v<StringSeries, decltype(source_plot)> ||
                     std::is_same_v<PlotDataAny, decltype(source_plot)>)
@@ -83,19 +165,7 @@ MoveDataRet MoveData(PlotDataMapRef& source, PlotDataMapRef& destination, bool r
         double max_range_x = source_plot.maximumRangeX();
         destination_plot.setMaximumRangeX(max_range_x);
       }
-
-      if (destination_plot.size() == 0)
-      {
-        std::swap(destination_plot, source_plot);
-      }
-      else
-      {
-        for (size_t i = 0; i < source_plot.size(); i++)
-        {
-          destination_plot.pushBack(source_plot.at(i));
-        }
-        source_plot.clear();
-      }
+      MergeData(source_plot, destination_plot);
     }
   };
 
@@ -107,3 +177,5 @@ MoveDataRet MoveData(PlotDataMapRef& source, PlotDataMapRef& destination, bool r
 
   return ret;
 }
+
+}  // namespace PJ

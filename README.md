@@ -12,7 +12,7 @@
 [![Intermodalics](docs/sponsor_intermodalics.png)](https://www.intermodalics.ai/)
 [![Greenzie](docs/sponsor_ark.png)](https://arkelectron.com/)
 
-# PlotJuggler 3.13
+# PlotJuggler 3.14
 
 PlotJuggler is a tool to visualize time series that is **fast**, **powerful** and  **intuitive**.
 
@@ -33,7 +33,7 @@ Noteworthy features:
 ## Data sources (file and streaming)
 
 - Load CSV files.
-- Load [ULog](https://dev.px4.io/v1.9.0/en/log/ulog_file_format.html) (PX4).
+- Load [ULog](https://docs.px4.io/main/en/dev_log/ulog_file_format) (PX4).
 - Subscribe to many different streaming sources: MQTT, WebSockets, ZeroMQ, UDP, etc.
 - Understand data formats such as JSON, CBOR, BSON, Message Pack, etc.
 - Well integrated with [ROS](https://www.ros.org/): open *rosbags* and/or subscribe to ROS *topics* (both ROS1 and ROS2).

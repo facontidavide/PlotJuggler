@@ -10,7 +10,22 @@
 #include <QObject>
 #include "PlotJuggler/plotdata.h"
 
-using namespace PJ;
+namespace PJ
+{
+
+template <typename T>
+inline bool isEqual(const T& a, const T& b)
+{
+  if constexpr (std::is_floating_point_v<T>)
+  {
+    return std::abs(a - b) <=
+           std::numeric_limits<T>::epsilon() * std::max(std::abs(a), std::abs(b));
+  }
+  else
+  {
+    return a == b;
+  }
+}
 
 class MonitoredValue : public QObject
 {
@@ -49,5 +64,6 @@ struct MoveDataRet
 };
 
 MoveDataRet MoveData(PlotDataMapRef& source, PlotDataMapRef& destination, bool remove_older);
+}  // namespace PJ
 
 #endif  // UTILS_H

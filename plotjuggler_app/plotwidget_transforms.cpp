@@ -107,18 +107,24 @@ QColor DialogTransformEditor::RowWidget::color() const
 
 void DialogTransformEditor::on_listCurves_itemSelectionChanged()
 {
-  auto selected = ui->listCurves->selectedItems();
-  if (selected.size() != 1)
+  auto selected_curves = ui->listCurves->selectedItems();
+  if (selected_curves.size() < 1)
   {
     return;
   }
-  auto item = selected.front();
-  auto row_widget = dynamic_cast<RowWidget*>(ui->listCurves->itemWidget(item));
-  auto curve_name = row_widget->text();
+  if (selected_curves.size() > 1)
+  {
+    // multi-selected curves may have different transforms
+    ui->listTransforms->clearSelection();
+    return;
+  }
 
-  auto curve_it = _plotwidget->curveFromTitle(curve_name);
+  auto row_widget = dynamic_cast<RowWidget*>(ui->listCurves->itemWidget(selected_curves.front()));
+  auto curve_name = row_widget->text();
+  auto curve_info = _plotwidget->curveFromTitle(curve_name);
+
   int transform_row = 0;
-  if (auto ts = dynamic_cast<TransformedTimeseries*>(curve_it->curve->data()))
+  if (auto ts = dynamic_cast<TransformedTimeseries*>(curve_info->curve->data()))
   {
     if (ts->transform())
     {
@@ -154,77 +160,139 @@ void DialogTransformEditor::on_listCurves_itemSelectionChanged()
 void DialogTransformEditor::on_listTransforms_itemSelectionChanged()
 {
   auto selected_curves = ui->listCurves->selectedItems();
-  if (selected_curves.size() != 1)
+  if (selected_curves.size() < 1)
   {
     return;
   }
-  auto row_widget = dynamic_cast<RowWidget*>(ui->listCurves->itemWidget(selected_curves.front()));
-
-  QString curve_name = row_widget->text();
 
   auto selected_transforms = ui->listTransforms->selectedItems();
   if (selected_transforms.size() != 1)
   {
+    ui->stackedWidgetArguments->setCurrentIndex(0);
     return;
   }
-  QString transform_ID = selected_transforms.front()->text();
-
-  auto curve_info = _plotwidget->curveFromTitle(curve_name);
-  auto qwt_curve = curve_info->curve;
-  auto ts = dynamic_cast<TransformedTimeseries*>(curve_info->curve->data());
 
   QSignalBlocker block(ui->lineEditAlias);
 
-  if (transform_ID.isEmpty() || transform_ID == ui->listTransforms->item(0)->text())
-  {
-    ts->setTransform({});
-    ts->updateCache(true);
-    ui->stackedWidgetArguments->setCurrentIndex(0);
+  QString transform_ID = selected_transforms.front()->text();
+  if (transform_ID == ui->listTransforms->item(0)->text())
+    transform_ID.clear();
 
+  if (transform_ID.isEmpty())
+  {
+    ui->stackedWidgetArguments->setCurrentIndex(0);
+  }
+
+  if (transform_ID.isEmpty() || selected_curves.size() > 1)
+  {
     ui->lineEditAlias->setText("");
     ui->lineEditAlias->setEnabled(false);
-    qwt_curve->setTitle(curve_name);
   }
-  else
+
+  TransformedTimeseries* ts = nullptr;
+
+  for (auto item : selected_curves)
   {
-    ts->setTransform(transform_ID);
-    ts->updateCache(true);
-    ui->lineEditAlias->setEnabled(true);
+    auto row_widget = dynamic_cast<RowWidget*>(ui->listCurves->itemWidget(item));
+    QString curve_name = row_widget->text();
+    auto curve_info = _plotwidget->curveFromTitle(curve_name);
+    auto qwt_curve = curve_info->curve;
+    ts = dynamic_cast<TransformedTimeseries*>(curve_info->curve->data());
 
-    QString curve_title = qwt_curve->title().text();
-    if (ts->alias().isEmpty())
+    auto src_name = QString::fromStdString(curve_info->src_name);
+    bool has_default_title =
+        ts->alias().isEmpty() ||
+        ts->alias().compare(QString("%1[%2]").arg(src_name).arg(ts->transformName())) == 0;
+
+    if (transform_ID.isEmpty())
     {
-      auto src_name = QString::fromStdString(curve_info->src_name);
-      auto new_title = QString("%1[%2]").arg(src_name).arg(transform_ID);
-      ts->setAlias(new_title);
+      ts->setTransform({});
+      ts->updateCache(true);
+
+      if (has_default_title)
+      {
+        ts->setAlias(QString());
+      }
+
+      qwt_curve->setTitle(curve_name);
     }
-
-    ui->lineEditAlias->setText(ts->alias());
-    qwt_curve->setTitle(ts->alias());
-
-    auto widget = ts->transform()->optionsWidget();
-    int index = ui->stackedWidgetArguments->indexOf(widget);
-    if (index == -1 && widget)
+    else
     {
-      index = ui->stackedWidgetArguments->addWidget(widget);
+      ts->setTransform(transform_ID);
+      ts->updateCache(true);
+
+      if (has_default_title)
+      {
+        auto new_default_title = QString("%1[%2]").arg(src_name).arg(transform_ID);
+        ts->setAlias(new_default_title);
+      }
+
+      qwt_curve->setTitle(ts->alias());
+
+      if (selected_curves.size() == 1)
+      {
+        ui->lineEditAlias->setText(ts->alias());
+        ui->lineEditAlias->setEnabled(true);
+      }
     }
+  }
 
-    ui->stackedWidgetArguments->setCurrentIndex(index);
+  // use the last selected curve, as the transform widget presenter
+  if (ts && ts->transform())
+  {
+    QWidget* widget = ts->transform()->optionsWidget();
 
-    if (_connected_transform_widgets.count(widget) == 0)
+    if (widget)
     {
-      connect(ts->transform().get(), &TransformFunction::parametersChanged, this, [=]() {
-        ts->updateCache(true);
-        if (ui->checkBoxAutoZoom->isChecked())
-        {
-          _plotwidget->zoomOut(false);
-        }
-        else
-        {
-          _plotwidget->replot();
-        }
-      });
-      _connected_transform_widgets.insert(widget);
+      int index = ui->stackedWidgetArguments->indexOf(widget);
+      if (index == -1 && widget)
+      {
+        index = ui->stackedWidgetArguments->addWidget(widget);
+      }
+
+      ui->stackedWidgetArguments->setCurrentIndex(index);
+
+      if (_connected_transform_widgets.count(widget) == 0)
+      {
+        connect(ts->transform().get(), &TransformFunction::parametersChanged, this, [this, ts]() {
+          // update this transform
+          ts->updateCache(true);
+
+          // update the others if necessary
+          if (ui->listCurves->selectedItems().size() > 1)
+          {
+            // Copy state from visible widget and apply to all selected curves.
+            QDomDocument doc;
+            QDomElement transform_state = doc.createElement("transform");
+            ts->transform()->xmlSaveState(doc, transform_state);
+
+            for (auto item : ui->listCurves->selectedItems())
+            {
+              auto row_widget = dynamic_cast<RowWidget*>(ui->listCurves->itemWidget(item));
+              QString curve_name = row_widget->text();
+              auto curve_info = _plotwidget->curveFromTitle(curve_name);
+              auto* item_ts = dynamic_cast<TransformedTimeseries*>(curve_info->curve->data());
+
+              if (item_ts != ts)
+              {
+                QSignalBlocker block_transform(item_ts->transform().get());
+                item_ts->transform()->xmlLoadState(transform_state);
+                item_ts->updateCache(true);
+              }
+            }
+          }
+          // replot
+          if (ui->checkBoxAutoZoom->isChecked())
+          {
+            _plotwidget->zoomOut(false);
+          }
+          else
+          {
+            _plotwidget->replot();
+          }
+        });
+        _connected_transform_widgets.insert(widget);
+      }
     }
   }
 

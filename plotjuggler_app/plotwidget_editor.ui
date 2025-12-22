@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>955</width>
-    <height>657</height>
+    <width>900</width>
+    <height>700</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>900</width>
-    <height>0</height>
+    <height>700</height>
    </size>
   </property>
   <property name="maximumSize">
@@ -200,6 +200,87 @@
           </widget>
          </item>
          <item>
+          <layout class="QFormLayout" name="formLayout_2">
+           <property name="topMargin">
+            <number>11</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QComboBox" name="comboBoxWidth">
+             <property name="minimumSize">
+              <size>
+               <width>50</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="insertPolicy">
+              <enum>QComboBox::NoInsert</enum>
+             </property>
+             <property name="sizeAdjustPolicy">
+              <enum>QComboBox::AdjustToContents</enum>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>22</width>
+               <height>22</height>
+              </size>
+             </property>
+             <property name="frame">
+              <bool>true</bool>
+             </property>
+             <item>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="resource.qrc">
+                <normaloff>:/resources/svg/line_width_1_0.svg</normaloff>:/resources/svg/line_width_1_0.svg</iconset>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="resource.qrc">
+                <normaloff>:/resources/svg/line_width_1_5.svg</normaloff>:/resources/svg/line_width_1_5.svg</iconset>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="resource.qrc">
+                <normaloff>:/resources/svg/line_width_2_0.svg</normaloff>:/resources/svg/line_width_2_0.svg</iconset>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="resource.qrc">
+                <normaloff>:/resources/svg/line_width_3_0.svg</normaloff>:/resources/svg/line_width_3_0.svg</iconset>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>: width</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
           <spacer name="verticalSpacer_2">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
@@ -233,7 +314,7 @@
         <property name="minimumSize">
          <size>
           <width>200</width>
-          <height>250</height>
+          <height>350</height>
          </size>
         </property>
         <property name="maximumSize">
@@ -267,7 +348,7 @@
             </font>
            </property>
            <property name="text">
-            <string>Lines Style:</string>
+            <string>Override Lines Style:</string>
            </property>
           </widget>
          </item>
@@ -276,13 +357,13 @@
            <property name="minimumSize">
             <size>
              <width>200</width>
-             <height>0</height>
+             <height>170</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
              <width>400</width>
-             <height>200</height>
+             <height>170</height>
             </size>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -302,12 +383,19 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QRadioButton" name="radioLines">
+             <widget class="QRadioButton" name="radioDefault">
+              <property name="font">
+               <font>
+                <weight>50</weight>
+                <italic>false</italic>
+                <bold>false</bold>
+               </font>
+              </property>
               <property name="focusPolicy">
                <enum>Qt::NoFocus</enum>
               </property>
               <property name="text">
-               <string>Lines</string>
+               <string>Lines (default)</string>
               </property>
               <property name="checked">
                <bool>true</bool>
@@ -336,13 +424,19 @@
             </item>
             <item>
              <widget class="QRadioButton" name="radioSticks">
+              <property name="focusPolicy">
+               <enum>Qt::NoFocus</enum>
+              </property>
               <property name="text">
                <string>Sticks</string>
               </property>
              </widget>
             </item>
-             <item>
+            <item>
              <widget class="QRadioButton" name="radioSteps">
+              <property name="focusPolicy">
+               <enum>Qt::NoFocus</enum>
+              </property>
               <property name="text">
                <string>Steps (pre)</string>
               </property>
@@ -350,10 +444,26 @@
             </item>
             <item>
              <widget class="QRadioButton" name="radioStepsInv">
+              <property name="focusPolicy">
+               <enum>Qt::NoFocus</enum>
+              </property>
               <property name="text">
                <string>Step (post)</string>
               </property>
              </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_3">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
             </item>
            </layout>
           </widget>
@@ -543,6 +653,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

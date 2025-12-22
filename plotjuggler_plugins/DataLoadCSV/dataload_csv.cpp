@@ -1,5 +1,6 @@
 #include "datetimehelp.h"
 #include "dataload_csv.h"
+#include "timestamp_parsing.h"
 
 #include <QTextStream>
 #include <QFile>
@@ -21,6 +22,107 @@
 static constexpr int TIME_INDEX_NOT_DEFINED = -2;
 static constexpr int TIME_INDEX_GENERATED = -1;
 static constexpr const char* INDEX_AS_TIME = "__TIME_INDEX_GENERATED__";
+
+/**
+ * @brief Auto-detect the delimiter used in a CSV line.
+ *
+ * Analyzes the first line of a CSV file to determine the most likely delimiter.
+ * Handles quoted strings correctly (delimiters inside quotes are ignored).
+ *
+ * @param first_line The first line of the CSV file
+ * @return The detected delimiter character, or ',' as default
+ */
+char DetectDelimiter(const QString& first_line)
+{
+  // Count delimiters, but only outside quoted strings
+  auto countOutsideQuotes = [](const QString& line, QChar delim) -> int {
+    int count = 0;
+    bool inside_quotes = false;
+    for (const QChar& c : line)
+    {
+      if (c == '"')
+      {
+        inside_quotes = !inside_quotes;
+      }
+      else if (!inside_quotes && c == delim)
+      {
+        count++;
+      }
+    }
+    return count;
+  };
+
+  int comma_count = countOutsideQuotes(first_line, ',');
+  int semicolon_count = countOutsideQuotes(first_line, ';');
+  int tab_count = countOutsideQuotes(first_line, '\t');
+
+  // For space, count consecutive spaces as one delimiter
+  int space_count = 0;
+  {
+    bool inside_quotes = false;
+    bool prev_was_space = false;
+    for (const QChar& c : first_line)
+    {
+      if (c == '"')
+      {
+        inside_quotes = !inside_quotes;
+        prev_was_space = false;
+      }
+      else if (!inside_quotes && c == ' ')
+      {
+        if (!prev_was_space)
+        {
+          space_count++;
+        }
+        prev_was_space = true;
+      }
+      else
+      {
+        prev_was_space = false;
+      }
+    }
+  }
+
+  // Find the best candidate
+  // Tab and semicolon are strong indicators, comma is common, space is least reliable
+  struct Candidate
+  {
+    char delim;
+    int count;
+    int priority;  // higher = preferred when counts are equal
+  };
+
+  std::array<Candidate, 4> candidates = { {
+      { '\t', tab_count, 4 },       // tabs are very reliable
+      { ';', semicolon_count, 3 },  // semicolons are reliable (European CSVs)
+      { ',', comma_count, 2 },      // commas are common
+      { ' ', space_count, 1 },      // spaces are least reliable
+  } };
+
+  Candidate* best = nullptr;
+  for (auto& c : candidates)
+  {
+    // Space needs higher threshold since it appears in many contexts
+    int threshold = (c.delim == ' ') ? 2 : 1;
+    if (c.count >= threshold)
+    {
+      if (!best)
+      {
+        best = &c;
+      }
+      else if (c.count > best->count)
+      {
+        best = &c;
+      }
+      else if (c.count == best->count && c.priority > best->priority)
+      {
+        best = &c;
+      }
+    }
+  }
+
+  return best ? best->delim : ',';
+}
 
 void SplitLine(const QString& line, QChar separator, QStringList& parts)
 {
@@ -268,12 +370,13 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
   }
 
   _model->setRowCount(lines.count());
+  QStringList lineTokens;
   for (int row = 0; row < lines.count(); row++)
   {
-    QVector<QStringRef> lineToken = lines[row].splitRef(_delimiter);
-    for (int j = 0; j < lineToken.size(); j++)
+    SplitLine(lines[row], _delimiter, lineTokens);
+    for (int j = 0; j < lineTokens.size(); j++)
     {
-      QString value = lineToken[j].toString();
+      const QString& value = lineTokens[j];
       if (auto item = _model->item(row, j))
       {
         item->setText(value);
@@ -312,38 +415,25 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
   _ui->lineEditDateFormat->setText(
       settings.value("DataLoadCSV.dateFormat", "yyyy-MM-dd hh:mm:ss").toString());
 
-  // suggest separator
+  // Auto-detect delimiter from the first line
   {
     file.open(QFile::ReadOnly);
     QTextStream in(&file);
-
     QString first_line = in.readLine();
-    int comma_count = first_line.count(QLatin1Char(','));
-    int semicolon_count = first_line.count(QLatin1Char(';'));
-    int space_count = first_line.count(QLatin1Char(' '));
-    int tab_count = first_line.count(QLatin1Char('\t'));
-
-    if (comma_count > 3 && comma_count > semicolon_count)
-    {
-      _ui->comboBox->setCurrentIndex(0);
-      _delimiter = ',';
-    }
-    if (semicolon_count > 3 && semicolon_count > comma_count)
-    {
-      _ui->comboBox->setCurrentIndex(1);
-      _delimiter = ';';
-    }
-    if (space_count > 3 && comma_count == 0 && semicolon_count == 0)
-    {
-      _ui->comboBox->setCurrentIndex(2);
-      _delimiter = ' ';
-    }
-    if (tab_count > 3 && comma_count == 0 && semicolon_count == 0)
-    {
-      _ui->comboBox->setCurrentIndex(3);
-      _delimiter = '\t';
-    }
     file.close();
+
+    _delimiter = DetectDelimiter(first_line);
+
+    // Update the UI combobox to match the detected delimiter
+    const std::array<char, 4> delimiters = { ',', ';', ' ', '\t' };
+    for (int i = 0; i < 4; i++)
+    {
+      if (delimiters[i] == _delimiter)
+      {
+        _ui->comboBox->setCurrentIndex(i);
+        break;
+      }
+    }
   }
 
   QString theme = settings.value("StyleSheet::theme", "light").toString();
@@ -413,70 +503,16 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
   return TIME_INDEX_NOT_DEFINED;
 }
 
+// Wrapper to call the new date library-based parsing from QString
 std::optional<double> AutoParseTimestamp(const QString& str)
 {
-  bool is_number = false;
-  QString str_trimmed = str.trimmed();
-  double val = 0.0;
+  return PJ::CSV::AutoParseTimestamp(str.toStdString());
+}
 
-  // Support the case where the timestamp is in nanoseconds / microseconds
-  int64_t ts = str.toLong(&is_number);
-  const int64_t first_ts = 1400000000;  // July 14, 2017
-  const int64_t last_ts = 2000000000;   // May 18, 2033
-  if (is_number)
-  {
-    // check if it is an absolute time in nanoseconds.
-    // convert to seconds if it is
-    if (ts > first_ts * 1e9 && ts < last_ts * 1e9)
-    {
-      val = double(ts) * 1e-9;
-    }
-    else if (ts > first_ts * 1e6 && ts < last_ts * 1e6)
-    {
-      // check if it is an absolute time in microseconds.
-      // convert to seconds if it is
-      val = double(ts) * 1e-6;
-    }
-    else
-    {
-      val = double(ts);
-    }
-  }
-  else
-  {
-    // Try a double value (seconds)
-    val = str.toDouble(&is_number);
-  }
-
-  // handle numbers with comma instead of point as decimal separator
-  if (!is_number)
-  {
-    static QLocale locale_with_comma(QLocale::German);
-    val = locale_with_comma.toDouble(str, &is_number);
-  }
-  if (!is_number)
-  {
-    QDateTime ts = QDateTime::fromString(str, Qt::ISODateWithMs);
-    if (ts.isValid())
-    {
-      return double(ts.toMSecsSinceEpoch()) / 1000.0;
-    }
-    else
-    {
-      return std::nullopt;
-    }
-  }
-  return is_number ? std::optional<double>(val) : std::nullopt;
-};
-
+// Wrapper to call the new date library-based parsing from QString with format
 std::optional<double> FormatParseTimestamp(const QString& str, const QString& format)
 {
-  QDateTime ts = QDateTime::fromString(str, format);
-  if (ts.isValid())
-  {
-    return double(ts.toMSecsSinceEpoch()) / 1000.0;
-  }
-  return std::nullopt;
+  return PJ::CSV::FormatParseTimestamp(str.toStdString(), format.toStdString());
 }
 
 bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data)
@@ -566,34 +602,8 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   const QString format_string = _ui->lineEditDateFormat->text();
   const bool parse_date_format = _ui->radioCustomTime->isChecked();
 
-  auto ParseNumber = [&](QString str, bool& is_number) {
-    QString str_trimmed = str.trimmed();
-    double val = val = str_trimmed.toDouble(&is_number);
-    // handle numbers with comma instead of point as decimal separator
-    if (!is_number)
-    {
-      static QLocale locale_with_comma(QLocale::German);
-      val = locale_with_comma.toDouble(str_trimmed, &is_number);
-    }
-    if (!is_number)
-    {
-      QDateTime ts;
-      if (parse_date_format)
-      {
-        ts = QDateTime::fromString(str_trimmed, format_string);
-      }
-      else
-      {
-        ts = QDateTime::fromString(str_trimmed, Qt::ISODateWithMs);
-      }
-      is_number = ts.isValid();
-      if (is_number)
-      {
-        val = ts.toMSecsSinceEpoch() / 1000.0;
-      }
-    }
-    return val;
-  };
+  // Vector to store detected column types (detected from first data row)
+  std::vector<PJ::CSV::ColumnTypeInfo> column_types(column_names.size());
 
   file.open(QFile::ReadOnly);
   QTextStream in(&file);
@@ -648,6 +658,15 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       continue;
     }
 
+    // identify column type, if necessary
+    for (size_t i = 0; i < column_types.size(); i++)
+    {
+      if (column_types[i].type == PJ::CSV::ColumnType::UNDEFINED && !string_items[i].isEmpty())
+      {
+        column_types[i] = PJ::CSV::DetectColumnType(string_items[i].toStdString());
+      }
+    }
+
     double timestamp = samplecount;
 
     if (time_index >= 0)
@@ -655,6 +674,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       t_str = string_items[time_index];
       const auto time_trimm = t_str.trimmed();
       bool is_number = false;
+
       if (parse_date_format)
       {
         if (auto ts = FormatParseTimestamp(time_trimm, format_string))
@@ -665,10 +685,15 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       }
       else
       {
-        if (auto ts = AutoParseTimestamp(time_trimm))
+        // Use the detected column type for the time column
+        const auto& time_type = column_types[time_index];
+        if (time_type.type != PJ::CSV::ColumnType::STRING)
         {
-          is_number = true;
-          timestamp = *ts;
+          if (auto ts = PJ::CSV::ParseWithType(time_trimm.toStdString(), time_type))
+          {
+            is_number = true;
+            timestamp = *ts;
+          }
         }
       }
 
@@ -743,12 +768,26 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
 
     for (unsigned i = 0; i < string_items.size(); i++)
     {
-      bool is_number = false;
       const auto& str = string_items[i];
-      double y = ParseNumber(str, is_number);
-      if (is_number)
+      const auto& col_type = column_types[i];
+
+      if (str.isEmpty() || col_type.type == PJ::CSV::ColumnType::UNDEFINED)
       {
-        plots_vector[i]->pushBack({ timestamp, y });
+        continue;
+      }
+
+      // Use the detected column type to parse the value
+      if (col_type.type != PJ::CSV::ColumnType::STRING)
+      {
+        if (auto val = PJ::CSV::ParseWithType(str.toStdString(), col_type))
+        {
+          plots_vector[i]->pushBack({ timestamp, *val });
+        }
+        else
+        {
+          // Parsing failed - store as string
+          string_vector[i]->pushBack({ timestamp, str.toStdString() });
+        }
       }
       else
       {
@@ -866,6 +905,9 @@ bool DataLoadCSV::xmlLoadState(const QDomElement& parent_element)
         break;
       case 2:
         _delimiter = ' ';
+        break;
+      case 3:
+        _delimiter = '\t';
         break;
     }
   }

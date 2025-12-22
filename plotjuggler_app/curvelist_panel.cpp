@@ -248,6 +248,7 @@ void CurveListPanel::refreshColumns()
 void CurveListPanel::updateFilter()
 {
   on_lineEditFilter_textChanged(ui->lineEditFilter->text());
+  on_lineEditCustomFilter_textChanged(ui->lineEditCustomFilter->text());
 }
 
 void CurveListPanel::keyPressEvent(QKeyEvent* event)
@@ -423,18 +424,22 @@ QString CurveListPanel::getTreeName(QString name)
 
 void CurveListPanel::on_lineEditFilter_textChanged(const QString& search_string)
 {
-  bool updated = _tree_view->applyVisibilityFilter(search_string) |
-                 _custom_view->applyVisibilityFilter(search_string);
+  bool updated = _tree_view->applyVisibilityFilter(search_string);
 
-  std::pair<int, int> hc_1 = _tree_view->hiddenItemsCount();
-  std::pair<int, int> hc_2 = _custom_view->hiddenItemsCount();
-
-  int item_count = hc_1.second + hc_2.second;
-  int visible_count = item_count - hc_1.first - hc_2.first;
+  const auto& [hidden_count, item_count] = _tree_view->hiddenItemsCount();
+  const int visible_count = item_count - hidden_count;
 
   ui->labelNumberDisplayed->setText(QString::number(visible_count) + QString(" of ") +
                                     QString::number(item_count));
   if (updated)
+  {
+    emit hiddenItemsChanged();
+  }
+}
+
+void CurveListPanel::on_lineEditCustomFilter_textChanged(const QString& search_string)
+{
+  if (_custom_view->applyVisibilityFilter(search_string))
   {
     emit hiddenItemsChanged();
   }
@@ -480,7 +485,7 @@ void CurveListPanel::on_buttonAddCustom_clicked()
   }
 
   emit createMathPlot(suggested_name);
-  on_lineEditFilter_textChanged(ui->lineEditFilter->text());
+  updateFilter();
 }
 
 void CurveListPanel::onCustomSelectionChanged(const QItemSelection&, const QItemSelection&)

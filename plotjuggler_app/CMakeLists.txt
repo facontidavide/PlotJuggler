@@ -23,6 +23,7 @@ qt5_wrap_ui(
   statistics_dialog.ui
   plot_docker_toolbar.ui
   plotwidget_editor.ui
+  transforms/binary_filter.ui
   transforms/function_editor.ui
   transforms/function_editor_help.ui
   transforms/transform_selector.ui
@@ -68,6 +69,7 @@ set(PLOTJUGGLER_SRC
     tabbedplotwidget.cpp
     tab_widget.h
     tree_completer.h
+    transforms/binary_filter.cpp
     transforms/custom_function.cpp
     transforms/function_editor.cpp
     transforms/transform_selector.cpp
@@ -108,6 +110,8 @@ if(APPIMAGE_BUILD)
   message(STATUS "Building PlotJuggler as an AppImage")
   target_compile_definitions(plotjuggler PRIVATE APPIMAGE_BUILD)
 endif()
+
+target_compile_definitions(plotjuggler PRIVATE PJ_INSTALLATION="${PJ_INSTALLATION}")
 
 target_include_directories(
   plotjuggler

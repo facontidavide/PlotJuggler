@@ -60,12 +60,6 @@ private slots:
 
   void on_editColotText_textChanged(const QString& arg1);
 
-  void on_radioLines_toggled(bool checked);
-
-  void on_radioPoints_toggled(bool checked);
-
-  void on_radioBoth_toggled(bool checked);
-
   void on_checkBoxMax_toggled(bool checked);
 
   void on_checkBoxMin_toggled(bool checked);
@@ -82,11 +76,7 @@ private slots:
 
   void on_lineLimitMax_textChanged(const QString& text);
 
-  void on_radioSticks_toggled(bool checked);
-
-  void on_radioSteps_toggled(bool checked);
-
-  void on_radioStepsInv_toggled(bool checked);
+  void onComboWidthChanged(int index);
 
 private:
   Ui::PlotWidgetEditor* ui;

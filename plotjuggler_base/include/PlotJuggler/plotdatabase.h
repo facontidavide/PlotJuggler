@@ -23,8 +23,8 @@ namespace PJ
 {
 struct Range
 {
-  double min;
-  double max;
+  double min = std::numeric_limits<double>::lowest();
+  double max = std::numeric_limits<double>::max();
 };
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)

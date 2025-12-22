@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Sync repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Cache apt packages
         uses: awalsh128/cache-apt-pkgs-action@latest
@@ -44,7 +44,7 @@ jobs:
           mkdir -p ${{ runner.temp }}/ccache/tmp
 
       - name: Save ccache folder
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ runner.temp }}/ccache
           key: ${{ runner.os }}-${{ matrix.ubuntu-distro }}
@@ -55,8 +55,9 @@ jobs:
         env:
           CCACHE_DIR: ${{ runner.temp }}/ccache
         run: |
-            cmake . -B build -DCMAKE_BUILD_TYPE=Release \
-                  -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+            cmake . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="appimage" \
+                  -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+                  -DPJ_PLUGINS_DIRECTORY="bin"
             cmake --build build
 
       - name: Build AppImage
@@ -74,7 +75,7 @@ jobs:
               --plugin qt --output appimage
 
       - name: Upload AppImage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: PlotJuggler-x86_64.AppImage
           path: PlotJuggler-x86_64.AppImage

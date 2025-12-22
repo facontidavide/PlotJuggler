@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 project(
   plotjuggler
   LANGUAGES C CXX
-  VERSION 3.13.2)
+  VERSION 3.14.5)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -22,6 +22,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
 option(ENABLE_ASAN "Enable Address Sanitizer" OFF)
 option(BASE_AS_SHARED "Build the base library as a shared library" OFF)
 option(BUILDING_WITH_CONAN "Using Conan for dependencies" OFF)
+option(PJ_INSTALLATION "Installation type" "undefined")
+option(PJ_PLUGINS_DIRECTORY "Plugins directory" "lib/plotjuggler/plugins")
 
 if(NOT WIN32 AND ENABLE_ASAN)
   set(CMAKE_CXX_FLAGS
@@ -58,6 +60,13 @@ if(catkin_FOUND)
   include_directories(${catkin_INCLUDE_DIRS})
   # COMPILED_WITH_CATKIN will be added to plotjuggler_base target later
 
+  # Set the ROS_DISTRO as PJ_INSTALLATION if not set already
+  if(NOT PJ_INSTALLATION)
+    if(DEFINED ENV{ROS_DISTRO})
+      set(PJ_INSTALLATION "$ENV{ROS_DISTRO}" CACHE STRING "Installation type" FORCE)
+    endif()
+  endif()
+
 elseif(ament_cmake_FOUND)
   set(COMPILING_WITH_AMENT 1)
 
@@ -74,11 +83,22 @@ elseif(ament_cmake_FOUND)
   # COMPILED_WITH_AMENT will be added to plotjuggler_base target later
   set(BASE_AS_SHARED ON)
 
+  # Set the ROS_DISTRO as PJ_INSTALLATION if not set already
+  if(NOT PJ_INSTALLATION)
+    if(DEFINED ENV{ROS_DISTRO})
+      set(PJ_INSTALLATION "$ENV{ROS_DISTRO}" CACHE STRING "Installation type" FORCE)
+    endif()
+  endif()
+
 else()
   message(STATUS "--------------------------------------------------")
   message(STATUS "PlotJuggler is being built WITHOUT any ROS support")
   message(STATUS "--------------------------------------------------")
 endif()
+
+  if(NOT PJ_INSTALLATION)
+      set(PJ_INSTALLATION "undefined" CACHE STRING "Installation type" FORCE)
+  endif()
 
 cmake_policy(SET CMP0020 NEW)
 
@@ -220,6 +240,8 @@ else()
                                       ${PLOTJUGGLER_BASE_MOCS})
 endif()
 
+set(PJ_PLUGIN_INSTALL_DIRECTORY "${CMAKE_INSTALL_PREFIX}/${PJ_PLUGINS_DIRECTORY}")
+
 target_include_directories(
   plotjuggler_base
   PUBLIC
@@ -236,6 +258,7 @@ target_compile_definitions(
   PUBLIC PJ_MAJOR_VERSION=${PROJECT_VERSION_MAJOR}
          PJ_MINOR_VERSION=${PROJECT_VERSION_MINOR}
          PJ_PATCH_VERSION=${PROJECT_VERSION_PATCH}
+         PJ_PLUGIN_INSTALL_DIRECTORY=\"${PJ_PLUGIN_INSTALL_DIRECTORY}\"
          FMT_HEADER_ONLY
          $<$<BOOL:${COMPILING_WITH_CATKIN}>:COMPILED_WITH_CATKIN>
          $<$<BOOL:${COMPILING_WITH_AMENT}>:COMPILED_WITH_AMENT>)
@@ -273,7 +296,6 @@ else()
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-  set(PJ_PLUGIN_INSTALL_DIRECTORY bin)
 
 endif()
 

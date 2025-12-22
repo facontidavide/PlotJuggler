@@ -150,6 +150,7 @@
              <property name="font">
               <font>
                <pointsize>9</pointsize>
+               <weight>50</weight>
                <bold>false</bold>
               </font>
              </property>
@@ -219,6 +220,10 @@
                </property>
                <property name="text">
                 <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/resources/svg/import.svg</normaloff>:/resources/svg/import.svg</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -290,6 +295,10 @@
                <property name="text">
                 <string/>
                </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/resources/svg/play_arrow.svg</normaloff>:/resources/svg/play_arrow.svg</iconset>
+               </property>
                <property name="iconSize">
                 <size>
                  <width>12</width>
@@ -304,17 +313,44 @@
             </layout>
            </item>
            <item>
-            <widget class="QCheckBox" name="checkBoxAddPrefixAndMerge">
-             <property name="focusPolicy">
-              <enum>Qt::NoFocus</enum>
+            <layout class="QHBoxLayout" name="horizontalLayout_14">
+             <property name="topMargin">
+              <number>0</number>
              </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Useful when comparing 2 or more files containing the same timeseries.&lt;br/&gt;&lt;br/&gt;You will be asked to add a prefix to the name of the timeseries, and you will &lt;span style=&quot; font-weight:700;&quot;&gt;not&lt;/span&gt; remove previously loaded data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="text">
-              <string>Add prefix and merge</string>
-             </property>
-            </widget>
+             <item>
+              <widget class="QCheckBox" name="checkBoxAddPrefix">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Useful when comparing 2 or more files containing the same timeseries.&lt;br/&gt;&lt;br/&gt;You will be asked to add a prefix to the name of the timeseries, and you will &lt;span style=&quot; font-weight:704;&quot;&gt;not&lt;/span&gt; remove previously loaded data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Add prefix</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="checkBoxMergeData">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When loading a file, don't replace timeseries with the same name, but merge them instead.&lt;/p&gt;&lt;p&gt;If this is not checked, new data will replace the old one (default)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Merge data</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_4">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
            </item>
            <item>
             <widget class="Line" name="line">
@@ -361,6 +397,10 @@
                <property name="text">
                 <string/>
                </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/resources/svg/import.svg</normaloff>:/resources/svg/import.svg</iconset>
+               </property>
                <property name="iconSize">
                 <size>
                  <width>22</width>
@@ -394,6 +434,10 @@
                </property>
                <property name="text">
                 <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/resources/svg/export.svg</normaloff>:/resources/svg/export.svg</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -444,6 +488,10 @@
                </property>
                <property name="text">
                 <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/resources/svg/play_arrow.svg</normaloff>:/resources/svg/play_arrow.svg</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -532,6 +580,7 @@
              <property name="font">
               <font>
                <pointsize>9</pointsize>
+               <weight>50</weight>
                <bold>false</bold>
               </font>
              </property>
@@ -633,6 +682,10 @@
                 <property name="text">
                  <string/>
                 </property>
+                <property name="icon">
+                 <iconset resource="resource.qrc">
+                  <normaloff>:/resources/svg/settings_cog.svg</normaloff>:/resources/svg/settings_cog.svg</iconset>
+                </property>
                 <property name="iconSize">
                  <size>
                   <width>16</width>
@@ -732,6 +785,10 @@
                <property name="text">
                 <string/>
                </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/resources/svg/pause.svg</normaloff>:/resources/svg/pause.svg</iconset>
+               </property>
                <property name="iconSize">
                 <size>
                  <width>27</width>
@@ -793,6 +850,10 @@
                </property>
                <property name="text">
                 <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resource.qrc">
+                 <normaloff>:/resources/svg/alarm-bell.svg</normaloff>:/resources/svg/alarm-bell.svg</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -942,6 +1003,7 @@
              <property name="font">
               <font>
                <pointsize>9</pointsize>
+               <weight>50</weight>
                <bold>false</bold>
               </font>
              </property>
@@ -1590,6 +1652,41 @@
                   </widget>
                  </item>
                  <item>
+                  <widget class="QPushButton" name="buttonDots">
+                   <property name="maximumSize">
+                    <size>
+                     <width>28</width>
+                     <height>28</height>
+                    </size>
+                   </property>
+                   <property name="baseSize">
+                    <size>
+                     <width>28</width>
+                     <height>28</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="resource.qrc">
+                     <normaloff>:/resources/svg/point_chart.svg</normaloff>:/resources/svg/point_chart.svg</iconset>
+                   </property>
+                   <property name="iconSize">
+                    <size>
+                     <width>26</width>
+                     <height>26</height>
+                    </size>
+                   </property>
+                   <property name="checkable">
+                    <bool>true</bool>
+                   </property>
+                   <property name="flat">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
                   <spacer name="verticalSpacer">
                    <property name="orientation">
                     <enum>Qt::Vertical</enum>
@@ -1697,11 +1794,11 @@
                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Loop&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                     <property name="text">
-                     <string>lo</string>
+                     <string/>
                     </property>
                     <property name="icon">
-                     <iconset>
-                      <normaloff>:/style_light/loop.png</normaloff>:/style_light/loop.png</iconset>
+                     <iconset resource="resource.qrc">
+                      <normaloff>:/resources/svg/loop.svg</normaloff>:/resources/svg/loop.svg</iconset>
                     </property>
                     <property name="iconSize">
                      <size>
@@ -1746,12 +1843,11 @@
 }</string>
                     </property>
                     <property name="text">
-                     <string>pl</string>
+                     <string/>
                     </property>
                     <property name="icon">
-                     <iconset>
-                      <normaloff>:/style_light/play_arrow.png</normaloff>
-                      <normalon>:/style_light/pause.png</normalon>:/style_light/play_arrow.png</iconset>
+                     <iconset resource="resource.qrc">
+                      <normaloff>:/resources/svg/play_arrow.svg</normaloff>:/resources/svg/play_arrow.svg</iconset>
                     </property>
                     <property name="iconSize">
                      <size>
@@ -1847,6 +1943,7 @@
                    <widget class="QLabel" name="label">
                     <property name="font">
                      <font>
+                      <weight>75</weight>
                       <bold>true</bold>
                      </font>
                     </property>
@@ -1896,6 +1993,7 @@
                    <widget class="QLabel" name="label_2">
                     <property name="font">
                      <font>
+                      <weight>75</weight>
                       <bold>true</bold>
                      </font>
                     </property>

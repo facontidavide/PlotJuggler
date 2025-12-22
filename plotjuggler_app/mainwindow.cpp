@@ -215,7 +215,7 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   ui->mainSplitter->setStretchFactor(0, 2);
   ui->mainSplitter->setStretchFactor(1, 6);
 
-  connect(ui->mainSplitter, SIGNAL(splitterMoved(int, int)), SLOT(on_splitterMoved(int, int)));
+  connect(ui->mainSplitter, &QSplitter::splitterMoved, this, &MainWindow::on_splitterMoved);
 
   initializeActions();
 
@@ -510,6 +510,7 @@ void MainWindow::loadAllPlugins(QStringList command_line_plugin_folders)
   plugin_folders += command_line_plugin_folders;
   plugin_folders += settings.value("Preferences::plugin_folders", QStringList()).toStringList();
   builtin_folders += QCoreApplication::applicationDirPath();
+  builtin_folders += PJ_PLUGIN_INSTALL_DIRECTORY;
 
   try
   {
@@ -741,7 +742,7 @@ void MainWindow::buildDummyData()
   importPlotDataMap(datamap, true);
 }
 
-void MainWindow::on_splitterMoved(int, int)
+void MainWindow::on_splitterMoved(int size, int index)
 {
   QList<int> sizes = ui->mainSplitter->sizes();
   int max_left_size = _curvelist_widget->maximumWidth();
@@ -768,6 +769,12 @@ void MainWindow::on_splitterMoved(int, int)
     sizes[1] = totalWidth - max_left_size;
     ui->mainSplitter->setSizes(sizes);
   }
+
+  if (index > 0)
+  {
+    const bool collapsed = (sizes[0] == 0);
+    ui->centralWidget->layout()->setContentsMargins(collapsed ? 8 : 0, 0, 0, 0);
+  }
 }
 
 void MainWindow::resizeEvent(QResizeEvent*)
@@ -788,7 +795,7 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
     updateTimeSlider();
   });
 
-  connect(&_time_offset, SIGNAL(valueChanged(double)), plot, SLOT(on_changeTimeOffset(double)));
+  connect(&_time_offset, &MonitoredValue::valueChanged, plot, &PlotWidget::on_changeTimeOffset);
 
   connect(ui->buttonUseDateTime, &QPushButton::toggled, plot, &PlotWidget::on_changeDateTimeScale);
 
@@ -812,6 +819,9 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
   plot->setKeepRatioXY(ui->buttonRatio->isChecked());
   plot->configureTracker(_tracker_param);
   plot->onShowPlot(ui->buttonShowpoint->isChecked());
+  plot->setDefaultStyle(ui->buttonDots->isChecked() ? PlotWidgetBase::LINES_AND_DOTS :
+                                                      PlotWidgetBase::LINES);
+
   if (ui->buttonReferencePoint->isChecked() && _reference_tracker_time.has_value())
   {
     plot->onReferenceLineChecked(ui->buttonReferencePoint->isChecked(),
@@ -1207,7 +1217,9 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
   filenames.sort();
   std::map<QString, QString> filename_prefix;
 
-  if (filenames.size() > 1 || ui->checkBoxAddPrefixAndMerge->isChecked())
+  const bool add_prefix = ui->checkBoxAddPrefix->isChecked();
+  const bool merge_data = ui->checkBoxMergeData->isChecked();
+  if (add_prefix)
   {
     DialogMultifilePrefix dialog(filenames, this);
     int ret = dialog.exec();
@@ -1231,7 +1243,7 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
     {
       info.prefix = filename_prefix[info.filename];
     }
-    auto added_names = loadDataFromFile(info);
+    auto added_names = loadDataFromFile(info, merge_data);
     if (!added_names.empty())
     {
       loaded_filenames.push_back(filenames[i]);
@@ -1248,12 +1260,13 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
   {
     data_replaced_entirely = true;
   }
-  else if (!ui->checkBoxAddPrefixAndMerge->isChecked())
+  else if (!add_prefix)
   {
     QMessageBox::StandardButton reply;
-    reply = QMessageBox::question(this, tr("Warning"),
-                                  tr("Do you want to remove the previously loaded data?\n"),
-                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::NoButton);
+    reply = QMessageBox::question(
+        this, tr("Warning"),
+        tr("Do you want to remove the previously loaded data?\nYes removes old data, No merges new and old data\n"),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::NoButton);
 
     if (reply == QMessageBox::Yes)
     {
@@ -1286,7 +1299,8 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
   return false;
 }
 
-std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo& info)
+std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo& info,
+                                                             bool merge_files)
 {
   ui->buttonPlay->setChecked(false);
 
@@ -1376,7 +1390,8 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
         AddPrefixToPlotData(info.prefix.toStdString(), mapped_data.strings);
 
         added_names = mapped_data.getAllNames();
-        importPlotDataMap(mapped_data, true);
+        bool remove_old = !merge_files;
+        importPlotDataMap(mapped_data, remove_old);
 
         QDomElement plugin_elem = dataloader->xmlSaveState(new_info.plugin_config);
         new_info.plugin_config.appendChild(plugin_elem);
@@ -1887,12 +1902,18 @@ bool MainWindow::loadLayoutFromFile(QString filename)
     return false;
   }
 
+  // Read file content with explicit UTF-8 encoding to handle Unicode characters
+  QTextStream stream(&file);
+  stream.setCodec("UTF-8");
+  QString fileContent = stream.readAll();
+  file.close();
+
   QString errorStr;
   int errorLine, errorColumn;
 
   QDomDocument domDocument;
 
-  if (!domDocument.setContent(&file, true, &errorStr, &errorLine, &errorColumn))
+  if (!domDocument.setContent(fileContent, true, &errorStr, &errorLine, &errorColumn))
   {
     QMessageBox::information(window(), tr("XML Layout"),
                              tr("Parse error at line %1:\n%2").arg(errorLine).arg(errorStr));
@@ -1926,7 +1947,7 @@ bool MainWindow::loadLayoutFromFile(QString filename)
     auto plugin_elem = datafile_elem.firstChildElement("plugin");
     info.plugin_config.appendChild(info.plugin_config.importNode(plugin_elem, true));
 
-    loadDataFromFile(info);
+    loadDataFromFile(info, false);
     datafile_elem = datafile_elem.nextSiblingElement("fileInfo");
   }
 
@@ -3040,6 +3061,7 @@ void MainWindow::on_buttonSaveLayout_clicked()
   if (file.open(QIODevice::WriteOnly))
   {
     QTextStream stream(&file);
+    stream.setCodec("UTF-8");
     stream << doc.toString() << "\n";
   }
 }
@@ -3357,7 +3379,7 @@ void MainWindow::on_buttonReloadData_clicked()
   _loaded_datafiles_previous.clear();
   for (const auto& info : prev_infos)
   {
-    loadDataFromFile(info);
+    loadDataFromFile(info, false);
   }
   ui->buttonReloadData->setEnabled(!_loaded_datafiles_previous.empty());
 }
@@ -3384,4 +3406,9 @@ void MainWindow::on_buttonReferencePoint_toggled(bool checked)
 void MainWindow::on_buttonShowpoint_toggled(bool checked)
 {
   this->forEachWidget([checked](PlotWidget* plot) { plot->onShowPlot(checked); });
+}
+
+void MainWindow::on_buttonDots_toggled(bool checked)
+{
+  forEachWidget([&](PlotWidget* plot) { plot->changeDots(checked); });
 }

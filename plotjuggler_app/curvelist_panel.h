@@ -64,6 +64,8 @@ private slots:
 
   void on_lineEditFilter_textChanged(const QString& search_string);
 
+  void on_lineEditCustomFilter_textChanged(const QString& search_string);
+
   void removeSelectedCurves();
 
   void on_buttonAddCustom_clicked();

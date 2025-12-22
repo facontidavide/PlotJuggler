@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Sync repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Define short Distribution name
         id: dist_short
@@ -61,7 +61,7 @@ jobs:
           mkdir -p ${{ runner.temp }}/ccache/tmp
 
       - name: Save ccache folder
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ runner.temp }}/ccache
           key: ${{ runner.os }}-${{ steps.dist_short.outputs.short_name }}
@@ -72,7 +72,7 @@ jobs:
         env:
           CCACHE_DIR: ${{ runner.temp }}/ccache
         run: |
-            cmake . -B build -DCMAKE_BUILD_TYPE=Release \
+            cmake . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION=${{ steps.dist_short.outputs.short_name }} \
                   -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
             cmake --build build
 
@@ -98,6 +98,7 @@ jobs:
           cp -rp DEBIAN plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/
           chmod ogu+x plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/DEBIAN/postinst
           chmod ogu+x plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/DEBIAN/preinst
+          chmod ogu+x plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/DEBIAN/postrm
           mv plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/DEBIAN/_control.'${{ steps.dist_short.outputs.short_name }}' plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/DEBIAN/control
           rm plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/DEBIAN/_*
 
@@ -120,7 +121,7 @@ jobs:
         run: mv plotjuggler_${{ steps.define_version.outputs.version }}_amd64.deb plotjuggler_${{ steps.define_version.outputs.version }}_amd64_${{ steps.dist_short.outputs.short_name }}.deb
 
       - name: Upload deb
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: plotjuggler_${{ steps.define_version.outputs.version }}_amd64_${{ steps.dist_short.outputs.short_name }}.deb
           path: plotjuggler_${{ steps.define_version.outputs.version }}_amd64_${{ steps.dist_short.outputs.short_name }}.deb
@@ -130,5 +131,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: plotjuggler_${{ steps.define_version.outputs.version }}_amd64_${{ steps.dist_short.outputs.short_name }}.deb
-          generate_release_notes: true
+          generate_release_notes: false
           fail_on_unmatched_files: false
