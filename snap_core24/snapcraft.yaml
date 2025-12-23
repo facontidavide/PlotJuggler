@@ -36,6 +36,7 @@ apps:
       - opengl
       - wayland
       - x11
+      - removable-media
     extensions: [ros2-jazzy]
 
 parts:
