@@ -60,7 +60,7 @@ cmake --build build/PlotJuggler --config RelWithDebInfo --target install
 
 ### Windows
 
-Uses Conan or vcpkg for dependency management. Visual Studio 2019 (16) required.
+Uses Conan or vcpkg for dependency management. Visual Studio 2019 (16) or newer recommended.
 
 ```batch
 # With Conan
@@ -160,6 +160,7 @@ Located in `.github/workflows/`:
 - `debian.yaml`: Debian package build
 - `snap_core*.yaml`: Snap package builds
 - `codeql.yml`: Security analysis
+- `pre-commit.yaml`: Pre-commit hooks validation
 
 ### Manual Testing
 - Build the project on target platform
