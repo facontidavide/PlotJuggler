@@ -16,6 +16,9 @@
 
 #include <array>
 #include <set>
+#include <sstream>
+#include <locale>
+#include <algorithm>
 
 #include <QStandardItemModel>
 
@@ -280,8 +283,21 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
   // check if all the elements in first row are numbers
   for (int i = 0; i < firstline_items.size(); i++)
   {
-    bool isNum;
-    firstline_items[i].trimmed().toDouble(&isNum);
+    bool isNum = false;
+    QString trimmed = firstline_items[i].trimmed();
+    if (!trimmed.isEmpty())
+    {
+      // Use locale-independent parsing to check if it's a number
+      std::string str = trimmed.toStdString();
+      std::string normalized = str;
+      std::replace(normalized.begin(), normalized.end(), ',', '.');
+      
+      std::istringstream iss(normalized);
+      iss.imbue(std::locale::classic());
+      double value;
+      iss >> value;
+      isNum = !iss.fail() && iss.eof();
+    }
     if (isNum)
     {
       is_number_count++;

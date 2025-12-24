@@ -16,6 +16,26 @@ static constexpr size_t NUM_UNAMBIGUOUS_FORMATS =
 static constexpr int64_t EPOCH_FIRST = 1400000000;  // July 14, 2014
 static constexpr int64_t EPOCH_LAST = 2000000000;   // May 18, 2033
 
+// Helper: Parse double in a locale-independent way
+static std::optional<double> ParseDouble(const std::string& str)
+{
+  try
+  {
+    std::istringstream iss(str);
+    iss.imbue(std::locale::classic());
+    double value;
+    iss >> value;
+    if (!iss.fail() && iss.eof())
+    {
+      return value;
+    }
+  }
+  catch (...)
+  {
+  }
+  return std::nullopt;
+}
+
 std::string Trim(const std::string& str)
 {
   size_t start = str.find_first_not_of(" \t\r\n");
@@ -228,7 +248,7 @@ std::optional<double> AutoParseTimestamp(const std::string& str)
       {
         std::string normalized = trimmed;
         std::replace(normalized.begin(), normalized.end(), ',', '.');
-        return std::stod(normalized);
+        return ParseDouble(normalized);
       }
     }
     catch (...)
@@ -428,7 +448,11 @@ std::optional<double> ParseWithType(const std::string& str, const ColumnTypeInfo
       case ColumnType::NUMBER: {
         std::string normalized = trimmed;
         std::replace(normalized.begin(), normalized.end(), ',', '.');
-        return std::stod(normalized);
+        if (auto val = ParseDouble(normalized))
+        {
+          return *val;
+        }
+        return std::nullopt;
       }
 
       case ColumnType::EPOCH_SECONDS:
