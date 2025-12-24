@@ -22,8 +22,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
 option(ENABLE_ASAN "Enable Address Sanitizer" OFF)
 option(BASE_AS_SHARED "Build the base library as a shared library" OFF)
 option(BUILDING_WITH_CONAN "Using Conan for dependencies" OFF)
-option(PJ_INSTALLATION "Installation type" "undefined")
-option(PJ_PLUGINS_DIRECTORY "Plugins directory" "lib/plotjuggler/plugins")
+set(PJ_INSTALLATION "undefined" CACHE STRING "Installation type")
+set(PJ_PLUGINS_DIRECTORY "lib/plotjuggler/plugins" CACHE STRING "Plugins directory")
 
 if(NOT WIN32 AND ENABLE_ASAN)
   set(CMAKE_CXX_FLAGS
