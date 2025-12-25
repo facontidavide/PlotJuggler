@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <locale>
 #include <cctype>
+#include <charconv>
 
 // Howard Hinnant's date library - header only
 #include "date/date.h"
