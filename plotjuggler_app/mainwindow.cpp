@@ -2874,7 +2874,10 @@ void MainWindow::on_buttonLoadDatafile_clicked()
 
   for (const auto& it : extensions)
   {
+    // Add both lowercase and uppercase variants to support case-insensitive matching
+    // on platforms where Qt file dialog is case-sensitive (e.g., Linux)
     file_extension_filter.append(QString(" *.") + it);
+    file_extension_filter.append(QString(" *.") + it.toUpper());
   }
 
   QString directory_path =
