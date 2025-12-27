@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <sstream>
 #include <chrono>
 #include <cstdint>
@@ -15,6 +16,18 @@
 
 namespace PJ::CSV
 {
+
+/**
+ * @brief Parse a string to double in a locale-independent way.
+ *
+ * This function always uses '.' as the decimal separator, regardless of the
+ * system locale. It also accepts ',' as a decimal separator for compatibility
+ * with European CSV files.
+ *
+ * @param str The string to parse
+ * @return The parsed double value, or nullopt if parsing fails
+ */
+std::optional<double> toDouble(const std::string& str);
 
 /**
  * @brief Trim whitespace from both ends of a string.
