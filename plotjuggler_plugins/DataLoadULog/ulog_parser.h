@@ -8,9 +8,21 @@
 #include <cstdint>
 #include <optional>
 
-#include "string_view.hpp"
+#include <string_view>
 
-typedef nonstd::string_view StringView;
+typedef std::string_view StringView;
+
+// Helper functions for std::string_view compatibility (C++17)
+inline bool startsWith(std::string_view sv, std::string_view prefix)
+{
+  return sv.size() >= prefix.size() && sv.compare(0, prefix.size(), prefix) == 0;
+}
+
+inline bool endsWith(std::string_view sv, std::string_view suffix)
+{
+  return sv.size() >= suffix.size() &&
+         sv.compare(sv.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
 
 class ULogParser
 {

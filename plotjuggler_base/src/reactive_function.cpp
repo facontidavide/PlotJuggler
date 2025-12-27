@@ -6,7 +6,7 @@
 
 #include "PlotJuggler/reactive_function.h"
 #include <sol/sol.hpp>
-#include "fmt/format.h"
+#include <fmt/format.h>
 #include <QMessageBox>
 
 namespace PJ

@@ -1,7 +1,32 @@
 #include "timestamp_parsing.h"
+#include <QLocale>
+#include <QString>
 
 namespace PJ::CSV
 {
+
+std::string Trim(const std::string& str)
+{
+  size_t start = str.find_first_not_of(" \t\r\n");
+  if (start == std::string::npos)
+  {
+    return {};
+  }
+  size_t end = str.find_last_not_of(" \t\r\n");
+  return str.substr(start, end - start + 1);
+}
+
+std::optional<double> toDouble(const std::string& str)
+{
+  // If comma is used as decimal separator (European format), replace with dot
+  QString qstr = QString::fromStdString(str);
+  qstr.replace(',', '.');
+
+  // Use QLocale::c() for locale-independent parsing (always uses '.' as decimal separator)
+  bool ok = false;
+  double value = QLocale::c().toDouble(qstr, &ok);
+  return ok ? std::optional<double>(value) : std::nullopt;
+}
 
 // Common format strings used by multiple functions
 static const char* const UNAMBIGUOUS_FORMATS[] = {
@@ -15,17 +40,6 @@ static constexpr size_t NUM_UNAMBIGUOUS_FORMATS =
 // Epoch timestamp range constants
 static constexpr int64_t EPOCH_FIRST = 1400000000;  // July 14, 2014
 static constexpr int64_t EPOCH_LAST = 2000000000;   // May 18, 2033
-
-std::string Trim(const std::string& str)
-{
-  size_t start = str.find_first_not_of(" \t\r\n");
-  if (start == std::string::npos)
-  {
-    return {};
-  }
-  size_t end = str.find_last_not_of(" \t\r\n");
-  return str.substr(start, end - start + 1);
-}
 
 // Helper: Extract fractional seconds from a timestamp string
 // Returns the base string (without fractional part) and the fractional nanoseconds
@@ -226,9 +240,7 @@ std::optional<double> AutoParseTimestamp(const std::string& str)
       }
       else
       {
-        std::string normalized = trimmed;
-        std::replace(normalized.begin(), normalized.end(), ',', '.');
-        return std::stod(normalized);
+        return toDouble(trimmed);
       }
     }
     catch (...)
@@ -339,6 +351,13 @@ ColumnTypeInfo DetectColumnType(const std::string& str)
     return info;
   }
 
+  // Check for hexadecimal with 0x prefix (case insensitive)
+  if (trimmed.size() > 2 && (trimmed[0] == '0' && (trimmed[1] == 'x' || trimmed[1] == 'X')))
+  {
+    info.type = ColumnType::HEX;
+    return info;
+  }
+
   auto num_info = CheckNumeric(trimmed);
   if (num_info.is_number)
   {
@@ -425,10 +444,12 @@ std::optional<double> ParseWithType(const std::string& str, const ColumnTypeInfo
   {
     switch (type_info.type)
     {
-      case ColumnType::NUMBER: {
-        std::string normalized = trimmed;
-        std::replace(normalized.begin(), normalized.end(), ',', '.');
-        return std::stod(normalized);
+      case ColumnType::NUMBER:
+        return toDouble(trimmed);
+
+      case ColumnType::HEX: {
+        // Parse hex value with 0x prefix
+        return static_cast<double>(std::stoll(trimmed, nullptr, 16));
       }
 
       case ColumnType::EPOCH_SECONDS:

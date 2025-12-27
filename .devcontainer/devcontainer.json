@@ -1,0 +1,40 @@
+{
+  "name": "PlotJuggler Dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake",
+        "ms-vscode.cpptools-extension-pack",
+        "theqtcompany.qt-cpp-pack",
+        "theqtcompany.qt",
+        "xaver.clang-format"
+      ],
+      "settings": {
+        "cmake.configureOnOpen": false,
+        "cmake.buildDirectory": "${workspaceFolder}/build",
+        "cmake.installPrefix": "${workspaceFolder}/install"
+      }
+    }
+  },
+  "runArgs": [
+    "--net=host",
+    "-e",
+    "DISPLAY=${localEnv:DISPLAY}",
+    "-v",
+    "/tmp/.X11-unix:/tmp/.X11-unix:rw"
+  ],
+  "containerEnv": {
+    "DISPLAY": "${localEnv:DISPLAY}",
+    "QT_X11_NO_MITSHM": "1"
+  },
+  "postCreateCommand": "echo 'Dev container ready. Run: ./conan_build.sh'",
+  "remoteUser": "vscode"
+}
