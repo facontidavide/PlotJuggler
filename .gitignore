@@ -73,3 +73,6 @@ _deps
 /linuxdeploy/*
 /linuxdeploy-plugin-qt/*
 /plotjuggler_plugins/ParserIDL/build*
+
+# CodeQL
+_codeql_detected_source_root
