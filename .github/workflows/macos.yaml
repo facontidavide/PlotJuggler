@@ -133,17 +133,27 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         env:
           MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
+          # Ensure keychain is unlocked and in search path
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security list-keychains -d user -s build.keychain login.keychain
+          security default-keychain -s build.keychain
+
+          # Debug: show identity being used
+          echo "Looking for identity: $MACOS_SIGNING_IDENTITY"
+          security find-identity -v -p codesigning build.keychain
+
           # Sign all nested binaries, libraries, and frameworks first
           find PlotJuggler.app -type f \( -name "*.dylib" -o -name "*.so" -o -perm +111 \) -exec \
-            /usr/bin/codesign --force --options runtime --sign "$MACOS_SIGNING_IDENTITY" --timestamp {} \;
+            /usr/bin/codesign --force --options runtime --sign "$MACOS_SIGNING_IDENTITY" --keychain build.keychain --timestamp {} \;
 
           # Sign all frameworks
           find PlotJuggler.app/Contents/Frameworks -type d -name "*.framework" -exec \
-            /usr/bin/codesign --force --options runtime --sign "$MACOS_SIGNING_IDENTITY" --timestamp {} \; 2>/dev/null || true
+            /usr/bin/codesign --force --options runtime --sign "$MACOS_SIGNING_IDENTITY" --keychain build.keychain --timestamp {} \; 2>/dev/null || true
 
           # Sign the main app bundle
-          /usr/bin/codesign --force --options runtime --sign "$MACOS_SIGNING_IDENTITY" --timestamp --deep PlotJuggler.app
+          /usr/bin/codesign --force --options runtime --sign "$MACOS_SIGNING_IDENTITY" --keychain build.keychain --timestamp --deep PlotJuggler.app
 
           # Verify the signature
           /usr/bin/codesign --verify --deep --strict --verbose=2 PlotJuggler.app
@@ -176,9 +186,13 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         env:
           MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
+          # Ensure keychain is unlocked
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+
           DMG_NAME="PlotJuggler-${{ github.ref_name }}-macOS-${{ matrix.config.arch }}.dmg"
-          /usr/bin/codesign --force --sign "$MACOS_SIGNING_IDENTITY" --timestamp "$DMG_NAME"
+          /usr/bin/codesign --force --sign "$MACOS_SIGNING_IDENTITY" --keychain build.keychain --timestamp "$DMG_NAME"
           /usr/bin/codesign --verify --verbose=2 "$DMG_NAME"
 
       - name: Upload DMG artifact
