@@ -71,7 +71,7 @@ echo $VERSION
 cp -v install/bin/* AppDir/usr/bin
 
 ./linuxdeploy-x86_64.AppImage --appdir=AppDir \
-    -d ./src/PlotJuggler/PlotJuggler.desktop \
+    -d ./src/PlotJuggler/io.plotjuggler.PlotJuggler.desktop \
     -i ./src/PlotJuggler/plotjuggler.png \
     --plugin qt --output appimage
 ```

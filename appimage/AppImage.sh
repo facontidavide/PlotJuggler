@@ -14,4 +14,4 @@ fi
 
 
 
-./linuxdeploy-x86_64.AppImage  --appimage-extract-and-run --appdir $APPDIRPATH -d ../PlotJuggler.desktop -i ../plotjuggler.png --plugin qt --output appimage
+./linuxdeploy-x86_64.AppImage  --appimage-extract-and-run --appdir $APPDIRPATH -d ../io.plotjuggler.PlotJuggler.desktop -i ../plotjuggler.png --plugin qt --output appimage

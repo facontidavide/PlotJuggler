@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
   //-------------------------
 
   QCoreApplication::setOrganizationName("PlotJuggler");
-  QCoreApplication::setApplicationName("PlotJuggler-3");
+  QCoreApplication::setApplicationName("io.plotjuggler.PlotJuggler");
   QSettings::setDefaultFormat(QSettings::IniFormat);
 
   QSettings settings;
