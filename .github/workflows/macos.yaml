@@ -165,7 +165,7 @@ jobs:
           path: PlotJuggler-${{ github.ref_name }}-macOS-${{ matrix.config.arch }}.dmg
 
       - name: Upload to Release
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: PlotJuggler-${{ github.ref_name }}-macOS-${{ matrix.config.arch }}.dmg
