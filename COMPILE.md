@@ -158,7 +158,7 @@ that specific plugin.
 
 ```batch
 conan install src/PlotJuggler --output-folder build/PlotJuggler ^
-      --build=missing -pr:b=default
+      --build=missing -pr:b=default -s build_type=Release
 
 set CMAKE_TOOLCHAIN=%cd%/build/PlotJuggler/conan_toolchain.cmake
 
@@ -166,7 +166,8 @@ cmake -G "Visual Studio 16" ^
       -S src/PlotJuggler -B build/PlotJuggler ^
       -DCMAKE_TOOLCHAIN_FILE=%CMAKE_TOOLCHAIN%  ^
       -DCMAKE_INSTALL_PREFIX=%cd%/install ^
-      -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
+      -DCMAKE_POLICY_DEFAULT_CMP0091=NEW ^
+      -DBUILDING_WITH_CONAN=ON
 
 
 cmake --build build/PlotJuggler --config Release --target install
