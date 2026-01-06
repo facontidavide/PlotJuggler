@@ -35,15 +35,16 @@ If you want to use [conan](https://conan.io/) to manage the dependencies,
 follow this instructions instead.
 
 ```shell
-conan install src/PlotJuggler --install-folder build/PlotJuggler \
-      --build missing -pr:b=default
+conan install src/PlotJuggler --output-folder build/PlotJuggler \
+      --build missing -pr:b=default -s build_type=RelWithDebInfo
 
 export CMAKE_TOOLCHAIN=$(pwd)/build/PlotJuggler/conan_toolchain.cmake
 
 cmake -S src/PlotJuggler -B build/PlotJuggler \
       -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN  \
       -DCMAKE_INSTALL_PREFIX=install \
-      -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
+      -DCMAKE_POLICY_DEFAULT_CMP0091=NEW \
+      -DBUILDING_WITH_CONAN=ON
 
 cmake --build build/PlotJuggler --config RelWithDebInfo --target install
 ```
@@ -156,7 +157,7 @@ Note: the Arrow/Parque plugin is not supported in Conan. Use vcpkg instead, if y
 that specific plugin.
 
 ```batch
-conan install src/PlotJuggler --install-folder build/PlotJuggler ^
+conan install src/PlotJuggler --output-folder build/PlotJuggler ^
       --build=missing -pr:b=default
 
 set CMAKE_TOOLCHAIN=%cd%/build/PlotJuggler/conan_toolchain.cmake
