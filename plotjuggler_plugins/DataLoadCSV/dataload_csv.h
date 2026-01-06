@@ -1,11 +1,8 @@
 #pragma once
 
-#include <QObject>
-#include <QtPlugin>
 #include <QStandardItemModel>
 #include "PlotJuggler/dataloader_base.h"
 #include "ui_dataload_csv.h"
-#include "QCSVHighlighter"
 
 using namespace PJ;
 
@@ -35,10 +32,34 @@ public:
 
   bool xmlLoadState(const QDomElement& parent_element) override;
 
-protected:
   void parseHeader(QFile& file, std::vector<std::string>& ordered_names);
 
-  int launchDialog(QFile& file, std::vector<std::string>* ordered_names);
+  QChar GetDelimiter() const noexcept;
+
+  void SetDelimeter(const char& delimeter) noexcept;
+
+  /**
+   * @brief Auto-detect the delimiter used in a CSV line.
+   *
+   * Analyzes the first line of a CSV file to determine the most likely delimiter.
+   * Handles quoted strings correctly (delimiters inside quotes are ignored).
+   *
+   * @param first_line The first line of the CSV file
+   * @return The detected delimiter character, or ',' as default
+   */
+  static char DetectDelimiter(const QString& first_line);
+
+  static void SplitLine(const QString& line, QChar separator, QStringList& parts);
+
+  static constexpr int TIME_INDEX_NOT_DEFINED = -2;
+  static constexpr int TIME_INDEX_GENERATED = -1;
+  static constexpr const char* INDEX_AS_TIME = "__TIME_INDEX_GENERATED__";
+
+signals:
+  void warningOccurred(const QString& title, const QString& message);
+
+  void onParseHeader(const QStringList& lines, const QString& preview_lines,
+                     const std::vector<std::string>& column_names);
 
 private:
   std::vector<const char*> _extensions;
@@ -47,15 +68,7 @@ private:
 
   QChar _delimiter;
 
-  QCSVHighlighter _csvHighlighter;
-
   FileLoadInfo* _fileInfo;
-
-  QDialog* _dialog;
-  Ui::DialogCSV* _ui;
-  DateTimeHelp* _dateTime_dialog;
-
-  QStandardItemModel* _model;
 
   bool multiple_columns_warning_ = true;
 };
