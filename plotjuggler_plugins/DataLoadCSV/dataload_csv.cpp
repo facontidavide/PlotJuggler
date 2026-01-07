@@ -239,9 +239,9 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
   {
     if (multiple_columns_warning_)
     {
-      emit warningOccurred("Duplicate Column Name",
-                           "Multiple Columns have the same name.\n"
-                           "The column number will be added (as suffix) to the name.");
+      emit onWarningOccurred("Duplicate Column Name",
+                             "Multiple Columns have the same name.\n"
+                             "The column number will be added (as suffix) to the name.");
       multiple_columns_warning_ = false;
     }
 
@@ -310,7 +310,8 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   if (!info->plugin_config.hasChildNodes())
   {
     _default_time_axis.clear();
-    time_index = launchDialog(file, &column_names);
+    // Emit here the signal that opens the dialog
+    emit onLaunchDialog(file, &column_names, time_index);
   }
   else
   {
@@ -649,12 +650,12 @@ bool DataLoadCSV::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) c
 {
   QDomElement elem = doc.createElement("parameters");
   elem.setAttribute("time_axis", _default_time_axis.c_str());
-  elem.setAttribute("delimiter", _ui->comboBox->currentIndex());
+  elem.setAttribute("delimiter", _delimiterIndex);
 
   QString date_format;
-  if (_ui->radioCustomTime->isChecked())
+  if (_isCustomTime)
   {
-    elem.setAttribute("date_format", _ui->lineEditDateFormat->text());
+    elem.setAttribute("date_format", _dateFormat.c_str());
   }
 
   parent_element.appendChild(elem);
@@ -674,9 +675,8 @@ bool DataLoadCSV::xmlLoadState(const QDomElement& parent_element)
   }
   if (elem.hasAttribute("delimiter"))
   {
-    int separator_index = elem.attribute("delimiter").toInt();
-    _ui->comboBox->setCurrentIndex(separator_index);
-    switch (separator_index)
+    _delimiterIndex = elem.attribute("delimiter").toInt();
+    switch (_delimiterIndex)
     {
       case 0:
         _delimiter = ',';
@@ -690,16 +690,18 @@ bool DataLoadCSV::xmlLoadState(const QDomElement& parent_element)
       case 3:
         _delimiter = '\t';
         break;
+      default:
+        _delimiter = ',';
+        break;
     }
   }
   if (elem.hasAttribute("date_format"))
   {
-    _ui->radioCustomTime->setChecked(true);
-    _ui->lineEditDateFormat->setText(elem.attribute("date_format"));
+    _dateFormat = elem.attribute("date_format").toStdString();
   }
   else
   {
-    _ui->radioAutoTime->setChecked(true);
+    _isCustomTime = false;
   }
   return true;
 }
@@ -709,7 +711,37 @@ QChar DataLoadCSV::GetDelimiter() const noexcept
   return _delimiter;
 }
 
-void DataLoadCSV::SetDelimeter(const char& delimeter) noexcept
+void DataLoadCSV::SetDelimiter(const char& delimiter) noexcept
 {
-  _delimiter = delimeter;
+  _delimiter = delimiter;
+}
+
+void DataLoadCSV::SetDelimiterIndex(const int delimiterIndex)
+{
+  _delimiterIndex = delimiterIndex;
+}
+
+int DataLoadCSV::GetDelimiterIndex() const noexcept
+{
+  return _delimiterIndex;
+}
+
+void DataLoadCSV::SetIsCustomTime(const bool isCustomTime)
+{
+  _isCustomTime = isCustomTime;
+}
+
+bool DataLoadCSV::GetIsCustomTime() const noexcept
+{
+  return _isCustomTime;
+}
+
+void DataLoadCSV::SetDateFormat(const std::string& dateFormat)
+{
+  _dateFormat = dateFormat;
+}
+
+std::string DataLoadCSV::GetDateFormat() const noexcept
+{
+  return _dateFormat;
 }

@@ -23,6 +23,8 @@ private slots:
 
   void ShowWarningMessage(const QString& title, const QString& message);
 
+  void LaunchDialog(QFile& file, std::vector<std::string>* column_names, int& result);
+
 private:
   int launchDialog(QFile& file, std::vector<std::string>* column_names);
 

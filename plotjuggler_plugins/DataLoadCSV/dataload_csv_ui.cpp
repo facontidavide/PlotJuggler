@@ -49,16 +49,24 @@ DataLoadCSVUI::DataLoadCSVUI()
   connect(_ui->listWidgetSeries, &QListWidget::itemDoubleClicked, this,
           [this]() { emit _ui->buttonBox->accepted(); });
 
-  connect(_ui->radioCustomTime, &QRadioButton::toggled, this,
-          [this](bool checked) { _ui->lineEditDateFormat->setEnabled(checked); });
+  connect(_ui->radioCustomTime, &QRadioButton::toggled, this, [this](bool checked) {
+    _ui->lineEditDateFormat->setEnabled(checked);
+    _dataLoadCSV->SetIsCustomTime(checked);
+    _dataLoadCSV->SetDateFormat(_ui->lineEditDateFormat->text().toStdString());
+  });
+
+  connect(_ui->lineEditDateFormat, &QLineEdit::textChanged, this,
+          [this](const QString& text) { _dataLoadCSV->SetDateFormat(text.toStdString()); });
 
   connect(_ui->dateTimeHelpButton, &QPushButton::clicked, this,
           [this]() { _dateTime_dialog->show(); });
 
-  connect(_dataLoadCSV.get(), &DataLoadCSV::warningOccurred, this,
+  connect(_dataLoadCSV.get(), &DataLoadCSV::onWarningOccurred, this,
           &DataLoadCSVUI::ShowWarningMessage);
 
   connect(_dataLoadCSV.get(), &DataLoadCSV::onParseHeader, this, &DataLoadCSVUI::ParseHeader);
+
+  connect(_dataLoadCSV.get(), &DataLoadCSV::onLaunchDialog, this, &DataLoadCSVUI::LaunchDialog);
 
   _ui->rawText->setHighlighter(&_csvHighlighter);
 
@@ -71,6 +79,23 @@ DataLoadCSVUI::DataLoadCSVUI()
 
   _model = new QStandardItemModel;
   _ui->tableView->setModel(_model);
+
+  // When loading a new state we might not have the default DataLoadCSV values
+  // Hence, we need to update the ui accordingly
+  if (_dataLoadCSV->GetDelimiterIndex() != -1)
+  {
+    _ui->comboBox->setCurrentIndex(_dataLoadCSV->GetDelimiterIndex());
+  }
+
+  if (_dataLoadCSV->GetIsCustomTime())
+  {
+    _ui->radioCustomTime->setChecked(true);
+    _ui->lineEditDateFormat->setText(QString::fromStdString(_dataLoadCSV->GetDateFormat()));
+  }
+  else
+  {
+    _ui->radioAutoTime->setChecked(true);
+  }
 }
 
 DataLoadCSVUI::~DataLoadCSVUI()
@@ -147,7 +172,7 @@ int DataLoadCSVUI::launchDialog(QFile& file, std::vector<std::string>* column_na
     QString first_line = in.readLine();
     file.close();
 
-    _dataLoadCSV->SetDelimeter(DataLoadCSV::DetectDelimiter(first_line));
+    _dataLoadCSV->SetDelimiter(DataLoadCSV::DetectDelimiter(first_line));
 
     // Update the UI combobox to match the detected delimiter
     constexpr std::array<char, 4> delimiters = { ',', ';', ' ', '\t' };
@@ -180,14 +205,16 @@ int DataLoadCSVUI::launchDialog(QFile& file, std::vector<std::string>* column_na
   QObject* context = pcontext.get();
   connect(_ui->comboBox, qOverload<int>(&QComboBox::currentIndexChanged), context, [&](int index) {
     const std::array<char, 4> delimiters = { ',', ';', ' ', '\t' };
-    _dataLoadCSV->SetDelimeter(delimiters[std::clamp(index, 0, 3)]);
+    _dataLoadCSV->SetDelimiter(delimiters[std::clamp(index, 0, 3)]);
     _csvHighlighter.delimiter = _dataLoadCSV->GetDelimiter();
     _dataLoadCSV->parseHeader(file, *column_names);
+    _dataLoadCSV->SetDelimiterIndex(index);
   });
 
   // parse the header once and launch the dialog
+  // the parseHeader function of the DataLoadCSV emits a Qt signal that automatically
+  // calls ParseHeader of this class (DataLoadCSVUI).
   _dataLoadCSV->parseHeader(file, *column_names);
-  this->parseHeader(file, *column_names);
 
   QString previous_index = settings.value("DataLoadCSV.timeIndex", "").toString();
   if (previous_index.isEmpty() == false)
@@ -226,6 +253,11 @@ int DataLoadCSVUI::launchDialog(QFile& file, std::vector<std::string>* column_na
   }
 
   return DataLoadCSV::TIME_INDEX_NOT_DEFINED;
+}
+
+void DataLoadCSVUI::LaunchDialog(QFile& file, std::vector<std::string>* column_names, int& result)
+{
+  result = launchDialog(file, column_names);
 }
 
 void DataLoadCSVUI::ShowWarningMessage(const QString& title, const QString& message)

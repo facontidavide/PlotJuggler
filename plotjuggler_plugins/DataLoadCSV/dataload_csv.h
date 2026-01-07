@@ -21,7 +21,7 @@ public:
   virtual bool readDataFromFile(PJ::FileLoadInfo* fileload_info,
                                 PlotDataMapRef& destination) override;
 
-  virtual ~DataLoadCSV();
+  virtual ~DataLoadCSV() override = default;
 
   virtual const char* name() const override
   {
@@ -36,7 +36,7 @@ public:
 
   QChar GetDelimiter() const noexcept;
 
-  void SetDelimeter(const char& delimeter) noexcept;
+  void SetDelimiter(const char& delimiter) noexcept;
 
   /**
    * @brief Auto-detect the delimiter used in a CSV line.
@@ -51,15 +51,29 @@ public:
 
   static void SplitLine(const QString& line, QChar separator, QStringList& parts);
 
+  void SetDelimiterIndex(int delimiterIndex);
+
+  int GetDelimiterIndex() const noexcept;
+
+  void SetIsCustomTime(bool isCustomTime);
+
+  bool GetIsCustomTime() const noexcept;
+
+  void SetDateFormat(const std::string& dateFormat);
+
+  std::string GetDateFormat() const noexcept;
+
   static constexpr int TIME_INDEX_NOT_DEFINED = -2;
   static constexpr int TIME_INDEX_GENERATED = -1;
   static constexpr const char* INDEX_AS_TIME = "__TIME_INDEX_GENERATED__";
 
 signals:
-  void warningOccurred(const QString& title, const QString& message);
+  void onWarningOccurred(const QString& title, const QString& message);
 
   void onParseHeader(const QStringList& lines, const QString& preview_lines,
                      const std::vector<std::string>& column_names);
+
+  void onLaunchDialog(QFile& file, std::vector<std::string>* column_names, int& result);
 
 private:
   std::vector<const char*> _extensions;
@@ -71,4 +85,11 @@ private:
   FileLoadInfo* _fileInfo;
 
   bool multiple_columns_warning_ = true;
+
+  // Used when Saving state
+  int _delimiterIndex = -1;
+
+  bool _isCustomTime = false;
+
+  std::string _dateFormat;
 };
