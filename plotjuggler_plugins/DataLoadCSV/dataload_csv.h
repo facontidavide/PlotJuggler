@@ -4,6 +4,8 @@
 #include "PlotJuggler/dataloader_base.h"
 #include "ui_dataload_csv.h"
 
+#include <QMessageBox>
+
 using namespace PJ;
 
 class DateTimeHelp;
@@ -69,6 +71,15 @@ public:
 
 signals:
   void onWarningOccurred(const QString& title, const QString& message);
+
+  void onWarningMessageBox(const QString& title, const QString& message,
+                           QMessageBox::StandardButton& result);
+
+  void onWarningMessageBoxSkippedLines(const QString& title, const QString& message,
+                                       const QString& detailedText);
+
+  void onWarningMessageBoxNonMonotonicTime(const QString& title, const QString& message,
+                                           const QString& detailedText, bool& sortButtonClicked);
 
   void onParseHeader(const QStringList& lines, const QString& preview_lines,
                      const std::vector<std::string>& column_names);

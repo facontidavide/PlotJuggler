@@ -423,13 +423,15 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
     {
       if (!skipped_wrong_column)
       {
-        auto ret = QMessageBox::warning(nullptr, "Unexpected column count",
-                                        tr("Line %1 has %2 columns, but the expected number of "
-                                           "columns is %3.\n Do you want to continue?")
-                                            .arg(linenumber)
-                                            .arg(string_items.size())
-                                            .arg(column_names.size()),
-                                        QMessageBox::Yes | QMessageBox::Abort, QMessageBox::Yes);
+        QMessageBox::StandardButton ret = QMessageBox::Yes;
+        emit onWarningMessageBox("Unexpected column count",
+                                 tr("Line %1 has %2 columns, but the expected number of "
+                                    "columns is %3.\n Do you want to continue?")
+                                     .arg(linenumber)
+                                     .arg(string_items.size())
+                                     .arg(column_names.size()),
+                                 ret);
+
         if (ret == QMessageBox::Abort)
         {
           return false;
@@ -485,12 +487,14 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       {
         if (!skipped_invalid_timestamp)
         {
-          auto ret = QMessageBox::warning(nullptr, "Error parsing timestamp",
-                                          tr("Line %1 has an invalid timestamp: "
-                                             "\"%2\".\n Do you want to continue?")
-                                              .arg(linenumber)
-                                              .arg(t_str),
-                                          QMessageBox::Yes | QMessageBox::Abort, QMessageBox::Yes);
+          QMessageBox::StandardButton ret = QMessageBox::Yes;
+          emit onWarningMessageBox("Error parsing timestamp",
+                                   tr("Line %1 has an invalid timestamp: "
+                                      "\"%2\".\n Do you want to continue?")
+                                       .arg(linenumber)
+                                       .arg(t_str),
+                                   ret);
+
           if (ret == QMessageBox::Abort)
           {
             return false;
@@ -503,45 +507,36 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
 
       if (prev_time > timestamp && !sortRequired)
       {
-        QMessageBox msgBox;
         QString timeName;
         timeName = time_header_str;
 
-        msgBox.setWindowTitle(tr("Selected time is not monotonic"));
-        msgBox.setText(tr("PlotJuggler detected that the time in this file is "
-                          "non-monotonic. This may indicate an issue with the input "
-                          "data. Continue? (Input file will not be modified but data "
-                          "will be sorted by PlotJuggler)"));
-        msgBox.setDetailedText(tr("File: \"%1\" \n\n"
-                                  "Selected time is not monotonic\n"
-                                  "Time Index: %6 [%7]\n"
-                                  "Time at line %2 : %3\n"
-                                  "Time at line %4 : %5")
-                                   .arg(_fileInfo->filename)
-                                   .arg(linenumber - 1)
-                                   .arg(prev_t_str)
-                                   .arg(linenumber)
-                                   .arg(t_str)
-                                   .arg(time_index)
-                                   .arg(timeName));
+        const QString& title = tr("Selected time is not monotonic");
+        const QString& message = tr("PlotJuggler detected that the time in this file is "
+                                    "non-monotonic. This may indicate an issue with the input "
+                                    "data. Continue? (Input file will not be modified but data "
+                                    "will be sorted by PlotJuggler)");
+        const QString& detailedText = tr("File: \"%1\" \n\n"
+                                         "Selected time is not monotonic\n"
+                                         "Time Index: %6 [%7]\n"
+                                         "Time at line %2 : %3\n"
+                                         "Time at line %4 : %5")
+                                          .arg(_fileInfo->filename)
+                                          .arg(linenumber - 1)
+                                          .arg(prev_t_str)
+                                          .arg(linenumber)
+                                          .arg(t_str)
+                                          .arg(time_index)
+                                          .arg(timeName);
 
-        QPushButton* sortButton = msgBox.addButton(tr("Continue"), QMessageBox::ActionRole);
-        QPushButton* abortButton = msgBox.addButton(QMessageBox::Abort);
-        msgBox.setIcon(QMessageBox::Warning);
-        msgBox.exec();
+        bool sortButtonClicked = false;
+        emit onWarningMessageBoxNonMonotonicTime(title, message, detailedText, sortButtonClicked);
 
-        if (msgBox.clickedButton() == abortButton)
+        if (!sortButtonClicked)
         {
           return false;
         }
-        else if (msgBox.clickedButton() == sortButton)
-        {
-          sortRequired = true;
-        }
-        else
-        {
-          return false;
-        }
+
+        sortRequired = true;
       }
 
       prev_time = timestamp;
@@ -628,19 +623,16 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   // Warn the user if some lines have been skipped.
   if (!skipped_lines.empty())
   {
-    QMessageBox msgBox;
-    msgBox.setWindowTitle(tr("Some lines have been skipped"));
-    msgBox.setText(tr("Some lines were not parsed as expected. "
-                      "This indicates an issue with the input data."));
     QString detailed_text;
     for (const auto& line : skipped_lines)
     {
       detailed_text += tr("Line %1: %2\n").arg(line.first).arg(line.second);
     }
-    msgBox.setDetailedText(detailed_text);
-    msgBox.addButton(tr("Continue"), QMessageBox::ActionRole);
-    msgBox.setIcon(QMessageBox::Warning);
-    msgBox.exec();
+
+    emit onWarningMessageBoxSkippedLines("Some lines have been skipped",
+                                         tr("Some lines were not parsed as expected. "
+                                            "This indicates an issue with the input data."),
+                                         detailed_text);
   }
 
   return true;
