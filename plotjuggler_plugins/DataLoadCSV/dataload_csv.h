@@ -60,7 +60,8 @@ private:
   bool multiple_columns_warning_ = true;
 
   // Structure to track combined date+time virtual columns
-  struct CombinedColumn {
+  struct CombinedColumn
+  {
     int date_column_index;
     int time_column_index;
     std::string virtual_name;

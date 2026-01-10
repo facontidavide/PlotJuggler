@@ -390,60 +390,63 @@ ColumnTypeInfo DetectColumnType(const std::string& str)
   bool has_dash = base_str.find('-') != std::string::npos;
   bool has_colon = base_str.find(':') != std::string::npos;
 
+  // Helper lambda to try parsing with multiple formats
+  auto tryParseFormats = [&base_str](const char* const* formats, size_t count,
+                                     auto parse_func) -> std::optional<const char*> {
+    for (size_t i = 0; i < count; i++)
+    {
+      std::istringstream in{ base_str };
+      in.imbue(std::locale::classic());
+      if (parse_func(in, formats[i]))
+      {
+        return formats[i];
+      }
+    }
+    return std::nullopt;
+  };
+
   // Check for DATE_ONLY formats FIRST (date without time)
   // Formats: "2024-01-15", "01/15/2024", "15-01-2024", "2024/01/15"
   if ((has_slash || has_dash) && !has_colon)
   {
-    // Try date-only formats - parse to year_month_day
-    const char* date_formats[] = {
-      "%Y-%m-%d",
-      "%Y/%m/%d",
-      "%d/%m/%Y",
-      "%m/%d/%Y",
-      "%d-%m-%Y",
-      "%m-%d-%Y"
-    };
+    static const char* const date_formats[] = { "%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y",
+                                                "%m/%d/%Y", "%d-%m-%Y", "%m-%d-%Y" };
 
-    for (const char* fmt : date_formats)
-    {
-      std::istringstream in{ base_str };
-      in.imbue(std::locale::classic());
+    auto parse_date = [](std::istringstream& in, const char* fmt) {
       date::year_month_day ymd;
       in >> date::parse(fmt, ymd);
-      if (!in.fail())
-      {
-        info.type = ColumnType::DATE_ONLY;
-        info.format = fmt;
-        return info;
-      }
+      return !in.fail();
+    };
+
+    if (auto fmt = tryParseFormats(date_formats, 6, parse_date))
+    {
+      info.type = ColumnType::DATE_ONLY;
+      info.format = *fmt;
+      return info;
     }
   }
 
-  // Check for TIME_ONLY formats FIRST (time without date)
+  // Check for TIME_ONLY formats (time without date)
   // Formats: "14:30:25", "14:30:25.123", "2:30:25 PM"
   if (has_colon && !has_slash && !has_dash)
   {
-    // Try time-only formats - parse to time duration
-    const char* time_formats[] = {
+    static const char* const time_formats[] = {
       "%H:%M:%S",
-      "%H:%M",
-      "%I:%M:%S %p",  // 12-hour with AM/PM
-      "%I:%M %p"
+      "%I:%M:%S %p"  // 12-hour with AM/PM
     };
 
-    for (const char* fmt : time_formats)
-    {
-      std::istringstream in{ base_str };
-      in.imbue(std::locale::classic());
+    auto parse_time = [](std::istringstream& in, const char* fmt) {
       std::chrono::seconds time_of_day{ 0 };
       in >> date::parse(fmt, time_of_day);
-      if (!in.fail())
-      {
-        info.type = ColumnType::TIME_ONLY;
-        info.format = fmt;
-        info.has_fractional = (fractional_ns.count() > 0 || trimmed != base_str);
-        return info;
-      }
+      return !in.fail();
+    };
+
+    if (auto fmt = tryParseFormats(time_formats, 2, parse_time))
+    {
+      info.type = ColumnType::TIME_ONLY;
+      info.format = *fmt;
+      info.has_fractional = (fractional_ns.count() > 0);
+      return info;
     }
   }
 
