@@ -832,6 +832,17 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
   plot->setDefaultStyle(ui->buttonDots->isChecked() ? PlotWidgetBase::LINES_AND_DOTS :
                                                       PlotWidgetBase::LINES);
 
+  // Inherit legend settings from current state
+  plot->activateLegend(_labels_status != LabelStatus::HIDDEN);
+  if (_labels_status == LabelStatus::LEFT)
+  {
+    plot->setLegendAlignment(Qt::AlignLeft);
+  }
+  else if (_labels_status == LabelStatus::RIGHT)
+  {
+    plot->setLegendAlignment(Qt::AlignRight);
+  }
+
   QSettings settings;
   bool swap_pan_zoom = settings.value("Preferences::swap_pan_zoom", false).toBool();
   plot->setSwapZoomPan(swap_pan_zoom);
