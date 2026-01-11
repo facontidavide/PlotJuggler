@@ -5,38 +5,9 @@
  */
 
 #include <functional>
-#include <stdio.h>
 
 #include <QApplication>
-#include <QActionGroup>
-#include <QCheckBox>
-#include <QCommandLineParser>
-#include <QDebug>
-#include <QDesktopServices>
-#include <QDomDocument>
-#include <QDoubleSpinBox>
-#include <QElapsedTimer>
-#include <QFileDialog>
-#include <QInputDialog>
-#include <QMenu>
-#include <QGroupBox>
-#include <QHBoxLayout>
-#include <QMessageBox>
-#include <QMimeData>
-#include <QMouseEvent>
-#include <QPluginLoader>
-#include <QPushButton>
-#include <QKeySequence>
-#include <QScrollBar>
-#include <QSettings>
-#include <QStringListModel>
 #include <QStringRef>
-#include <QThread>
-#include <QTextStream>
-#include <QWindow>
-#include <QHeaderView>
-#include <QStandardPaths>
-#include <QXmlStreamReader>
 
 #include "mainwindow.h"
 #include "curvelist_panel.h"
