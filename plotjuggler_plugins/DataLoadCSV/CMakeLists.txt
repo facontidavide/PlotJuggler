@@ -7,7 +7,6 @@ qt5_wrap_ui(UI_SRC dataload_csv.ui datetimehelp.ui)
 
 set(SRC
     dataload_csv.cpp
-    dataload_csv_ui.cpp
     datetimehelp.cpp
     timestamp_parsing.cpp)
 

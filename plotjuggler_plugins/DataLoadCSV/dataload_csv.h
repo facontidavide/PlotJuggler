@@ -5,6 +5,8 @@
 #include "ui_dataload_csv.h"
 
 #include <QMessageBox>
+#include <QCSVHighlighter>
+#include <QProgressDialog>
 
 using namespace PJ;
 
@@ -18,14 +20,13 @@ class DataLoadCSV : public DataLoader
 
 public:
   DataLoadCSV();
-  virtual const std::vector<const char*>& compatibleFileExtensions() const override;
+  const std::vector<const char*>& compatibleFileExtensions() const override;
 
-  virtual bool readDataFromFile(PJ::FileLoadInfo* fileload_info,
-                                PlotDataMapRef& destination) override;
+  bool readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef& destination) override;
 
-  virtual ~DataLoadCSV() override = default;
+  ~DataLoadCSV() override;
 
-  virtual const char* name() const override
+  const char* name() const override
   {
     return "DataLoad CSV";
   }
@@ -69,38 +70,78 @@ public:
   static constexpr int TIME_INDEX_GENERATED = -1;
   static constexpr const char* INDEX_AS_TIME = "__TIME_INDEX_GENERATED__";
 
-signals:
-  void onWarningOccurred(const QString& title, const QString& message);
-
-  void onWarningMessageBox(const QString& title, const QString& message,
-                           QMessageBox::StandardButton& result);
-
-  void onWarningMessageBoxSkippedLines(const QString& title, const QString& message,
-                                       const QString& detailedText);
-
-  void onWarningMessageBoxNonMonotonicTime(const QString& title, const QString& message,
-                                           const QString& detailedText, bool& sortButtonClicked);
-
-  void onParseHeader(const QStringList& lines, const QString& preview_lines,
-                     const std::vector<std::string>& column_names);
-
-  void onLaunchDialog(QFile& file, std::vector<std::string>* column_names, int& result);
-
 private:
+  static void ShowWarningMessageBox(const QString& title, const QString& message,
+                                    QMessageBox::StandardButton& result);
+
+  static void ShowWarningMessageBoxSkippedLines(const QString& title, const QString& message,
+                                                const QString& detailedText);
+
+  static void ShowWarningMessageBoxNonMonotonicTime(const QString& title, const QString& message,
+                                                    const QString& detailedText,
+                                                    bool& sortButtonClicked);
+  void SetupUI();
+
+  void parseHeaderLogic(QFile& file, std::vector<std::string>& column_names);
+  void parseHeaderUI(const std::vector<std::string>& column_names);
+
+  // The UI counterpart is readDataFromFile
+  bool readDataFromFileLogic(FileLoadInfo* info, PlotDataMapRef& plot_data);
+
+  // UI callbacks
+  using LaunchDialogCallback =
+      std::function<int(QFile& file, std::vector<std::string>* column_names)>;
+  LaunchDialogCallback _launchDialogCallback;
+  int launchDialog(QFile& file, std::vector<std::string>* column_names);
+  int LaunchDialogUI(QFile& file, std::vector<std::string>* column_names) const;
+
+  using OpenProgressDialogCallback = std::function<void(QFile& file)>;
+  OpenProgressDialogCallback _openProgressDialogCallback;
+  void OpenProgressDialogUI(QFile& file) const;
+  void openProgressDialog(QFile& file);
+
+  using UpdateProgressDialogCallback = std::function<void(int progress)>;
+  UpdateProgressDialogCallback _updateProgressDialogCallback;
+  void UpdateProgressDialogUI(int progress) const;
+
+  using IsProgressBarCancelled = std::function<bool()>;
+  IsProgressBarCancelled _isProgressBarCancelled;
+  bool WasProgressBarCancelledUI() const;
+
+  using WarningMessageBoxCallback = std::function<QMessageBox::StandardButton(
+      const QString& title, const QString& text, const QString& detailedText)>;
+  WarningMessageBoxCallback _warningMessageBoxCallback;
+  QMessageBox::StandardButton OpenWarningMessageBoxUI(const QString& title, const QString& text,
+                                                      const QString& detailedText = QString());
+  QMessageBox::StandardButton openWarningMessageBox(const QString& title, const QString& text,
+                                                    const QString& detailedText = QString());
+
+  using WarningMessageBoxNonMonotonicTime =
+      std::function<bool(const QString& title, const QString& text, const QString& detailedText)>;
+  WarningMessageBoxNonMonotonicTime _warningMessageBoxNonMonotonicTime;
+  bool OpenWarningMessageBoxNonMonotonicTimeUI(const QString& title, const QString& text,
+                                               const QString& detailedText);
+  bool openWarningMessageBoxNonMonotonicTime(const QString& title, const QString& text,
+                                             const QString& detailedText);
+
+  //---------------------------------------------------------------------------------//
+
   std::vector<const char*> _extensions;
-
   std::string _default_time_axis;
-
   QChar _delimiter;
-
-  FileLoadInfo* _fileInfo;
-
+  FileLoadInfo* _fileInfo = nullptr;
   bool multiple_columns_warning_ = true;
-
   // Used when Saving state
-  int _delimiterIndex = -1;
-
+  int _delimiterIndex = -1;  // TODO: check if we can remove this
   bool _isCustomTime = false;
-
+  bool _triggerMultipleColumnsWarning = false;
   std::string _dateFormat;
+
+  QDialog* _dialog;
+  Ui::DialogCSV* _ui;
+  DateTimeHelp* _dateTime_dialog;
+  QCSVHighlighter _csvHighlighter;
+  QStandardItemModel* _model;
+  QStringList _lines = QStringList();
+  QString _preview_lines = QString();
 };
