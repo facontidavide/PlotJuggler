@@ -215,9 +215,17 @@ DataLoadCSV::DataLoadCSV()
     bool box_enabled = !checked || selected.size() == 1;
     _ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(box_enabled);
   });
+  connect(_ui->radioButtonDateTimeColumns, &QRadioButton::toggled, this, [this](bool checked) {
+    _ui->listWidgetSeries->setEnabled(!checked && _ui->radioButtonSelect->isChecked());
+    if (checked)
+    {
+      _ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
+    }
+  });
   connect(_ui->listWidgetSeries, &QListWidget::itemSelectionChanged, this, [this]() {
     auto selected = _ui->listWidgetSeries->selectionModel()->selectedIndexes();
-    bool box_enabled = _ui->radioButtonIndex->isChecked() || selected.size() == 1;
+    bool box_enabled = _ui->radioButtonIndex->isChecked() ||
+                       _ui->radioButtonDateTimeColumns->isChecked() || selected.size() == 1;
     _ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(box_enabled);
   });
 
@@ -262,6 +270,8 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
 
   column_names.clear();
   _ui->listWidgetSeries->clear();
+  _ui->radioButtonDateTimeColumns->setEnabled(false);
+  _ui->radioButtonDateTimeColumns->setText(tr("Combine Date + Time columns"));
 
   QTextStream inA(&file);
   // The first line should contain the header. If it contains a number, we will
@@ -391,6 +401,77 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
   _ui->rawText->setPlainText(preview_lines);
   _ui->tableView->resizeColumnsToContents();
 
+  // Auto-detect DATE_ONLY and TIME_ONLY column pairs and create combined virtual columns
+  _combined_columns.clear();
+
+  if (lines.empty())
+  {
+    file.close();
+    return;
+  }
+
+  // Detect column types from the first data row
+  std::vector<PJ::CSV::ColumnTypeInfo> column_types(column_names.size());
+  QStringList first_data_line;
+  SplitLine(lines[0], _delimiter, first_data_line);
+
+  for (size_t i = 0; i < column_types.size() && i < first_data_line.size(); i++)
+  {
+    if (!first_data_line[i].isEmpty())
+    {
+      column_types[i] = PJ::CSV::DetectColumnType(first_data_line[i].toStdString());
+    }
+  }
+
+  // Find DATE_ONLY and TIME_ONLY consecutive column pairs only
+  for (size_t i = 0; i + 1 < column_types.size(); i++)
+  {
+    const auto& type_a = column_types[i].type;
+    const auto& type_b = column_types[i + 1].type;
+
+    size_t date_idx = SIZE_MAX;
+    size_t time_idx = SIZE_MAX;
+
+    // Check if columns i and i+1 form a date+time pair (in either order)
+    if (type_a == PJ::CSV::ColumnType::DATE_ONLY && type_b == PJ::CSV::ColumnType::TIME_ONLY)
+    {
+      date_idx = i;
+      time_idx = i + 1;
+    }
+    else if (type_a == PJ::CSV::ColumnType::TIME_ONLY && type_b == PJ::CSV::ColumnType::DATE_ONLY)
+    {
+      date_idx = i + 1;
+      time_idx = i;
+    }
+
+    if (date_idx == SIZE_MAX)
+    {
+      continue;
+    }
+
+    // Create combined virtual column
+    std::string virtual_name = column_names[date_idx] + " + " + column_names[time_idx];
+
+    CombinedColumn combined;
+    combined.date_column_index = date_idx;
+    combined.time_column_index = time_idx;
+    combined.virtual_name = virtual_name;
+    _combined_columns.push_back(combined);
+
+    // Skip the next column since it's already part of this pair
+    i++;
+  }
+
+  // Enable the radio button if combined columns were detected
+  if (!_combined_columns.empty())
+  {
+    _ui->radioButtonDateTimeColumns->setEnabled(true);
+    // Show which columns will be combined
+    const auto& combined = _combined_columns[0];
+    _ui->radioButtonDateTimeColumns->setText(
+        tr("Combine Date + Time columns (%1)").arg(QString::fromStdString(combined.virtual_name)));
+  }
+
   file.close();
 }
 
@@ -491,6 +572,14 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
     return TIME_INDEX_GENERATED;
   }
 
+  if (_ui->radioButtonDateTimeColumns->isChecked() && !_combined_columns.empty())
+  {
+    // Return index pointing to the first combined column (virtual index after real columns)
+    settings.setValue("DataLoadCSV.timeIndex",
+                      QString::fromStdString(_combined_columns[0].virtual_name));
+    return column_names->size();  // Virtual index for combined column
+  }
+
   QModelIndexList indexes = _ui->listWidgetSeries->selectionModel()->selectedRows();
   if (indexes.size() == 1)
   {
@@ -540,12 +629,26 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
     }
     else
     {
+      // First check regular columns
       for (size_t i = 0; i < column_names.size(); i++)
       {
         if (column_names[i] == _default_time_axis)
         {
           time_index = i;
           break;
+        }
+      }
+
+      // If not found, check virtual combined columns
+      if (time_index == TIME_INDEX_NOT_DEFINED)
+      {
+        for (size_t i = 0; i < _combined_columns.size(); i++)
+        {
+          if (_combined_columns[i].virtual_name == _default_time_axis)
+          {
+            time_index = column_names.size() + i;
+            break;
+          }
         }
       }
     }
@@ -671,33 +774,79 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
 
     if (time_index >= 0)
     {
-      t_str = string_items[time_index];
-      const auto time_trimm = t_str.trimmed();
+      // Check if this is a combined virtual column
+      bool is_combined = false;
+      int date_col_idx = -1;
+      int time_col_idx = -1;
+
+      // Virtual columns have indices >= original column count
+      if (time_index >= static_cast<int>(column_types.size()))
+      {
+        // This is a virtual combined column
+        int virtual_idx = time_index - column_types.size();
+        if (virtual_idx < static_cast<int>(_combined_columns.size()))
+        {
+          is_combined = true;
+          date_col_idx = _combined_columns[virtual_idx].date_column_index;
+          time_col_idx = _combined_columns[virtual_idx].time_column_index;
+        }
+      }
+
       bool is_number = false;
 
-      if (parse_date_format)
+      if (is_combined && date_col_idx >= 0 && time_col_idx >= 0)
       {
-        if (auto ts = FormatParseTimestamp(time_trimm, format_string))
+        // Parse combined date+time columns
+        const QString& date_str = string_items[date_col_idx];
+        const QString& time_str = string_items[time_col_idx];
+
+        if (auto ts = PJ::CSV::ParseCombinedDateTime(
+                date_str.trimmed().toStdString(), time_str.trimmed().toStdString(),
+                column_types[date_col_idx], column_types[time_col_idx]))
         {
           is_number = true;
           timestamp = *ts;
+          t_str = date_str + " " + time_str;  // For error messages
         }
       }
       else
       {
-        // Use the detected column type for the time column
-        const auto& time_type = column_types[time_index];
-        if (time_type.type != PJ::CSV::ColumnType::STRING)
+        // Regular single-column timestamp parsing
+        t_str = string_items[time_index];
+        const auto time_trimm = t_str.trimmed();
+
+        if (parse_date_format)
         {
-          if (auto ts = PJ::CSV::ParseWithType(time_trimm.toStdString(), time_type))
+          if (auto ts = FormatParseTimestamp(time_trimm, format_string))
           {
             is_number = true;
             timestamp = *ts;
           }
         }
+        else
+        {
+          // Use the detected column type for the time column
+          const auto& time_type = column_types[time_index];
+          if (time_type.type != PJ::CSV::ColumnType::STRING)
+          {
+            if (auto ts = PJ::CSV::ParseWithType(time_trimm.toStdString(), time_type))
+            {
+              is_number = true;
+              timestamp = *ts;
+            }
+          }
+        }
       }
 
-      time_header_str = header_string_items[time_index];
+      if (is_combined)
+      {
+        time_header_str = QString::fromStdString(
+            _combined_columns[time_index - column_types.size()].virtual_name);
+      }
+      else
+      {
+        time_header_str = header_string_items[time_index];
+      }
 
       if (!is_number)
       {
@@ -776,6 +925,22 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
         continue;
       }
 
+      // Skip Date/Time columns that are part of a combined column
+      // (they're only used to generate the timestamp, not stored as data)
+      bool skip_combined_component = false;
+      for (const auto& combined : _combined_columns)
+      {
+        if (i == combined.date_column_index || i == combined.time_column_index)
+        {
+          skip_combined_component = true;
+          break;
+        }
+      }
+      if (skip_combined_component)
+      {
+        continue;
+      }
+
       // Use the detected column type to parse the value
       if (col_type.type != PJ::CSV::ColumnType::STRING)
       {
@@ -817,7 +982,21 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
 
   if (time_index >= 0)
   {
-    _default_time_axis = column_names[time_index];
+    // Check if this is a combined virtual column
+    if (time_index >= static_cast<int>(column_names.size()))
+    {
+      // Virtual combined column
+      int virtual_idx = time_index - column_names.size();
+      if (virtual_idx < static_cast<int>(_combined_columns.size()))
+      {
+        _default_time_axis = _combined_columns[virtual_idx].virtual_name;
+      }
+    }
+    else
+    {
+      // Regular column
+      _default_time_axis = column_names[time_index];
+    }
   }
   else if (time_index == TIME_INDEX_GENERATED)
   {

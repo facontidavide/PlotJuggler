@@ -96,6 +96,8 @@ enum class ColumnType
   EPOCH_MICROS,   // Numeric epoch timestamp in microseconds
   EPOCH_NANOS,    // Numeric epoch timestamp in nanoseconds
   DATETIME,       // Date/time string with detected format
+  DATE_ONLY,      // Date string without time component (e.g., "2024-01-15")
+  TIME_ONLY,      // Time string without date component (e.g., "14:30:25.123")
   STRING,         // Non-numeric, non-datetime string
   UNDEFINED
 };
@@ -130,6 +132,23 @@ ColumnTypeInfo DetectColumnType(const std::string& str);
  * @return Parsed value as double, or nullopt if parsing fails
  */
 std::optional<double> ParseWithType(const std::string& str, const ColumnTypeInfo& type_info);
+
+/**
+ * @brief Combine separate date and time strings into a single timestamp.
+ *
+ * Takes a date-only string and a time-only string and combines them into
+ * a single timestamp value.
+ *
+ * @param date_str The date string (e.g., "2024-01-15")
+ * @param time_str The time string (e.g., "14:30:25.123")
+ * @param date_info The detected type info for the date column
+ * @param time_info The detected type info for the time column
+ * @return Combined timestamp as seconds since epoch, or nullopt if parsing fails
+ */
+std::optional<double> ParseCombinedDateTime(const std::string& date_str,
+                                            const std::string& time_str,
+                                            const ColumnTypeInfo& date_info,
+                                            const ColumnTypeInfo& time_info);
 
 }  // namespace PJ::CSV
 
