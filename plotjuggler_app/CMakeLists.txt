@@ -16,7 +16,6 @@ qt5_wrap_ui(
   curvelist_panel.ui
   preferences_dialog.ui
   suggest_dialog.ui
-  new_release_dialog.ui
   multifile_prefix.ui
   colormap_editor.ui
   colormap_selector.ui
@@ -51,8 +50,9 @@ set(PLOTJUGGLER_SRC
     main.cpp
     mainwindow.cpp
     messageparser_base.cpp
+    toast_notification.cpp
+    toast_manager.cpp
     menubar.cpp
-    new_release_dialog.cpp
     plugin_manager.cpp
     plotwidget.cpp
     plotwidget_editor.cpp

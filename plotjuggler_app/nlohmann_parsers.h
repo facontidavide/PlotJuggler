@@ -83,25 +83,66 @@ public:
 
 //------------------------------------------
 
-#include <QGroupBox>
+#include <QCheckBox>
+#include <QDialog>
+#include <QFrame>
+#include <QLabel>
 #include <QVBoxLayout>
-#include <QLineEdit>
 
-class QCheckBoxClose : public QGroupBox
+#include "PlotJuggler/line_edit.h"
+
+class QCheckBoxClose : public QWidget
 {
 public:
-  QLineEdit* lineedit;
-  QGroupBox* groupbox;
-  QCheckBoxClose(QString text) : QGroupBox(text)
+  QCheckBox* checkbox;
+  QFrame* frame;
+  LineEdit* lineedit;
+
+  QCheckBoxClose(QString text) : QWidget()
   {
-    QGroupBox::setCheckable(true);
-    QGroupBox::setChecked(false);
-    lineedit = new QLineEdit(this);
-    QVBoxLayout* vbox = new QVBoxLayout;
-    vbox->addSpacing(20);
-    vbox->addWidget(lineedit);
-    QGroupBox::setLayout(vbox);
+    checkbox = new QCheckBox(text, this);
+    checkbox->setChecked(false);
+
+    frame = new QFrame(this);
+    frame->setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
+    frame->setVisible(false);
+
+    auto* label = new QLabel("Timestamp field name:", frame);
+    lineedit = new LineEdit(frame);
+    lineedit->setPlaceholderText("e.g. timestamp, time, ts");
+
+    auto* frameLayout = new QVBoxLayout(frame);
+    frameLayout->setContentsMargins(8, 8, 8, 8);
+    frameLayout->setSpacing(4);
+    frameLayout->addWidget(label);
+    frameLayout->addWidget(lineedit);
+
+    auto* mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(4);
+    mainLayout->addWidget(checkbox);
+    mainLayout->addWidget(frame);
+
+    connect(checkbox, &QCheckBox::toggled, this, [this](bool checked) {
+      frame->setVisible(checked);
+      // Trigger parent dialog resize
+      if (auto* dlg = qobject_cast<QDialog*>(window()))
+      {
+        dlg->adjustSize();
+      }
+    });
   }
+
+  bool isChecked() const
+  {
+    return checkbox->isChecked();
+  }
+
+  void setChecked(bool checked)
+  {
+    checkbox->setChecked(checked);
+  }
+
   ~QCheckBoxClose() override
   {
     qDebug() << "Destroying QCheckBoxClose";
@@ -128,7 +169,7 @@ public:
                                      timestamp_name);
   }
 
-  virtual QWidget* optionsWidget()
+  QWidget* optionsWidget() override
   {
     loadSettings();
 

@@ -92,7 +92,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditSource">
+             <widget class="LineEdit" name="lineEditSource">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -448,7 +448,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="nameLineEdit">
+               <widget class="LineEdit" name="nameLineEdit">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                   <horstretch>0</horstretch>
@@ -647,7 +647,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="lineEditTab2Filter">
+              <widget class="LineEdit" name="lineEditTab2Filter">
                <property name="dragEnabled">
                 <bool>true</bool>
                </property>
@@ -764,7 +764,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="suffixLineEdit">
+              <widget class="LineEdit" name="suffixLineEdit">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -979,6 +979,11 @@
    <class>QCodeEditor</class>
    <extends>QTextEdit</extends>
    <header location="global">QCodeEditor</header>
+  </customwidget>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>PlotJuggler/line_edit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -3,6 +3,10 @@
 #include "qwt_scale_div.h"
 
 #include "plotpanner.h"
+#include <QMouseEvent>
+#include <QApplication>
+#include <QSettings>
+#include "PlotJuggler/svg_util.h"
 
 void PlotPanner::moveCanvas(int dx, int dy)
 {
@@ -60,4 +64,36 @@ void PlotPanner::moveCanvas(int dx, int dy)
 
   plot->setAutoReplot(doAutoReplot);
   plot->replot();
+}
+
+void PlotPanner::widgetMousePressEvent(QMouseEvent* event)
+{
+  // Check if this event matches our panning button/modifiers
+  Qt::MouseButton button;
+  Qt::KeyboardModifiers modifiers;
+  getMouseButton(button, modifiers);
+
+  if (event->button() == button && event->modifiers() == modifiers)
+  {
+    // Set the move cursor when panning starts
+    QSettings settings;
+    QString theme = settings.value("Preferences::theme", "light").toString();
+    auto pixmap = LoadSvg(":/resources/svg/move_view.svg", theme);
+    QApplication::setOverrideCursor(QCursor(pixmap.scaled(24, 24)));
+    _cursor_overridden = true;
+  }
+
+  QwtPlotPanner::widgetMousePressEvent(event);
+}
+
+void PlotPanner::widgetMouseReleaseEvent(QMouseEvent* event)
+{
+  // Restore cursor before calling base class
+  if (_cursor_overridden)
+  {
+    QApplication::restoreOverrideCursor();
+    _cursor_overridden = false;
+  }
+
+  QwtPlotPanner::widgetMouseReleaseEvent(event);
 }

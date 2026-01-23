@@ -2,6 +2,32 @@
 Changelog for package plotjuggler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.15.0 (2025-12-27)
+-------------------
+
+3.14.6 (2025-12-27)
+-------------------
+* cherry pick `#835 <https://github.com/facontidavide/PlotJuggler/issues/835>`_: use timspam in protobuf, if present
+* formatting
+* fix style in preferences
+* Feature: add option to swap pan/zoom mouse actions (`#1235 <https://github.com/facontidavide/PlotJuggler/issues/1235>`_)
+* cleanup ULG plugin
+* Merge branch 'he_parse'
+* fix formatting
+* fix comments
+* CSV parsing: fix issue `#1237 <https://github.com/facontidavide/PlotJuggler/issues/1237>`_
+* Add hexadecimal timestamp parsing (0x prefix only)
+  Support hexadecimal values in CSV files when explicitly prefixed with 0x.
+  This avoids ambiguity with string labels like 'A' or 'B' which could
+  otherwise be misinterpreted as hex values.
+  Addresses feedback from @facontidavide on `#1227 <https://github.com/facontidavide/PlotJuggler/issues/1227>`_
+* Fix plugin installation path from /usr/OFF to /usr/lib/plotjuggler/plugins (`#1239 <https://github.com/facontidavide/PlotJuggler/issues/1239>`_)
+* Add GitHub Copilot instructions for repository context (`#1242 <https://github.com/facontidavide/PlotJuggler/issues/1242>`_)
+* add devcontainer
+* should fix `#1223 <https://github.com/facontidavide/PlotJuggler/issues/1223>`_
+* formatting
+* Contributors: Copilot, Davide Faconti, panav, viktor-av
+
 3.14.5 (2025-12-22)
 -------------------
 * add option to change width of lines in PlotWidget Editor

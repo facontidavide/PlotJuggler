@@ -37,8 +37,6 @@
 #include "transforms/absolute_transform.h"
 #include "transforms/time_since_previous_point.h"
 
-#include "new_release_dialog.h"
-
 #ifdef COMPILED_WITH_CATKIN
 #include <ros/ros.h>
 #endif
@@ -60,35 +58,6 @@ inline int GetVersionNumber(QString str)
   int minor = online_version[1].toInt();
   int patch = online_version[2].toInt();
   return major * 10000 + minor * 100 + patch;
-}
-
-void OpenNewReleaseDialog(QNetworkReply* reply)
-{
-  if (reply->error())
-  {
-    qDebug() << "GitHub release check error:" << reply->error() << reply->errorString();
-    return;
-  }
-
-  QString answer = reply->readAll();
-  QJsonDocument document = QJsonDocument::fromJson(answer.toUtf8());
-  QJsonObject data = document.object();
-  QString url = data["html_url"].toString();
-  QString name = data["name"].toString();
-  QString tag_name = data["tag_name"].toString();
-  QSettings settings;
-  int online_number = GetVersionNumber(tag_name);
-  QString dont_show = settings.value("NewRelease/dontShowThisVersion", VERSION_STRING).toString();
-  int dontshow_number = GetVersionNumber(dont_show);
-  int current_number = GetVersionNumber(VERSION_STRING);
-
-  qDebug() << "Current version:" << VERSION_STRING << ". Latest release version :" << tag_name;
-
-  if (online_number > current_number && online_number > dontshow_number)
-  {
-    NewReleaseDialog* dialog = new NewReleaseDialog(nullptr, tag_name, name, url);
-    dialog->exec();
-  }
 }
 
 QPixmap getFunnySplashscreen()
@@ -200,7 +169,7 @@ int main(int argc, char* argv[])
   //-------------------------
 
   QCoreApplication::setOrganizationName("PlotJuggler");
-  QCoreApplication::setApplicationName("PlotJuggler-3");
+  QCoreApplication::setApplicationName("io.plotjuggler.PlotJuggler");
   QSettings::setDefaultFormat(QSettings::IniFormat);
 
   QSettings settings;
@@ -338,20 +307,6 @@ int main(int argc, char* argv[])
   QIcon app_icon("://resources/plotjuggler.svg");
   QApplication::setWindowIcon(app_icon);
 
-  QNetworkAccessManager manager_new_release;
-  QObject::connect(&manager_new_release, &QNetworkAccessManager::finished, OpenNewReleaseDialog);
-
-  QNetworkRequest request_new_release;
-  request_new_release.setUrl(QUrl("https://api.github.com/repos/facontidavide/"
-                                  "PlotJuggler/releases/latest"));
-
-  // Disable SSL peer verification for GitHub API (workaround for Qt5/OpenSSL 3.0 incompatibility)
-  QSslConfiguration sslConfig_release = request_new_release.sslConfiguration();
-  sslConfig_release.setPeerVerifyMode(QSslSocket::VerifyNone);
-  request_new_release.setSslConfiguration(sslConfig_release);
-
-  manager_new_release.get(request_new_release);
-
   MainWindow* window = nullptr;
 
   /*
@@ -423,6 +378,49 @@ int main(int argc, char* argv[])
   {
     window->on_buttonStreamingStart_clicked();
   }
+
+  // Check for new releases on GitHub
+  QNetworkAccessManager* manager_new_release = new QNetworkAccessManager(&app);
+  QObject::connect(
+      manager_new_release, &QNetworkAccessManager::finished, [window](QNetworkReply* reply) {
+        if (reply->error())
+        {
+          qDebug() << "GitHub release check error:" << reply->error() << reply->errorString();
+          return;
+        }
+
+        QString answer = reply->readAll();
+        QJsonDocument document = QJsonDocument::fromJson(answer.toUtf8());
+        QJsonObject data = document.object();
+        QString url = data["html_url"].toString();
+        QString name = data["name"].toString();
+        QString tag_name = data["tag_name"].toString();
+
+        int online_number = GetVersionNumber(tag_name);
+        int current_number = GetVersionNumber(VERSION_STRING);
+
+        qDebug() << "Current version:" << VERSION_STRING << ". Latest release version:" << tag_name;
+
+        if (online_number > current_number)
+        {
+          QString message = QString("New release available: <b>%1</b><br>"
+                                    "<a href=\"%2\">View on GitHub</a>")
+                                .arg(name, url);
+          QPixmap icon(":/resources/success_kid.png");
+          window->showToast(message, icon);
+        }
+      });
+
+  QNetworkRequest request_new_release;
+  request_new_release.setUrl(
+      QUrl("https://api.github.com/repos/facontidavide/PlotJuggler/releases/latest"));
+
+  // Disable SSL peer verification for GitHub API (workaround for Qt5/OpenSSL 3.0 incompatibility)
+  QSslConfiguration sslConfig_release = request_new_release.sslConfiguration();
+  sslConfig_release.setPeerVerifyMode(QSslSocket::VerifyNone);
+  request_new_release.setSslConfiguration(sslConfig_release);
+
+  manager_new_release->get(request_new_release);
 
   QNetworkAccessManager manager_message;
   QObject::connect(

@@ -194,7 +194,6 @@ Located in `.github/workflows/`:
 - Can be built without ROS support
 
 ### Version Information
-- Current version: 3.14.5 (defined in `CMakeLists.txt` and `package.xml`)
 - Version info embedded in compiled binary
 - Installation type tracked via `PJ_INSTALLATION` CMake variable
 

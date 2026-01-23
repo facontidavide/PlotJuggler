@@ -31,6 +31,7 @@ THE SOFTWARE.
 #include <QNetworkInterface>
 
 #include "ui_udp_server.h"
+#include "PlotJuggler/dialog_utils.h"
 
 class UdpServerDialog : public QDialog
 {
@@ -110,7 +111,7 @@ bool UDP_Server::start(QStringList*)
 
   ParserFactoryPlugin::Ptr parser_creator;
 
-  auto onComboChanged = [&](const QString& selected_protocol) {
+  auto onComboChanged = [this, &dialog, &parser_creator](const QString& selected_protocol) {
     if (parser_creator)
     {
       if (auto prev_widget = parser_creator->optionsWidget())
@@ -120,10 +121,7 @@ bool UDP_Server::start(QStringList*)
     }
     parser_creator = parserFactories()->at(selected_protocol);
 
-    if (auto widget = parser_creator->optionsWidget())
-    {
-      widget->setVisible(true);
-    }
+    showOptionsWidget(&dialog, dialog.ui->boxOptions, parser_creator->optionsWidget());
   };
 
   connect(dialog.ui->comboBoxProtocol, qOverload<const QString&>(&QComboBox::currentIndexChanged),

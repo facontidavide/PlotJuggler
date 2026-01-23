@@ -55,15 +55,12 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path installer\io.plotjuggler.application\data
           Copy-Item -Path build\bin\Release\*.* -Destination installer\io.plotjuggler.application\data -Recurse -Force
-          windeployqt.exe --release installer\io.plotjuggler.application\data\plotjuggler.exe
+          cmd /c installer\windeploy_pj.bat
 
       - name: Create installer using QT Installation Framework
-        id: create_installer
         shell: pwsh
         run: |
-          # Get version from tag or use default
-          $version = if ($env:GITHUB_REF -match "refs/tags/([0-9]+\.[0-9]+\.[0-9]+)") { $matches[1] } else { "dev" }
-          $installer_name = "PlotJuggler-$version-Windows-x64.exe"
+          $installer_name = "PlotJuggler-${{ github.ref_name }}-Windows-x64.exe"
 
           # Find binarycreator executable
           $binarycreator = Get-ChildItem -Path "${{ github.workspace }}\qt_installation" -Recurse -Name "binarycreator.exe" | Select-Object -First 1
@@ -82,20 +79,19 @@ jobs:
               exit 1
           }
 
-          # Set output for upload step
-          "installer_name=$installer_name" >> $env:GITHUB_OUTPUT
           Write-Host "Installer created successfully: $installer_name"
 
       - name: Upload installer
         uses: actions/upload-artifact@v6
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: ${{ steps.create_installer.outputs.installer_name }}
-          path: ${{ steps.create_installer.outputs.installer_name }}
+          name: PlotJuggler-${{ github.ref_name }}-Windows-x64.exe
+          path: PlotJuggler-${{ github.ref_name }}-Windows-x64.exe
 
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.create_installer.outputs.installer_name }}
+          files: PlotJuggler-${{ github.ref_name }}-Windows-x64.exe
           generate_release_notes: false
           fail_on_unmatched_files: false

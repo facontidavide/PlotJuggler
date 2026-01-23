@@ -140,7 +140,7 @@ public:
     return false;
   }
 
-  void setLargeArraysPolicy(bool clamp, unsigned max_size)
+  void setLargeArraysPolicy(bool clamp, unsigned max_size) override
   {
     MessageParser::setLargeArraysPolicy(clamp, max_size);
     // Original function signature:
@@ -172,10 +172,10 @@ private:
 ParserFactoryWASM::ParserFactoryWASM(std::unique_ptr<WasmRuntime> runtime, QString plugin_name,
                                      QString encoding)
   : _runtime(std::move(runtime))
-  , _plugin_name(std::move(plugin_name))
-  , _encoding(std::move(encoding))
+  , _plugin_name_str(plugin_name.toStdString())
+  , _encoding_str(encoding.toStdString())
 {
-  qDebug() << "ParserFactoryWASM Plugin: " << _plugin_name << " encoding: " << _encoding;
+  qDebug() << "ParserFactoryWASM Plugin: " << plugin_name << " encoding: " << encoding;
 }
 
 MessageParserPtr ParserFactoryWASM::createParser(const std::string& topic_name,

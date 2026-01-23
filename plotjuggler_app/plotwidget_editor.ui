@@ -193,7 +193,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="editColotText">
+          <widget class="LineEdit" name="editColotText">
            <property name="focusPolicy">
             <enum>Qt::ClickFocus</enum>
            </property>
@@ -525,7 +525,7 @@
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QLineEdit" name="lineLimitMax">
+             <widget class="LineEdit" name="lineLimitMax">
               <property name="enabled">
                <bool>false</bool>
               </property>
@@ -545,7 +545,7 @@
              </widget>
             </item>
             <item row="2" column="1">
-             <widget class="QLineEdit" name="lineLimitMin">
+             <widget class="LineEdit" name="lineLimitMin">
               <property name="enabled">
                <bool>false</bool>
               </property>
@@ -653,6 +653,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>PlotJuggler/line_edit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resource.qrc"/>
  </resources>

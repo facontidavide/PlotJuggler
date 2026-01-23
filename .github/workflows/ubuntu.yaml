@@ -17,8 +17,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ubuntu-distro:
-          - ubuntu-22.04
+        include:
+          - ubuntu-distro: ubuntu-22.04
+            arch: x86_64
+          - ubuntu-distro: ubuntu-22.04-arm
+            arch: aarch64
 
     steps:
       - name: Sync repository
@@ -27,7 +30,7 @@ jobs:
       - name: Cache apt packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: software-properties-common qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev ccache libmosquitto-dev ca-certificates lsb-release wget
+          packages: software-properties-common qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev ccache libmosquitto-dev ca-certificates lsb-release wget libcurl4-openssl-dev
           version: 2.0
 
       - name: Install Apache Arrow for Parquet support
@@ -64,26 +67,28 @@ jobs:
         working-directory: ${{ github.workspace }}
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-            wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-            wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+            wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${{ matrix.arch }}.AppImage
+            wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-${{ matrix.arch }}.AppImage
             chmod +x linuxdeploy*.AppImage
             mkdir -p AppDir/usr/bin
             cp -v build/bin/* AppDir/usr/bin
-            ./linuxdeploy-x86_64.AppImage --appdir=AppDir \
-              -d ./PlotJuggler.desktop \
+            ./linuxdeploy-${{ matrix.arch }}.AppImage --appdir=AppDir \
+              -d ./io.plotjuggler.PlotJuggler.desktop \
               -i ./plotjuggler.png \
               --plugin qt --output appimage
+            mv PlotJuggler-${{ matrix.arch }}.AppImage PlotJuggler-${{ github.ref_name }}-${{ matrix.arch }}.AppImage
 
       - name: Upload AppImage
         uses: actions/upload-artifact@v6
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: PlotJuggler-x86_64.AppImage
-          path: PlotJuggler-x86_64.AppImage
+          name: PlotJuggler-${{ github.ref_name }}-${{ matrix.arch }}.AppImage
+          path: PlotJuggler-${{ github.ref_name }}-${{ matrix.arch }}.AppImage
 
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: PlotJuggler-x86_64.AppImage
+          files: PlotJuggler-${{ github.ref_name }}-${{ matrix.arch }}.AppImage
           generate_release_notes: true
           fail_on_unmatched_files: false

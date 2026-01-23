@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           apt update
-          apt install -y git qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq3-dev ccache libmosquitto-dev ca-certificates lsb-release wget zsync
+          apt install -y git qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq3-dev ccache libmosquitto-dev ca-certificates lsb-release wget zsync libcurl4-openssl-dev
 
       - name: Install Apache Arrow for Parquet support
         shell: bash
@@ -110,7 +110,7 @@ jobs:
           cp -p build/bin/* plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/usr/lib/plotjuggler/
           mkdir -p plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/usr/bin
           mkdir -p plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/usr/share/applications
-          cp PlotJuggler.desktop plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/usr/share/applications/
+          cp io.plotjuggler.PlotJuggler.desktop plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/usr/share/applications/
           mkdir -p plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/usr/share/icons/hicolor/512x512/apps/
           cp plotjuggler.png plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/usr/share/icons/hicolor/512x512/apps/
           mkdir -p plotjuggler_'${{ steps.define_version.outputs.version }}'_amd64/usr/share/icons/hicolor/scalable/apps/

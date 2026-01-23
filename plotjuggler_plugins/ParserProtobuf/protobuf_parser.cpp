@@ -44,12 +44,36 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg, double& times
 
   std::function<void(const google::protobuf::Message&, const std::string&, const bool)> ParseImpl;
 
+  if (useEmbeddedTimestamp())
+  {
+    // search the correct field the first time
+    if (!_timestamp_field_index && _first_message)
+    {
+      _first_message = false;
+      for (auto i = 0; i < _msg_descriptor->field_count(); ++i)
+      {
+        const auto& field = _msg_descriptor->field(i);
+        if ("timestamp" == field->name() &&
+            field->cpp_type() == gp::FieldDescriptor::CPPTYPE_DOUBLE)
+        {
+          _timestamp_field_index = i;
+          break;
+        }
+      }
+    }
+    // if there is a field with the expected name, use that as timestamp
+    if (_timestamp_field_index)
+    {
+      const gp::Reflection* ref_tmp = mutable_msg->GetReflection();
+      const gp::Descriptor* desc_tmp = mutable_msg->GetDescriptor();
+      timestamp = ref_tmp->GetDouble(*mutable_msg, desc_tmp->field(*_timestamp_field_index));
+    }
+  }
+
   ParseImpl = [&](const google::protobuf::Message& msg, const std::string& prefix,
                   const bool is_map) {
     const gp::Reflection* reflection = msg.GetReflection();
     const gp::Descriptor* descriptor = msg.GetDescriptor();
-    //    std::vector<const FieldDescriptor*> reflection_fields;
-    //    reflection->ListFields(msg, &reflection_fields);
 
     for (int index = 0; index < descriptor->field_count(); index++)
     {

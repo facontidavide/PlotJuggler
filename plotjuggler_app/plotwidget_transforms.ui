@@ -143,7 +143,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditAlias">
+             <widget class="LineEdit" name="lineEditAlias">
               <property name="minimumSize">
                <size>
                 <width>300</width>
@@ -311,6 +311,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>PlotJuggler/line_edit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

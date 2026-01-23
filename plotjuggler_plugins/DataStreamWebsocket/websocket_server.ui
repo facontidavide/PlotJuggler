@@ -29,7 +29,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="lineEditPort"/>
+    <widget class="LineEdit" name="lineEditPort"/>
    </item>
    <item>
     <widget class="QLabel" name="label_2">
@@ -101,6 +101,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>PlotJuggler/line_edit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

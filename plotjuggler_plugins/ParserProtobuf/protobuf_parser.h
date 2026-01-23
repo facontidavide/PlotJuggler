@@ -34,4 +34,7 @@ protected:
 
   google::protobuf::DynamicMessageFactory _msg_factory;
   const google::protobuf::Descriptor* _msg_descriptor = nullptr;
+
+  bool _first_message = true;
+  std::optional<size_t> _timestamp_field_index;
 };

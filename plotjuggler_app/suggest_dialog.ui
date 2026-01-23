@@ -34,14 +34,14 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QLineEdit" name="lineEditX">
+      <widget class="LineEdit" name="lineEditX">
        <property name="readOnly">
         <bool>true</bool>
        </property>
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="lineEditY">
+      <widget class="LineEdit" name="lineEditY">
        <property name="readOnly">
         <bool>true</bool>
        </property>
@@ -71,7 +71,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="lineEditName"/>
+    <widget class="LineEdit" name="lineEditName"/>
    </item>
    <item>
     <spacer name="verticalSpacer">
@@ -98,6 +98,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>PlotJuggler/line_edit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

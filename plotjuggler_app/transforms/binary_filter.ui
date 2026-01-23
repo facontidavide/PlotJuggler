@@ -110,7 +110,7 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QLineEdit" name="lineEditA">
+       <widget class="LineEdit" name="lineEditA">
         <property name="maximumSize">
          <size>
           <width>120</width>
@@ -126,7 +126,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="lineEditB">
+       <widget class="LineEdit" name="lineEditB">
         <property name="maximumSize">
          <size>
           <width>120</width>
@@ -169,6 +169,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>PlotJuggler/line_edit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

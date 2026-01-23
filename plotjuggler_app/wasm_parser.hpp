@@ -14,11 +14,11 @@ public:
 
   const char* name() const override
   {
-    return _plugin_name.toStdString().c_str();
+    return _plugin_name_str.c_str();
   }
   const char* encoding() const override
   {
-    return _encoding.toStdString().c_str();
+    return _encoding_str.c_str();
   }
 
   // Message parsing
@@ -27,8 +27,8 @@ public:
 
 private:
   std::shared_ptr<WasmRuntime> _runtime;
-  QString _plugin_name;
-  QString _encoding;
+  std::string _plugin_name_str;
+  std::string _encoding_str;
 };
 
 }  // namespace PJ

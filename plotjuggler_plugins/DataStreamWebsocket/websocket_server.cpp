@@ -29,6 +29,7 @@ THE SOFTWARE.
 #include <chrono>
 
 #include "ui_websocket_server.h"
+#include "PlotJuggler/dialog_utils.h"
 
 class WebsocketDialog : public QDialog
 {
@@ -105,7 +106,7 @@ bool WebsocketServer::start(QStringList*)
   ParserFactoryPlugin::Ptr parser_creator;
 
   connect(dialog->ui->comboBoxProtocol, qOverload<const QString&>(&QComboBox::currentIndexChanged),
-          this, [&](const QString& selected_protocol) {
+          this, [this, dialog, &parser_creator](const QString& selected_protocol) {
             if (parser_creator)
             {
               if (auto prev_widget = parser_creator->optionsWidget())
@@ -115,10 +116,7 @@ bool WebsocketServer::start(QStringList*)
             }
             parser_creator = parserFactories()->at(selected_protocol);
 
-            if (auto widget = parser_creator->optionsWidget())
-            {
-              widget->setVisible(true);
-            }
+            showOptionsWidget(dialog, dialog->ui->boxOptions, parser_creator->optionsWidget());
           });
 
   dialog->ui->comboBoxProtocol->setCurrentText(protocol);

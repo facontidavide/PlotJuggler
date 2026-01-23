@@ -47,7 +47,7 @@ jobs:
           cmake --build build --config Release
 
       - name: Create .app bundle
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         run: |
           mkdir -p PlotJuggler.app/Contents/MacOS
           mkdir -p PlotJuggler.app/Contents/Resources
@@ -71,9 +71,9 @@ jobs:
             <key>CFBundleName</key>
             <string>PlotJuggler</string>
             <key>CFBundleVersion</key>
-            <string>${GITHUB_REF#refs/tags/}</string>
+            <string>${{ github.ref_name }}</string>
             <key>CFBundleShortVersionString</key>
-            <string>${GITHUB_REF#refs/tags/}</string>
+            <string>${{ github.ref_name }}</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>CFBundleIconFile</key>
@@ -87,16 +87,47 @@ jobs:
           EOF
 
       - name: Bundle Qt dependencies
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         run: |
           export PATH="$(brew --prefix qt@5)/bin:$PATH"
           macdeployqt PlotJuggler.app -verbose=2
 
-      - name: Create DMG
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Import Code Signing Certificate
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
+          p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+
+      - name: List signing identities
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
-          DMG_NAME="PlotJuggler-${VERSION}-macOS-${{ matrix.config.arch }}.dmg"
+          echo "=== Available signing identities ==="
+          security find-identity -v -p codesigning
+
+      - name: Sign Application Bundle
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        env:
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        run: |
+          # Sign all nested binaries, libraries, and frameworks first
+          find PlotJuggler.app -type f \( -name "*.dylib" -o -name "*.so" -o -perm +111 \) -exec \
+            /usr/bin/codesign --force --options runtime --sign "$MACOS_SIGNING_IDENTITY" --timestamp {} \;
+
+          # Sign all frameworks
+          find PlotJuggler.app/Contents/Frameworks -type d -name "*.framework" -exec \
+            /usr/bin/codesign --force --options runtime --sign "$MACOS_SIGNING_IDENTITY" --timestamp {} \; 2>/dev/null || true
+
+          # Sign the main app bundle
+          /usr/bin/codesign --force --options runtime --sign "$MACOS_SIGNING_IDENTITY" --timestamp --deep PlotJuggler.app
+
+          # Verify the signature
+          /usr/bin/codesign --verify --deep --strict --verbose=2 PlotJuggler.app
+
+      - name: Create DMG
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        run: |
+          DMG_NAME="PlotJuggler-${{ github.ref_name }}-macOS-${{ matrix.config.arch }}.dmg"
 
           create-dmg \
             --volname "PlotJuggler" \
@@ -117,19 +148,47 @@ jobs:
             hdiutil create -volname "PlotJuggler" -srcfolder PlotJuggler.app -ov -format UDZO "$DMG_NAME"
           fi
 
-          echo "DMG_NAME=$DMG_NAME" >> $GITHUB_ENV
+      - name: Sign DMG
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        env:
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        run: |
+          DMG_NAME="PlotJuggler-${{ github.ref_name }}-macOS-${{ matrix.config.arch }}.dmg"
+          /usr/bin/codesign --force --sign "$MACOS_SIGNING_IDENTITY" --timestamp "$DMG_NAME"
+          /usr/bin/codesign --verify --verbose=2 "$DMG_NAME"
+
+      - name: Notarize DMG
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          DMG_NAME="PlotJuggler-${{ github.ref_name }}-macOS-${{ matrix.config.arch }}.dmg"
+
+          # Submit for notarization with S3 acceleration and timeout
+          xcrun notarytool submit "$DMG_NAME" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --wait \
+            --timeout 30m \
+            --s3-acceleration
+
+          # Staple the notarization ticket to the DMG
+          xcrun stapler staple "$DMG_NAME"
 
       - name: Upload DMG artifact
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v6
         with:
-          name: ${{ env.DMG_NAME }}
-          path: ${{ env.DMG_NAME }}
+          name: PlotJuggler-${{ github.ref_name }}-macOS-${{ matrix.config.arch }}.dmg
+          path: PlotJuggler-${{ github.ref_name }}-macOS-${{ matrix.config.arch }}.dmg
 
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.DMG_NAME }}
+          files: PlotJuggler-${{ github.ref_name }}-macOS-${{ matrix.config.arch }}.dmg
           generate_release_notes: false
           fail_on_unmatched_files: false

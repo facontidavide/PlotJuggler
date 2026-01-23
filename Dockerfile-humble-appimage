@@ -33,7 +33,7 @@ RUN chmod +x linuxdeploy-plugin-qt-x86_64.AppImage
 RUN ./linuxdeploy-plugin-qt-x86_64.AppImage --appimage-extract && mv squashfs-root/AppRun squashfs-root/linuxdeploy-plugin-qt
 
 WORKDIR /opt/ws_plotjuggler
-RUN bash -c "source install/setup.bash && PATH=$PATH:/opt/linuxdeploy-plugin-qt/squashfs-root /opt/linuxdeploy/squashfs-root/AppRun --appdir /opt/AppDir -d src/PlotJuggler/PlotJuggler.desktop -i src/PlotJuggler/plotjuggler.png --plugin qt --output appimage"
+RUN bash -c "source install/setup.bash && PATH=$PATH:/opt/linuxdeploy-plugin-qt/squashfs-root /opt/linuxdeploy/squashfs-root/AppRun --appdir /opt/AppDir -d src/PlotJuggler/io.plotjuggler.PlotJuggler.desktop -i src/PlotJuggler/plotjuggler.png --plugin qt --output appimage"
 RUN chmod +x /opt/ws_plotjuggler/PlotJuggler-x86_64.AppImage && mv /opt/ws_plotjuggler/PlotJuggler-x86_64.AppImage /opt/ws_plotjuggler/PlotJuggler-x86_64-ROS2.AppImage
 
 FROM scratch AS exporter

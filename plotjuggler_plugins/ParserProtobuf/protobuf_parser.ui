@@ -81,6 +81,16 @@
         <widget class="QComboBox" name="comboBox"/>
        </item>
        <item>
+        <widget class="QCheckBox" name="checkBoxTimestamp">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;if the message defintion contains the field &amp;quot;timestamp&amp;quot; and this field is a double, we will use that as timestamp.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>use the field &quot;timestamp&quot;, if present</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="label">
          <property name="text">
           <string>File text:</string>

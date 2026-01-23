@@ -35,15 +35,16 @@ If you want to use [conan](https://conan.io/) to manage the dependencies,
 follow this instructions instead.
 
 ```shell
-conan install src/PlotJuggler --install-folder build/PlotJuggler \
-      --build missing -pr:b=default
+conan install src/PlotJuggler --output-folder build/PlotJuggler \
+      --build missing -pr:b=default -s build_type=RelWithDebInfo
 
 export CMAKE_TOOLCHAIN=$(pwd)/build/PlotJuggler/conan_toolchain.cmake
 
 cmake -S src/PlotJuggler -B build/PlotJuggler \
       -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN  \
       -DCMAKE_INSTALL_PREFIX=install \
-      -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
+      -DCMAKE_POLICY_DEFAULT_CMP0091=NEW \
+      -DBUILDING_WITH_CONAN=ON
 
 cmake --build build/PlotJuggler --config RelWithDebInfo --target install
 ```
@@ -71,7 +72,7 @@ echo $VERSION
 cp -v install/bin/* AppDir/usr/bin
 
 ./linuxdeploy-x86_64.AppImage --appdir=AppDir \
-    -d ./src/PlotJuggler/PlotJuggler.desktop \
+    -d ./src/PlotJuggler/io.plotjuggler.PlotJuggler.desktop \
     -i ./src/PlotJuggler/plotjuggler.png \
     --plugin qt --output appimage
 ```
@@ -156,8 +157,8 @@ Note: the Arrow/Parque plugin is not supported in Conan. Use vcpkg instead, if y
 that specific plugin.
 
 ```batch
-conan install src/PlotJuggler --install-folder build/PlotJuggler ^
-      --build=missing -pr:b=default
+conan install src/PlotJuggler --output-folder build/PlotJuggler ^
+      --build=missing -pr:b=default -s build_type=Release
 
 set CMAKE_TOOLCHAIN=%cd%/build/PlotJuggler/conan_toolchain.cmake
 
@@ -165,7 +166,8 @@ cmake -G "Visual Studio 16" ^
       -S src/PlotJuggler -B build/PlotJuggler ^
       -DCMAKE_TOOLCHAIN_FILE=%CMAKE_TOOLCHAIN%  ^
       -DCMAKE_INSTALL_PREFIX=%cd%/install ^
-      -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
+      -DCMAKE_POLICY_DEFAULT_CMP0091=NEW ^
+      -DBUILDING_WITH_CONAN=ON
 
 
 cmake --build build/PlotJuggler --config Release --target install
@@ -194,7 +196,7 @@ Change the **Qt** and **QtInstallerFramework** version as needed.
 xcopy src\PlotJuggler\installer installer\ /Y /S /f /z
 xcopy install\bin\*.* installer\io.plotjuggler.application\data /Y /S /f /z
 
-C:\QtPro\5.15.16\msvc2019_64\bin\windeployqt.exe --release installer\io.plotjuggler.application\data\plotjuggler.exe
+installer\windeploy_pj.bat C:\QtPro\5.15.16\msvc2019_64\bin\windeployqt.exe
 
 C:\QtPro\Tools\QtInstallerFramework\4.6\bin\binarycreator.exe --offline-only -c installer\config.xml -p installer  PlotJuggler-Windows-installer.exe
 ```

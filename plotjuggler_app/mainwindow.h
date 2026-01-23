@@ -32,8 +32,11 @@
 #include "transforms/custom_function.h"
 #include "transforms/function_editor.h"
 #include "plugin_manager.h"
+#include "toast_manager.h"
 
 #include "ui_mainwindow.h"
+
+class QVBoxLayout;
 
 class MainWindow : public QMainWindow
 {
@@ -53,6 +56,11 @@ public:
   void enableStreamingNotificationsButton(bool enabled);
 
   void setStatusBarMessage(QString message);
+
+  /// Show a toast notification in the bottom-right corner
+  /// @param message The text/HTML to display (supports rich text with clickable links)
+  /// @param icon Optional 56x56 icon to show on the left
+  void showToast(const QString& message, const QPixmap& icon = QPixmap());
 
 public slots:
 
@@ -173,6 +181,9 @@ private:
   QMenu* _recent_layout_files;
 
   QString _skin_path;
+
+  // Toast notification manager
+  ToastManager* _toast_manager;
 
   void initializeActions();
   void initializePlugins();

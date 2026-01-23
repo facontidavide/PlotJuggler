@@ -43,7 +43,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="lineEditAddress"/>
+       <widget class="LineEdit" name="lineEditAddress"/>
       </item>
      </layout>
     </widget>
@@ -64,7 +64,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="lineEditPort">
+       <widget class="LineEdit" name="lineEditPort">
         <property name="text">
          <string/>
         </property>
@@ -141,6 +141,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>PlotJuggler/line_edit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

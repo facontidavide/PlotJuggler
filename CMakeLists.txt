@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 project(
   plotjuggler
   LANGUAGES C CXX
-  VERSION 3.14.5)
+  VERSION 3.15.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -301,7 +301,7 @@ endif()
 
 set(DESKTOP_ICON_DIR "${CMAKE_INSTALL_PREFIX}/share/icons")
 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/PlotJuggler.desktop
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/io.plotjuggler.PlotJuggler.desktop
         DESTINATION "${CMAKE_INSTALL_PREFIX}/share/applications")
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler.svg

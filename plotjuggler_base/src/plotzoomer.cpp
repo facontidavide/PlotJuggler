@@ -83,7 +83,11 @@ void PlotZoomer::widgetMouseMoveEvent(QMouseEvent* me)
 void PlotZoomer::widgetMouseReleaseEvent(QMouseEvent* me)
 {
   _mouse_pressed = false;
-  _zoom_enabled = false;
+  if (_zoom_enabled)
+  {
+    QApplication::restoreOverrideCursor();
+    _zoom_enabled = false;
+  }
   QwtPlotPicker::widgetMouseReleaseEvent(me);
   this->setTrackerMode(AlwaysOff);
 }

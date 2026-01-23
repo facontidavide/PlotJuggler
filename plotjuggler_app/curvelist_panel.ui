@@ -61,7 +61,7 @@
            <number>6</number>
           </property>
           <item>
-           <widget class="QLineEdit" name="lineEditFilter">
+           <widget class="LineEdit" name="lineEditFilter">
             <property name="minimumSize">
              <size>
               <width>0</width>
@@ -178,7 +178,7 @@
            <number>6</number>
           </property>
           <item>
-           <widget class="QLineEdit" name="lineEditCustomFilter">
+           <widget class="LineEdit" name="lineEditCustomFilter">
             <property name="minimumSize">
              <size>
               <width>0</width>
@@ -367,6 +367,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>PlotJuggler/line_edit.h</header>
+  </customwidget>
+ </customwidgets>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>
  <connections/>

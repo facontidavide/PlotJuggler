@@ -17,6 +17,8 @@ PreferencesDialog::PreferencesDialog(QWidget* parent)
 {
   ui->setupUi(this);
   QSettings settings;
+
+  // Apperance
   QString theme = settings.value("Preferences::theme", "light").toString();
   if (theme == "dark")
   {
@@ -27,27 +29,25 @@ PreferencesDialog::PreferencesDialog(QWidget* parent)
     ui->comboBoxTheme->setCurrentIndex(0);
   }
 
-  int precision = settings.value("Preferences::precision", 3).toInt();
-  ui->comboBoxPrecision->setCurrentIndex(precision);
-
-  bool use_plot_color_index = settings.value("Preferences::use_plot_color_index", false).toBool();
-  bool remember_color = settings.value("Preferences::remember_color", true).toBool();
-
-  ui->checkBoxRememberColor->setChecked(remember_color);
-  ui->radioLocalColorIndex->setChecked(use_plot_color_index);
-  ui->radioGlobalColorIndex->setChecked(!use_plot_color_index);
-
-  ui->pushButtonAdd->setIcon(LoadSvg(":/resources/svg/add_tab.svg", theme));
-  ui->pushButtonRemove->setIcon(LoadSvg(":/resources/svg/trash.svg", theme));
-
   bool use_separator = settings.value("Preferences::use_separator", true).toBool();
   ui->checkBoxSeparator->setChecked(use_separator);
 
   bool use_opengl = settings.value("Preferences::use_opengl", true).toBool();
   ui->checkBoxOpenGL->setChecked(use_opengl);
 
+  int precision = settings.value("Preferences::precision", 3).toInt();
+  ui->comboBoxPrecision->setCurrentIndex(precision - 1);
+
   bool no_splash = settings.value("Preferences::no_splash", false).toBool();
   ui->checkBoxSkipSplash->setChecked(no_splash);
+
+  // Behavior
+  bool use_plot_color_index = settings.value("Preferences::use_plot_color_index", false).toBool();
+  bool remember_color = settings.value("Preferences::remember_color", true).toBool();
+
+  ui->checkBoxRememberColor->setChecked(remember_color);
+  ui->radioLocalColorIndex->setChecked(use_plot_color_index);
+  ui->radioGlobalColorIndex->setChecked(!use_plot_color_index);
 
   bool autozoom_visibility = settings.value("Preferences::autozoom_visibility", true).toBool();
   ui->checkBoxAutoZoomVisibility->setChecked(autozoom_visibility);
@@ -59,13 +59,20 @@ PreferencesDialog::PreferencesDialog(QWidget* parent)
       settings.value("Preferences::autozoom_filter_applied", true).toBool();
   ui->checkBoxAutoZoomFilter->setChecked(autozoom_filter_applied);
 
-  bool truncation_check = settings.value("Preferences::truncation_check", true).toBool();
-  ui->checkBoxTruncation->setChecked(truncation_check);
-
   QSize export_plot =
       settings.value("Preferences::export_plot_size", default_document_dimentions).toSize();
   ui->spinBoxExportX->setValue(export_plot.width());
   ui->spinBoxExportY->setValue(export_plot.height());
+
+  bool swap_pan_zoom = settings.value("Preferences::swap_pan_zoom", false).toBool();
+  ui->checkBoxSwapPanZoom->setChecked(swap_pan_zoom);
+
+  bool truncation_check = settings.value("Preferences::truncation_check", true).toBool();
+  ui->checkBoxTruncation->setChecked(truncation_check);
+
+  // Plugins
+  ui->pushButtonAdd->setIcon(LoadSvg(":/resources/svg/add_tab.svg", theme));
+  ui->pushButtonRemove->setIcon(LoadSvg(":/resources/svg/trash.svg", theme));
 
   //---------------
   auto custom_plugin_folders = settings.value("Preferences::plugin_folders", true).toStringList();
@@ -101,7 +108,7 @@ void PreferencesDialog::on_buttonBox_accepted()
                     ui->comboBoxTheme->currentIndex() == 1 ? "dark" : "light");
   settings.setValue("Preferences::remember_color", ui->checkBoxRememberColor->isChecked());
   settings.setValue("Preferences::use_plot_color_index", ui->radioLocalColorIndex->isChecked());
-  settings.setValue("Preferences::precision", ui->comboBoxPrecision->currentIndex());
+  settings.setValue("Preferences::precision", ui->comboBoxPrecision->currentIndex() + 1);
   settings.setValue("Preferences::use_separator", ui->checkBoxSeparator->isChecked());
   settings.setValue("Preferences::use_opengl", ui->checkBoxOpenGL->isChecked());
   settings.setValue("Preferences::no_splash", ui->checkBoxSkipSplash->isChecked());
@@ -113,6 +120,7 @@ void PreferencesDialog::on_buttonBox_accepted()
   settings.setValue("Preferences::truncation_check", ui->checkBoxTruncation->isChecked());
   settings.setValue("Preferences::export_plot_size",
                     QSize{ ui->spinBoxExportX->value(), ui->spinBoxExportY->value() });
+  settings.setValue("Preferences::swap_pan_zoom", ui->checkBoxSwapPanZoom->isChecked());
 
   QStringList plugin_folders;
   for (int row = 0; row < ui->listWidgetCustom->count(); row++)

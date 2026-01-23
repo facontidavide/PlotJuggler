@@ -18,7 +18,12 @@ public Q_SLOTS:
 signals:
   void rescaled(QRectF new_size);
 
+protected:
+  void widgetMousePressEvent(QMouseEvent* event) override;
+  void widgetMouseReleaseEvent(QMouseEvent* event) override;
+
 private:
+  bool _cursor_overridden = false;
 };
 
 #endif  // PLOTPANNER_H

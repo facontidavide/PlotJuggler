@@ -125,6 +125,7 @@
         <file>resources/skin/mainwindow_title.txt</file>
         <file>resources/stylesheet_dark.qss</file>
         <file>resources/stylesheet_light.qss</file>
+        <file>resources/success_kid.png</file>
         <file>resources/svg/Fx.svg</file>
         <file>resources/svg/add_column.svg</file>
         <file>resources/svg/add_row.svg</file>
@@ -180,8 +181,6 @@
         <file>resources/svg/zoom_max.svg</file>
         <file>resources/svg/zoom_vertical.svg</file>
         <file>resources/twitter.png</file>
-        <file>resources/update_plotjuggler.jpg</file>
-        <file>resources/update_plotjuggler_2.jpg</file>
         <file>style_dark/arrow_down.png</file>
         <file>style_dark/arrow_down_disabled.png</file>
         <file>style_dark/arrow_down_focus.png</file>

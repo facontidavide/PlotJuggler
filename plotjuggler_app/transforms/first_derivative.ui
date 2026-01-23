@@ -71,7 +71,7 @@
          <number>8</number>
         </property>
         <item>
-         <widget class="QLineEdit" name="lineEditCustom">
+         <widget class="LineEdit" name="lineEditCustom">
           <property name="maximumSize">
            <size>
             <width>80</width>
@@ -132,6 +132,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>PlotJuggler/line_edit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

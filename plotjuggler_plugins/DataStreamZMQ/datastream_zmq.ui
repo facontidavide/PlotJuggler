@@ -111,10 +111,10 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="lineEditAddress"/>
+      <widget class="LineEdit" name="lineEditAddress"/>
      </item>
      <item row="1" column="2">
-      <widget class="QLineEdit" name="lineEditPort"/>
+      <widget class="LineEdit" name="lineEditPort"/>
      </item>
     </layout>
    </item>
@@ -177,7 +177,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="lineEditTopics"/>
+    <widget class="LineEdit" name="lineEditTopics"/>
    </item>
    <item>
     <spacer name="verticalSpacer">
@@ -204,6 +204,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>PlotJuggler/line_edit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>
