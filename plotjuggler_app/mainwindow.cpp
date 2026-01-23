@@ -3054,6 +3054,7 @@ void MainWindow::on_buttonSaveLayout_clicked()
       colormap.appendChild(colormap_script);
       color_maps.appendChild(colormap);
     }
+    root.appendChild(color_maps);
   }
   root.appendChild(doc.createComment(" - - - - - - - - - - - - - - "));
   //------------------------------------
