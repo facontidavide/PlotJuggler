@@ -116,6 +116,7 @@ struct NumericInfo
 {
   bool is_number = false;
   bool has_decimal = false;
+  bool has_exponent = false;
 };
 
 static NumericInfo CheckNumeric(const std::string& str)
@@ -123,22 +124,61 @@ static NumericInfo CheckNumeric(const std::string& str)
   NumericInfo info;
   info.is_number = true;
 
+  bool has_digit = false;
+
   for (size_t i = 0; i < str.size(); i++)
   {
-    char c = str[i];
-    if (i == 0 && (c == '-' || c == '+'))
+    const char c = str[i];
+
+    if (c == 'e' || c == 'E')
     {
+      if (info.has_exponent)
+      {
+        info.is_number = false;
+        break;
+      }
+      info.has_exponent = true;
       continue;
     }
+
+    if (c == '-' || c == '+')
+    {
+      if (i == 0 || str[i - 1] == 'e' || str[i - 1] == 'E')
+      {
+        continue;
+      }
+      info.is_number = false;
+      break;
+    }
+
     if (c == '.' || c == ',')
     {
+      if (info.has_decimal || info.has_exponent)
+      {
+        info.is_number = false;
+        break;
+      }
       info.has_decimal = true;
       continue;
     }
-    if (!std::isdigit(static_cast<unsigned char>(c)))
+
+    if (std::isdigit(static_cast<unsigned char>(c)))
+    {
+      has_digit = true;
+    }
+    else
     {
       info.is_number = false;
       break;
+    }
+  }
+
+  if (info.is_number)
+  {
+    const char last = str.back();
+    if (!has_digit || last == 'e' || last == 'E' || last == '+' || last == '-')
+    {
+      info.is_number = false;
     }
   }
 
@@ -232,7 +272,7 @@ std::optional<double> AutoParseTimestamp(const std::string& str)
   {
     try
     {
-      if (!num_info.has_decimal)
+      if (!num_info.has_decimal && !num_info.has_exponent)
       {
         int64_t ts = std::stoll(trimmed);
         ColumnType epoch_type = DetectEpochType(ts);
