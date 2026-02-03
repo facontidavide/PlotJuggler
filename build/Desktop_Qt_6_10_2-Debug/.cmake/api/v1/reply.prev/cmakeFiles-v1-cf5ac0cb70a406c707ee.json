@@ -1,0 +1,1898 @@
+{
+	"inputs" : 
+	[
+		{
+			"path" : "CMakeLists.txt"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "build/Desktop_Qt_6_10_2-Debug/.qtc/package-manager/auto-setup.cmake"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "build/Desktop_Qt_6_10_2-Debug/CMakeFiles/3.30.5/CMakeSystem.cmake"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "build/Desktop_Qt_6_10_2-Debug/.qtc/package-manager/maintenance_tool_provider.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeSystemSpecificInitialize.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/Platform/Linux-Initialize.cmake"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "build/Desktop_Qt_6_10_2-Debug/CMakeFiles/3.30.5/CMakeCXXCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeSystemSpecificInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeGenericSystem.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeInitializeConfigs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/Platform/Linux.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/Platform/UnixPaths.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeCXXInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeLanguageInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/Compiler/GNU-CXX.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/Compiler/GNU.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/Compiler/CMakeCommonCompilerMacros.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/Platform/Linux-GNU-CXX.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/Platform/Linux-GNU.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeCommonLanguageInclude.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6ConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6ConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6Config.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicCMakeEarlyPolicyHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicCMakeHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6ConfigExtras.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicCMakeVersionHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtInstallPaths.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6Targets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6VersionlessAliasTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtFeature.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CheckCXXCompilerFlag.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/Internal/CheckCompilerFlag.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/Internal/CheckFlagCommonConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/Internal/CheckSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CheckCXXSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/Internal/CheckSourceCompiles.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtFeatureCommon.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicAndroidHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicAppleHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicCMakeHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicCMakeVersionHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicExternalProjectHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicFinalizerHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicFindPackageHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicGitHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicPluginHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicPluginHelpers_v2.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomAttributionHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomCommonGenerationHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomCpeHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomCycloneDXHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomDocumentNamespaceHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomDepHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomFileHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomGenerationHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomGenerationCycloneDXHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomLicenseHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomOpsHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomPurlHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomPythonHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomQtEntityHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomSystemDepHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicTargetHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicTestHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicToolHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicWalkLibsHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicWindowsHelpers.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6Dependencies.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindThreads.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CheckLibraryExists.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CheckIncludeFileCXX.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CheckCXXSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindPackageHandleStandardArgs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindPackageMessage.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Core/Qt6CoreConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Core/Qt6CoreConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Core/Qt6CoreConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Core/Qt6CoreDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/FindWrapAtomic.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CheckCXXSourceCompiles.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindPackageHandleStandardArgs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindPackageMessage.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsVersionlessTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Core/Qt6CoreTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Core/Qt6CoreTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Core/Qt6CoreAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Core/Qt6CoreMacros.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Core/Qt6CoreConfigExtras.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/GNUInstallDirs.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Core/Qt6CoreVersionlessAliasTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6NetworkConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6NetworkConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6NetworkConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6NetworkDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6NetworkTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6NetworkTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6NetworkAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6NetworkPlugins.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QGlibNetworkInformationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QGlibNetworkInformationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QGlibNetworkInformationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QGlibNetworkInformationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QNetworkManagerNetworkInformationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QNetworkManagerNetworkInformationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QNetworkManagerNetworkInformationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QNetworkManagerNetworkInformationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QTlsBackendCertOnlyPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QTlsBackendCertOnlyPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QTlsBackendCertOnlyPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QTlsBackendCertOnlyPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QTlsBackendOpenSSLPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QTlsBackendOpenSSLPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QTlsBackendOpenSSLPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6QTlsBackendOpenSSLPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Network/Qt6NetworkVersionlessAliasTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsVersionlessAliasTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsVersionlessTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsVersionlessTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsVersionlessTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsVersionlessTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6GuiConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6GuiConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6GuiConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6GuiDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/FindWrapOpenGL.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindOpenGL.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindPackageHandleStandardArgs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindPackageMessage.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindPackageHandleStandardArgs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindPackageMessage.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/FindWrapVulkanHeaders.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindVulkan.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindPackageHandleStandardArgs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindPackageMessage.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindPackageHandleStandardArgs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/FindPackageMessage.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsVersionlessTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6GuiTools/Qt6GuiToolsVersionlessTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBus/Qt6DBusConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBus/Qt6DBusConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBus/Qt6DBusConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBus/Qt6DBusDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6CoreTools/Qt6CoreToolsVersionlessTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBusTools/Qt6DBusToolsVersionlessTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBus/Qt6DBusTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBus/Qt6DBusTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBus/Qt6DBusAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBus/Qt6DBusMacros.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/MacroAddFileDependencies.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6DBus/Qt6DBusVersionlessAliasTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6GuiTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6GuiTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6GuiAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6GuiPlugins.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QComposePlatformInputContextPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QComposePlatformInputContextPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QComposePlatformInputContextPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QComposePlatformInputContextPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSEmulatorIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSEmulatorIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSEmulatorIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSEmulatorIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSKmsEglDeviceIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSKmsEglDeviceIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSKmsEglDeviceIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSKmsEglDeviceIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSKmsGbmIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSKmsGbmIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSKmsGbmIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSKmsGbmIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSX11IntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSX11IntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSX11IntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEglFSX11IntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevKeyboardPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevKeyboardPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevKeyboardPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevKeyboardPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevMousePluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevMousePluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevMousePluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevMousePluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTabletPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTabletPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTabletPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTabletPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTouchScreenPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTouchScreenPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTouchScreenPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QEvdevTouchScreenPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QGifPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QGifPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QGifPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QGifPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QGtk3ThemePluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QGtk3ThemePluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QGtk3ThemePluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QGtk3ThemePluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QICOPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QICOPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QICOPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QICOPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QIbusPlatformInputContextPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QIbusPlatformInputContextPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QIbusPlatformInputContextPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QIbusPlatformInputContextPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QJpegPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QJpegPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QJpegPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QJpegPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QLinuxFbIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QLinuxFbIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QLinuxFbIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QLinuxFbIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalEglIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalEglIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalEglIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalEglIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QMinimalIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QOffscreenIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QOffscreenIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QOffscreenIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QOffscreenIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgIconPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgIconPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgIconPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgIconPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QSvgPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QTuioTouchPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QTuioTouchPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QTuioTouchPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QTuioTouchPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QVkKhrDisplayIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QVkKhrDisplayIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QVkKhrDisplayIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QVkKhrDisplayIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QVncIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QVncIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QVncIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QVncIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QWaylandIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QWaylandIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QWaylandIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QWaylandIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbEglIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbEglIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbEglIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbEglIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbGlxIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbGlxIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbGlxIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbGlxIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbIntegrationPluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbIntegrationPluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbIntegrationPluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXcbIntegrationPluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXdgDesktopPortalThemePluginConfig.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXdgDesktopPortalThemePluginTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXdgDesktopPortalThemePluginTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6QXdgDesktopPortalThemePluginAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Gui/Qt6GuiVersionlessAliasTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsTargets-relwithdebinfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsAdditionalTargetInfo.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsMacros.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsPlugins.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6Widgets/Qt6WidgetsVersionlessAliasTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6ConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6ConfigVersionImpl.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6Config.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicCMakeEarlyPolicyHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicCMakeHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6ConfigExtras.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicCMakeVersionHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtInstallPaths.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6Targets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6VersionlessAliasTargets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtFeature.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CheckCXXCompilerFlag.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtFeatureCommon.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicAndroidHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicAppleHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicCMakeHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicCMakeVersionHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicExternalProjectHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicFinalizerHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicFindPackageHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicGitHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicPluginHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicPluginHelpers_v2.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomAttributionHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomCommonGenerationHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomCpeHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomCycloneDXHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomDocumentNamespaceHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomDepHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomFileHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomGenerationHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomGenerationCycloneDXHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomLicenseHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomOpsHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomPurlHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomPythonHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomQtEntityHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicSbomSystemDepHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicTargetHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicTestHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicToolHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicWalkLibsHelpers.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/QtPublicWindowsHelpers.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/Qt6Dependencies.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/GNUInstallDirs.cmake"
+		}
+	],
+	"kind" : "cmakeFiles",
+	"paths" : 
+	{
+		"build" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug",
+		"source" : "/home/alvaro/Proyects/DataStreamWebSocket"
+	},
+	"version" : 
+	{
+		"major" : 1,
+		"minor" : 1
+	}
+}
