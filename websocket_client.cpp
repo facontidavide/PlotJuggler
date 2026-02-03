@@ -77,8 +77,7 @@ bool WebsocketClient::start()
     connect(&dialog, &WebsocketDialog::connectRequested, this, [&]() {
         bool ok = false;
         int p = dialog.ui->lineEditPort->text().toUShort(&ok);
-        if (!ok)
-        {
+        if (!ok) {
             QMessageBox::warning(nullptr, "WebSocket Client", "Invalid Port", QMessageBox::Ok);
             return;
         }
@@ -94,8 +93,7 @@ bool WebsocketClient::start()
     dialog.exec();
     _dialog = nullptr;
 
-    if (!_running)
-    {
+    if (!_running) {
         shutdown();
         return false;
     }
@@ -164,6 +162,14 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
                 break;
 
             const auto topics = obj.value("topics").toArray();
+
+            QStringList selected_topics;
+            for (auto* it : _dialog->ui->topicsList->selectedItems())
+                selected_topics << it->text(0);
+
+            _dialog->ui->topicsList->setUpdatesEnabled(false);
+            _dialog->ui->topicsList->blockSignals(true);
+
             _dialog->ui->topicsList->clear();
 
             for (const auto& v : topics)
@@ -173,17 +179,21 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
                 const auto t = v.toObject();
                 const auto name = t.value("name").toString();
                 const auto type = t.value("type").toString();
-
                 if (name.isEmpty()) continue;
 
-                auto* item = new QTreeWidgetItem();
+                auto* item = new QTreeWidgetItem(_dialog->ui->topicsList);
                 item->setText(0, name);
                 item->setText(1, type);
-                _dialog->ui->topicsList->addTopLevelItem(item);
+
+                if (selected_topics.contains(name))
+                    item->setSelected(true);
             }
+
+            _dialog->ui->topicsList->blockSignals(false);
+            _dialog->ui->topicsList->setUpdatesEnabled(true);
+
             break;
         }
-
         case WsState::Mode::Subscribe:
         {
             _state.req_in_flight = false;
@@ -219,8 +229,7 @@ void WebsocketClient::onError(QAbstractSocket::SocketError)
 {
     _running = false;
 
-    if (_dialog)
-    {
+    if (_dialog) {
         auto b = _dialog->ui->buttonBox->button(QDialogButtonBox::Ok);
         if (b) b->setEnabled(true);
     }
