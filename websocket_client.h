@@ -65,9 +65,11 @@ private:
 
     WebsocketDialog* _dialog;
     QTimer _topicsTimer;
+    QTimer _heartBeatTimer;
 
     QString sendCommand(QJsonObject obj);
     void requestTopics();
+    void sendHeartBeat();
 
 private slots:
     void onConnected();

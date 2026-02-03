@@ -48,6 +48,9 @@ WebsocketClient::WebsocketClient() : _running(false), _dialog(nullptr)
     _topicsTimer.setInterval(1000);
     connect(&_topicsTimer, &QTimer::timeout, this, &WebsocketClient::requestTopics);
 
+    _heartBeatTimer.setInterval(1000);
+    connect(&_heartBeatTimer, &QTimer::timeout, this, &WebsocketClient::sendHeartBeat);
+
     connect(&_socket, &QWebSocket::connected, this, &WebsocketClient::onConnected);
     connect(&_socket, &QWebSocket::textMessageReceived, this, &WebsocketClient::onTextMessageReceived);
     connect(&_socket, &QWebSocket::binaryMessageReceived, this, &WebsocketClient::onBinaryMessageReceived);
@@ -136,6 +139,8 @@ bool WebsocketClient::start()
         QJsonObject cmd;
         cmd["command"] = "subscribe";
         cmd["topics"] = arr;
+
+        qDebug() << cmd << Qt::endl;
         sendCommand(cmd);
 
         auto b = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
@@ -162,6 +167,7 @@ bool WebsocketClient::start()
 void WebsocketClient::shutdown()
 {
     _topicsTimer.stop();
+    _heartBeatTimer.stop();
     _state.mode = WsState::Mode::Close;
     _state.req_in_flight = false;
 
@@ -208,7 +214,7 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
         return;
     }
 
-    if (status != "success")
+    if (status != "success") // INTEGRATE PARTIAL
         return;
 
     switch (_state.mode) {
@@ -259,6 +265,7 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
         {
             _state.req_in_flight = false;
             _state.mode = WsState::Mode::Data;
+            _heartBeatTimer.start();
             break;
         }
 
@@ -277,7 +284,7 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
 
 void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
 {
-    qDebug() << "RX binary:" << message.size() << "bytes";
+    qDebug() << "RX binary:" << message.size() << "bytes" << Qt::endl;
 }
 
 void WebsocketClient::onDisconnected()
@@ -287,7 +294,7 @@ void WebsocketClient::onDisconnected()
     _state.req_in_flight = false;
 
     _running = false;
-    qDebug() << "Disconnected";
+    qDebug() << "Disconnected" << Qt::endl;
 }
 
 void WebsocketClient::onError(QAbstractSocket::SocketError)
@@ -329,6 +336,16 @@ void WebsocketClient::requestTopics()
 
     QJsonObject cmd;
     cmd["command"] = "get_topics";
+    sendCommand(cmd);
+}
+
+void WebsocketClient::sendHeartBeat()
+{
+    if (!_running) return;
+    if (_state.mode != WsState::Mode::Data) return;
+
+    QJsonObject cmd;
+    cmd["command"] = "heartbeat";
     sendCommand(cmd);
 }
 
