@@ -39,12 +39,15 @@ template <> constexpr inline auto WebsocketDialog::qt_create_metaobjectdata<qt_m
     QtMocHelpers::StringRefStorage qt_stringData {
         "WebsocketDialog",
         "connectRequested",
-        ""
+        "",
+        "cancelRequested"
     };
 
     QtMocHelpers::UintData qt_methods {
         // Signal 'connectRequested'
         QtMocHelpers::SignalData<void()>(1, 2, QMC::AccessPublic, QMetaType::Void),
+        // Signal 'cancelRequested'
+        QtMocHelpers::SignalData<void()>(3, 2, QMC::AccessPublic, QMetaType::Void),
     };
     QtMocHelpers::UintData qt_properties {
     };
@@ -69,11 +72,14 @@ void WebsocketDialog::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int 
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
         case 0: _t->connectRequested(); break;
+        case 1: _t->cancelRequested(); break;
         default: ;
         }
     }
     if (_c == QMetaObject::IndexOfMethod) {
         if (QtMocHelpers::indexOfMethod<void (WebsocketDialog::*)()>(_a, &WebsocketDialog::connectRequested, 0))
+            return;
+        if (QtMocHelpers::indexOfMethod<void (WebsocketDialog::*)()>(_a, &WebsocketDialog::cancelRequested, 1))
             return;
     }
 }
@@ -97,14 +103,14 @@ int WebsocketDialog::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 1)
+        if (_id < 2)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 1;
+        _id -= 2;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 1)
+        if (_id < 2)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 1;
+        _id -= 2;
     }
     return _id;
 }
@@ -113,5 +119,11 @@ int WebsocketDialog::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 void WebsocketDialog::connectRequested()
 {
     QMetaObject::activate(this, &staticMetaObject, 0, nullptr);
+}
+
+// SIGNAL 1
+void WebsocketDialog::cancelRequested()
+{
+    QMetaObject::activate(this, &staticMetaObject, 1, nullptr);
 }
 QT_WARNING_POP

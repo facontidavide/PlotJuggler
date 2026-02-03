@@ -26,7 +26,7 @@ public:
 
         ui->lineEditPort->setValidator(new QIntValidator(1, 65535, this));
 
-        connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+        connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &WebsocketDialog::cancelRequested);
         connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &WebsocketDialog::connectRequested);
     }
 
@@ -34,6 +34,7 @@ public:
 
 signals:
     void connectRequested();
+    void cancelRequested();
 
 public:
     Ui::WebSocketDialog* ui;
@@ -74,20 +75,76 @@ bool WebsocketClient::start()
     auto okBtn = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
     if (okBtn) okBtn->setText("Connect");
 
-    connect(&dialog, &WebsocketDialog::connectRequested, this, [&]() {
-        bool ok = false;
-        int p = dialog.ui->lineEditPort->text().toUShort(&ok);
-        if (!ok) {
-            QMessageBox::warning(nullptr, "WebSocket Client", "Invalid Port", QMessageBox::Ok);
+    auto refreshOk = [&]() {
+        if (!dialog.ui->buttonBox) return;
+        auto b = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
+        if (!b) return;
+
+        if (!_running) {
+            b->setEnabled(true);
+            b->setText("Connect");
             return;
         }
 
-        _url = QUrl(QString("ws://127.0.0.1:%1").arg(p));
+        if (_state.mode == WsState::Mode::GetTopics) {
+            const bool hasSelection = dialog.ui->topicsList && !dialog.ui->topicsList->selectedItems().isEmpty();
+            b->setText("Subscribe");
+            b->setEnabled(hasSelection && !_state.req_in_flight);
+            return;
+        }
+
+        b->setEnabled(false);
+    };
+
+    connect(dialog.ui->topicsList, &QTreeWidget::itemSelectionChanged, this, refreshOk);
+
+    connect(&dialog, &WebsocketDialog::connectRequested, this, [&]() {
+        if (!_running) {
+            bool ok = false;
+            int p = dialog.ui->lineEditPort->text().toUShort(&ok);
+            if (!ok) {
+                QMessageBox::warning(nullptr, "WebSocket Client", "Invalid Port", QMessageBox::Ok);
+                return;
+            }
+
+            _url = QUrl(QString("ws://127.0.0.1:%1").arg(p));
+
+            auto b = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
+            if (b) b->setEnabled(false);
+
+            _socket.open(_url);
+            return;
+        }
+
+        if (_state.mode != WsState::Mode::GetTopics) return;
+        if (_state.req_in_flight) return;
+
+        if (!dialog.ui->topicsList) return;
+        const auto selected = dialog.ui->topicsList->selectedItems();
+        if (selected.isEmpty()) return;
+
+        QJsonArray arr;
+        for (auto* it : selected) {
+            const auto name = it->text(0);
+            if (!name.isEmpty()) arr.append(name);
+        }
+        if (arr.isEmpty()) return;
+
+        _state.mode = WsState::Mode::Subscribe;
+        _state.req_in_flight = true;
+
+        QJsonObject cmd;
+        cmd["command"] = "subscribe";
+        cmd["topics"] = arr;
+        sendCommand(cmd);
 
         auto b = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
         if (b) b->setEnabled(false);
+    });
 
-        _socket.open(_url);
+    connect(&dialog, &WebsocketDialog::cancelRequested, this, [&]() {
+        shutdown();
+        dialog.reject();
     });
 
     dialog.exec();
@@ -104,6 +161,10 @@ bool WebsocketClient::start()
 
 void WebsocketClient::shutdown()
 {
+    _topicsTimer.stop();
+    _state.mode = WsState::Mode::Close;
+    _state.req_in_flight = false;
+
     _socket.close();
     _running = false;
 }
@@ -221,6 +282,10 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
 
 void WebsocketClient::onDisconnected()
 {
+    _topicsTimer.stop();
+    _state.mode = WsState::Mode::Close;
+    _state.req_in_flight = false;
+
     _running = false;
     qDebug() << "Disconnected";
 }
