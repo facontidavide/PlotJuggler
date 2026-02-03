@@ -5,6 +5,7 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QObject \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QSharedDataPointer \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QString \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QTimer \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QUrl \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QVariant \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/q17memory.h \
@@ -16,6 +17,7 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/q23type_traits.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/q23utility.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/q26numeric.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qabstracteventdispatcher.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qalgorithms.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qalloc.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qanystringview.h \
@@ -26,6 +28,7 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qatomic.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qatomic_cxx11.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qbasicatomic.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qbasictimer.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qbindingstorage.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qbytearray.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qbytearrayalgorithms.h \
@@ -47,7 +50,9 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qdarwinhelpers.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qdatastream.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qdatetime.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qdeadlinetimer.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qdebug.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qeventloop.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qexceptionhandling.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qflags.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qfloat16.h \
@@ -118,6 +123,7 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qtenvironmentvariables.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qtextstream.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qtformat_impl.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qtimer.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qtmetamacros.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qtnoop.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qtpreprocessorsupport.h \

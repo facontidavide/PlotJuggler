@@ -41,6 +41,12 @@ public:
 
 WebsocketClient::WebsocketClient() : _running(false), _dialog(nullptr)
 {
+    _state.mode = WsState::Mode::Close;
+    _state.req_in_flight = false;
+
+    _topicsTimer.setInterval(1000);
+    connect(&_topicsTimer, &QTimer::timeout, this, &WebsocketClient::requestTopics);
+
     connect(&_socket, &QWebSocket::connected, this, &WebsocketClient::onConnected);
     connect(&_socket, &QWebSocket::textMessageReceived, this, &WebsocketClient::onTextMessageReceived);
     connect(&_socket, &QWebSocket::binaryMessageReceived, this, &WebsocketClient::onBinaryMessageReceived);
@@ -66,14 +72,14 @@ bool WebsocketClient::start()
     dialog.ui->lineEditPort->setText(QString::number(port));
 
     auto okBtn = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
-    if (okBtn) okBtn->setText("Conectar");
+    if (okBtn) okBtn->setText("Connect");
 
     connect(&dialog, &WebsocketDialog::connectRequested, this, [&]() {
         bool ok = false;
         int p = dialog.ui->lineEditPort->text().toUShort(&ok);
         if (!ok)
         {
-            QMessageBox::warning(nullptr, "WebSocket Client", "Puerto inválido", QMessageBox::Ok);
+            QMessageBox::warning(nullptr, "WebSocket Client", "Invalid Port", QMessageBox::Ok);
             return;
         }
 
@@ -109,15 +115,18 @@ void WebsocketClient::onConnected()
     _running = true;
     qDebug() << "Connected";
 
+    _state.mode = WsState::Mode::GetTopics;
+    _state.req_in_flight = true;
+
     QJsonObject cmd;
     cmd["command"] = "get_topics";
     sendCommand(cmd);
+
+    _topicsTimer.start();
 }
 
 void WebsocketClient::onTextMessageReceived(const QString& message)
 {
-    qDebug() << "RX:" << message;
-
     QJsonParseError err;
     const auto doc = QJsonDocument::fromJson(message.toUtf8(), &err);
     if (err.error != QJsonParseError::NoError || !doc.isObject())
@@ -125,12 +134,16 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
 
     const auto obj = doc.object();
 
-    if (!obj.contains("protocol_version") || obj.value("protocol_version").toInt() != 1)
+    if (!obj.contains("protocol_version") ||
+        obj.value("protocol_version").toInt() != 1)
         return;
 
     const auto status = obj.value("status").toString();
+
     if (status == "error")
     {
+        _state.req_in_flight = false;
+
         const auto msg = obj.value("message").toString("Unknown error");
         QMessageBox::warning(nullptr, "WebSocket Client", msg, QMessageBox::Ok);
         return;
@@ -139,31 +152,55 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
     if (status != "success")
         return;
 
-    if (!obj.contains("topics") || !obj.value("topics").isArray())
-        return;
+    switch (_state.mode) {
+        case WsState::Mode::GetTopics:
+        {
+            if (!obj.contains("topics") || !obj.value("topics").isArray())
+                break;
 
-    if (!_dialog || !_dialog->ui || !_dialog->ui->topicsList)
-        return;
+            _state.req_in_flight = false;
 
-    const auto topics = obj.value("topics").toArray();
+            if (!_dialog || !_dialog->ui || !_dialog->ui->topicsList)
+                break;
 
-    _dialog->ui->topicsList->clear();
+            const auto topics = obj.value("topics").toArray();
+            _dialog->ui->topicsList->clear();
 
-    for (const auto& v : topics)
-    {
-        if (!v.isObject()) continue;
+            for (const auto& v : topics)
+            {
+                if (!v.isObject()) continue;
 
-        const auto t = v.toObject();
-        const auto name = t.value("name").toString();
-        const auto type = t.value("type").toString();
+                const auto t = v.toObject();
+                const auto name = t.value("name").toString();
+                const auto type = t.value("type").toString();
 
-        if (name.isEmpty()) continue;
+                if (name.isEmpty()) continue;
 
-        auto* item = new QTreeWidgetItem();
-        item->setText(0, name);
-        item->setText(1, type);
+                auto* item = new QTreeWidgetItem();
+                item->setText(0, name);
+                item->setText(1, type);
+                _dialog->ui->topicsList->addTopLevelItem(item);
+            }
+            break;
+        }
 
-        _dialog->ui->topicsList->addTopLevelItem(item);
+        case WsState::Mode::Subscribe:
+        {
+            _state.req_in_flight = false;
+            _state.mode = WsState::Mode::Data;
+            break;
+        }
+
+        case WsState::Mode::Data:
+        {
+            break;
+        }
+
+        case WsState::Mode::Close:
+            break;
+        default:
+            qWarning() << "Unhandled mode:" << int(_state.mode);
+            break;
     }
 }
 
@@ -206,6 +243,19 @@ QString WebsocketClient::sendCommand(QJsonObject obj)
     _socket.sendTextMessage(QString::fromUtf8(doc.toJson(QJsonDocument::Compact)));
 
     return obj["id"].toString();
+}
+
+void WebsocketClient::requestTopics()
+{
+    if (!_running) return;
+    if (_state.mode != WsState::Mode::GetTopics) return;
+    if (_state.req_in_flight) return;
+
+    _state.req_in_flight = true;
+
+    QJsonObject cmd;
+    cmd["command"] = "get_topics";
+    sendCommand(cmd);
 }
 
 #include "websocket_client.moc"

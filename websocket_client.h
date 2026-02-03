@@ -6,6 +6,21 @@
 #include <QByteArray>
 #include <QString>
 #include <QAbstractSocket>
+#include <QTimer>
+
+struct WsState
+{
+    enum class Mode
+    {
+        GetTopics,
+        Subscribe,
+        Data,
+        Close
+    };
+
+    Mode mode = Mode::GetTopics;
+    bool req_in_flight = false;
+};
 
 namespace Ui { class WebSocketDialog; }
 
@@ -46,10 +61,13 @@ private:
     QWebSocket _socket;
     QUrl _url;
     bool _running;
+    WsState _state;
 
     WebsocketDialog* _dialog;
+    QTimer _topicsTimer;
 
     QString sendCommand(QJsonObject obj);
+    void requestTopics();
 
 private slots:
     void onConnected();

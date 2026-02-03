@@ -93,3 +93,11 @@
 2	206	1770125640189360405	/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/DataStreamWebSocket_autogen/mocs_compilation.cpp	96312b94f9cf4dcc
 206	2126	1770125640393362226	CMakeFiles/DataStreamWebSocket.dir/websocket_client.cpp.o	61c368898ac1628b
 2126	2407	1770125642313379369	DataStreamWebSocket	c1d963dfbfaea3f8
+2	213	1770129116793444392	DataStreamWebSocket_autogen/timestamp	96312b94f9cf4dcc
+2	213	1770129116793444392	DataStreamWebSocket_autogen/mocs_compilation.cpp	96312b94f9cf4dcc
+2	213	1770129116793444392	/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/DataStreamWebSocket_autogen/timestamp	96312b94f9cf4dcc
+2	213	1770129116793444392	/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/DataStreamWebSocket_autogen/mocs_compilation.cpp	96312b94f9cf4dcc
+213	1476	1770129116797444448	CMakeFiles/DataStreamWebSocket.dir/DataStreamWebSocket_autogen/mocs_compilation.cpp.o	ca2f848f2d5cbcc5
+213	1503	1770129116798709765	CMakeFiles/DataStreamWebSocket.dir/main.cpp.o	dd539da7df63e526
+213	2296	1770129116798593840	CMakeFiles/DataStreamWebSocket.dir/websocket_client.cpp.o	61c368898ac1628b
+2296	2589	1770129118880473516	DataStreamWebSocket	c1d963dfbfaea3f8
