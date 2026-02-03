@@ -14,9 +14,10 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QDialogButtonBox>
+#include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
-#include <QtWidgets/QSpacerItem>
+#include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
@@ -30,17 +31,14 @@ public:
     QLineEdit *lineEditPort;
     QLabel *label_2;
     QComboBox *comboBoxProtocol;
-    QWidget *boxOptions;
-    QVBoxLayout *layoutOptions;
-    QLabel *label_3;
-    QSpacerItem *verticalSpacer;
+    QTreeWidget *topicsList;
     QDialogButtonBox *buttonBox;
 
     void setupUi(QWidget *WebSocketDialog)
     {
         if (WebSocketDialog->objectName().isEmpty())
             WebSocketDialog->setObjectName("WebSocketDialog");
-        WebSocketDialog->resize(293, 232);
+        WebSocketDialog->resize(355, 419);
         verticalLayout = new QVBoxLayout(WebSocketDialog);
         verticalLayout->setObjectName("verticalLayout");
         label = new QLabel(WebSocketDialog);
@@ -68,29 +66,19 @@ public:
 
         verticalLayout->addWidget(comboBoxProtocol);
 
-        boxOptions = new QWidget(WebSocketDialog);
-        boxOptions->setObjectName("boxOptions");
-        layoutOptions = new QVBoxLayout(boxOptions);
-        layoutOptions->setObjectName("layoutOptions");
-        layoutOptions->setContentsMargins(0, 6, 0, 6);
-        label_3 = new QLabel(boxOptions);
-        label_3->setObjectName("label_3");
-        QFont font1;
-        font1.setBold(true);
-        label_3->setFont(font1);
+        topicsList = new QTreeWidget(WebSocketDialog);
+        topicsList->setObjectName("topicsList");
+        topicsList->setSelectionMode(QAbstractItemView::SelectionMode::ExtendedSelection);
+        topicsList->setUniformRowHeights(true);
+        topicsList->setHeaderHidden(false);
+        topicsList->setColumnCount(2);
 
-        layoutOptions->addWidget(label_3);
-
-
-        verticalLayout->addWidget(boxOptions);
-
-        verticalSpacer = new QSpacerItem(20, 59, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
-
-        verticalLayout->addItem(verticalSpacer);
+        verticalLayout->addWidget(topicsList);
 
         buttonBox = new QDialogButtonBox(WebSocketDialog);
         buttonBox->setObjectName("buttonBox");
         buttonBox->setStandardButtons(QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok);
+        buttonBox->setCenterButtons(true);
 
         verticalLayout->addWidget(buttonBox);
 
@@ -105,7 +93,9 @@ public:
         WebSocketDialog->setWindowTitle(QCoreApplication::translate("WebSocketDialog", "Form", nullptr));
         label->setText(QCoreApplication::translate("WebSocketDialog", "Port of the Websocket client:", nullptr));
         label_2->setText(QCoreApplication::translate("WebSocketDialog", "Message Protocol:", nullptr));
-        label_3->setText(QCoreApplication::translate("WebSocketDialog", "Protocol options:", nullptr));
+        QTreeWidgetItem *___qtreewidgetitem = topicsList->headerItem();
+        ___qtreewidgetitem->setText(1, QCoreApplication::translate("WebSocketDialog", "Type", nullptr));
+        ___qtreewidgetitem->setText(0, QCoreApplication::translate("WebSocketDialog", "Topic", nullptr));
     } // retranslateUi
 
 };

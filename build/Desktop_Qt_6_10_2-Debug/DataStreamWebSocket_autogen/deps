@@ -9,11 +9,17 @@ DataStreamWebSocket_autogen/timestamp: \
 	/home/alvaro/Proyects/DataStreamWebSocket/websocket_client.cpp \
 	/home/alvaro/Proyects/DataStreamWebSocket/websocket_client.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QByteArray \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QDebug \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QFlags \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QJsonArray \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QJsonDocument \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QJsonObject \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QObject \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QSettings \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QSharedDataPointer \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QString \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QUrl \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QUuid \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QVariant \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/q17memory.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/q20functional.h \
@@ -40,7 +46,10 @@ DataStreamWebSocket_autogen/timestamp: \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qbytearraylist.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qbytearrayview.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qcalendar.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qcborcommon.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qcborvalue.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qchar.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qcheckedint_impl.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qcompare.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qcompare_impl.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qcomparehelpers.h \
@@ -56,6 +65,7 @@ DataStreamWebSocket_autogen/timestamp: \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qdatastream.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qdatetime.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qdebug.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qendian.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qexceptionhandling.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qflags.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qfloat16.h \
@@ -71,12 +81,19 @@ DataStreamWebSocket_autogen/timestamp: \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qiodevicebase.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qiterable.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qiterator.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qjsonarray.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qjsondocument.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qjsonobject.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qjsonparseerror.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qjsonvalue.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qlatin1stringview.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qline.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qlist.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qlocale.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qlogging.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qmalloc.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qmap.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qmargins.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qmath.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qmetacontainer.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qmetaobject.h \
@@ -90,15 +107,20 @@ DataStreamWebSocket_autogen/timestamp: \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qobjectdefs_impl.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qoverload.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qpair.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qpoint.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qprocessordetection.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qrect.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qrefcount.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qregularexpression.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qscopedpointer.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qscopeguard.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qset.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qsettings.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qshareddata.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qshareddata_impl.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qsharedpointer.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qsharedpointer_impl.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qsize.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qspan.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qstdlibdetection.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qstring.h \
@@ -138,11 +160,39 @@ DataStreamWebSocket_autogen/timestamp: \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qtypes.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qurl.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qutf8stringview.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/quuid.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qvariant.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qvarlengtharray.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qversiontagging.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qxptype_traits.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qyieldcpu.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/QIntValidator \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qaction.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qbitmap.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qbrush.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qcolor.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qcursor.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qfont.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qfontinfo.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qfontmetrics.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qfontvariableaxis.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qicon.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qimage.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qkeysequence.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qpaintdevice.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qpalette.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qpixelformat.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qpixmap.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qpolygon.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qregion.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qrgb.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qrgba64.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qtgui-config.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qtguiexports.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qtguiglobal.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qtransform.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qvalidator.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtGui/qwindowdefs.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtNetwork/QAbstractSocket \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtNetwork/QNetworkProxy \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtNetwork/QNetworkRequest \
@@ -167,6 +217,21 @@ DataStreamWebSocket_autogen/timestamp: \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWebSockets/qwebsocket.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWebSockets/qwebsocketprotocol.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWebSockets/qwebsockets_global.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/QAbstractButton \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/QDialog \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/QDialogButtonBox \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/QMessageBox \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/QPushButton \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qabstractbutton.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qdialog.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qdialogbuttonbox.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qmessagebox.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qpushbutton.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qsizepolicy.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qtwidgets-config.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qtwidgetsexports.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qtwidgetsglobal.h \
+	/home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qwidget.h \
 	/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/FindWrapAtomic.cmake \
 	/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/FindWrapOpenGL.cmake \
 	/home/alvaro/Qt/6.10.2/gcc_64/lib/cmake/Qt6/FindWrapVulkanHeaders.cmake \

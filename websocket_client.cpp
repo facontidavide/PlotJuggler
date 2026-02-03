@@ -1,18 +1,23 @@
 #include "websocket_client.h"
 
 #include <QSettings>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QUuid>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QIntValidator>
 #include <QDebug>
 #include <QDialog>
 #include <QDialogButtonBox>
-#include <QEventLoop>
-#include <QTimer>
+#include <QAbstractButton>
 
 #include "ui_websocket_client.h"
 
 class WebsocketDialog : public QDialog
 {
+    Q_OBJECT
 public:
     WebsocketDialog() : QDialog(nullptr), ui(new Ui::WebSocketDialog)
     {
@@ -21,32 +26,26 @@ public:
 
         ui->lineEditPort->setValidator(new QIntValidator(1, 65535, this));
 
-        connect(ui->buttonBox, &QDialogButtonBox::accepted,
-                this, &QDialog::accept);
-        connect(ui->buttonBox, &QDialogButtonBox::rejected,
-                this, &QDialog::reject);
+        connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+        connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &WebsocketDialog::connectRequested);
     }
 
-    ~WebsocketDialog()
-    {
-        delete ui;
-    }
+    ~WebsocketDialog() { delete ui; }
 
+signals:
+    void connectRequested();
+
+public:
     Ui::WebSocketDialog* ui;
 };
 
-WebsocketClient::WebsocketClient() : _running(false)
+WebsocketClient::WebsocketClient() : _running(false), _dialog(nullptr)
 {
-    connect(&_socket, &QWebSocket::connected,
-            this, &WebsocketClient::onConnected);
-    connect(&_socket, &QWebSocket::textMessageReceived,
-            this, &WebsocketClient::onTextMessageReceived);
-    connect(&_socket, &QWebSocket::binaryMessageReceived,
-            this, &WebsocketClient::onBinaryMessageReceived);
-    connect(&_socket, &QWebSocket::disconnected,
-            this, &WebsocketClient::onDisconnected);
-    connect(&_socket, &QWebSocket::errorOccurred,
-            this, &WebsocketClient::onError);
+    connect(&_socket, &QWebSocket::connected, this, &WebsocketClient::onConnected);
+    connect(&_socket, &QWebSocket::textMessageReceived, this, &WebsocketClient::onTextMessageReceived);
+    connect(&_socket, &QWebSocket::binaryMessageReceived, this, &WebsocketClient::onBinaryMessageReceived);
+    connect(&_socket, &QWebSocket::disconnected, this, &WebsocketClient::onDisconnected);
+    connect(&_socket, &QWebSocket::errorOccurred, this, &WebsocketClient::onError);
 }
 
 WebsocketClient::~WebsocketClient()
@@ -59,92 +58,43 @@ bool WebsocketClient::start()
     if (_running) return true;
 
     QSettings settings;
-    QString protocol =
-        settings.value("WebsocketClient::protocol", "JSON").toString();
-    int port =
-        settings.value("WebsocketClient::port", 8080).toInt();
+    int port = settings.value("WebsocketClient::port", 8080).toInt();
 
     WebsocketDialog dialog;
+    _dialog = &dialog;
 
     dialog.ui->lineEditPort->setText(QString::number(port));
 
-    dialog.ui->comboBoxProtocol->clear();
-    dialog.ui->comboBoxProtocol->addItems({ "JSON" });
+    auto okBtn = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
+    if (okBtn) okBtn->setText("Conectar");
 
-    int idx = dialog.ui->comboBoxProtocol->findText(protocol);
-    dialog.ui->comboBoxProtocol->setCurrentIndex(idx >= 0 ? idx : 0);
+    connect(&dialog, &WebsocketDialog::connectRequested, this, [&]() {
+        bool ok = false;
+        int p = dialog.ui->lineEditPort->text().toUShort(&ok);
+        if (!ok)
+        {
+            QMessageBox::warning(nullptr, "WebSocket Client", "Puerto inválido", QMessageBox::Ok);
+            return;
+        }
 
-    if (dialog.exec() != QDialog::Accepted)
+        _url = QUrl(QString("ws://127.0.0.1:%1").arg(p));
+
+        auto b = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
+        if (b) b->setEnabled(false);
+
+        _socket.open(_url);
+    });
+
+    dialog.exec();
+    _dialog = nullptr;
+
+    if (!_running)
     {
-        _running = false;
+        shutdown();
         return false;
     }
 
-    bool ok = false;
-    port = dialog.ui->lineEditPort->text().toUShort(&ok);
-    protocol = dialog.ui->comboBoxProtocol->currentText();
-
-    if (!ok)
-    {
-        QMessageBox::warning(nullptr,
-                             "WebSocket Client",
-                             "Puerto inválido",
-                             QMessageBox::Ok);
-        _running = false;
-        return false;
-    }
-
-    settings.setValue("WebsocketClient::protocol", protocol);
-    settings.setValue("WebsocketClient::port", port);
-
-    _url = QUrl(QString("ws://127.0.0.1:%1").arg(port));
-
-    qDebug() << "Connecting to" << _url.toString()
-             << "protocol:" << protocol;
-
-    QEventLoop loop;
-    QTimer timer;
-    timer.setSingleShot(true);
-
-    bool connected = false;
-
-    auto c1 = connect(&_socket, &QWebSocket::connected,
-                      this, [&]() {
-                          connected = true;
-                          loop.quit();
-                      });
-
-    auto c2 = connect(&_socket, &QWebSocket::errorOccurred,
-                      this, [&](QAbstractSocket::SocketError) {
-                          connected = false;
-                          loop.quit();
-                      });
-
-    connect(&timer, &QTimer::timeout,
-            this, [&]() {
-                connected = false;
-                loop.quit();
-            });
-
-    _socket.open(_url);
-    timer.start(2000);
-    loop.exec();
-
-    disconnect(c1);
-    disconnect(c2);
-
-    if (!connected)
-    {
-        QMessageBox::warning(nullptr,
-                             "WebSocket Client",
-                             "No se pudo conectar",
-                             QMessageBox::Ok);
-        _socket.close();
-        _running = false;
-        return false;
-    }
-
-    _running = true;
+    settings.setValue("WebsocketClient::port", dialog.ui->lineEditPort->text().toInt());
     return true;
 }
 
@@ -158,31 +108,104 @@ void WebsocketClient::onConnected()
 {
     _running = true;
     qDebug() << "Connected";
+
+    QJsonObject cmd;
+    cmd["command"] = "get_topics";
+    sendCommand(cmd);
 }
 
 void WebsocketClient::onTextMessageReceived(const QString& message)
 {
     qDebug() << "RX:" << message;
+
+    QJsonParseError err;
+    const auto doc = QJsonDocument::fromJson(message.toUtf8(), &err);
+    if (err.error != QJsonParseError::NoError || !doc.isObject())
+        return;
+
+    const auto obj = doc.object();
+
+    if (!obj.contains("protocol_version") || obj.value("protocol_version").toInt() != 1)
+        return;
+
+    const auto status = obj.value("status").toString();
+    if (status == "error")
+    {
+        const auto msg = obj.value("message").toString("Unknown error");
+        QMessageBox::warning(nullptr, "WebSocket Client", msg, QMessageBox::Ok);
+        return;
+    }
+
+    if (status != "success")
+        return;
+
+    if (!obj.contains("topics") || !obj.value("topics").isArray())
+        return;
+
+    if (!_dialog || !_dialog->ui || !_dialog->ui->topicsList)
+        return;
+
+    const auto topics = obj.value("topics").toArray();
+
+    _dialog->ui->topicsList->clear();
+
+    for (const auto& v : topics)
+    {
+        if (!v.isObject()) continue;
+
+        const auto t = v.toObject();
+        const auto name = t.value("name").toString();
+        const auto type = t.value("type").toString();
+
+        if (name.isEmpty()) continue;
+
+        auto* item = new QTreeWidgetItem();
+        item->setText(0, name);
+        item->setText(1, type);
+
+        _dialog->ui->topicsList->addTopLevelItem(item);
+    }
 }
 
 void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
 {
-    qDebug() << "RX:" << message.size() << "bytes";
+    qDebug() << "RX binary:" << message.size() << "bytes";
 }
 
 void WebsocketClient::onDisconnected()
 {
     _running = false;
     qDebug() << "Disconnected";
-    emit closed();
 }
 
 void WebsocketClient::onError(QAbstractSocket::SocketError)
 {
     _running = false;
-    QMessageBox::warning(nullptr,
-                         "WebSocket Client",
-                         _socket.errorString(),
-                         QMessageBox::Ok);
-    emit closed();
+
+    if (_dialog)
+    {
+        auto b = _dialog->ui->buttonBox->button(QDialogButtonBox::Ok);
+        if (b) b->setEnabled(true);
+    }
+
+    QMessageBox::warning(nullptr, "WebSocket Client", _socket.errorString(), QMessageBox::Ok);
 }
+
+QString WebsocketClient::sendCommand(QJsonObject obj)
+{
+    if (!obj.contains("command"))
+        return QString();
+
+    if (!obj.contains("id"))
+        obj["id"] = QUuid::createUuid().toString(QUuid::WithoutBraces);
+
+    if (!obj.contains("protocol_version"))
+        obj["protocol_version"] = 1;
+
+    QJsonDocument doc(obj);
+    _socket.sendTextMessage(QString::fromUtf8(doc.toJson(QJsonDocument::Compact)));
+
+    return obj["id"].toString();
+}
+
+#include "websocket_client.moc"

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>293</width>
-    <height>232</height>
+    <width>355</width>
+    <height>419</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -47,52 +47,38 @@
     <widget class="QComboBox" name="comboBoxProtocol"/>
    </item>
    <item>
-    <widget class="QWidget" name="boxOptions" native="true">
-     <layout class="QVBoxLayout" name="layoutOptions">
-      <property name="leftMargin">
-       <number>0</number>
+    <widget class="QTreeWidget" name="topicsList">
+     <property name="selectionMode">
+      <enum>QAbstractItemView::SelectionMode::ExtendedSelection</enum>
+     </property>
+     <property name="uniformRowHeights">
+      <bool>true</bool>
+     </property>
+     <property name="headerHidden">
+      <bool>false</bool>
+     </property>
+     <property name="columnCount">
+      <number>2</number>
+     </property>
+     <column>
+      <property name="text">
+       <string>Topic</string>
       </property>
-      <property name="topMargin">
-       <number>6</number>
+     </column>
+     <column>
+      <property name="text">
+       <string>Type</string>
       </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>6</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="label_3">
-        <property name="font">
-         <font>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Protocol options:</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     </column>
     </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Orientation::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>59</height>
-      </size>
-     </property>
-    </spacer>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
       <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
+     </property>
+     <property name="centerButtons">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
