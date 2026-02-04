@@ -1,2 +1,0 @@
-set(__QT_DEPLOY_TARGET_DataStreamWebSocket_FILE /home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/DataStreamWebSocket)
-set(__QT_DEPLOY_TARGET_DataStreamWebSocket_TYPE EXECUTABLE)

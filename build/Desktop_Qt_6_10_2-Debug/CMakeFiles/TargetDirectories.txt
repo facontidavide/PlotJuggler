@@ -1,9 +1,0 @@
-/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/CMakeFiles/DSWS_Test.dir
-/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/CMakeFiles/edit_cache.dir
-/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/CMakeFiles/rebuild_cache.dir
-/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/CMakeFiles/list_install_components.dir
-/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/CMakeFiles/install.dir
-/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/CMakeFiles/install/local.dir
-/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/CMakeFiles/install/strip.dir
-/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/CMakeFiles/DSWS_Test_autogen_timestamp_deps.dir
-/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/CMakeFiles/DSWS_Test_autogen.dir
