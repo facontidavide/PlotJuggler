@@ -240,6 +240,11 @@ bool WebsocketClient::start()
 
 void WebsocketClient::shutdown()
 {
+    if (!_running && _state.mode == WsState::Mode::Close)
+        return;
+
+    _running = false;
+
     // Stop periodic timers
     _topicsTimer.stop();
     _heartBeatTimer.stop();
@@ -248,9 +253,15 @@ void WebsocketClient::shutdown()
     _state.mode = WsState::Mode::Close;
     _state.req_in_flight = false;
 
+    _dialog = nullptr;
+
+    // Clean topics
+    _topics.clear();
+
     // Close socket
+    _socket.disconnect(this);
+    _socket.abort();
     _socket.close();
-    _running = false;
 }
 
 void WebsocketClient::onConnected()
@@ -272,6 +283,8 @@ void WebsocketClient::onConnected()
 
 void WebsocketClient::onTextMessageReceived(const QString& message)
 {
+    if (!_running) return;
+
     // Parse JSON message
     QJsonParseError err;
     const auto doc = QJsonDocument::fromJson(message.toUtf8(), &err);
@@ -444,6 +457,8 @@ bool WebsocketClient::parseDecompressedPayload(const QByteArray& decompressed, u
 
 void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
 {
+    if (!_running) return;
+
     if (message.size() < 16) {
         return;
     }
@@ -509,11 +524,10 @@ void WebsocketClient::onError(QAbstractSocket::SocketError)
     _running = false;
 
     // Re-enable OK button if dialog is still open
-    if (_dialog) {
+    if (_dialog && _dialog->ui && _dialog->ui->buttonBox) {
         auto b = _dialog->ui->buttonBox->button(QDialogButtonBox::Ok);
         if (b) b->setEnabled(true);
     }
-
     QMessageBox::warning(nullptr, "WebSocket Client", _socket.errorString(), QMessageBox::Ok);
 }
 
