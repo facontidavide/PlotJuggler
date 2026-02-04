@@ -60,7 +60,9 @@ jobs:
       - name: Create installer using QT Installation Framework
         shell: pwsh
         run: |
-          $installer_name = "PlotJuggler-${{ github.ref_name }}-Windows-x64.exe"
+          # Sanitize ref_name to replace / with - for valid Windows filename
+          $ref_name = "${{ github.ref_name }}" -replace '/', '-'
+          $installer_name = "PlotJuggler-$ref_name-Windows-x64.exe"
 
           # Find binarycreator executable
           $binarycreator = Get-ChildItem -Path "${{ github.workspace }}\qt_installation" -Recurse -Name "binarycreator.exe" | Select-Object -First 1
