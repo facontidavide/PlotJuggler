@@ -212,6 +212,7 @@ bool WebsocketClient::start()
         // Disable button until response
         auto b = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
         if (b) b->setEnabled(false);
+        dialog.reject();
     });
 
     // =======================
@@ -399,6 +400,48 @@ static bool readLE(const uint8_t*& p, const uint8_t* end, T& out)
     return true;
 }
 
+bool WebsocketClient::parseDecompressedPayload(const QByteArray& decompressed, uint32_t expected_count)
+{
+    const uint8_t* q = reinterpret_cast<const uint8_t*>(decompressed.constData());
+    const uint8_t* qend = q + decompressed.size();
+
+    uint32_t parsed = 0;
+
+    while (q < qend)
+    {
+        uint16_t name_len = 0;
+        if (!readLE(q, qend, name_len)) return false;
+        if (q + name_len > qend) return false;
+
+        QString topic = QString::fromUtf8(reinterpret_cast<const char*>(q), name_len);
+        q += name_len;
+
+        uint64_t ts_ns = 0;
+        if (!readLE(q, qend, ts_ns)) return false;
+        double ts_sec = double(ts_ns) * 1e-9;
+
+        uint32_t data_len = 0;
+        if (!readLE(q, qend, data_len)) return false;
+        if (q + data_len > qend) return false;
+
+        const uint8_t* cdr = q;
+        q += data_len;
+
+        onRos2CdrMessage(topic, ts_sec, cdr, data_len);
+        parsed++;
+    }
+
+    if (parsed != expected_count)
+    {
+        qWarning() << "Parsed messages mismatch. header=" << expected_count
+                   << "parsed=" << parsed
+                   << "decompressed=" << decompressed.size();
+        return false;
+    }
+
+    return true;
+}
+
 void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
 {
     if (message.size() < 16) {
@@ -426,6 +469,26 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
         qWarning() << "Bad flag:" << flags;
         return;
     }
+    QByteArray compressed = message.mid(16);
+    if (compressed.isEmpty())
+        return;
+
+    QByteArray decompressed;
+    decompressed.resize(int(uncompressed_size));
+
+    size_t res = ZSTD_decompress(decompressed.data(),
+                                 size_t(decompressed.size()),
+                                 compressed.constData(),
+                                 size_t(compressed.size()));
+
+    if (ZSTD_isError(res)) {
+        qWarning() << "ZSTD_decompress error:" << ZSTD_getErrorName(res);
+        return;
+    }
+
+    decompressed.resize(int(res));
+
+    parseDecompressedPayload(decompressed, message_count);
 }
 
 void WebsocketClient::onDisconnected()

@@ -78,6 +78,7 @@ private:
     void sendHeartBeat();
     void createParsersForTopics();
     void onRos2CdrMessage(const QString& topic, double ts_sec, const uint8_t* cdr, uint32_t len);
+    bool parseDecompressedPayload(const QByteArray& decompressed, uint32_t expected_count);
 
 private slots:
     void onConnected();
