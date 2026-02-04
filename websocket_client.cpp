@@ -16,6 +16,8 @@
 #include <QtEndian>
 #include <cstring>
 
+#include <zstd.h>
+
 #include "ui_websocket_client.h"
 
 // =======================
@@ -399,31 +401,30 @@ static bool readLE(const uint8_t*& p, const uint8_t* end, T& out)
 
 void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
 {
-    const uint8_t* p = reinterpret_cast<const uint8_t*>(message.constData());
-    const uint8_t* end = p + message.size();
+    if (message.size() < 16) {
+        return;
+    }
 
-    while (p < end)
-    {
-        uint16_t name_len = 0;
-        if (!readLE(p, end, name_len)) break;
-        qDebug() << "PASA" << Qt::endl;
-        if (p + name_len > end) break;
+    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(message.constData());
+    const uint8_t* end = ptr + message.size();
 
-        const QString topic = QString::fromUtf8(reinterpret_cast<const char*>(p), name_len);
-        p += name_len;
+    uint32_t magic = 0;
+    uint32_t message_count = 0;
+    uint32_t uncompressed_size = 0;
+    uint32_t flags = 0;
 
-        uint64_t ts_ns = 0;
-        if (!readLE(p, end, ts_ns)) break;
-        const double ts_sec = double(ts_ns) * 1e-9;
+    if (!readLE(ptr, end, magic)) return;
+    if (!readLE(ptr, end, message_count)) return;
+    if (!readLE(ptr, end, uncompressed_size)) return;
+    if (!readLE(ptr, end, flags)) return;
 
-        uint32_t data_len = 0;
-        if (!readLE(p, end, data_len)) break;
-        if (p + data_len > end) break;
-
-        const uint8_t* cdr = p;
-        p += data_len;
-
-        onRos2CdrMessage(topic, ts_sec, cdr, data_len);
+    if (magic != 0x42524A50) {
+        qWarning() << "Bad magic:" << Qt::hex << magic;
+        return;
+    }
+    if (flags != 0) {
+        qWarning() << "Bad flag:" << flags;
+        return;
     }
 }
 

@@ -23,6 +23,7 @@ target_include_directories(DSWS_Test PRIVATE
 )
 
 target_link_libraries(DSWS_Test PRIVATE
+  zstd
   Qt5::Core
   Qt5::Widgets
   Qt5::WebSockets
