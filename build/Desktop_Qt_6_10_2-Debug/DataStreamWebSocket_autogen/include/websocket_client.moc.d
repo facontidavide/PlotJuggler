@@ -2,10 +2,8 @@
   /home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/DataStreamWebSocket_autogen/moc_predefs.h \
   /home/alvaro/Proyects/DataStreamWebSocket/websocket_client.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QByteArray \
-  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QDebug \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QFlags \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QJsonArray \
-  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QJsonDocument \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QJsonObject \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QObject \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QSettings \
@@ -13,7 +11,6 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QString \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QTimer \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QUrl \
-  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QUuid \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QVariant \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/q17memory.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/q20functional.h \
@@ -25,6 +22,7 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/q23utility.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/q26numeric.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qabstracteventdispatcher.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qabstractitemmodel.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qalgorithms.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qalloc.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qanystringview.h \
@@ -77,6 +75,7 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qhashfunctions.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qiodevice.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qiodevicebase.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qitemselectionmodel.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qiterable.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qiterator.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qjsonarray.h \
@@ -216,17 +215,32 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWebSockets/qwebsocket.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWebSockets/qwebsocketprotocol.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWebSockets/qwebsockets_global.h \
-  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/QAbstractButton \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/QDialog \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/QDialogButtonBox \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/QMessageBox \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/QPushButton \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/QTreeWidget \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qabstractbutton.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qabstractitemdelegate.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qabstractitemview.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qabstractscrollarea.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qabstractslider.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qabstractspinbox.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qdialog.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qdialogbuttonbox.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qframe.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qmessagebox.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qpushbutton.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qrubberband.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qsizepolicy.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qslider.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qstyle.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qstyleoption.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qtabbar.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qtabwidget.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qtreeview.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qtreewidget.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qtreewidgetitemiterator.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qtwidgets-config.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qtwidgetsexports.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtWidgets/qtwidgetsglobal.h \

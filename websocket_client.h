@@ -7,6 +7,7 @@
 #include <QString>
 #include <QAbstractSocket>
 #include <QTimer>
+#include <QJsonObject>
 
 struct WsState
 {

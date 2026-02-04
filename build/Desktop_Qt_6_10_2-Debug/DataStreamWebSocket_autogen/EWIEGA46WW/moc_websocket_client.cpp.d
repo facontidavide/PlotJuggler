@@ -2,6 +2,7 @@
   /home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/DataStreamWebSocket_autogen/moc_predefs.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QByteArray \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QFlags \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QJsonObject \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QObject \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QSharedDataPointer \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/QString \
@@ -35,6 +36,8 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qbytearraylist.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qbytearrayview.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qcalendar.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qcborcommon.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qcborvalue.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qchar.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qcompare.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qcompare_impl.h \
@@ -52,6 +55,7 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qdatetime.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qdeadlinetimer.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qdebug.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qendian.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qeventloop.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qexceptionhandling.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qflags.h \
@@ -68,6 +72,10 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qiodevicebase.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qiterable.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qiterator.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qjsondocument.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qjsonobject.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qjsonparseerror.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qjsonvalue.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qlatin1stringview.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qlist.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qlocale.h \
@@ -89,6 +97,7 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qpair.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qprocessordetection.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qrefcount.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qregularexpression.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qscopedpointer.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qscopeguard.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qset.h \
@@ -136,6 +145,7 @@
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qtypes.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qurl.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qutf8stringview.h \
+  /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/quuid.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qvariant.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qvarlengtharray.h \
   /home/alvaro/Qt/6.10.2/gcc_64/include/QtCore/qversiontagging.h \
