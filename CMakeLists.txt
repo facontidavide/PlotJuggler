@@ -185,6 +185,8 @@ find_or_download_fmt()
 
 # IMPORTANT: LZ4 and ZSTD must be included after Arrow, since Arrow also includes
 # Findlz4Alt.cmake and FindzstdAlt.cmake and we want to avoid target conflicts
+# Arrow 23.0.0+ requires CURL::libcurl target to exist before loading Arrow config
+find_package(CURL QUIET)
 find_package(Arrow QUIET)
 
 include(${PROJECT_SOURCE_DIR}/cmake/find_or_download_lz4.cmake)
