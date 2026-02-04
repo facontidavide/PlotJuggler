@@ -77,6 +77,7 @@ private:
     void requestTopics();
     void sendHeartBeat();
     void createParsersForTopics();
+    void onRos2CdrMessage(const QString& topic, double ts_sec, const uint8_t* cdr, uint32_t len);
 
 private slots:
     void onConnected();

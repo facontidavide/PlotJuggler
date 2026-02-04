@@ -9,8 +9,6 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(PJ_DIR "$ENV{HOME}/Proyects/PlotJuggler")
-
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets WebSockets)
 
 add_executable(DSWS_Test
@@ -25,7 +23,6 @@ target_include_directories(DSWS_Test PRIVATE
 )
 
 target_link_libraries(DSWS_Test PRIVATE
-  plotjuggler_base
   Qt5::Core
   Qt5::Widgets
   Qt5::WebSockets

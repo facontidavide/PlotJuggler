@@ -13,6 +13,8 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QTreeWidget>
+#include <QtEndian>
+#include <cstring>
 
 #include "ui_websocket_client.h"
 
@@ -385,12 +387,44 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
     }
 }
 
+template <typename T>
+static bool readLE(const uint8_t*& p, const uint8_t* end, T& out)
+{
+    if (p + sizeof(T) > end) return false;
+    std::memcpy(&out, p, sizeof(T));
+    out = qFromLittleEndian(out);
+    p += sizeof(T);
+    return true;
+}
+
 void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
 {
-    // Binary frames (ZSTD-compressed data, etc.)
-    qDebug() << "RX binary:" << message.size() << "bytes" << Qt::endl;
+    const uint8_t* p = reinterpret_cast<const uint8_t*>(message.constData());
+    const uint8_t* end = p + message.size();
 
+    while (p < end)
+    {
+        uint16_t name_len = 0;
+        if (!readLE(p, end, name_len)) break;
+        qDebug() << "PASA" << Qt::endl;
+        if (p + name_len > end) break;
 
+        const QString topic = QString::fromUtf8(reinterpret_cast<const char*>(p), name_len);
+        p += name_len;
+
+        uint64_t ts_ns = 0;
+        if (!readLE(p, end, ts_ns)) break;
+        const double ts_sec = double(ts_ns) * 1e-9;
+
+        uint32_t data_len = 0;
+        if (!readLE(p, end, data_len)) break;
+        if (p + data_len > end) break;
+
+        const uint8_t* cdr = p;
+        p += data_len;
+
+        onRos2CdrMessage(topic, ts_sec, cdr, data_len);
+    }
 }
 
 void WebsocketClient::onDisconnected()
@@ -479,6 +513,25 @@ void WebsocketClient::createParsersForTopics()
                               CreateParserROS2(*parserFactories(), topic, type, dataMap()));
         }
     }
+#endif
+}
+
+void WebsocketClient::onRos2CdrMessage(const QString& topic, double ts_sec, const uint8_t* cdr, uint32_t len)
+{
+#ifdef PJ_BUILD
+        const std::string topic_std = topic.toStdString();
+
+        if (!_parser.hasParser(topic_std))
+            return;
+
+        PJ::MessageRef msg_ref(cdr, len);
+        _parser.parseMessage(topic_std, msg_ref, ts_sec);
+
+        emit dataReceived();
+#else
+        Q_UNUSED(cdr);
+        Q_UNUSED(len);
+        qDebug() << "RX msg topic=" << topic << "ts=" << ts_sec << "cdr=" << len << Qt::endl;
 #endif
 }
 
