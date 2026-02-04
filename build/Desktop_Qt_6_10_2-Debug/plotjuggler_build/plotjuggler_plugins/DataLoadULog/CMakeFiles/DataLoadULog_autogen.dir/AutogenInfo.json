@@ -1,0 +1,149 @@
+{
+	"BUILD_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/plotjuggler_plugins/DataLoadULog/DataLoadULog_autogen",
+	"CMAKE_BINARY_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug",
+	"CMAKE_CURRENT_BINARY_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/plotjuggler_plugins/DataLoadULog",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/home/alvaro/Proyects/PlotJuggler/plotjuggler_plugins/DataLoadULog",
+	"CMAKE_EXECUTABLE" : "/home/alvaro/Qt/Tools/CMake/bin/cmake",
+	"CMAKE_LIST_FILES" : 
+	[
+		"/home/alvaro/Proyects/PlotJuggler/plotjuggler_plugins/DataLoadULog/CMakeLists.txt"
+	],
+	"CMAKE_SOURCE_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket",
+	"CROSS_CONFIG" : false,
+	"DEP_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/plotjuggler_plugins/DataLoadULog/DataLoadULog_autogen/deps",
+	"DEP_FILE_RULE_NAME" : "DataLoadULog_autogen/timestamp",
+	"HEADERS" : 
+	[
+		[
+			"/home/alvaro/Proyects/PlotJuggler/plotjuggler_plugins/DataLoadULog/dataload_ulog.h",
+			"MU",
+			"EWIEGA46WW/moc_dataload_ulog.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/plotjuggler_plugins/DataLoadULog/ulog_parameters_dialog.h",
+			"MU",
+			"EWIEGA46WW/moc_ulog_parameters_dialog.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/plotjuggler_plugins/DataLoadULog/ulog_parser.h",
+			"MU",
+			"EWIEGA46WW/moc_ulog_parser.cpp",
+			null
+		]
+	],
+	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
+	"INCLUDE_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/plotjuggler_plugins/DataLoadULog/DataLoadULog_autogen/include",
+	"MOC_COMPILATION_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/plotjuggler_plugins/DataLoadULog/DataLoadULog_autogen/mocs_compilation.cpp",
+	"MOC_DEFINITIONS" : 
+	[
+		"DataLoadULog_EXPORTS",
+		"FMT_HEADER_ONLY",
+		"PJ_MAJOR_VERSION=3",
+		"PJ_MINOR_VERSION=15",
+		"PJ_PATCH_VERSION=0",
+		"PJ_PLUGIN_INSTALL_DIRECTORY=\"/tmp/lib/plotjuggler/plugins\"",
+		"QT_CONCURRENT_LIB",
+		"QT_CORE_LIB",
+		"QT_GUI_LIB",
+		"QT_PLUGIN",
+		"QT_SVG_LIB",
+		"QT_WIDGETS_LIB",
+		"QT_XML_LIB",
+		"QWT_MOC_INCLUDE"
+	],
+	"MOC_DEPEND_FILTERS" : 
+	[
+		[
+			"Q_PLUGIN_METADATA",
+			"[\n][ \t]*Q_PLUGIN_METADATA[ \t]*\\([^\\)]*FILE[ \t]*\"([^\"]+)\""
+		]
+	],
+	"MOC_INCLUDES" : 
+	[
+		"/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/plotjuggler_plugins/DataLoadULog",
+		"/home/alvaro/Proyects/PlotJuggler/plotjuggler_plugins/DataLoadULog",
+		"/usr/include/x86_64-linux-gnu/qt5/QtPrintSupport",
+		"/usr/include/x86_64-linux-gnu/qt5/QtWebSockets",
+		"/usr/include/x86_64-linux-gnu/qt5/QtNetwork",
+		"/usr/include/x86_64-linux-gnu/qt5/QtOpenGL",
+		"/home/alvaro/Proyects/PlotJuggler/plotjuggler_plugins",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/sol2-3.5.0/include",
+		"/home/alvaro/Proyects/PlotJuggler/plotjuggler_base/include",
+		"/home/alvaro/Proyects/PlotJuggler/plotjuggler_base/src",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/qwt/src",
+		"/usr/include/x86_64-linux-gnu/qt5",
+		"/usr/include/x86_64-linux-gnu/qt5/QtCore",
+		"/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++",
+		"/usr/include/x86_64-linux-gnu/qt5/QtWidgets",
+		"/usr/include/x86_64-linux-gnu/qt5/QtGui",
+		"/usr/include/x86_64-linux-gnu/qt5/QtConcurrent",
+		"/usr/include/x86_64-linux-gnu/qt5/QtXml",
+		"/usr/include/x86_64-linux-gnu/qt5/QtSvg",
+		"/usr/include/c++/13",
+		"/usr/include/x86_64-linux-gnu/c++/13",
+		"/usr/include/c++/13/backward",
+		"/usr/lib/gcc/x86_64-linux-gnu/13/include",
+		"/usr/local/include",
+		"/usr/include/x86_64-linux-gnu",
+		"/usr/include"
+	],
+	"MOC_MACRO_NAMES" : [ "Q_OBJECT", "Q_GADGET", "Q_NAMESPACE", "Q_NAMESPACE_EXPORT" ],
+	"MOC_OPTIONS" : [],
+	"MOC_PATH_PREFIX" : false,
+	"MOC_PREDEFS_CMD" : 
+	[
+		"/bin/g++",
+		"-std=gnu++17",
+		"-dM",
+		"-E",
+		"-c",
+		"/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp"
+	],
+	"MOC_PREDEFS_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/plotjuggler_plugins/DataLoadULog/DataLoadULog_autogen/moc_predefs.h",
+	"MOC_RELAXED_MODE" : false,
+	"MOC_SKIP" : 
+	[
+		"/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/plotjuggler_plugins/DataLoadULog/ui_selectlistdialog.h",
+		"/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/plotjuggler_plugins/DataLoadULog/ui_ulog_parameters_dialog.h"
+	],
+	"MULTI_CONFIG" : false,
+	"PARALLEL" : 6,
+	"PARSE_CACHE_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/plotjuggler_plugins/DataLoadULog/CMakeFiles/DataLoadULog_autogen.dir/ParseCache.txt",
+	"QT_MOC_EXECUTABLE" : "/usr/lib/qt5/bin/moc",
+	"QT_UIC_EXECUTABLE" : "/usr/lib/qt5/bin/uic",
+	"QT_VERSION_MAJOR" : 5,
+	"QT_VERSION_MINOR" : 15,
+	"SETTINGS_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/plotjuggler_plugins/DataLoadULog/CMakeFiles/DataLoadULog_autogen.dir/AutogenUsed.txt",
+	"SOURCES" : 
+	[
+		[
+			"/home/alvaro/Proyects/PlotJuggler/plotjuggler_plugins/DataLoadULog/dataload_ulog.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/plotjuggler_plugins/DataLoadULog/ulog_parameters_dialog.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/plotjuggler_plugins/DataLoadULog/ulog_parser.cpp",
+			"MU",
+			null
+		]
+	],
+	"UIC_OPTIONS" : [],
+	"UIC_SEARCH_PATHS" : [],
+	"UIC_SKIP" : 
+	[
+		"/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/plotjuggler_plugins/DataLoadULog/ui_selectlistdialog.h",
+		"/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/plotjuggler_plugins/DataLoadULog/ui_ulog_parameters_dialog.h",
+		"/home/alvaro/Proyects/PlotJuggler/plotjuggler_plugins/DataLoadULog/ulog_parameters_dialog.ui",
+		"/home/alvaro/Proyects/PlotJuggler/plotjuggler_plugins/selectlistdialog.ui"
+	],
+	"UIC_UI_FILES" : [],
+	"USE_BETTER_GRAPH" : false,
+	"VERBOSITY" : 0
+}

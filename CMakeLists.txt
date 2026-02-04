@@ -9,27 +9,30 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core WebSockets Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core WebSockets Widgets)
+set(PJ_DIR "$ENV{HOME}/Proyects/PlotJuggler")
 
-add_executable(DataStreamWebSocket
+find_package(Qt5 REQUIRED COMPONENTS Core Widgets WebSockets)
+
+add_executable(DSWS_Test
   websocket_client.cpp
   websocket_client.ui
   websocket_client.h
   main.cpp
 )
-target_include_directories(DataStreamWebSocket PRIVATE
+
+target_include_directories(DSWS_Test PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-target_link_libraries(DataStreamWebSocket PRIVATE
-  Qt${QT_VERSION_MAJOR}::Core
-  Qt${QT_VERSION_MAJOR}::Widgets
-  Qt${QT_VERSION_MAJOR}::WebSockets
+target_link_libraries(DSWS_Test PRIVATE
+  plotjuggler_base
+  Qt5::Core
+  Qt5::Widgets
+  Qt5::WebSockets
 )
 
 include(GNUInstallDirs)
-install(TARGETS DataStreamWebSocket
+install(TARGETS DSWS_Test
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )

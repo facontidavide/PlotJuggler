@@ -1,0 +1,34 @@
+{
+	"BUILD_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking/qt_advanced_docking_autogen",
+	"CMAKE_BINARY_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug",
+	"CMAKE_CURRENT_BINARY_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking",
+	"CMAKE_SOURCE_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket",
+	"CROSS_CONFIG" : false,
+	"GENERATOR" : "Ninja",
+	"INCLUDE_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking/qt_advanced_docking_autogen/include",
+	"INPUTS" : 
+	[
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/images/close-button-focused.svg",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/images/tabs-menu-button.svg",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/images/detach-button.svg",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/images/detach-button-disabled.svg",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/images/close-button.svg",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/images/close-button-disabled.svg",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/stylesheets/focus_highlighting_linux.css",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/stylesheets/default_linux.css",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/stylesheets/default.css",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/stylesheets/focus_highlighting.css"
+	],
+	"LOCK_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking/CMakeFiles/qt_advanced_docking_autogen.dir/AutoRcc_ads_UVLADIE3JM_Lock.lock",
+	"MULTI_CONFIG" : false,
+	"OPTIONS" : [ "-name", "ads" ],
+	"OUTPUT_CHECKSUM" : "UVLADIE3JM",
+	"OUTPUT_NAME" : "qrc_ads.cpp",
+	"RCC_EXECUTABLE" : "/usr/lib/qt5/bin/rcc",
+	"RCC_LIST_OPTIONS" : [ "--list" ],
+	"SETTINGS_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking/CMakeFiles/qt_advanced_docking_autogen.dir/AutoRcc_ads_UVLADIE3JM_Used.txt",
+	"SOURCE" : "/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/ads.qrc",
+	"USE_BETTER_GRAPH" : false,
+	"VERBOSITY" : 0
+}

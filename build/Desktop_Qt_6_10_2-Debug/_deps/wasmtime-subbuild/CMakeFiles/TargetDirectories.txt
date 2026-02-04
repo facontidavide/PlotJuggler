@@ -1,0 +1,3 @@
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/wasmtime-subbuild/CMakeFiles/wasmtime-populate.dir
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/wasmtime-subbuild/CMakeFiles/edit_cache.dir
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/wasmtime-subbuild/CMakeFiles/rebuild_cache.dir

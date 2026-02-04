@@ -68,9 +68,15 @@ private:
     QTimer _topicsTimer;
     QTimer _heartBeatTimer;
 
+    std::vector<std::pair<QString, QString>> _topics;
+
+    // PJ::CompositeParser _parser;
+    // PJ::RosParserConfig _config;
+
     QString sendCommand(QJsonObject obj);
     void requestTopics();
     void sendHeartBeat();
+    void createParsersForTopics();
 
 private slots:
     void onConnected();

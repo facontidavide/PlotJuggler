@@ -1,0 +1,322 @@
+{
+	"BUILD_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking/qt_advanced_docking_autogen",
+	"CMAKE_BINARY_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug",
+	"CMAKE_CURRENT_BINARY_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking",
+	"CMAKE_EXECUTABLE" : "/home/alvaro/Qt/Tools/CMake/bin/cmake",
+	"CMAKE_LIST_FILES" : 
+	[
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/CMakeLists.txt",
+		"/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/.qtc/package-manager/auto-setup.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5Core/Qt5CoreConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5Core/Qt5CoreConfig.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5Gui/Qt5GuiConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5Gui/Qt5GuiConfig.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5Widgets/Qt5WidgetsConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5Widgets/Qt5WidgetsConfig.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5/Qt5ConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5/Qt5Config.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5/Qt5ModuleLocation.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5Core/Qt5CoreConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5Core/Qt5CoreConfig.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5Gui/Qt5GuiConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5Gui/Qt5GuiConfig.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5Widgets/Qt5WidgetsConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5Widgets/Qt5WidgetsConfig.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5X11Extras/Qt5X11ExtrasConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5X11Extras/Qt5X11ExtrasConfig.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5/Qt5ConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5/Qt5Config.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5/Qt5ModuleLocation.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5X11Extras/Qt5X11ExtrasConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt5X11Extras/Qt5X11ExtrasConfig.cmake",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/ads.qrc"
+	],
+	"CMAKE_SOURCE_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket",
+	"CROSS_CONFIG" : false,
+	"DEP_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking/qt_advanced_docking_autogen/deps",
+	"DEP_FILE_RULE_NAME" : "qt_advanced_docking_autogen/timestamp",
+	"HEADERS" : 
+	[
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/DockAreaTabBar.h",
+			"MU",
+			"NU3FWKKRO4/moc_DockAreaTabBar.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/DockAreaTitleBar.h",
+			"MU",
+			"NU3FWKKRO4/moc_DockAreaTitleBar.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/DockAreaTitleBar_p.h",
+			"MU",
+			"NU3FWKKRO4/moc_DockAreaTitleBar_p.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/DockAreaWidget.h",
+			"MU",
+			"NU3FWKKRO4/moc_DockAreaWidget.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/DockComponentsFactory.h",
+			"MU",
+			"NU3FWKKRO4/moc_DockComponentsFactory.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/DockContainerWidget.h",
+			"MU",
+			"NU3FWKKRO4/moc_DockContainerWidget.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/DockFocusController.h",
+			"MU",
+			"NU3FWKKRO4/moc_DockFocusController.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/DockManager.h",
+			"MU",
+			"NU3FWKKRO4/moc_DockManager.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/DockOverlay.h",
+			"MU",
+			"NU3FWKKRO4/moc_DockOverlay.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/DockSplitter.h",
+			"MU",
+			"NU3FWKKRO4/moc_DockSplitter.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/DockWidget.h",
+			"MU",
+			"NU3FWKKRO4/moc_DockWidget.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/DockWidgetTab.h",
+			"MU",
+			"NU3FWKKRO4/moc_DockWidgetTab.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/DockingStateReader.h",
+			"MU",
+			"NU3FWKKRO4/moc_DockingStateReader.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/ElidingLabel.h",
+			"MU",
+			"NU3FWKKRO4/moc_ElidingLabel.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/FloatingDockContainer.h",
+			"MU",
+			"NU3FWKKRO4/moc_FloatingDockContainer.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/FloatingDragPreview.h",
+			"MU",
+			"NU3FWKKRO4/moc_FloatingDragPreview.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/IconProvider.h",
+			"MU",
+			"NU3FWKKRO4/moc_IconProvider.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads/ads_globals.h",
+			"MU",
+			"NU3FWKKRO4/moc_ads_globals.cpp",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/linux/FloatingWidgetTitleBar.h",
+			"MU",
+			"GPDIUTPX2A/moc_FloatingWidgetTitleBar.cpp",
+			null
+		]
+	],
+	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
+	"INCLUDE_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking/qt_advanced_docking_autogen/include",
+	"MOC_COMPILATION_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking/qt_advanced_docking_autogen/mocs_compilation.cpp",
+	"MOC_DEFINITIONS" : 
+	[
+		"ADS_STATIC",
+		"QT_CORE_LIB",
+		"QT_GUI_LIB",
+		"QT_WIDGETS_LIB",
+		"QT_X11EXTRAS_LIB"
+	],
+	"MOC_DEPEND_FILTERS" : 
+	[
+		[
+			"Q_PLUGIN_METADATA",
+			"[\n][ \t]*Q_PLUGIN_METADATA[ \t]*\\([^\\)]*FILE[ \t]*\"([^\"]+)\""
+		]
+	],
+	"MOC_INCLUDES" : 
+	[
+		"/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking",
+		"/usr/include/x86_64-linux-gnu/qt5/QtConcurrent",
+		"/usr/include/x86_64-linux-gnu/qt5/QtPrintSupport",
+		"/usr/include/x86_64-linux-gnu/qt5/QtXml",
+		"/usr/include/x86_64-linux-gnu/qt5/QtWebSockets",
+		"/usr/include/x86_64-linux-gnu/qt5/QtNetwork",
+		"/usr/include/x86_64-linux-gnu/qt5/QtSvg",
+		"/usr/include/x86_64-linux-gnu/qt5/QtOpenGL",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/include/Qads",
+		"/usr/include/x86_64-linux-gnu/qt5",
+		"/usr/include/x86_64-linux-gnu/qt5/QtCore",
+		"/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++",
+		"/usr/include/x86_64-linux-gnu/qt5/QtWidgets",
+		"/usr/include/x86_64-linux-gnu/qt5/QtGui",
+		"/usr/include/x86_64-linux-gnu/qt5/QtX11Extras",
+		"/usr/include/c++/13",
+		"/usr/include/x86_64-linux-gnu/c++/13",
+		"/usr/include/c++/13/backward",
+		"/usr/lib/gcc/x86_64-linux-gnu/13/include",
+		"/usr/local/include",
+		"/usr/include/x86_64-linux-gnu",
+		"/usr/include"
+	],
+	"MOC_MACRO_NAMES" : [ "Q_OBJECT", "Q_GADGET", "Q_NAMESPACE", "Q_NAMESPACE_EXPORT" ],
+	"MOC_OPTIONS" : [],
+	"MOC_PATH_PREFIX" : false,
+	"MOC_PREDEFS_CMD" : 
+	[
+		"/bin/g++",
+		"-std=c++14",
+		"-dM",
+		"-E",
+		"-c",
+		"/home/alvaro/Qt/Tools/CMake/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp"
+	],
+	"MOC_PREDEFS_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking/qt_advanced_docking_autogen/moc_predefs.h",
+	"MOC_RELAXED_MODE" : false,
+	"MOC_SKIP" : [],
+	"MULTI_CONFIG" : false,
+	"PARALLEL" : 6,
+	"PARSE_CACHE_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking/CMakeFiles/qt_advanced_docking_autogen.dir/ParseCache.txt",
+	"QT_MOC_EXECUTABLE" : "/usr/lib/qt5/bin/moc",
+	"QT_UIC_EXECUTABLE" : "/usr/lib/qt5/bin/uic",
+	"QT_VERSION_MAJOR" : 5,
+	"QT_VERSION_MINOR" : 15,
+	"SETTINGS_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/Qt-Advanced-Docking/CMakeFiles/qt_advanced_docking_autogen.dir/AutogenUsed.txt",
+	"SOURCES" : 
+	[
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/DockAreaTabBar.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/DockAreaTitleBar.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/DockAreaWidget.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/DockComponentsFactory.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/DockContainerWidget.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/DockFocusController.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/DockManager.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/DockOverlay.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/DockSplitter.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/DockWidget.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/DockWidgetTab.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/DockingStateReader.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/ElidingLabel.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/FloatingDockContainer.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/FloatingDragPreview.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/IconProvider.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/ads_globals.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/alvaro/Proyects/PlotJuggler/3rdparty/Qt-Advanced-Docking/src/linux/FloatingWidgetTitleBar.cpp",
+			"MU",
+			null
+		]
+	],
+	"UIC_OPTIONS" : [],
+	"UIC_SEARCH_PATHS" : [],
+	"UIC_SKIP" : [],
+	"UIC_UI_FILES" : [],
+	"USE_BETTER_GRAPH" : false,
+	"VERBOSITY" : 0
+}

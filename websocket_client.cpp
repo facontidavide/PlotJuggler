@@ -4,6 +4,8 @@
 
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonParseError>
 
 #include <QMessageBox>
 #include <QPushButton>
@@ -73,7 +75,15 @@ WebsocketClient::WebsocketClient() : _running(false), _dialog(nullptr)
     connect(&_socket, &QWebSocket::textMessageReceived, this, &WebsocketClient::onTextMessageReceived);
     connect(&_socket, &QWebSocket::binaryMessageReceived, this, &WebsocketClient::onBinaryMessageReceived);
     connect(&_socket, &QWebSocket::disconnected, this, &WebsocketClient::onDisconnected);
-    connect(&_socket, &QWebSocket::errorOccurred, this, &WebsocketClient::onError);
+
+    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        connect(&_socket, &QWebSocket::errorOccurred, this, &WebsocketClient::onError);
+    #else
+        connect(&_socket,
+                QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error),
+                this,
+                &WebsocketClient::onError);
+    #endif
 }
 
 WebsocketClient::~WebsocketClient()
@@ -167,9 +177,19 @@ bool WebsocketClient::start()
 
         // Build JSON array with selected topic names
         QJsonArray arr;
+
+        _topics.clear();
         for (auto* it : selected) {
             const auto name = it->text(0);
-            if (!name.isEmpty()) arr.append(name);
+            const auto type = it->text(1);
+
+            if (name.isEmpty()) continue;
+
+            arr.append(name);
+
+            // Store selected topics
+            if (!type.isEmpty()) _topics.push_back({name, type});
+
         }
         if (arr.isEmpty()) return;
 
@@ -326,14 +346,28 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
 
             break;
         }
+
         case WsState::Mode::Subscribe:
         {
-            // Subscription accepted
             _state.req_in_flight = false;
-            _state.mode = WsState::Mode::Data;
 
-            // Start heartbeat
+            if (obj.contains("schemas") && obj.value("schemas").isObject()) {
+                const auto schemas = obj.value("schemas").toObject();
+
+                _topics.erase(
+                    std::remove_if(_topics.begin(), _topics.end(),
+                            [&](const auto& p){ return !schemas.contains(p.first); }),
+                              _topics.end());
+            }
+            else {
+                _topics.clear();
+            }
+
+            createParsersForTopics();
+
+            _state.mode = WsState::Mode::Data;
             _heartBeatTimer.start();
+
             break;
         }
 
@@ -355,6 +389,8 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
 {
     // Binary frames (ZSTD-compressed data, etc.)
     qDebug() << "RX binary:" << message.size() << "bytes" << Qt::endl;
+
+
 }
 
 void WebsocketClient::onDisconnected()
@@ -427,6 +463,23 @@ void WebsocketClient::sendHeartBeat()
     QJsonObject cmd;
     cmd["command"] = "heartbeat";
     sendCommand(cmd);
+}
+
+void WebsocketClient::createParsersForTopics()
+{
+#ifdef PJ_BUILD
+    for (const auto& [topic_, type_] : _topics)
+    {
+        const auto topic = topic_.toStdString();
+        const auto type  = type_.toStdString();
+
+        if (!_parser.hasParser(topic))
+        {
+            _parser.addParser(topic,
+                              CreateParserROS2(*parserFactories(), topic, type, dataMap()));
+        }
+    }
+#endif
 }
 
 // Qt MOC include for QObject/Q_OBJECT

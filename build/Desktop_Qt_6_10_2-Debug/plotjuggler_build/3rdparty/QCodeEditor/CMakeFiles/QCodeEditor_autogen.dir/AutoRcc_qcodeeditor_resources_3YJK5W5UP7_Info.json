@@ -1,0 +1,29 @@
+{
+	"BUILD_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/QCodeEditor/QCodeEditor_autogen",
+	"CMAKE_BINARY_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug",
+	"CMAKE_CURRENT_BINARY_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/QCodeEditor",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/home/alvaro/Proyects/PlotJuggler/3rdparty/QCodeEditor",
+	"CMAKE_SOURCE_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket",
+	"CROSS_CONFIG" : false,
+	"GENERATOR" : "Ninja",
+	"INCLUDE_DIR" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/QCodeEditor/QCodeEditor_autogen/include",
+	"INPUTS" : 
+	[
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/QCodeEditor/resources/default_style.xml",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/QCodeEditor/resources/languages/python.xml",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/QCodeEditor/resources/languages/lua.xml",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/QCodeEditor/resources/languages/cpp.xml",
+		"/home/alvaro/Proyects/PlotJuggler/3rdparty/QCodeEditor/resources/languages/glsl.xml"
+	],
+	"LOCK_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/QCodeEditor/CMakeFiles/QCodeEditor_autogen.dir/AutoRcc_qcodeeditor_resources_3YJK5W5UP7_Lock.lock",
+	"MULTI_CONFIG" : false,
+	"OPTIONS" : [ "-name", "qcodeeditor_resources" ],
+	"OUTPUT_CHECKSUM" : "3YJK5W5UP7",
+	"OUTPUT_NAME" : "qrc_qcodeeditor_resources.cpp",
+	"RCC_EXECUTABLE" : "/usr/lib/qt5/bin/rcc",
+	"RCC_LIST_OPTIONS" : [ "--list" ],
+	"SETTINGS_FILE" : "/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/plotjuggler_build/3rdparty/QCodeEditor/CMakeFiles/QCodeEditor_autogen.dir/AutoRcc_qcodeeditor_resources_3YJK5W5UP7_Used.txt",
+	"SOURCE" : "/home/alvaro/Proyects/PlotJuggler/3rdparty/QCodeEditor/resources/qcodeeditor_resources.qrc",
+	"USE_BETTER_GRAPH" : false,
+	"VERBOSITY" : 0
+}

@@ -1,0 +1,69 @@
+
+name: cmake Ubuntu
+
+on: [push, pull_request]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Debug
+
+jobs:
+  build:
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # ubuntu 24.04 doesn't allow non-user pip install by default anymore
+    # don't do this on your host computer, but this is fine in CI
+    - name: pip break system packages
+      if: matrix.os == 'ubuntu-24.04'
+      run: python3 -m pip config set global.break-system-packages true
+
+    - name: Install Conan
+      id: conan
+      uses: turtlebrowser/get-conan@main
+      with:
+        version: 2.0.13
+
+    - name: Create default profile
+      run: conan profile detect
+
+    - name: Create Build Environment
+      # Some projects don't allow in-source building, so create a separate build directory
+      # We'll use this as our working directory for all subsequent commands
+      run: cmake -E make_directory ${{github.workspace}}/build
+
+    - name: Install conan dependencies
+      working-directory: ${{github.workspace}}/build
+      run: conan install ${{github.workspace}}/data_tamer_cpp/conanfile.py -s build_type=Debug --build=missing -s compiler.cppstd=gnu17 -of .
+
+    - name: Configure CMake
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: cmake ${{github.workspace}}/data_tamer_cpp -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="./build/Debug/generators/conan_toolchain.cmake" -DCMAKE_CXX_FLAGS_DEBUG="-g -fprofile-arcs -ftest-coverage"
+
+    - name: Build
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: cmake --build . --config Debug
+
+    - name: run test (Linux)
+      working-directory: ${{github.workspace}}/build
+      run: ctest -T test -T Coverage
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        directory: ${{github.workspace}}/build
+        gcov_ignore: ${{github.workspace}}/3rdparty
+        verbose: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

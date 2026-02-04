@@ -1,0 +1,12 @@
+# This is a generated file and its contents are an internal implementation detail.
+# The download step will be re-executed if anything in this file changes.
+# No other meaning or use of this file is supported.
+
+method=url
+command=/home/alvaro/Qt/Tools/CMake/bin/cmake;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/download-data_tamer-populate.cmake;COMMAND;/home/alvaro/Qt/Tools/CMake/bin/cmake;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/verify-data_tamer-populate.cmake;COMMAND;/home/alvaro/Qt/Tools/CMake/bin/cmake;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/extract-data_tamer-populate.cmake
+source_dir=/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-src
+work_dir=/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps
+url(s)=https://github.com/PickNikRobotics/data_tamer/archive/refs/tags/1.0.3.zip
+hash=
+      no_extract=
+

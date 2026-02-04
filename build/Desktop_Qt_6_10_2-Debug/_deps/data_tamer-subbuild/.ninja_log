@@ -1,0 +1,21 @@
+# ninja log v6
+4	828	1770202384232737537	data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-download	953d79bdce5761d4
+828	830	1770202384235737582	data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-update	e97ac7e9d9040e37
+828	830	1770202384235737582	/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-update	e97ac7e9d9040e37
+0	4	1770202383408725261	/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-mkdir	1b1a88b0ae1cbffc
+838	840	1770202384245737731	data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-install	928164bbb8ac7f22
+835	838	1770202384242737686	data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-build	2bd3c43f1ddc43e9
+843	846	1770202384251737820	/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/CMakeFiles/data_tamer-populate-complete	6120e4fafe027018
+838	840	1770202384245737731	/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-install	928164bbb8ac7f22
+833	835	1770202384240737656	/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-configure	1e34a96334684459
+835	838	1770202384242737686	/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-build	2bd3c43f1ddc43e9
+830	833	1770202384238737626	data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-patch	d7b4da3df33ea7db
+843	846	1770202384251737820	CMakeFiles/data_tamer-populate-complete	6120e4fafe027018
+843	846	1770202384251737820	/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-done	6120e4fafe027018
+0	4	1770202383408725261	data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-mkdir	1b1a88b0ae1cbffc
+843	846	1770202384251737820	data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-done	6120e4fafe027018
+830	833	1770202384238737626	/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-patch	d7b4da3df33ea7db
+840	843	1770202384247737761	data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-test	934040ef3a6d3943
+4	828	1770202384232737537	/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-download	953d79bdce5761d4
+833	835	1770202384240737656	data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-configure	1e34a96334684459
+840	843	1770202384247737761	/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-test	934040ef3a6d3943

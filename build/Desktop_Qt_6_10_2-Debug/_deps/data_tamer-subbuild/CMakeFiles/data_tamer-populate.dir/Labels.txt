@@ -1,0 +1,14 @@
+# Target labels
+ data_tamer-populate
+# Source files and their labels
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/CMakeFiles/data_tamer-populate
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/CMakeFiles/data_tamer-populate.rule
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/CMakeFiles/data_tamer-populate-complete.rule
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-build.rule
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-configure.rule
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-download.rule
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-install.rule
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-mkdir.rule
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-patch.rule
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-test.rule
+/home/alvaro/Proyects/DataStreamWebSocket/build/Desktop_Qt_6_10_2-Debug/_deps/data_tamer-subbuild/data_tamer-populate-prefix/src/data_tamer-populate-stamp/data_tamer-populate-update.rule
