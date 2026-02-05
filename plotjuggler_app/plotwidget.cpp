@@ -929,8 +929,12 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
     {
       overrideCurvesStyle(PlotWidgetBase::STEPSINV);
     }
-    updateCurvesStyle();
   }
+  else
+  {
+    overrideCurvesStyle(std::nullopt);
+  }
+  updateCurvesStyle();
 
   QString bg_data = plot_widget.attribute("background_data");
   QString bg_colormap = plot_widget.attribute("background_colormap");
