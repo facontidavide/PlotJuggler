@@ -66,6 +66,10 @@ WebsocketClient::WebsocketClient() : _running(false), _dialog(nullptr)
     _state.mode = WsState::Mode::Close;
     _state.req_in_flight = false;
 
+    // Pending request tracking
+    _pendingRequestId.clear();
+    _pendingMode = WsState::Mode::Close;
+
     // Timer used to periodically request topics
     _topicsTimer.setInterval(1000);
     connect(&_topicsTimer, &QTimer::timeout, this, &WebsocketClient::requestTopics);
@@ -80,14 +84,14 @@ WebsocketClient::WebsocketClient() : _running(false), _dialog(nullptr)
     connect(&_socket, &QWebSocket::binaryMessageReceived, this, &WebsocketClient::onBinaryMessageReceived);
     connect(&_socket, &QWebSocket::disconnected, this, &WebsocketClient::onDisconnected);
 
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        connect(&_socket, &QWebSocket::errorOccurred, this, &WebsocketClient::onError);
-    #else
-        connect(&_socket,
-                QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error),
-                this,
-                &WebsocketClient::onError);
-    #endif
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    connect(&_socket, &QWebSocket::errorOccurred, this, &WebsocketClient::onError);
+#else
+    connect(&_socket,
+            QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error),
+            this,
+            &WebsocketClient::onError);
+#endif
 }
 
 WebsocketClient::~WebsocketClient()
@@ -193,7 +197,6 @@ bool WebsocketClient::start()
 
             // Store selected topics
             if (!type.isEmpty()) _topics.push_back({name, type});
-
         }
         if (arr.isEmpty()) return;
 
@@ -207,7 +210,8 @@ bool WebsocketClient::start()
         cmd["topics"] = arr;
 
         // qDebug() << cmd << Qt::endl;
-        sendCommand(cmd);
+        _pendingMode = WsState::Mode::Subscribe;
+        _pendingRequestId = sendCommand(cmd);
 
         // Disable button until response
         auto b = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
@@ -253,6 +257,10 @@ void WebsocketClient::shutdown()
     _state.mode = WsState::Mode::Close;
     _state.req_in_flight = false;
 
+    // Reset pending request
+    _pendingRequestId.clear();
+    _pendingMode = WsState::Mode::Close;
+
     _dialog = nullptr;
 
     // Clean topics
@@ -275,7 +283,8 @@ void WebsocketClient::onConnected()
 
     QJsonObject cmd;
     cmd["command"] = "get_topics";
-    sendCommand(cmd);
+    _pendingMode = WsState::Mode::GetTopics;
+    _pendingRequestId = sendCommand(cmd);
 
     // Start periodic topic refresh
     _topicsTimer.start();
@@ -299,11 +308,21 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
         return;
 
     const auto status = obj.value("status").toString();
+    const auto id = obj.value("id").toString();
+
+    // Ignore responses that don't match the in-flight request
+    if (_state.req_in_flight) {
+        if (_pendingRequestId.isEmpty() || id != _pendingRequestId)
+            return;
+    }
 
     // Error response from server
-    if (status == "error")
-    {
+    if (status == "error") {
         _state.req_in_flight = false;
+
+        // Reset pending request
+        _pendingRequestId.clear();
+        _pendingMode = WsState::Mode::Close;
 
         const auto msg = obj.value("message").toString("Unknown error");
         QMessageBox::warning(nullptr, "WebSocket Client", msg, QMessageBox::Ok);
@@ -314,92 +333,95 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
     if (status != "success") // INTEGRATE PARTIAL
         return;
 
-    switch (_state.mode) {
-        case WsState::Mode::GetTopics:
-        {
-            // Expect array of topics
-            if (!obj.contains("topics") || !obj.value("topics").isArray())
-                break;
+    // Request completed successfully
+    _state.req_in_flight = false;
 
-            _state.req_in_flight = false;
+    // Save mode locally, then clear pending (so nested code can't break it)
+    const auto handledMode = _pendingMode;
+    _pendingRequestId.clear();
+    _pendingMode = WsState::Mode::Close;
 
-            // Dialog may already be closed
-            if (!_dialog || !_dialog->ui || !_dialog->ui->topicsList)
-                break;
-
-            const auto topics = obj.value("topics").toArray();
-
-            // Save current selection
-            QStringList selected_topics;
-            for (auto* it : _dialog->ui->topicsList->selectedItems())
-                selected_topics << it->text(0);
-
-            // Update UI without triggering signals
-            _dialog->ui->topicsList->setUpdatesEnabled(false);
-            _dialog->ui->topicsList->blockSignals(true);
-
-            _dialog->ui->topicsList->clear();
-
-            // Populate topic list
-            for (const auto& v : topics)
-            {
-                if (!v.isObject()) continue;
-
-                const auto t = v.toObject();
-                const auto name = t.value("name").toString();
-                const auto type = t.value("type").toString();
-                if (name.isEmpty()) continue;
-
-                auto* item = new QTreeWidgetItem(_dialog->ui->topicsList);
-                item->setText(0, name);
-                item->setText(1, type);
-
-                // Restore previous selection
-                if (selected_topics.contains(name))
-                    item->setSelected(true);
-            }
-
-            _dialog->ui->topicsList->blockSignals(false);
-            _dialog->ui->topicsList->setUpdatesEnabled(true);
-
+    switch (handledMode) {
+    case WsState::Mode::GetTopics:
+    {
+        // Expect array of topics
+        if (!obj.contains("topics") || !obj.value("topics").isArray())
             break;
+
+        // Dialog may already be closed
+        if (!_dialog || !_dialog->ui || !_dialog->ui->topicsList)
+            break;
+
+        const auto topics = obj.value("topics").toArray();
+
+        // Save current selection
+        QStringList selected_topics;
+        for (auto* it : _dialog->ui->topicsList->selectedItems())
+            selected_topics << it->text(0);
+
+        // Update UI without triggering signals
+        _dialog->ui->topicsList->setUpdatesEnabled(false);
+        _dialog->ui->topicsList->blockSignals(true);
+
+        _dialog->ui->topicsList->clear();
+
+        // Populate topic list
+        for (const auto& v : topics) {
+            if (!v.isObject()) continue;
+
+            const auto t = v.toObject();
+            const auto name = t.value("name").toString();
+            const auto type = t.value("type").toString();
+            if (name.isEmpty()) continue;
+
+            auto* item = new QTreeWidgetItem(_dialog->ui->topicsList);
+            item->setText(0, name);
+            item->setText(1, type);
+
+            // Restore previous selection
+            if (selected_topics.contains(name))
+                item->setSelected(true);
         }
 
-        case WsState::Mode::Subscribe:
-        {
-            _state.req_in_flight = false;
+        _dialog->ui->topicsList->blockSignals(false);
+        _dialog->ui->topicsList->setUpdatesEnabled(true);
 
-            if (obj.contains("schemas") && obj.value("schemas").isObject()) {
-                const auto schemas = obj.value("schemas").toObject();
+        break;
+    }
 
-                _topics.erase(
-                    std::remove_if(_topics.begin(), _topics.end(),
-                            [&](const auto& p){ return !schemas.contains(p.first); }),
-                              _topics.end());
-            }
-            else {
-                _topics.clear();
-            }
+    case WsState::Mode::Subscribe:
+    {
+        if (obj.contains("schemas") && obj.value("schemas").isObject()) {
+            const auto schemas = obj.value("schemas").toObject();
 
-            createParsersForTopics();
-
-            _state.mode = WsState::Mode::Data;
-            _heartBeatTimer.start();
-
-            break;
+            _topics.erase(
+                std::remove_if(_topics.begin(), _topics.end(),
+                               [&](const auto& p){ return !schemas.contains(p.first); }),
+                _topics.end());
+        }
+        else {
+            _topics.clear();
         }
 
-        case WsState::Mode::Data:
-        {
-            // Text messages in data mode currently ignored
-            break;
-        }
+        createParsersForTopics();
 
-        case WsState::Mode::Close:
-            break;
-        default:
-            qWarning() << "Unhandled mode:" << int(_state.mode);
-            break;
+        _state.mode = WsState::Mode::Data;
+        _heartBeatTimer.start();
+
+        break;
+    }
+
+    case WsState::Mode::Data:
+    {
+        // Text messages in data mode currently ignored
+        break;
+    }
+
+    case WsState::Mode::Close:
+        break;
+    default:
+        qWarning() << "Unhandled mode:" << int(handledMode);
+        break;
     }
 }
 
@@ -420,8 +442,7 @@ bool WebsocketClient::parseDecompressedPayload(const QByteArray& decompressed, u
 
     uint32_t parsed = 0;
 
-    while (q < qend)
-    {
+    while (q < qend) {
         uint16_t name_len = 0;
         if (!readLE(q, qend, name_len)) return false;
         if (q + name_len > qend) return false;
@@ -444,8 +465,7 @@ bool WebsocketClient::parseDecompressedPayload(const QByteArray& decompressed, u
         parsed++;
     }
 
-    if (parsed != expected_count)
-    {
+    if (parsed != expected_count) {
         qWarning() << "Parsed messages mismatch. header=" << expected_count
                    << "parsed=" << parsed
                    << "decompressed=" << decompressed.size();
@@ -515,6 +535,10 @@ void WebsocketClient::onDisconnected()
     _state.mode = WsState::Mode::Close;
     _state.req_in_flight = false;
 
+    // Reset pending request
+    _pendingRequestId.clear();
+    _pendingMode = WsState::Mode::Close;
+
     _running = false;
     qDebug() << "Disconnected" << Qt::endl;
 }
@@ -522,6 +546,11 @@ void WebsocketClient::onDisconnected()
 void WebsocketClient::onError(QAbstractSocket::SocketError)
 {
     _running = false;
+
+    // Reset in-flight flags (connection error ends any request)
+    _state.req_in_flight = false;
+    _pendingRequestId.clear();
+    _pendingMode = WsState::Mode::Close;
 
     // Re-enable OK button if dialog is still open
     if (_dialog && _dialog->ui && _dialog->ui->buttonBox) {
@@ -563,7 +592,8 @@ void WebsocketClient::requestTopics()
 
     QJsonObject cmd;
     cmd["command"] = "get_topics";
-    sendCommand(cmd);
+    _pendingMode = WsState::Mode::GetTopics;
+    _pendingRequestId = sendCommand(cmd);
 }
 
 void WebsocketClient::sendHeartBeat()
@@ -580,8 +610,7 @@ void WebsocketClient::sendHeartBeat()
 void WebsocketClient::createParsersForTopics()
 {
 #ifdef PJ_BUILD
-    for (const auto& [topic_, type_] : _topics)
-    {
+    for (const auto& [topic_, type_] : _topics) {
         const auto topic = topic_.toStdString();
         const auto type  = type_.toStdString();
 
@@ -597,19 +626,19 @@ void WebsocketClient::createParsersForTopics()
 void WebsocketClient::onRos2CdrMessage(const QString& topic, double ts_sec, const uint8_t* cdr, uint32_t len)
 {
 #ifdef PJ_BUILD
-        const std::string topic_std = topic.toStdString();
+    const std::string topic_std = topic.toStdString();
 
-        if (!_parser.hasParser(topic_std))
-            return;
+    if (!_parser.hasParser(topic_std))
+        return;
 
-        PJ::MessageRef msg_ref(cdr, len);
-        _parser.parseMessage(topic_std, msg_ref, ts_sec);
+    PJ::MessageRef msg_ref(cdr, len);
+    _parser.parseMessage(topic_std, msg_ref, ts_sec);
 
-        emit dataReceived();
+    emit dataReceived();
 #else
-        Q_UNUSED(cdr);
-        Q_UNUSED(len);
-        qDebug() << "RX msg topic=" << topic << "ts=" << ts_sec << "cdr=" << len << Qt::endl;
+    Q_UNUSED(cdr);
+    Q_UNUSED(len);
+    qDebug() << "RX msg topic=" << topic << "ts=" << ts_sec << "cdr=" << len << Qt::endl;
 #endif
 }
 

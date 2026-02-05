@@ -9,6 +9,9 @@
 #include <QTimer>
 #include <QJsonObject>
 
+#include <vector>
+#include <utility>
+
 struct WsState
 {
     enum class Mode
@@ -19,7 +22,7 @@ struct WsState
         Close
     };
 
-    Mode mode = Mode::GetTopics;
+    Mode mode = Mode::Close;
     bool req_in_flight = false;
 };
 
@@ -45,15 +48,19 @@ public:
 
     ~WebsocketClient();
 
-    char* name()
+    char* name() const
     {
         return "WebSocket Server";
     }
 
-    bool isDebugPlugin()
+    bool isDebugPlugin() const
     {
         return false;
     }
+
+    bool pause();
+    bool resume();
+    bool unsubscribe();
 
 signals:
     void closed();
@@ -74,6 +81,9 @@ private:
     // PJ::RosParserConfig _config;
 
     QString sendCommand(QJsonObject obj);
+    QString _pendingRequestId;
+    WsState::Mode _pendingMode = WsState::Mode::Close;
+
     void requestTopics();
     void sendHeartBeat();
     void createParsersForTopics();
