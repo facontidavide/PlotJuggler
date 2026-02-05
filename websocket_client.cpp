@@ -280,6 +280,10 @@ void WebsocketClient::shutdown()
 #ifdef PJ_BUILD
   // Drop created parsers
   _parsers_topic.clear();
+
+  // Clean data
+  dataMap().clear();
+  emit dataReceived();
 #endif
 
   // Close socket
@@ -676,6 +680,8 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
 // =======================
 QString WebsocketClient::sendCommand(QJsonObject obj)
 {
+  if (_socket.state() != QAbstractSocket::ConnectedState) return QString();
+
   // Every command must have a "command" field
   if (!obj.contains("command"))
     return QString();
@@ -697,6 +703,8 @@ QString WebsocketClient::sendCommand(QJsonObject obj)
 
 void WebsocketClient::requestTopics()
 {
+  if (_socket.state() != QAbstractSocket::ConnectedState) return;
+
   // Only poll when connected and idle
   if (!_running) return;
   if (_state.mode != WsState::Mode::GetTopics) return;
@@ -714,6 +722,8 @@ void WebsocketClient::requestTopics()
 
 void WebsocketClient::sendHeartBeat()
 {
+  if (_socket.state() != QAbstractSocket::ConnectedState) return;
+
   // Heartbeat only in Data mode
   if (!_running) return;
   if (_state.mode != WsState::Mode::Data) return;
