@@ -119,7 +119,20 @@ bool UDP_Server::start(QStringList*)
         prev_widget->setVisible(false);
       }
     }
-    parser_creator = parserFactories()->at(selected_protocol);
+    // Safe lookup with fallback
+    auto it = parserFactories()->find(selected_protocol);
+    if (it != parserFactories()->end())
+    {
+      parser_creator = it->second;
+    }
+    else
+    {
+      // Fallback to first available parser
+      if (!parserFactories()->empty()) 
+      {
+        parser_creator = parserFactories()->begin()->second;
+      }
+    }
 
     showOptionsWidget(&dialog, dialog.ui->boxOptions, parser_creator->optionsWidget());
   };
