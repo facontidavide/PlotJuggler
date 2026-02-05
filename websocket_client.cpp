@@ -76,7 +76,7 @@ WebsocketClient::WebsocketClient() : _running(false), _dialog(nullptr)
     _pendingRequestId.clear();
     _pendingMode = WsState::Mode::Close;
 
-    // Timer used to periodically request topics
+    // Timer used to periodically request topics (only while selecting topics)
     _topicsTimer.setInterval(1000);
     connect(&_topicsTimer, &QTimer::timeout, this, &WebsocketClient::requestTopics);
 
@@ -117,13 +117,13 @@ bool WebsocketClient::start()
     QSettings settings;
     int port = settings.value("WebsocketClient::port", 8080).toInt();
 
-    // Create dialog
+    // Create dialog (stack object)
     WebsocketDialog dialog;
     _dialog = &dialog;
 
     dialog.ui->lineEditPort->setText(QString::number(port));
 
-    // Rename OK button
+    // Rename OK button (will toggle between Connect/Subscribe)
     auto okBtn = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
     if (okBtn) okBtn->setText("Connect");
 
@@ -133,14 +133,14 @@ bool WebsocketClient::start()
         auto b = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
         if (!b) return;
 
-        // Not connected yet
+        // Not connected yet: allow connect
         if (!_running) {
             b->setEnabled(true);
             b->setText("Connect");
             return;
         }
 
-        // Connected and waiting for topic selection
+        // Connected and waiting for topic selection: allow subscribe when something is selected
         if (_state.mode == WsState::Mode::GetTopics) {
             const bool hasSelection = dialog.ui->topicsList && !dialog.ui->topicsList->selectedItems().isEmpty();
             b->setText("Subscribe");
@@ -192,6 +192,7 @@ bool WebsocketClient::start()
         // Build JSON array with selected topic names
         QJsonArray arr;
 
+        // Refresh selected topics cache
         _topics.clear();
         for (auto* it : selected) {
             const auto name = it->text(0);
@@ -201,12 +202,12 @@ bool WebsocketClient::start()
 
             arr.append(name);
 
-            // Store selected topics
+            // Store (topic, type) pairs for later parser creation / unsubscribe
             if (!type.isEmpty()) _topics.push_back({name, type});
         }
         if (arr.isEmpty()) return;
 
-        // Update state
+        // Update state: one request in-flight
         _state.mode = WsState::Mode::Subscribe;
         _state.req_in_flight = true;
 
@@ -219,9 +220,11 @@ bool WebsocketClient::start()
         _pendingMode = WsState::Mode::Subscribe;
         _pendingRequestId = sendCommand(cmd);
 
-        // Disable button until response
+        // Disable button until response response arrives
         auto b = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
         if (b) b->setEnabled(false);
+
+        // Close dialog after subscribing (PlotJuggler takes over)
         dialog.reject();
     });
 
@@ -229,6 +232,7 @@ bool WebsocketClient::start()
     // Cancel button
     // =======================
     connect(&dialog, &WebsocketDialog::cancelRequested, this, [&]() {
+        // Stop everything and close dialog
         shutdown();
         dialog.reject();
     });
@@ -257,18 +261,19 @@ void WebsocketClient::shutdown()
     _topicsTimer.stop();
     _heartBeatTimer.stop();
 
-    // Reset state
+    // Reset state machine
     _state.mode = WsState::Mode::Close;
     _state.req_in_flight = false;
 
-    // Reset pending request
+    // Reset pending request tracking
     _pendingRequestId.clear();
     _pendingMode = WsState::Mode::Close;
 
+    // Close dialog if still open
     if (_dialog) _dialog->reject();
     _dialog = nullptr;
 
-    // Clean topics
+    // Clean topics cache
     _topics.clear();
 
     // Close socket
@@ -279,6 +284,7 @@ void WebsocketClient::shutdown()
 
 bool WebsocketClient::pause()
 {
+    // Pause streaming on server side
     if (!_running) return false;
     if (_state.req_in_flight) return false;
 
@@ -290,6 +296,7 @@ bool WebsocketClient::pause()
 
 bool WebsocketClient::resume()
 {
+    // Resume streaming on server side
     if (!_running) return false;
     if (_state.req_in_flight) return false;
 
@@ -301,6 +308,7 @@ bool WebsocketClient::resume()
 
 bool WebsocketClient::unsubscribe()
 {
+    // Unsubscribe currently selected topics
     if (!_running) return false;
     if (_state.req_in_flight) return false;
 
@@ -331,6 +339,8 @@ void WebsocketClient::onConnected()
 
     QJsonObject cmd;
     cmd["command"] = "get_topics";
+
+    // Track expected response
     _pendingMode = WsState::Mode::GetTopics;
     _pendingRequestId = sendCommand(cmd);
 
@@ -344,15 +354,15 @@ void WebsocketClient::onDisconnected()
     _topicsTimer.stop();
     _heartBeatTimer.stop();
 
-    // Reset state
+    // Reset state machine
     _state.mode = WsState::Mode::Close;
     _state.req_in_flight = false;
 
-    // Reset pending request
+    // Reset pending request tracking
     _pendingRequestId.clear();
     _pendingMode = WsState::Mode::Close;
 
-    // Clear all topics
+    // Clear topics cache
     _topics.clear();
 
     _running = false;
@@ -363,7 +373,7 @@ void WebsocketClient::onError(QAbstractSocket::SocketError)
 {
     _running = false;
 
-    // Reset in-flight flags (connection error ends any request)
+    // Connection error aborts any in-flight request
     _state.req_in_flight = false;
     _pendingRequestId.clear();
     _pendingMode = WsState::Mode::Close;
@@ -373,6 +383,8 @@ void WebsocketClient::onError(QAbstractSocket::SocketError)
         auto b = _dialog->ui->buttonBox->button(QDialogButtonBox::Ok);
         if (b) b->setEnabled(true);
     }
+
+    // Show Qt socket error string
     QMessageBox::warning(nullptr, "WebSocket Client", _socket.errorString(), QMessageBox::Ok);
 }
 
@@ -396,7 +408,7 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
     const auto status = obj.value("status").toString();
     const auto id = obj.value("id").toString();
 
-    // Ignore responses that don't match the in-flight request
+    // If a request is in-flight, only accept matching response "id"
     if (_state.req_in_flight) {
         if (_pendingRequestId.isEmpty() || id != _pendingRequestId)
             return;
@@ -416,13 +428,13 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
     }
 
     // Only handle successful responses
-    if (status != "success") // INTEGRATE PARTIAL
+    if (status != "success") // TODO: handle partial/streaming responses if API supports it
         return;
 
     // Request completed successfully
     _state.req_in_flight = false;
 
-    // Save mode locally, then clear pending (so nested code can't break it)
+    // Save mode locally, then clear pending (avoid re-entrancy issues)
     const auto handledMode = _pendingMode;
     _pendingRequestId.clear();
     _pendingMode = WsState::Mode::Close;
@@ -440,7 +452,7 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
 
         const auto topics = obj.value("topics").toArray();
 
-        // Save current selection
+        // Save current selection to restore it after refresh
         QStringList selected_topics;
         for (auto* it : _dialog->ui->topicsList->selectedItems())
             selected_topics << it->text(0);
@@ -477,20 +489,25 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
 
     case WsState::Mode::Subscribe:
     {
+        // Server may return schemas for only the accepted topics
         if (obj.contains("schemas") && obj.value("schemas").isObject()) {
             const auto schemas = obj.value("schemas").toObject();
 
+            // Keep only topics that the server confirmed
             _topics.erase(
                 std::remove_if(_topics.begin(), _topics.end(),
                                [&](const auto& p){ return !schemas.contains(p.first); }),
                 _topics.end());
         }
         else {
+            // If no schemas are returned, treat as failed/empty subscription
             _topics.clear();
         }
 
+        // Create parsers for accepted topics (PJ build only)
         createParsersForTopics();
 
+        // Move to Data mode and start heartbeat
         _state.mode = WsState::Mode::Data;
         _heartBeatTimer.start();
 
@@ -511,9 +528,13 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
     }
 }
 
+// =======================
+// Binary helpers
+// =======================
 template <typename T>
 static bool readLE(const uint8_t*& p, const uint8_t* end, T& out)
 {
+    // Read POD type from buffer as little-endian
     if (p + sizeof(T) > end) return false;
     std::memcpy(&out, p, sizeof(T));
     out = qFromLittleEndian(out);
@@ -523,11 +544,14 @@ static bool readLE(const uint8_t*& p, const uint8_t* end, T& out)
 
 bool WebsocketClient::parseDecompressedPayload(const QByteArray& decompressed, uint32_t expected_count)
 {
+    // Payload format: repeated blocks
+    // [u16 topic_name_len][bytes topic_name][u64 ts_ns][u32 cdr_len][bytes cdr]
     const uint8_t* q = reinterpret_cast<const uint8_t*>(decompressed.constData());
     const uint8_t* qend = q + decompressed.size();
 
     uint32_t parsed = 0;
 
+    // Parse until end of payload
     while (q < qend) {
         uint16_t name_len = 0;
         if (!readLE(q, qend, name_len)) return false;
@@ -544,13 +568,16 @@ bool WebsocketClient::parseDecompressedPayload(const QByteArray& decompressed, u
         if (!readLE(q, qend, data_len)) return false;
         if (q + data_len > qend) return false;
 
+        // CDR buffer points inside decompressed payload
         const uint8_t* cdr = q;
         q += data_len;
 
+        // Push message into parser / PlotJuggler
         onRos2CdrMessage(topic, ts_sec, cdr, data_len);
         parsed++;
     }
 
+    // Header message_count must match parsed messages
     if (parsed != expected_count) {
         qWarning() << "Parsed messages mismatch. header=" << expected_count
                    << "parsed=" << parsed
@@ -565,10 +592,12 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
 {
     if (!_running) return;
 
+    // Frame header must be at least 16 bytes
     if (message.size() < 16) {
         return;
     }
 
+    // Frame header fields (little-endian)
     const uint8_t* ptr = reinterpret_cast<const uint8_t*>(message.constData());
     const uint8_t* end = ptr + message.size();
 
@@ -582,7 +611,8 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
     if (!readLE(ptr, end, uncompressed_size)) return;
     if (!readLE(ptr, end, flags)) return;
 
-    if (magic != 0x42524A50) {
+    // Validate magic and flags
+    if (magic != 0x42524A50) { // "PJRB"
         qWarning() << "Bad magic:" << Qt::hex << magic;
         return;
     }
@@ -590,10 +620,13 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
         qWarning() << "Bad flag:" << flags;
         return;
     }
+
+    // Compressed payload starts after 16-byte header
     QByteArray compressed = message.mid(16);
     if (compressed.isEmpty())
         return;
 
+    // ZSTD decompress
     QByteArray decompressed;
     decompressed.resize(int(uncompressed_size));
 
@@ -607,11 +640,16 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
         return;
     }
 
+    // Resize to actual decompressed bytes
     decompressed.resize(int(res));
 
+    // Parse messages inside payload
     parseDecompressedPayload(decompressed, message_count);
 }
 
+// =======================
+// Commands / requests
+// =======================
 QString WebsocketClient::sendCommand(QJsonObject obj)
 {
     // Every command must have a "command" field
@@ -644,6 +682,8 @@ void WebsocketClient::requestTopics()
 
     QJsonObject cmd;
     cmd["command"] = "get_topics";
+
+    // Track expected response
     _pendingMode = WsState::Mode::GetTopics;
     _pendingRequestId = sendCommand(cmd);
 }
@@ -654,14 +694,19 @@ void WebsocketClient::sendHeartBeat()
     if (!_running) return;
     if (_state.mode != WsState::Mode::Data) return;
 
+    // Keep-alive / watchdog on server side
     QJsonObject cmd;
     cmd["command"] = "heartbeat";
     sendCommand(cmd);
 }
 
+// =======================
+// PlotJuggler integration
+// =======================
 void WebsocketClient::createParsersForTopics()
 {
 #ifdef PJ_BUILD
+    // Create one parser per subscribed topic/type
     for (const auto& [topic_, type_] : _topics) {
         const auto topic = topic_.toStdString();
         const auto type  = type_.toStdString();
@@ -678,6 +723,7 @@ void WebsocketClient::createParsersForTopics()
 void WebsocketClient::onRos2CdrMessage(const QString& topic, double ts_sec, const uint8_t* cdr, uint32_t len)
 {
 #ifdef PJ_BUILD
+    // Feed CDR blob to the ROS2 parser for this topic
     const std::string topic_std = topic.toStdString();
 
     if (!_parser.hasParser(topic_std))
@@ -686,8 +732,10 @@ void WebsocketClient::onRos2CdrMessage(const QString& topic, double ts_sec, cons
     PJ::MessageRef msg_ref(cdr, len);
     _parser.parseMessage(topic_std, msg_ref, ts_sec);
 
+    // Notify PlotJuggler that new data is available
     emit dataReceived();
 #else
+    // Debug build: just log reception
     Q_UNUSED(cdr);
     Q_UNUSED(len);
     qDebug() << "RX msg topic=" << topic << "ts=" << ts_sec << "cdr=" << len << Qt::endl;
