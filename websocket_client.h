@@ -8,9 +8,13 @@
 #include <QAbstractSocket>
 #include <QTimer>
 #include <QJsonObject>
+#include <QtPlugin>
 
 #include <vector>
 #include <utility>
+
+#include "PlotJuggler/datastreamer_base.h"
+#include "PlotJuggler/messageparser_base.h"
 
 struct WsState
 {
@@ -26,34 +30,45 @@ struct WsState
     bool req_in_flight = false;
 };
 
+struct TopicInfo
+{
+  QString name;
+  QString type;
+  QString schema_name;
+  QString schema_encoding;
+  QString schema_definition;
+};
+
 namespace Ui { class WebSocketDialog; }
 
 class WebsocketDialog;
 
-class WebsocketClient : public QObject
+class WebsocketClient : public PJ::DataStreamer
 {
     Q_OBJECT
+    Q_PLUGIN_METADATA(IID "facontidavide.PlotJuggler3.DataStreamer")
+    Q_INTERFACES(PJ::DataStreamer)
 
 public:
     WebsocketClient();
 
-    bool start();
+    virtual bool start(QStringList*) override;
 
-    void shutdown();
+    virtual void shutdown() override;
 
-    bool isRunning()
+    virtual bool isRunning() const override
     {
         return _running;
     }
 
-    ~WebsocketClient();
+    ~WebsocketClient() override = default;
 
-    char* name() const
+    virtual const char* name() const override
     {
-        return "WebSocket Server";
+        return "WebSocket Client";
     }
 
-    bool isDebugPlugin() const
+    virtual bool isDebugPlugin() override
     {
         return false;
     }
@@ -75,11 +90,10 @@ private:
     QTimer _topicsTimer;
     QTimer _heartBeatTimer;
 
-    std::vector<std::pair<QString, QString>> _topics;
+    std::vector<TopicInfo> _topics;
 
 #ifdef PJ_BUILD
-    PJ::CompositeParser _parser;
-    PJ::RosParserConfig _config;
+    std::unordered_map<std::string, PJ::MessageParserPtr> _parsers_topic;
 #endif
 
     QString sendCommand(QJsonObject obj);

@@ -1,36 +1,32 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(DataStreamWebsocketBridge LANGUAGES CXX)
+project(DataStreamWebsocketBridge)
 
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
+find_package(Qt5 REQUIRED COMPONENTS Widgets WebSockets)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+qt5_wrap_ui(UI_SRC websocket_client.ui)
 
-find_package(Qt5 REQUIRED COMPONENTS Core Widgets WebSockets)
-
-add_executable(DSWS_Test
+add_library(DataStreamWebsocketBridge SHARED
   websocket_client.cpp
-  websocket_client.ui
-  websocket_client.h
-  main.cpp
+  ${UI_SRC}
 )
 
-target_include_directories(DSWS_Test PRIVATE
-  ${CMAKE_CURRENT_BINARY_DIR}
+target_include_directories(DataStreamWebsocketBridge PRIVATE
+  ../
 )
 
-target_link_libraries(DSWS_Test PRIVATE
-  zstd
-  Qt5::Core
+target_link_libraries(DataStreamWebsocketBridge PRIVATE
   Qt5::Widgets
   Qt5::WebSockets
+  plotjuggler_base
+  zstd
 )
 
-include(GNUInstallDirs)
-install(TARGETS DSWS_Test
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+target_compile_definitions(DataStreamWebsocketBridge PRIVATE
+  QT_PLUGIN
+  PJ_BUILD
 )
+
+install(TARGETS DataStreamWebsocketBridge
+        DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY})
+
