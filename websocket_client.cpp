@@ -38,6 +38,12 @@ public:
         // Allow only valid TCP ports
         ui->lineEditPort->setValidator(new QIntValidator(1, 65535, this));
 
+        // Set the unique protocol
+        ui->comboBoxProtocol->clear();
+        ui->comboBoxProtocol->addItem("ZSTD-compressed");
+        ui->comboBoxProtocol->setCurrentIndex(0);
+        ui->comboBoxProtocol->setEnabled(false);
+
         // Cancel button
         connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &WebsocketDialog::cancelRequested);
         // OK button (connect / subscribe)
@@ -244,9 +250,7 @@ bool WebsocketClient::start()
 
 void WebsocketClient::shutdown()
 {
-    if (!_running && _state.mode == WsState::Mode::Close)
-        return;
-
+    if (!_running) return;
     _running = false;
 
     // Stop periodic timers
@@ -261,15 +265,59 @@ void WebsocketClient::shutdown()
     _pendingRequestId.clear();
     _pendingMode = WsState::Mode::Close;
 
+    if (_dialog) _dialog->reject();
     _dialog = nullptr;
 
     // Clean topics
     _topics.clear();
 
     // Close socket
-    _socket.disconnect(this);
+    // _socket.disconnect(this);
     _socket.abort();
     _socket.close();
+}
+
+bool WebsocketClient::pause()
+{
+    if (!_running) return false;
+    if (_state.req_in_flight) return false;
+
+    QJsonObject cmd;
+    cmd["command"] = "pause";
+
+    return !sendCommand(cmd).isEmpty();
+}
+
+bool WebsocketClient::resume()
+{
+    if (!_running) return false;
+    if (_state.req_in_flight) return false;
+
+    QJsonObject cmd;
+    cmd["command"] = "resume";
+
+    return !sendCommand(cmd).isEmpty();
+}
+
+bool WebsocketClient::unsubscribe()
+{
+    if (!_running) return false;
+    if (_state.req_in_flight) return false;
+
+    QJsonArray arr;
+    for (const auto& [name, type] : _topics) {
+        Q_UNUSED(type);
+        if (!name.isEmpty())
+            arr.append(name);
+    }
+
+    if (arr.isEmpty()) return false;
+
+    QJsonObject cmd;
+    cmd["command"] = "unsubscribe";
+    cmd["topics"] = arr;
+
+    return !sendCommand(cmd).isEmpty();
 }
 
 void WebsocketClient::onConnected()
@@ -288,6 +336,44 @@ void WebsocketClient::onConnected()
 
     // Start periodic topic refresh
     _topicsTimer.start();
+}
+
+void WebsocketClient::onDisconnected()
+{
+    // Stop topic polling
+    _topicsTimer.stop();
+    _heartBeatTimer.stop();
+
+    // Reset state
+    _state.mode = WsState::Mode::Close;
+    _state.req_in_flight = false;
+
+    // Reset pending request
+    _pendingRequestId.clear();
+    _pendingMode = WsState::Mode::Close;
+
+    // Clear all topics
+    _topics.clear();
+
+    _running = false;
+    qDebug() << "Disconnected" << Qt::endl;
+}
+
+void WebsocketClient::onError(QAbstractSocket::SocketError)
+{
+    _running = false;
+
+    // Reset in-flight flags (connection error ends any request)
+    _state.req_in_flight = false;
+    _pendingRequestId.clear();
+    _pendingMode = WsState::Mode::Close;
+
+    // Re-enable OK button if dialog is still open
+    if (_dialog && _dialog->ui && _dialog->ui->buttonBox) {
+        auto b = _dialog->ui->buttonBox->button(QDialogButtonBox::Ok);
+        if (b) b->setEnabled(true);
+    }
+    QMessageBox::warning(nullptr, "WebSocket Client", _socket.errorString(), QMessageBox::Ok);
 }
 
 void WebsocketClient::onTextMessageReceived(const QString& message)
@@ -524,40 +610,6 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
     decompressed.resize(int(res));
 
     parseDecompressedPayload(decompressed, message_count);
-}
-
-void WebsocketClient::onDisconnected()
-{
-    // Stop topic polling
-    _topicsTimer.stop();
-
-    // Reset state
-    _state.mode = WsState::Mode::Close;
-    _state.req_in_flight = false;
-
-    // Reset pending request
-    _pendingRequestId.clear();
-    _pendingMode = WsState::Mode::Close;
-
-    _running = false;
-    qDebug() << "Disconnected" << Qt::endl;
-}
-
-void WebsocketClient::onError(QAbstractSocket::SocketError)
-{
-    _running = false;
-
-    // Reset in-flight flags (connection error ends any request)
-    _state.req_in_flight = false;
-    _pendingRequestId.clear();
-    _pendingMode = WsState::Mode::Close;
-
-    // Re-enable OK button if dialog is still open
-    if (_dialog && _dialog->ui && _dialog->ui->buttonBox) {
-        auto b = _dialog->ui->buttonBox->button(QDialogButtonBox::Ok);
-        if (b) b->setEnabled(true);
-    }
-    QMessageBox::warning(nullptr, "WebSocket Client", _socket.errorString(), QMessageBox::Ok);
 }
 
 QString WebsocketClient::sendCommand(QJsonObject obj)

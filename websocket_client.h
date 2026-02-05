@@ -77,8 +77,10 @@ private:
 
     std::vector<std::pair<QString, QString>> _topics;
 
-    // PJ::CompositeParser _parser;
-    // PJ::RosParserConfig _config;
+#ifdef PJ_BUILD
+    PJ::CompositeParser _parser;
+    PJ::RosParserConfig _config;
+#endif
 
     QString sendCommand(QJsonObject obj);
     QString _pendingRequestId;
