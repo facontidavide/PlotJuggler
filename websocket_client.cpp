@@ -28,7 +28,6 @@
 // =======================
 class WebsocketDialog : public QDialog
 {
-  Q_OBJECT
 public:
   WebsocketDialog() : QDialog(nullptr), ui(new Ui::WebSocketDialog)
   {
@@ -46,21 +45,9 @@ public:
     ui->comboBoxProtocol->addItem("ZSTD-compressed");
     ui->comboBoxProtocol->setCurrentIndex(0);
     ui->comboBoxProtocol->setEnabled(false);
-
-    // Cancel button
-    connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &WebsocketDialog::cancelRequested);
-    // OK button (connect / subscribe)
-    connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &WebsocketDialog::connectRequested);
   }
 
   ~WebsocketDialog() { delete ui; }
-
-signals:
-  // Emitted when OK is pressed
-  void connectRequested();
-
-  // Emitted when Cancel is pressed
-  void cancelRequested();
 
 public:
   Ui::WebSocketDialog* ui;
@@ -156,7 +143,7 @@ bool WebsocketClient::start(QStringList*)
   // =======================
   // OK button logic
   // =======================
-  connect(&dialog, &WebsocketDialog::connectRequested, this, [&]() {
+  connect(dialog.ui->buttonBox, &QDialogButtonBox::accepted, this, [&]() {
 
     // Not connected: open socket
     if (!_running) {
@@ -232,7 +219,7 @@ bool WebsocketClient::start(QStringList*)
   // =======================
   // Cancel button
   // =======================
-  connect(&dialog, &WebsocketDialog::cancelRequested, this, [&]() {
+  connect(dialog.ui->buttonBox, &QDialogButtonBox::rejected, this, [&]() {
     // Stop everything and close dialog
     shutdown();
     dialog.reject();
@@ -809,5 +796,3 @@ void WebsocketClient::onRos2CdrMessage(const QString& topic, double ts_sec, cons
   qDebug() << "RX msg topic=" << topic << "ts=" << ts_sec << "cdr=" << len << Qt::endl;
 #endif
 }
-
-#include "websocket_client.moc"

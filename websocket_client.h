@@ -77,9 +77,6 @@ public:
     bool resume();
     bool unsubscribe();
 
-signals:
-    void closed();
-
 private:
     QWebSocket _socket;
     QUrl _url;
