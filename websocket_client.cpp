@@ -22,6 +22,26 @@
 #include <set>
 
 #include "ui_websocket_client.h"
+#include "ui_websocket_settings.h"
+
+// =======================
+// Settings dialog
+// =======================
+class WebsocketSettingsDialog : public QDialog
+{
+public:
+  WebsocketSettingsDialog(QWidget* parent=nullptr) : QDialog(parent), ui(new Ui::WebSocketSettingsDialog)
+  {
+    ui->setupUi(this);
+    auto ok = ui->buttonBox->button(QDialogButtonBox::Ok);
+    if (ok) ok->setText("Save");
+    ui->doubleBox->setLocale(QLocale::c());
+  }
+
+  ~WebsocketSettingsDialog() { delete ui; }
+
+  Ui::WebSocketSettingsDialog* ui;
+};
 
 // =======================
 // Connection dialog
@@ -56,11 +76,12 @@ public:
 // =======================
 // WebsocketClient
 // =======================
-WebsocketClient::WebsocketClient() : _running(false), _dialog(nullptr)
+WebsocketClient::WebsocketClient() : _running(false), _keep(false), _dialog(nullptr)
 {
   // Initial state
   _state.mode = WsState::Mode::Close;
   _state.req_in_flight = false;
+  _max_rate = -1;
 
   // Pending request tracking
   _pendingRequestId.clear();
@@ -112,6 +133,11 @@ bool WebsocketClient::start(QStringList*)
   auto okBtn = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
   if (okBtn) okBtn->setText("Connect");
 
+  // Set Icon on Settings button
+  dialog.ui->toolButton->setAutoRaise(true);
+  dialog.ui->toolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  dialog.ui->toolButton->setIcon(QIcon::fromTheme("preferences-system"));
+
   // Enable/disable OK button depending on state
   auto refreshOk = [&]() {
     if (!dialog.ui->buttonBox) return;
@@ -139,6 +165,28 @@ bool WebsocketClient::start(QStringList*)
 
   // Refresh button when topic selection changes
   connect(dialog.ui->topicsList, &QTreeWidget::itemSelectionChanged, this, refreshOk);
+
+  // =======================
+  // Settings button logic
+  // =======================
+  connect(dialog.ui->toolButton, &QToolButton::clicked, this, [&]() {
+    WebsocketSettingsDialog sdlg(&dialog);
+
+    sdlg.ui->doubleBox->setValue(_max_rate);
+    sdlg.ui->checkBox->setChecked(_keep);
+
+    connect(sdlg.ui->buttonBox, &QDialogButtonBox::accepted, &sdlg, [&]() {
+      _max_rate = sdlg.ui->doubleBox->value();
+      _keep = sdlg.ui->checkBox->isChecked();
+      sdlg.accept();
+    });
+
+    connect(sdlg.ui->buttonBox, &QDialogButtonBox::rejected, &sdlg, [&]() {
+      sdlg.reject();
+    });
+
+    sdlg.exec();
+  });
 
   // =======================
   // OK button logic
@@ -185,14 +233,21 @@ bool WebsocketClient::start(QStringList*)
 
       if (name.isEmpty()) continue;
 
-      arr.append(name);
+      if (_max_rate != 0.0 && _max_rate != -1.0) {
+        QJsonObject t;
+        t["name"] = name;
+        t["max_rate_hz"] = _max_rate;
+        arr.append(t);
+      } else {
+        arr.append(name);
+      }
 
-      // Cache selected topics (schema will be filled after subscribe response)
       TopicInfo info;
       info.name = name;
       info.type = type;
       _topics.push_back(std::move(info));
     }
+
     if (arr.isEmpty()) return;
 
     // Update state: one request in-flight
@@ -213,7 +268,7 @@ bool WebsocketClient::start(QStringList*)
     if (b) b->setEnabled(false);
 
     // Close dialog after subscribing (PlotJuggler takes over)
-    dialog.reject();
+    if (!_keep) dialog.reject();
   });
 
   // =======================

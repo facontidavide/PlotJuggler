@@ -39,8 +39,9 @@ struct TopicInfo
   QString schema_definition;
 };
 
-namespace Ui { class WebSocketDialog; }
+namespace Ui { class WebSocketSettings; class WebsocketDialog; }
 
+class WebSocketSettings;
 class WebsocketDialog;
 
 class WebsocketClient : public PJ::DataStreamer
@@ -82,8 +83,12 @@ private:
     QUrl _url;
     bool _running;
     WsState _state;
+    double _max_rate;
+    bool _keep;
 
     WebsocketDialog* _dialog;
+    WebSocketSettings* _settings;
+
     QTimer _topicsTimer;
     QTimer _heartBeatTimer;
 
