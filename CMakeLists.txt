@@ -18,7 +18,6 @@ else()
 
   qt5_wrap_ui(UI_SRC
     websocket_client.ui
-    websocket_settings.ui
   )
 
   set(SRC

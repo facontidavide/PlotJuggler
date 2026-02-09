@@ -9,6 +9,7 @@
 
 #include <QMessageBox>
 #include <QPushButton>
+#include <QScrollBar>
 #include <QIntValidator>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -487,20 +488,25 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
       if (!_dialog || !_dialog->ui || !_dialog->ui->topicsList)
         break;
 
-      const auto topics = obj.value("topics").toArray();
+      auto* view = _dialog->ui->topicsList;
+
+      // Save current scroll position
+      auto* vsb = view->verticalScrollBar();
+      const int scroll_y = vsb ? vsb->value() : 0;
 
       // Save current selection to restore it after refresh
       QStringList selected_topics;
-      for (auto* it : _dialog->ui->topicsList->selectedItems())
+      for (auto* it : view->selectedItems())
         selected_topics << it->text(0);
 
       // Update UI without triggering signals
-      _dialog->ui->topicsList->setUpdatesEnabled(false);
-      _dialog->ui->topicsList->blockSignals(true);
+      view->setUpdatesEnabled(false);
+      view->blockSignals(true);
 
-      _dialog->ui->topicsList->clear();
+      view->clear();
 
       // Populate topic list
+      const auto topics = obj.value("topics").toArray();
       for (const auto& v : topics) {
         if (!v.isObject()) continue;
 
@@ -509,7 +515,7 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
         const auto type = t.value("type").toString();
         if (name.isEmpty()) continue;
 
-        auto* item = new QTreeWidgetItem(_dialog->ui->topicsList);
+        auto* item = new QTreeWidgetItem(view);
         item->setText(0, name);
         item->setText(1, type);
 
@@ -518,12 +524,19 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
           item->setSelected(true);
       }
 
+      // Apply the filter after restore
       if (_dialog->ui->lineEditFilter) {
-        applyTopicFilterKeepSelected(_dialog->ui->topicsList, _dialog->ui->lineEditFilter->text());
+        applyTopicFilterKeepSelected(view, _dialog->ui->lineEditFilter->text());
       }
 
-      _dialog->ui->topicsList->blockSignals(false);
-      _dialog->ui->topicsList->setUpdatesEnabled(true);
+      view->blockSignals(false);
+      view->setUpdatesEnabled(true);
+
+      // Restore scroll position after layout update
+      QTimer::singleShot(0, view, [view, scroll_y]() {
+        if (auto* sb = view->verticalScrollBar())
+          sb->setValue(scroll_y);
+      });
 
       break;
     }
