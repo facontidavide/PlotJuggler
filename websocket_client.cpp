@@ -22,26 +22,6 @@
 #include <set>
 
 #include "ui_websocket_client.h"
-#include "ui_websocket_settings.h"
-
-// =======================
-// Settings dialog
-// =======================
-class WebsocketSettingsDialog : public QDialog
-{
-public:
-  WebsocketSettingsDialog(QWidget* parent=nullptr) : QDialog(parent), ui(new Ui::WebSocketSettingsDialog)
-  {
-    ui->setupUi(this);
-    auto ok = ui->buttonBox->button(QDialogButtonBox::Ok);
-    if (ok) ok->setText("Save");
-    ui->doubleBox->setLocale(QLocale::c());
-  }
-
-  ~WebsocketSettingsDialog() { delete ui; }
-
-  Ui::WebSocketSettingsDialog* ui;
-};
 
 // =======================
 // Connection dialog
@@ -60,11 +40,7 @@ public:
     // Allow only valid TCP ports
     ui->lineEditPort->setValidator(new QIntValidator(1, 65535, this));
 
-    // Set the unique protocol
-    ui->comboBoxProtocol->clear();
-    ui->comboBoxProtocol->addItem("ZSTD-compressed");
-    ui->comboBoxProtocol->setCurrentIndex(0);
-    ui->comboBoxProtocol->setEnabled(false);
+    ui->comboBox->setEnabled(false);
   }
 
   ~WebsocketDialog() { delete ui; }
@@ -76,12 +52,11 @@ public:
 // =======================
 // WebsocketClient
 // =======================
-WebsocketClient::WebsocketClient() : _running(false), _keep(false), _dialog(nullptr)
+WebsocketClient::WebsocketClient() : _running(false), _dialog(nullptr)
 {
   // Initial state
   _state.mode = WsState::Mode::Close;
   _state.req_in_flight = false;
-  _max_rate = -1;
 
   // Pending request tracking
   _pendingRequestId.clear();
@@ -112,6 +87,33 @@ WebsocketClient::WebsocketClient() : _running(false), _keep(false), _dialog(null
 }
 
 // =======================
+// Filter helpers
+// =======================
+static void applyTopicFilterKeepSelected(QTreeWidget* list, const QString& filter)
+{
+  if (!list) return;
+
+  const QString fl = filter.trimmed().toLower();
+
+  for (int i = 0; i < list->topLevelItemCount(); i++) {
+    auto* it = list->topLevelItem(i);
+
+    const bool selected = it->isSelected();
+
+    if (fl.isEmpty()) {
+      it->setHidden(false);
+      continue;
+    }
+
+    const QString name = it->text(0).toLower();
+    const QString type = it->text(1).toLower();
+    const bool match = name.contains(fl) || type.contains(fl);
+
+    it->setHidden(!(match || selected));
+  }
+}
+
+// =======================
 // Start client
 // =======================
 bool WebsocketClient::start(QStringList*)
@@ -121,22 +123,19 @@ bool WebsocketClient::start(QStringList*)
 
   // Load stored port (default 8080)
   QSettings settings;
+  QString address = settings.value("WebsocketClient::address", "127.0.0.1").toString();
   int port = settings.value("WebsocketClient::port", 8080).toInt();
 
   // Create dialog (stack object)
   WebsocketDialog dialog;
   _dialog = &dialog;
 
+  dialog.ui->lineEditAddress->setText(address);
   dialog.ui->lineEditPort->setText(QString::number(port));
 
   // Rename OK button (will toggle between Connect/Subscribe)
   auto okBtn = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
   if (okBtn) okBtn->setText("Connect");
-
-  // Set Icon on Settings button
-  dialog.ui->toolButton->setAutoRaise(true);
-  dialog.ui->toolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
-  dialog.ui->toolButton->setIcon(QIcon::fromTheme("preferences-system"));
 
   // Enable/disable OK button depending on state
   auto refreshOk = [&]() {
@@ -166,26 +165,10 @@ bool WebsocketClient::start(QStringList*)
   // Refresh button when topic selection changes
   connect(dialog.ui->topicsList, &QTreeWidget::itemSelectionChanged, this, refreshOk);
 
-  // =======================
-  // Settings button logic
-  // =======================
-  connect(dialog.ui->toolButton, &QToolButton::clicked, this, [&]() {
-    WebsocketSettingsDialog sdlg(&dialog);
-
-    sdlg.ui->doubleBox->setValue(_max_rate);
-    sdlg.ui->checkBox->setChecked(_keep);
-
-    connect(sdlg.ui->buttonBox, &QDialogButtonBox::accepted, &sdlg, [&]() {
-      _max_rate = sdlg.ui->doubleBox->value();
-      _keep = sdlg.ui->checkBox->isChecked();
-      sdlg.accept();
-    });
-
-    connect(sdlg.ui->buttonBox, &QDialogButtonBox::rejected, &sdlg, [&]() {
-      sdlg.reject();
-    });
-
-    sdlg.exec();
+  // Refresh topic list applying the filter
+  connect(dialog.ui->lineEditFilter, &QLineEdit::textChanged,
+          this, [&](const QString&) {
+            applyTopicFilterKeepSelected(dialog.ui->topicsList, dialog.ui->lineEditFilter->text());
   });
 
   // =======================
@@ -201,9 +184,15 @@ bool WebsocketClient::start(QStringList*)
         QMessageBox::warning(nullptr, "WebSocket Client", "Invalid Port", QMessageBox::Ok);
         return;
       }
+      const QString adrr = dialog.ui->lineEditAddress->text().trimmed();
+
+      if (adrr.isEmpty()) {
+        QMessageBox::warning(nullptr, "WebSocket Client", "Invalid Address", QMessageBox::Ok);
+        return;
+      }
 
       // BuildWebSocket URL
-      _url = QUrl(QString("ws://127.0.0.1:%1").arg(p));
+      _url = QUrl(QString("ws://%1:%2").arg(adrr).arg(p));
 
       // Disable button while connecting
       auto b = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
@@ -233,21 +222,14 @@ bool WebsocketClient::start(QStringList*)
 
       if (name.isEmpty()) continue;
 
-      if (_max_rate != 0.0 && _max_rate != -1.0) {
-        QJsonObject t;
-        t["name"] = name;
-        t["max_rate_hz"] = _max_rate;
-        arr.append(t);
-      } else {
-        arr.append(name);
-      }
+      arr.append(name);
 
+      // Cache selected topics (schema will be filled after subscribe response)
       TopicInfo info;
       info.name = name;
       info.type = type;
       _topics.push_back(std::move(info));
     }
-
     if (arr.isEmpty()) return;
 
     // Update state: one request in-flight
@@ -268,7 +250,7 @@ bool WebsocketClient::start(QStringList*)
     if (b) b->setEnabled(false);
 
     // Close dialog after subscribing (PlotJuggler takes over)
-    if (!_keep) dialog.reject();
+    dialog.reject();
   });
 
   // =======================
@@ -534,6 +516,10 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
         // Restore previous selection
         if (selected_topics.contains(name))
           item->setSelected(true);
+      }
+
+      if (_dialog->ui->lineEditFilter) {
+        applyTopicFilterKeepSelected(_dialog->ui->topicsList, _dialog->ui->lineEditFilter->text());
       }
 
       _dialog->ui->topicsList->blockSignals(false);
@@ -845,7 +831,7 @@ void WebsocketClient::onRos2CdrMessage(const QString& topic, double ts_sec, cons
   // Notify PlotJuggler that new data is available
   emit dataReceived();
 #else
-   // Debug build: just log reception
+  // Debug build: just log reception
   Q_UNUSED(cdr);
   Q_UNUSED(len);
   qDebug() << "RX msg topic=" << topic << "ts=" << ts_sec << "cdr=" << len << Qt::endl;
