@@ -383,6 +383,12 @@ void WebsocketClient::onConnected()
 
 void WebsocketClient::onDisconnected()
 {
+  if (_dialog && _dialog->ui && _dialog->ui->topicsList && _dialog->ui->buttonBox) {
+    _dialog->ui->topicsList->clear();
+    auto b = _dialog->ui->buttonBox->button(QDialogButtonBox::Ok);
+    if (b) b->setEnabled(true);
+  }
+
   if (!_running) return;
   // Stop topic polling
   _topicsTimer.stop();
@@ -405,11 +411,6 @@ void WebsocketClient::onDisconnected()
 #endif
 
   _running = false;
-  if (_dialog && _dialog->ui && _dialog->ui->topicsList && _dialog->ui->buttonBox) {
-    _dialog->ui->topicsList->clear();
-    auto b = _dialog->ui->buttonBox->button(QDialogButtonBox::Ok);
-    if (b) b->setEnabled(true);
-  }
   qDebug() << "Disconnected" << Qt::endl;
 }
 
