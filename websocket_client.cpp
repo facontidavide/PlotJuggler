@@ -383,6 +383,7 @@ void WebsocketClient::onConnected()
 
 void WebsocketClient::onDisconnected()
 {
+  if (!_running) return;
   // Stop topic polling
   _topicsTimer.stop();
   _heartBeatTimer.stop();
@@ -404,26 +405,19 @@ void WebsocketClient::onDisconnected()
 #endif
 
   _running = false;
+  if (_dialog && _dialog->ui && _dialog->ui->topicsList && _dialog->ui->buttonBox) {
+    _dialog->ui->topicsList->clear();
+    auto b = _dialog->ui->buttonBox->button(QDialogButtonBox::Ok);
+    if (b) b->setEnabled(true);
+  }
   qDebug() << "Disconnected" << Qt::endl;
 }
 
 void WebsocketClient::onError(QAbstractSocket::SocketError)
 {
-  _running = false;
-
-  // Connection error aborts any in-flight request
-  _state.req_in_flight = false;
-  _pendingRequestId.clear();
-  _pendingMode = WsState::Mode::Close;
-
-  // Re-enable OK button if dialog is still open
-  if (_dialog && _dialog->ui && _dialog->ui->buttonBox) {
-    auto b = _dialog->ui->buttonBox->button(QDialogButtonBox::Ok);
-    if (b) b->setEnabled(true);
-  }
-
   //Show Qt socket error string
   QMessageBox::warning(nullptr, "WebSocket Client", _socket.errorString(), QMessageBox::Ok);
+  onDisconnected();
 }
 
 void WebsocketClient::onTextMessageReceived(const QString& message)
