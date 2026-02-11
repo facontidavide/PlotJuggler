@@ -53,7 +53,7 @@ public:
 // =======================
 // WebsocketClient
 // =======================
-WebsocketClient::WebsocketClient() : _running(false), _dialog(nullptr)
+WebsocketClient::WebsocketClient() : _running(false), _closing(false), _dialog(nullptr)
 {
   // Initial state
   _state.mode = WsState::Mode::Close;
@@ -312,6 +312,7 @@ void WebsocketClient::shutdown()
 #endif
 
   // Close socket
+  _closing = true;
   _socket.abort();
   _socket.close();
 }
@@ -387,9 +388,17 @@ void WebsocketClient::onDisconnected()
     _dialog->ui->topicsList->clear();
     auto b = _dialog->ui->buttonBox->button(QDialogButtonBox::Ok);
     if (b) b->setEnabled(true);
+  } else if (!_closing){
+    QMessageBox::warning(
+        nullptr,
+        "WebSocket Client",
+        "Server closed the connection",
+        QMessageBox::Ok);
   }
 
   if (!_running) return;
+  if (_closing) _closing = false;
+
   // Stop topic polling
   _topicsTimer.stop();
   _heartBeatTimer.stop();

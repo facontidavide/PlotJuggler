@@ -81,6 +81,7 @@ private:
   QWebSocket _socket;
   QUrl _url;
   bool _running;
+  bool _closing;
   WsState _state;
 
   WebsocketDialog* _dialog;
