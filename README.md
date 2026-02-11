@@ -11,7 +11,6 @@ This plugin allows PlotJuggler to connect to a WebSocket server (for example, a 
 - Configurable WebSocket server connection (IP + port)
 - Dynamic topic discovery
 - Real-time subscribe and unsubscribe
-- ZSTD compression support
 - Remote close and reconnection handling
 - Native integration within the PlotJuggler plugin system
 
