@@ -1,38 +1,39 @@
 # PlotJuggler WebSocket Client Plugin
 
-Plugin de **WebSocket Client** para integrar datos remotos en **PlotJuggler** mediante un bridge WebSocket.
+WebSocket Client plugin to integrate remote data into **PlotJuggler** through a WebSocket bridge.
 
-Este plugin permite conectar PlotJuggler a un servidor WebSocket (por ejemplo un bridge ROS2 personalizado) sin necesidad de que PlotJuggler tenga acceso directo a DDS o ROS2.
-
----
-
-## 🚀 Características
-
-- Conexión a servidor WebSocket configurable (IP + puerto)
-- Descubrimiento dinámico de topics
-- Suscripción y desuscripción en tiempo real
-- Soporte de compresión (ZSTD)
-- Manejo de reconexión y cierre remoto
-- Integración nativa dentro del sistema de plugins de PlotJuggler
+This plugin allows PlotJuggler to connect to a WebSocket server (for example, a custom ROS2 bridge) without requiring direct DDS or ROS2 access.
 
 ---
 
-## 🏗 Arquitectura
+## Features
+
+- Configurable WebSocket server connection (IP + port)
+- Dynamic topic discovery
+- Real-time subscribe and unsubscribe
+- ZSTD compression support
+- Remote close and reconnection handling
+- Native integration within the PlotJuggler plugin system
+
+---
+
+## Architecture
 
 ```
-PlotJuggler  ←→  WebSocket Client Plugin  ←→  WebSocket Server (pj_ros_bridge u otro)
+PlotJuggler  <->  WebSocket Client Plugin  <->  WebSocket Server (pj_ros_bridge or similar)
 ```
 
-El servidor puede estar en:
-- La misma máquina
-- Otro portátil en red local
-- Un robot remoto
+The server can run on:
+
+- The same machine  
+- Another laptop on the local network  
+- A remote robot  
 
 ---
 
-# 🔧 Instalación
+# Installation
 
-## 1️⃣ Clonar PlotJuggler
+## 1. Clone PlotJuggler
 
 ```bash
 mkdir -p ~/ws_plotjuggler/src
@@ -42,14 +43,14 @@ git clone https://github.com/PlotJuggler/PlotJuggler.git
 
 ---
 
-## 2️⃣ Clonar el plugin dentro de plotjuggler_plugins
+## 2. Clone the plugin inside `plotjuggler_plugins`
 
 ```bash
 cd PlotJuggler/plotjuggler_plugins
-git clone <URL_DE_TU_REPO> DataStreamWebsocketBridge
+git clone <YOUR_REPOSITORY_URL> DataStreamWebsocketBridge
 ```
 
-La estructura final debe quedar así:
+The final structure should look like:
 
 ```
 PlotJuggler/
@@ -60,9 +61,9 @@ PlotJuggler/
 
 ---
 
-## 3️⃣ Instalar dependencias
+## 3. Install dependencies
 
-### Ubuntu con Qt6
+### Ubuntu with Qt6
 
 ```bash
 sudo apt install \
@@ -71,7 +72,7 @@ sudo apt install \
     libzstd-dev
 ```
 
-### Ubuntu con Qt5
+### Ubuntu with Qt5
 
 ```bash
 sudo apt install \
@@ -82,7 +83,7 @@ sudo apt install \
 
 ---
 
-## 4️⃣ Compilar
+## 4. Build
 
 ```bash
 cd ~/ws_plotjuggler
@@ -94,48 +95,48 @@ make -j$(nproc)
 
 ---
 
-# ▶️ Uso
+# Usage
 
-1. Ejecutar PlotJuggler:
+1. Run PlotJuggler:
 
 ```bash
 ./bin/plotjuggler
 ```
 
-2. Ir a:
+2. Navigate to:
 
 ```
 Streaming → WebSocket Client
 ```
 
-3. Configurar:
-   - IP del servidor (ej: 192.168.1.50)
-   - Puerto (ej: 8080)
-   - Protocolo (ZSTD si está habilitado)
+3. Configure:
+   - Server IP (e.g., 192.168.1.50)
+   - Port (e.g., 8080)
+   - Protocol (enable ZSTD if supported)
 
-4. Conectar.
+4. Connect.
 
-5. Seleccionar topics y suscribirse.
+5. Select topics and subscribe.
 
 ---
 
-# 🌐 Conexión remota
+# Remote Connection
 
-Si el servidor escucha en:
+If the server listens on:
 
 ```
 ws://0.0.0.0:8080
 ```
 
-Significa que acepta conexiones desde cualquier IP.
+It accepts connections from any network interface.
 
-Desde otro portátil debes usar:
+From another machine, connect using:
 
 ```
-ws://IP_DEL_SERVIDOR:8080
+ws://SERVER_IP:8080
 ```
 
-Ejemplo:
+Example:
 
 ```
 ws://192.168.1.42:8080
@@ -143,58 +144,60 @@ ws://192.168.1.42:8080
 
 ---
 
-# ⚙️ Configuración típica con ROS2
+# Typical ROS2 Setup
 
-Si usas tu bridge ROS2:
+If using your ROS2 bridge:
 
 ```bash
 ros2 run pj_ros_bridge pj_ros_bridge_node
 ```
 
-Por defecto:
-- Puerto: 8080
-- Frecuencia: 50 Hz
+Default configuration:
 
-Luego conecta el plugin a:
+- Port: 8080  
+- Publish rate: 50 Hz  
+
+Then connect the plugin to:
 
 ```
 ws://localhost:8080
 ```
 
-o a la IP del robot.
+or to the robot’s IP address.
 
 ---
 
-# 🧠 Estados de conexión
+# Connection States
 
-El plugin gestiona:
+The plugin handles the following states:
 
-- Connecting
-- Connected
-- Disconnected
-- Remote Close
-- Error
+- Connecting  
+- Connected  
+- Disconnected  
+- Remote Close  
+- Error  
 
-Si el servidor cierra la conexión, el plugin detecta el evento y muestra advertencia en la interfaz.
+If the server closes the connection, the plugin detects the event and displays a warning in the UI.
 
 ---
 
-# 🛠 Desarrollo
+# Development
 
-Estructura típica del plugin:
+Typical plugin structure:
 
 ```
 DataStreamWebsocketBridge/
  ├── websocket_client.h
  ├── websocket_client.cpp
+ ├── websocket_client.ui
  ├── CMakeLists.txt
  └── resources/
 ```
 
-Se integra usando la interfaz de DataStream de PlotJuggler.
+It integrates using PlotJuggler’s DataStream interface.
 
 ---
 
-# 📜 Licencia
+# License
 
-MIT / Apache 2.0 (según definas en tu repositorio)
+MIT or Apache 2.0 (depending on your repository configuration)
