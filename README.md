@@ -47,7 +47,7 @@ git clone https://github.com/PlotJuggler/PlotJuggler.git
 
 ```bash
 cd PlotJuggler/plotjuggler_plugins
-git clone <YOUR_REPOSITORY_URL> DataStreamWebsocketBridge
+git clone https://github.com/Alvvalencia/DataStreamWebsocketBridge.git
 ```
 
 The final structure should look like:
@@ -130,7 +130,6 @@ Streaming → WebSocket Client
 3. Configure:
    - Server IP (e.g., 192.168.1.50)
    - Port (e.g., 8080)
-   - Protocol (enable ZSTD if supported)
 
 4. Connect.
 
