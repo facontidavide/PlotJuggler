@@ -61,7 +61,25 @@ PlotJuggler/
 
 ---
 
-## 3. Install dependencies
+## 3. Add the plugin to `plotjuggler_plugins/CMakeLists.txt`
+
+Open:
+
+```
+PlotJuggler/plotjuggler_plugins/CMakeLists.txt
+```
+
+Add your plugin directory:
+
+```cmake
+add_subdirectory(DataStreamWebsocketBridge)
+```
+
+Place it alongside the other plugin `add_subdirectory(...)` entries.
+
+---
+
+## 4. Install dependencies
 
 ### Ubuntu with Qt6
 
@@ -83,7 +101,7 @@ sudo apt install \
 
 ---
 
-## 4. Build
+## 5. Build
 
 ```bash
 cd ~/ws_plotjuggler
@@ -200,3 +218,4 @@ It integrates using PlotJuggler’s DataStream interface.
 
 # License
 
+MIT or Apache 2.0 (depending on your repository configuration)
