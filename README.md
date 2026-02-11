@@ -216,5 +216,3 @@ It integrates using PlotJuggler’s DataStream interface.
 ---
 
 # License
-
-MIT or Apache 2.0 (depending on your repository configuration)
