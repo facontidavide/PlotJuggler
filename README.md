@@ -195,39 +195,6 @@ Se integra usando la interfaz de DataStream de PlotJuggler.
 
 ---
 
-# 🐞 Troubleshooting
-
-### No conecta
-
-- Verifica que el servidor está corriendo.
-- Comprueba firewall.
-- Confirma IP correcta.
-- Usa:
-
-```bash
-netstat -an | grep 8080
-```
-
----
-
-### Se desconecta automáticamente
-
-- El servidor cerró la sesión.
-- Timeout de heartbeat.
-- Error de protocolo.
-
----
-
-### Error relacionado con ZSTD
-
-Instalar:
-
-```bash
-sudo apt install libzstd-dev
-```
-
----
-
 # 📜 Licencia
 
 MIT / Apache 2.0 (según definas en tu repositorio)
