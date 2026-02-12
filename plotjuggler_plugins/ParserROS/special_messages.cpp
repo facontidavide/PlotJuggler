@@ -6,6 +6,13 @@ PJ::Msg::RPY PJ::Msg::QuaternionToRPY(PJ::Msg::Quaternion q)
   RPY rpy;
 
   double quat_norm2 = (q.w * q.w) + (q.x * q.x) + (q.y * q.y) + (q.z * q.z);
+  if (quat_norm2 < 1e-10)
+  {
+    rpy.roll = 0.0;
+    rpy.pitch = 0.0;
+    rpy.yaw = 0.0;
+    return rpy;
+  }
   if (std::abs(quat_norm2 - 1.0) > std::numeric_limits<double>::epsilon())
   {
     double mult = 1.0 / std::sqrt(quat_norm2);
