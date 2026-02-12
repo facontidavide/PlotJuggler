@@ -33,10 +33,6 @@ void QuaternionToRollPitchYaw::calculate()
   data_pitch.setMaximumRangeX(data_x.maximumRangeX());
   data_yaw.setMaximumRangeX(data_x.maximumRangeX());
 
-  data_roll.clear();
-  data_pitch.clear();
-  data_yaw.clear();
-
   if (data_x.size() == 0 || data_x.size() != data_y.size() || data_y.size() != data_z.size() ||
       data_z.size() != data_w.size())
   {
@@ -55,7 +51,7 @@ void QuaternionToRollPitchYaw::calculate()
     double q_z = data_z.at(index).y;
     double q_w = data_w.at(index).y;
 
-    if (timestamp >= _last_timestamp)
+    if (timestamp > _last_timestamp)
     {
       std::array<double, 3> RPY;
       calculateNextPoint(index, { q_x, q_y, q_z, q_w }, RPY);
