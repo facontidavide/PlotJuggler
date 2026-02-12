@@ -274,6 +274,7 @@ QString StatePublisherCSV::generateRangeCSV(double time_start, double time_end)
 
   const auto NaN = std::numeric_limits<double>::quiet_NaN();
   std::vector<double> row_values(plot_count, NaN);
+  std::vector<bool> row_used(plot_count, false);
 
   QString labels;
   labels += "__time,";
@@ -288,8 +289,27 @@ QString StatePublisherCSV::generateRangeCSV(double time_start, double time_end)
     {
       index = plotdata->size();
     }
-    indices[i] = index + 1;
+    indices[i] = index;
   }
+
+  // Compute timestamp tolerance from the minimum sample period across all series.
+  // Using half the smallest dt ensures "same instant" points merge without
+  // accidentally collapsing distinct adjacent samples.
+  double min_dt = std::numeric_limits<double>::max();
+  for (size_t i = 0; i < plot_count; i++)
+  {
+    const PJ::PlotData* plotdata = ordered_plotdata[i].second;
+    size_t idx = indices[i];
+    if (idx + 1 < plotdata->size())
+    {
+      double dt = plotdata->at(idx + 1).x - plotdata->at(idx).x;
+      if (dt > 0)
+      {
+        min_dt = std::min(min_dt, dt);
+      }
+    }
+  }
+  const double time_eps = (min_dt < std::numeric_limits<double>::max()) ? min_dt * 0.5 : 1e-9;
 
   bool done = false;
   QStringList rows = { labels };
@@ -299,6 +319,7 @@ QString StatePublisherCSV::generateRangeCSV(double time_start, double time_end)
     // done will become false if at least one plotdata is not completed
     done = true;
     double min_time = std::numeric_limits<double>::max();
+    std::fill(row_used.begin(), row_used.end(), false);
 
     for (size_t i = 0; i < plot_count; i++)
     {
@@ -323,11 +344,14 @@ QString StatePublisherCSV::generateRangeCSV(double time_start, double time_end)
         min_time = point.x;  // new min_time
         // reset previous flags
         std::fill(row_values.begin(), row_values.begin() + i, NaN);
+        std::fill(row_used.begin(), row_used.begin() + i, false);
         row_values[i] = point.y;
+        row_used[i] = true;
       }
-      else if (std::abs(min_time - point.x) < std::numeric_limits<double>::epsilon())
+      else if (std::abs(min_time - point.x) <= time_eps)
       {
         row_values[i] = point.y;
+        row_used[i] = true;
       }
     }
 
@@ -344,7 +368,9 @@ QString StatePublisherCSV::generateRangeCSV(double time_start, double time_end)
       if (!std::isnan(row_values[i]))
       {
         row_str += QString::number(row_values[i], 'f', 9);
-        // value used, move to the nex index
+      }
+      if (row_used[i])
+      {
         indices[i]++;
       }
       row_str += (i + 1 < plot_count) ? "," : "\n";
