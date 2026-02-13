@@ -1,17 +1,9 @@
 #pragma once
 
-#include <QObject>
 #include <QWebSocket>
-#include <QUrl>
-#include <QByteArray>
-#include <QString>
-#include <QAbstractSocket>
 #include <QTimer>
-#include <QJsonObject>
-#include <QtPlugin>
 
-#include <vector>
-#include <utility>
+#include <unordered_map>
 
 #include "websocket_client_config.h"
 #include "PlotJuggler/datastreamer_base.h"
@@ -106,7 +98,7 @@ private:
   std::unordered_map<std::string, PJ::MessageParserPtr> _parsers_topic;
 #endif
 
-  QString sendCommand(QJsonObject obj);
+  QString sendCommand(const QJsonObject obj);
   QString _pendingRequestId;
   WsState::Mode _pendingMode = WsState::Mode::Close;
 

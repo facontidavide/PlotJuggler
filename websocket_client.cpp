@@ -1,25 +1,15 @@
 #include "websocket_client.h"
 
-#include <QSettings>
-
-#include <QJsonObject>
 #include <QJsonArray>
-#include <QJsonDocument>
 #include <QJsonParseError>
-
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollBar>
-#include <QIntValidator>
-#include <QDialog>
-#include <QDialogButtonBox>
-#include <QTreeWidget>
+
+
 #include <QtEndian>
 #include <cstring>
-
 #include <zstd.h>
-
-#include <algorithm>
 #include <set>
 
 #include "ui_websocket_client.h"
@@ -798,7 +788,7 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
 // =======================
 // Commands / requests
 // =======================
-QString WebsocketClient::sendCommand(QJsonObject obj)
+QString WebsocketClient::sendCommand(const QJsonObject obj)
 {
   if (_socket.state() != QAbstractSocket::ConnectedState) return QString();
 
