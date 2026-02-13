@@ -592,7 +592,6 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
       }
 
       view->resizeColumnToContents(0);
-      view->resizeColumnToContents(1);
 
       view->setVisible(true);
       view->blockSignals(false);
