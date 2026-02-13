@@ -563,6 +563,7 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
       // Update UI without triggering signals
       view->setUpdatesEnabled(false);
       view->blockSignals(true);
+      view->setVisible(false);
 
       view->clear();
 
@@ -590,6 +591,10 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
         applyTopicFilterKeepSelected(view, _dialog->ui->lineEditFilter->text());
       }
 
+      view->resizeColumnToContents(0);
+      view->resizeColumnToContents(1);
+
+      view->setVisible(true);
       view->blockSignals(false);
       view->setUpdatesEnabled(true);
 

@@ -105,6 +105,7 @@ private:
   WsState::Mode _pendingMode = WsState::Mode::Close;
 
   void setupSettings();
+  void adjustDialogSize();
 
   void requestTopics();
   void sendHeartBeat();
