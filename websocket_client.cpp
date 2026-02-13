@@ -788,7 +788,7 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
 // =======================
 // Commands / requests
 // =======================
-QString WebsocketClient::sendCommand(const QJsonObject obj)
+QString WebsocketClient::sendCommand(QJsonObject obj)
 {
   if (_socket.state() != QAbstractSocket::ConnectedState) return QString();
 

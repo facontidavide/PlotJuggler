@@ -98,7 +98,7 @@ private:
   std::unordered_map<std::string, PJ::MessageParserPtr> _parsers_topic;
 #endif
 
-  QString sendCommand(const QJsonObject obj);
+  QString sendCommand(QJsonObject obj);
   QString _pendingRequestId;
   WsState::Mode _pendingMode = WsState::Mode::Close;
 
