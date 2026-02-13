@@ -53,8 +53,10 @@ public:
 // =======================
 // WebsocketClient
 // =======================
-WebsocketClient::WebsocketClient() : _running(false), _closing(false), _dialog(nullptr)
+WebsocketClient::WebsocketClient() : _running(false), _paused(false), _closing(false), _dialog(nullptr)
 {
+  setupSettings();
+
   // Initial state
   _state.mode = WsState::Mode::Close;
   _state.req_in_flight = false;
@@ -85,6 +87,55 @@ WebsocketClient::WebsocketClient() : _running(false), _closing(false), _dialog(n
           this,
           &WebsocketClient::onError);
 #endif
+}
+
+void WebsocketClient::setupSettings()
+{
+  // Action shown in PlotJuggler "Settings"
+  _action_settings = new QAction("Pause", this);
+
+  // Initial state
+  _action_settings->setText("Pause");
+
+  // Toggle pause / resume
+  connect(_action_settings, &QAction::triggered, this, [this]() {
+
+    // Not running
+    if (!_running) {
+      return;
+    }
+
+    // Request in flight
+    if (_state.req_in_flight) {
+      return;
+    }
+
+    // If paused -> resume
+    if (_paused) {
+      if (resume()) {
+        _paused = false;
+        _action_settings->setText("Pause");
+      }
+
+    } else {
+      // If running -> pause
+      if (pause()) {
+        _paused = true;
+        _action_settings->setText("Resume");
+      }
+    }
+  });
+
+   // Expose action to PlotJuggler
+  _actions = { _action_settings };
+}
+
+// =======================
+// PlotJuggler actions
+// =======================
+const std::vector<QAction*>& WebsocketClient::availableActions()
+{
+  return _actions;
 }
 
 // =======================
@@ -282,6 +333,12 @@ void WebsocketClient::shutdown()
 {
   if (!_running) return;
   _running = false;
+  _paused = false;
+
+  // Reset the text of the Plotjuggler settings
+  if (_action_settings) {
+    _action_settings->setText("Pause");
+  }
 
   // Stop periodic timers
   _topicsTimer.stop();

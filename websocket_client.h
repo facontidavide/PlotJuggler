@@ -52,6 +52,8 @@ class WebsocketClient : public PJ::DataStreamer
 public:
   WebsocketClient();
 
+  const std::vector<QAction*>& availableActions() override;
+
   virtual bool start(QStringList*) override;
 
   virtual void shutdown() override;
@@ -78,10 +80,14 @@ public:
   bool unsubscribe();
 
 private:
+  QAction* _action_settings = nullptr;
+  std::vector<QAction*> _actions;
+
   QWebSocket _socket;
   QUrl _url;
   bool _running;
   bool _closing;
+  bool _paused;
   WsState _state;
 
   WebsocketDialog* _dialog;
@@ -97,6 +103,8 @@ private:
   QString sendCommand(QJsonObject obj);
   QString _pendingRequestId;
   WsState::Mode _pendingMode = WsState::Mode::Close;
+
+  void setupSettings();
 
   void requestTopics();
   void sendHeartBeat();
