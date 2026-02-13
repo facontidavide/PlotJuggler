@@ -55,6 +55,7 @@ public:
 // =======================
 WebsocketClient::WebsocketClient() : _running(false), _paused(false), _closing(false), _dialog(nullptr)
 {
+  loadDefaultSettings();
   setupSettings();
 
   // Initial state
@@ -166,6 +167,32 @@ static void applyTopicFilterKeepSelected(QTreeWidget* list, const QString& filte
 }
 
 // =======================
+// Refresh text button
+// =======================
+void WebsocketClient::updateOkButton()
+{
+  if (!_dialog || !_dialog->ui || !_dialog->ui->buttonBox) return;
+  auto b = _dialog->ui->buttonBox->button(QDialogButtonBox::Ok);
+  if (!b) return;
+
+  if (!_running) {
+    b->setEnabled(true);
+    b->setText("Connect");
+    return;
+  }
+
+  if (_state.mode == WsState::Mode::GetTopics) {
+    const bool hasSelection = _dialog->ui->topicsList &&
+                              !_dialog->ui->topicsList->selectedItems().isEmpty();
+    b->setText("Subscribe");
+    b->setEnabled(hasSelection && !_state.req_in_flight);
+    return;
+  }
+
+  b->setEnabled(false);
+}
+
+// =======================
 // Start client
 // =======================
 bool WebsocketClient::start(QStringList*)
@@ -173,49 +200,19 @@ bool WebsocketClient::start(QStringList*)
   // Already running
   if (_running) return true;
 
-  // Load stored port (default 8080)
-  QSettings settings;
-  QString address = settings.value("WebsocketClient::address", "127.0.0.1").toString();
-  int port = settings.value("WebsocketClient::port", 8080).toInt();
-
   // Create dialog (stack object)
   WebsocketDialog dialog;
   _dialog = &dialog;
 
-  dialog.ui->lineEditAddress->setText(address);
-  dialog.ui->lineEditPort->setText(QString::number(port));
+  dialog.ui->lineEditAddress->setText(_config.address);
+  dialog.ui->lineEditPort->setText(QString::number(_config.port));
 
   // Rename OK button (will toggle between Connect/Subscribe)
   auto okBtn = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
   if (okBtn) okBtn->setText("Connect");
 
-  // Enable/disable OK button depending on state
-  auto refreshOk = [&]() {
-    if (!dialog.ui->buttonBox) return;
-    auto b = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
-    if (!b) return;
-
-    // Not connected yet: allow connect
-    if (!_running) {
-      b->setEnabled(true);
-      b->setText("Connect");
-      return;
-    }
-
-    // Connected and waiting for topic selection: allow subscribe when something is selected
-    if (_state.mode == WsState::Mode::GetTopics) {
-      const bool hasSelection = dialog.ui->topicsList && !dialog.ui->topicsList->selectedItems().isEmpty();
-      b->setText("Subscribe");
-      b->setEnabled(hasSelection && !_state.req_in_flight);
-      return;
-    }
-
-    // Other states
-    b->setEnabled(false);
-  };
-
   // Refresh button when topic selection changes
-  connect(dialog.ui->topicsList, &QTreeWidget::itemSelectionChanged, this, refreshOk);
+  connect(dialog.ui->topicsList, &QTreeWidget::itemSelectionChanged, this, &WebsocketClient::updateOkButton);
 
   // Refresh topic list applying the filter
   connect(dialog.ui->lineEditFilter, &QLineEdit::textChanged,
@@ -250,6 +247,11 @@ bool WebsocketClient::start(QStringList*)
       auto b = dialog.ui->buttonBox->button(QDialogButtonBox::Ok);
       if (b) b->setEnabled(false);
 
+      // Save profile settings
+      _config.address = adrr;
+      _config.port = p;
+      saveDefaultSettings();
+
       // Open WebSocket
       _socket.open(_url);
       return;
@@ -283,6 +285,12 @@ bool WebsocketClient::start(QStringList*)
       _topics.push_back(std::move(info));
     }
     if (arr.isEmpty()) return;
+
+    // Store topics name on profile
+    _config.topics.clear();
+    for (const auto& v : arr)
+      _config.topics << v.toString();
+    saveDefaultSettings();
 
     // Update state: one request in-flight
     _state.mode = WsState::Mode::Subscribe;
@@ -324,8 +332,6 @@ bool WebsocketClient::start(QStringList*)
     return false;
   }
 
-  // Store selected port
-  settings.setValue("WebsocketClient::port", dialog.ui->lineEditPort->text().toInt());
   return true;
 }
 
@@ -555,10 +561,14 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
       auto* vsb = view->verticalScrollBar();
       const int scroll_y = vsb ? vsb->value() : 0;
 
-      // Save current selection to restore it after refresh
-      QStringList selected_topics;
-      for (auto* it : view->selectedItems())
-        selected_topics << it->text(0);
+      // Restore selection (persisted + current)
+      QStringList wanted = _config.topics;
+      for (auto* it : view->selectedItems()) {
+        const auto n = it->text(0);
+        if (!wanted.contains(n))
+          wanted << n;
+      }
+      _config.topics.clear();
 
       // Update UI without triggering signals
       view->setUpdatesEnabled(false);
@@ -582,7 +592,7 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
         item->setText(1, type);
 
         // Restore previous selection
-        if (selected_topics.contains(name))
+        if (wanted.contains(name))
           item->setSelected(true);
       }
 
@@ -597,6 +607,9 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
       view->setVisible(true);
       view->blockSignals(false);
       view->setUpdatesEnabled(true);
+
+      // Check profile settings
+      updateOkButton();
 
       // Restore scroll position after layout update
       QTimer::singleShot(0, view, [view, scroll_y]() {
@@ -916,3 +929,31 @@ void WebsocketClient::onRos2CdrMessage(const QString& topic, double ts_sec, cons
   qDebug() << "RX msg topic=" << topic << "ts=" << ts_sec << "cdr=" << len << Qt::endl;
 #endif
 }
+
+// =======================
+// PlotJuggler profiles
+// =======================
+void WebsocketClient::saveDefaultSettings()
+{
+  QSettings s;
+  _config.saveToSettings(s, "WebsocketClient");
+}
+
+void WebsocketClient::loadDefaultSettings()
+{
+  QSettings s;
+  _config.loadFromSettings(s, "WebsocketClient");
+}
+
+bool WebsocketClient::xmlSaveState(QDomDocument& doc, QDomElement& parent) const
+{
+  _config.xmlSaveState(doc, parent);
+  return true;
+}
+
+bool WebsocketClient::xmlLoadState(const QDomElement& parent)
+{
+  _config.xmlLoadState(parent);
+  return true;
+}
+

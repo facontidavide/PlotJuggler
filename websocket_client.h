@@ -13,6 +13,7 @@
 #include <vector>
 #include <utility>
 
+#include "websocket_client_config.h"
 #include "PlotJuggler/datastreamer_base.h"
 #include "PlotJuggler/messageparser_base.h"
 
@@ -75,6 +76,9 @@ public:
     return false;
   }
 
+  bool xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const override;
+  bool xmlLoadState(const QDomElement& parent_element) override;
+
   bool pause();
   bool resume();
   bool unsubscribe();
@@ -82,6 +86,8 @@ public:
 private:
   QAction* _action_settings = nullptr;
   std::vector<QAction*> _actions;
+
+  websocket_client_config _config;
 
   QWebSocket _socket;
   QUrl _url;
@@ -104,8 +110,11 @@ private:
   QString _pendingRequestId;
   WsState::Mode _pendingMode = WsState::Mode::Close;
 
+  void saveDefaultSettings();
+  void loadDefaultSettings();
   void setupSettings();
-  void adjustDialogSize();
+
+  void updateOkButton();
 
   void requestTopics();
   void sendHeartBeat();

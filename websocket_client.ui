@@ -124,7 +124,7 @@
    <item>
     <widget class="QTreeWidget" name="topicsList">
      <property name="selectionMode">
-      <enum>QAbstractItemView::SelectionMode::ExtendedSelection</enum>
+      <enum>QAbstractItemView::SelectionMode::MultiSelection</enum>
      </property>
      <property name="uniformRowHeights">
       <bool>true</bool>
@@ -170,7 +170,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Tip: [CTRL+A] select all, [CTRL+SHIFT+A] deselect all</string>
+        <string>Tip: [CLICK] toggle select, [CLICK+DRAG] multiple select</string>
        </property>
       </widget>
      </item>
