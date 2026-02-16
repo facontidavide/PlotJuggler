@@ -20,6 +20,7 @@ RangeSlider::RangeSlider(QWidget* aParent)
   , mMinTickPx(45)
   , mShowTicks(true)
   , mShowTickLabels(true)
+  , mTooltipVisible(true)
   , mFirstHandlePressed(false)
   , mSecondHandlePressed(false)
   , mInterval(mMaximum - mMinimum)
@@ -183,6 +184,8 @@ void RangeSlider::mousePressEvent(QMouseEvent* aEvent)
         setUpperValue(mUpperValue + step);
     }
   }
+
+  maybeShowHandleTooltip(aEvent->globalPos(), aEvent->pos());
 }
 
 void RangeSlider::mouseMoveEvent(QMouseEvent* aEvent)
@@ -226,6 +229,8 @@ void RangeSlider::mouseMoveEvent(QMouseEvent* aEvent)
       }
     }
   }
+
+  maybeShowHandleTooltip(aEvent->globalPos(), aEvent->pos());
 }
 
 void RangeSlider::mouseReleaseEvent(QMouseEvent* aEvent)
@@ -234,6 +239,12 @@ void RangeSlider::mouseReleaseEvent(QMouseEvent* aEvent)
 
   mFirstHandlePressed = false;
   mSecondHandlePressed = false;
+
+  if (mShowHandleValueTooltip)
+  {
+    QToolTip::hideText();
+    mTooltipVisible = false;
+  }
 }
 
 void RangeSlider::changeEvent(QEvent* aEvent)
@@ -250,6 +261,13 @@ void RangeSlider::changeEvent(QEvent* aEvent)
     }
     update();
   }
+}
+
+void RangeSlider::leaveEvent(QEvent* e)
+{
+  QWidget::leaveEvent(e);
+  QToolTip::hideText();
+  mTooltipVisible = false;
 }
 
 QSize RangeSlider::minimumSizeHint() const
@@ -508,5 +526,55 @@ void RangeSlider::drawTicks(QPainter& painter, const QRectF& backgroundRect)
         painter.drawText(x + majorLen + 4, pos + fm.ascent() / 2, txt);
       }
     }
+  }
+}
+
+void RangeSlider::setShowHandleValueTooltip(bool on)
+{
+  mShowHandleValueTooltip = on;
+  if (!on)
+  {
+    QToolTip::hideText();
+    mTooltipVisible = false;
+  }
+}
+
+bool RangeSlider::showHandleValueTooltip() const
+{
+  return mShowHandleValueTooltip;
+}
+
+QString RangeSlider::handleValueText(bool left) const
+{
+  return QString::number(left ? mLowerValue : mUpperValue);
+}
+
+void RangeSlider::maybeShowHandleTooltip(const QPoint& globalPos, const QPoint& localPos)
+{
+  if (!mShowHandleValueTooltip)
+    return;
+
+  bool overLeft = type.testFlag(LeftHandle) && firstHandleRect().contains(localPos);
+  bool overRight = type.testFlag(RightHandle) && secondHandleRect().contains(localPos);
+
+  if (mFirstHandlePressed && type.testFlag(LeftHandle))
+    overLeft = true;
+  if (mSecondHandlePressed && type.testFlag(RightHandle))
+    overRight = true;
+
+  if (overLeft)
+  {
+    QToolTip::showText(globalPos, handleValueText(true), this);
+    mTooltipVisible = true;
+  }
+  else if (overRight)
+  {
+    QToolTip::showText(globalPos, handleValueText(false), this);
+    mTooltipVisible = true;
+  }
+  else if (mTooltipVisible)
+  {
+    QToolTip::hideText();
+    mTooltipVisible = false;
   }
 }

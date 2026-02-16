@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QToolTip>
 #include <QWidget>
 #include <QPainter>
 #include <QMouseEvent>
@@ -45,6 +46,9 @@ public:
   void setShowTickLabels(bool on);
   void setShowTicks(bool on);
 
+  void setShowHandleValueTooltip(bool on);
+  bool showHandleValueTooltip() const;
+
   bool showTicks() const;
 
 protected:
@@ -53,6 +57,7 @@ protected:
   void mouseMoveEvent(QMouseEvent* aEvent) override;
   void mouseReleaseEvent(QMouseEvent* aEvent) override;
   void changeEvent(QEvent* aEvent) override;
+  void leaveEvent(QEvent* e) override;
 
   QRectF firstHandleRect() const;
   QRectF secondHandleRect() const;
@@ -95,6 +100,12 @@ private:
   void drawTicks(QPainter& painter, const QRectF& backgroundRect);
   int niceStep(int raw) const;
   int firstTick(int min, int step) const;
+
+  bool mShowHandleValueTooltip = true;
+  bool mTooltipVisible = false;
+
+  void maybeShowHandleTooltip(const QPoint& globalPos, const QPoint& localPos);
+  QString handleValueText(bool left) const;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(RangeSlider::Options)
