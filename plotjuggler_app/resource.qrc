@@ -335,5 +335,6 @@
         <file>style_light/window_close_disabled.png</file>
         <file>style_light/window_close_focus.png</file>
         <file>style_light/window_close_pressed.png</file>
+        <file>resources/memes/meme_103.jpg</file>
     </qresource>
 </RCC>
