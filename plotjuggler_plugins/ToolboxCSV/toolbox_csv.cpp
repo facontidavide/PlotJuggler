@@ -1,4 +1,5 @@
 #include "toolbox_csv.h"
+#include "PlotJuggler/svg_util.h"
 #include "ui_toolbox_csv.h"
 
 #include <QEvent>
@@ -14,24 +15,6 @@ ToolboxCSV::ToolboxCSV()
   ui = new Ui::toolBoxUI();
 
   ui->setupUi(_widget);
-
-  // Solved UI style problems(Black blocks)
-  ui->toolButton->setIcon(_widget->style()->standardIcon(QStyle::SP_DirOpenIcon));
-  ui->toolButton->setAutoRaise(true);
-  ui->toolButton->setStyleSheet("QToolButton { background: transparent; }");
-
-  auto* corner = ui->tableWidget->findChild<QAbstractButton*>();
-  if (corner)
-  {
-    corner->setToolTip("Click to select all topics");
-  }
-
-  ui->tableWidget->setStyleSheet(
-      "QTableCornerButton::section {"
-      "  background-color: palette(button);"
-      "  border: 1px solid palette(mid);"
-      "}"
-      );
 
   // Drag/Drop event
   ui->tableWidget->installEventFilter(this);
@@ -74,6 +57,24 @@ std::pair<QWidget*, PJ::ToolboxPlugin::WidgetType> ToolboxCSV::providedWidget() 
 
 bool ToolboxCSV::onShowWidget()
 {
+  QSettings settings;
+  QString theme = settings.value("StyleSheet::theme", "light").toString();
+
+  ui->clearButton->setIcon(LoadSvg(":/resources/svg/clear.svg", theme));
+  ui->saveButton->setIcon(LoadSvg(":/resources/svg/save.svg", theme));
+
+  auto* corner = ui->tableWidget->findChild<QAbstractButton*>();
+  if (corner)
+  {
+    corner->setToolTip("Click to select all topics");
+  }
+
+  ui->tableWidget->setStyleSheet(
+      "QTableCornerButton::section {"
+      "  background-color: palette(button);"
+      "  border: 1px solid palette(mid);"
+      "}"
+      );
   return true;
 }
 
