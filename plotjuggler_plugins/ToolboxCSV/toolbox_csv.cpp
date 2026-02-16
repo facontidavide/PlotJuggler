@@ -27,8 +27,9 @@ ToolboxCSV::ToolboxCSV()
   }
 
   ui->tableWidget->setStyleSheet(
-      "QTableCornerButton::section:hover {"
-      "  background-color: palette(light);"
+      "QTableCornerButton::section {"
+      "  background-color: palette(button);"
+      "  border: 1px solid palette(mid);"
       "}"
       );
 
