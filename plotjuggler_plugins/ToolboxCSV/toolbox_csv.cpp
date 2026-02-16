@@ -20,16 +20,6 @@ ToolboxCSV::ToolboxCSV()
   ui->tableWidget->installEventFilter(this);
   ui->tableWidget->viewport()->installEventFilter(this);
 
-  ui->plotBox->setChecked(true);
-  ui->framePlotPreview->setVisible(true);
-
-  // Visible/Invisible plot data
-  connect(ui->plotBox, &QCheckBox::toggled, this, [this](bool on) {
-    ui->framePlotPreview->setVisible(on);
-    _widget->layout()->invalidate();
-    _widget->layout()->activate();
-  });
-
   // Cancel/Close
   connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &ToolboxCSV::onClosed);
 }
@@ -44,10 +34,6 @@ void ToolboxCSV::init(PJ::PlotDataMapRef& src_data, PJ::TransformsMap& transform
   _transforms = &transform_map;
 
   _plot_widget = new PJ::PlotWidgetBase(ui->frame);
-
-  auto preview_layout = new QHBoxLayout(ui->framePlotPreview);
-  preview_layout->setMargin(6);
-  preview_layout->addWidget(_plot_widget);
 }
 
 std::pair<QWidget*, PJ::ToolboxPlugin::WidgetType> ToolboxCSV::providedWidget() const
@@ -69,23 +55,29 @@ bool ToolboxCSV::onShowWidget()
     corner->setToolTip("Click to select all topics");
   }
 
-  ui->tableWidget->setStyleSheet(
-      "QTableCornerButton::section {"
-      "  background-color: palette(button);"
-      "  border: 1px solid palette(mid);"
-      "}"
-      );
+  ui->tableWidget->setStyleSheet("QTableCornerButton::section {"
+                                 "  background-color: palette(button);"
+                                 "  border: 1px solid palette(mid);"
+                                 "}");
+
+  ui->rangeSlider->setOptions(RangeSlider::DoubleHandles);
+  ui->rangeSlider->setShowTicks(false);
+
   return true;
 }
 
-bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev) {
-  if (ev->type() == QEvent::DragEnter) {
+bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev)
+{
+  if (ev->type() == QEvent::DragEnter)
+  {
     auto* event = static_cast<QDragEnterEvent*>(ev);
     const QMimeData* mimeData = event->mimeData();
     const QStringList mimeFormats = mimeData->formats();
 
-    for (const QString& format : mimeFormats) {
-      if (format != "curveslist/add_curve") {
+    for (const QString& format : mimeFormats)
+    {
+      if (format != "curveslist/add_curve")
+      {
         continue;
       }
 
@@ -93,59 +85,75 @@ bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev) {
       QDataStream stream(&encoded, QIODevice::ReadOnly);
 
       QStringList curves;
-      while (!stream.atEnd()) {
+      while (!stream.atEnd())
+      {
         QString curve_name;
         stream >> curve_name;
-        if (!curve_name.isEmpty()) {
+        if (!curve_name.isEmpty())
+        {
           curves.push_back(curve_name);
         }
       }
 
-      if (curves.isEmpty()) {
+      if (curves.isEmpty())
+      {
         return false;
       }
 
       _dragging_curves = curves;
 
-      if (obj == ui->tableWidget || obj == ui->tableWidget->viewport()) {
+      if (obj == ui->tableWidget || obj == ui->tableWidget->viewport())
+      {
         event->acceptProposedAction();
         return true;
       }
     }
 
     return false;
-  } else if (ev->type() == QEvent::DragMove) {
+  }
+  else if (ev->type() == QEvent::DragMove)
+  {
     auto* event = static_cast<QDragMoveEvent*>(ev);
-    if (obj == ui->tableWidget || obj == ui->tableWidget->viewport()) {
-      if (event->mimeData() && event->mimeData()->hasFormat("curveslist/add_curve")) {
+    if (obj == ui->tableWidget || obj == ui->tableWidget->viewport())
+    {
+      if (event->mimeData() && event->mimeData()->hasFormat("curveslist/add_curve"))
+      {
         event->acceptProposedAction();
         return true;
       }
     }
     return false;
-  } else if (ev->type() == QEvent::Drop) {
+  }
+  else if (ev->type() == QEvent::Drop)
+  {
     auto* event = static_cast<QDropEvent*>(ev);
 
-    if (obj != ui->tableWidget && obj != ui->tableWidget->viewport()) {
+    if (obj != ui->tableWidget && obj != ui->tableWidget->viewport())
+    {
       return false;
     }
 
-    for (const QString& raw : _dragging_curves) {
+    for (const QString& raw : _dragging_curves)
+    {
       QString topic = raw.trimmed();
-      if (topic.isEmpty()) {
+      if (topic.isEmpty())
+      {
         continue;
       }
 
       bool exists = false;
-      for (int r = 0; r < ui->tableWidget->rowCount(); r++) {
+      for (int r = 0; r < ui->tableWidget->rowCount(); r++)
+      {
         QTableWidgetItem* item = ui->tableWidget->item(r, 0);
-        if (item && item->text() == topic) {
+        if (item && item->text() == topic)
+        {
           exists = true;
           break;
         }
       }
 
-      if (exists) {
+      if (exists)
+      {
         continue;
       }
 
@@ -166,4 +174,3 @@ void ToolboxCSV::onClosed()
 {
   emit this->closed();
 }
-
