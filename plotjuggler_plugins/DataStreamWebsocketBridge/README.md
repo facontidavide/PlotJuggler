@@ -24,9 +24,9 @@ PlotJuggler  <->  WebSocket Client Plugin  <->  WebSocket Server (pj_ros_bridge 
 
 The server can run on:
 
-- The same machine  
-- Another laptop on the local network  
-- A remote robot  
+- The same machine
+- Another laptop on the local network
+- A remote robot
 
 ---
 
@@ -170,8 +170,8 @@ ros2 run pj_ros_bridge pj_ros_bridge_node
 
 Default configuration:
 
-- Port: 8080  
-- Publish rate: 50 Hz  
+- Port: 8080
+- Publish rate: 50 Hz
 
 Then connect the plugin to:
 
@@ -187,11 +187,11 @@ or to the robot’s IP address.
 
 The plugin handles the following states:
 
-- Connecting  
-- Connected  
-- Disconnected  
-- Remote Close  
-- Error  
+- Connecting
+- Connected
+- Disconnected
+- Remote Close
+- Error
 
 If the server closes the connection, the plugin detects the event and displays a warning in the UI.
 

@@ -52,8 +52,7 @@ public:
     topics.clear();
 
     QDomElement topics_elem = cfg.firstChildElement("topics");
-    for (QDomElement t = topics_elem.firstChildElement("topic");
-         !t.isNull();
+    for (QDomElement t = topics_elem.firstChildElement("topic"); !t.isNull();
          t = t.nextSiblingElement("topic"))
     {
       QString name = t.attribute("name");
@@ -75,8 +74,8 @@ public:
   void loadFromSettings(const QSettings& settings, const QString& group)
   {
     address = settings.value(group + "/address", "127.0.0.1").toString();
-    port    = settings.value(group + "/port", 8080).toInt();
-    topics  = settings.value(group + "/topics").toStringList();
+    port = settings.value(group + "/port", 8080).toInt();
+    topics = settings.value(group + "/topics").toStringList();
   }
 };
 

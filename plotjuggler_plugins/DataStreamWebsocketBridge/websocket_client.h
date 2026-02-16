@@ -32,7 +32,10 @@ struct TopicInfo
   QString schema_definition;
 };
 
-namespace Ui { class WebSocketDialog; }
+namespace Ui
+{
+class WebSocketDialog;
+}
 
 class WebsocketDialog;
 
