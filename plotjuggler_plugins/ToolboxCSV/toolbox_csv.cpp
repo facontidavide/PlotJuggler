@@ -43,6 +43,8 @@ ToolboxCSV::ToolboxCSV()
   // Visible/Invisible plot data
   connect(ui->plotBox, &QCheckBox::toggled, this, [this](bool on) {
     ui->framePlotPreview->setVisible(on);
+    _widget->layout()->invalidate();
+    _widget->layout()->activate();
   });
 
   // Cancel/Close
