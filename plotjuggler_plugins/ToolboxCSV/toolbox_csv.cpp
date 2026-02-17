@@ -61,7 +61,17 @@ bool ToolboxCSV::onShowWidget()
                                  "}");
 
   ui->rangeSlider->setOptions(RangeSlider::DoubleHandles);
+  ui->rangeSlider->setRangeReal(0.0, 1.0, 3);
   ui->rangeSlider->setShowTicks(false);
+
+  ui->startTime->setRange(0.0, 1.0);
+  ui->startTime->setButtonSymbols(QAbstractSpinBox::NoButtons);
+
+  ui->endTime->setRange(0.0, 1.0);
+  ui->endTime->setValue(1.0);
+  ui->endTime->setButtonSymbols(QAbstractSpinBox::NoButtons);
+
+  updateTimeControlsEnabled();
 
   return true;
 }
@@ -163,6 +173,7 @@ bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev)
     }
 
     _dragging_curves.clear();
+    updateTimeControlsEnabled();
     event->acceptProposedAction();
     return true;
   }
@@ -173,4 +184,12 @@ bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev)
 void ToolboxCSV::onClosed()
 {
   emit this->closed();
+}
+
+void ToolboxCSV::updateTimeControlsEnabled()
+{
+  const bool has_data = ui->tableWidget->rowCount() > 0;
+  ui->startTime->setEnabled(has_data);
+  ui->endTime->setEnabled(has_data);
+  ui->rangeSlider->setEnabled(has_data);
 }

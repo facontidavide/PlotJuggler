@@ -17,6 +17,10 @@ RangeSlider::RangeSlider(QWidget* aParent)
   , mMaximum(100)
   , mLowerValue(0)
   , mUpperValue(100)
+  , mMinReal(0.0)
+  , mMaxReal(1.0)
+  , mDecimals(3)
+  , mScale(1000)
   , mMinTickPx(45)
   , mShowTicks(true)
   , mShowTickLabels(true)
@@ -403,6 +407,7 @@ void RangeSlider::SetRange(int aMinimum, int mMaximum)
 {
   setMinimum(aMinimum);
   setMaximum(mMaximum);
+  mDecimals = 0;
 }
 
 void RangeSlider::setOptions(Options t)
@@ -546,7 +551,13 @@ bool RangeSlider::showHandleValueTooltip() const
 
 QString RangeSlider::handleValueText(bool left) const
 {
-  return QString::number(left ? mLowerValue : mUpperValue);
+  if (mDecimals <= 0)
+  {
+    return QString::number(left ? mLowerValue : mUpperValue);
+  }
+
+  double v = left ? lowerValueReal() : upperValueReal();
+  return QString::number(v, 'f', mDecimals);
 }
 
 void RangeSlider::maybeShowHandleTooltip(const QPoint& globalPos, const QPoint& localPos)
@@ -577,4 +588,68 @@ void RangeSlider::maybeShowHandleTooltip(const QPoint& globalPos, const QPoint& 
     QToolTip::hideText();
     mTooltipVisible = false;
   }
+}
+
+static int pow10i(int d)
+{
+  int s = 1;
+  for (int i = 0; i < d; i++)
+    s *= 10;
+  return s;
+}
+
+int RangeSlider::toInt(double v) const
+{
+  if (v < mMinReal)
+    v = mMinReal;
+  if (v > mMaxReal)
+    v = mMaxReal;
+  return int((v - mMinReal) * mScale + 0.5);
+}
+
+double RangeSlider::toReal(int v) const
+{
+  return mMinReal + (v * 1.0 / mScale);
+}
+
+void RangeSlider::setRangeReal(double minV, double maxV, int decimals)
+{
+  if (minV > maxV)
+    std::swap(minV, maxV);
+
+  mMinReal = minV;
+  mMaxReal = maxV;
+  mDecimals = std::max(0, decimals);
+  mScale = pow10i(mDecimals);
+
+  int imin = 0;
+  int imax = std::max(1, int((mMaxReal - mMinReal) * mScale + 0.5));
+
+  setMinimum(imin);
+  setMaximum(imax);
+}
+
+void RangeSlider::setLowerValueReal(double v)
+{
+  setLowerValue(toInt(v));
+}
+
+void RangeSlider::setUpperValueReal(double v)
+{
+  setUpperValue(toInt(v));
+}
+
+double RangeSlider::lowerValueReal() const
+{
+  return toReal(mLowerValue);
+}
+
+double RangeSlider::upperValueReal() const
+{
+  return toReal(mUpperValue);
+}
+
+int RangeSlider::decimals() const
+{
+  return mDecimals;
 }
