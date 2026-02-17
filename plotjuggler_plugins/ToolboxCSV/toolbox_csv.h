@@ -49,10 +49,15 @@ private:
   QStringList _dragging_curves;
 
   bool eventFilter(QObject* obj, QEvent* ev) override;
+
   void updateTimeControlsEnabled();
+
   bool getTimeRange(double& tmin, double& tmax) const;
   void setTimeRange(double tmin, double tmax);
+
   void updateTimeRange();
+
+  void saveAll();
 
   double _t0 = 0.0;
 };
