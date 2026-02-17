@@ -57,6 +57,8 @@ public:
   double lowerValueReal() const;
   double upperValueReal() const;
   int decimals() const;
+  int toInt(double v) const;
+  double toReal(int v) const;
 
 protected:
   void paintEvent(QPaintEvent* aEvent) override;
@@ -118,8 +120,6 @@ private:
   double mMaxReal;
   int mDecimals;
   int mScale;
-  int toInt(double v) const;
-  double toReal(int v) const;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(RangeSlider::Options)
