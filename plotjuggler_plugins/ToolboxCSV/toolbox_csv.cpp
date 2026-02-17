@@ -23,45 +23,6 @@ ToolboxCSV::ToolboxCSV()
 
   // Cancel/Close
   connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &ToolboxCSV::onClosed);
-}
-
-ToolboxCSV::~ToolboxCSV()
-{
-}
-
-void ToolboxCSV::init(PJ::PlotDataMapRef& src_data, PJ::TransformsMap& transform_map)
-{
-  _plot_data = &src_data;
-  _transforms = &transform_map;
-}
-
-std::pair<QWidget*, PJ::ToolboxPlugin::WidgetType> ToolboxCSV::providedWidget() const
-{
-  return { _widget, PJ::ToolboxPlugin::WidgetType::FIXED };
-}
-
-bool ToolboxCSV::onShowWidget()
-{
-  QSettings settings;
-  QString theme = settings.value("StyleSheet::theme", "light").toString();
-
-  ui->clearButton->setIcon(LoadSvg(":/resources/svg/clear.svg", theme));
-  ui->saveButton->setIcon(LoadSvg(":/resources/svg/save.svg", theme));
-
-  ui->csvButton->setChecked(true);
-
-  auto* corner = ui->tableWidget->findChild<QAbstractButton*>();
-  if (corner)
-  {
-    corner->setToolTip("Click to select all topics");
-  }
-
-  ui->tableWidget->setStyleSheet("QTableCornerButton::section {"
-                                 "  background-color: palette(button);"
-                                 "  border: 1px solid palette(mid);"
-                                 "}");
-
-  ui->tableWidget->horizontalHeader()->setStyleSheet("QHeaderView::section { font-weight: bold; }");
 
   ui->rangeSlider->setOptions(RangeSlider::DoubleHandles);
   ui->rangeSlider->setRangeReal(0.0, 1.0, 2);
@@ -76,7 +37,7 @@ bool ToolboxCSV::onShowWidget()
   ui->endTime->setDecimals(2);
   ui->endTime->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
-  updateTimeControlsEnabled();
+  ui->csvButton->setChecked(true);
 
   connect(ui->rangeSlider, &RangeSlider::lowerValueChanged, _widget, [this](int v) {
     QSignalBlocker b(*ui->startTime);
@@ -143,7 +104,51 @@ bool ToolboxCSV::onShowWidget()
   });
 
   // Relative/Absolute timestamps shown
-  connect(ui->relativeBox, &QCheckBox::toggled, _widget, [this](bool) { updateTimeRange(); });
+  connect(ui->relativeBox, &QCheckBox::toggled, this, &ToolboxCSV::updateTimeRange);
+
+  connect(ui->saveButton, &QPushButton::clicked, this, &ToolboxCSV::saveAll);
+}
+
+ToolboxCSV::~ToolboxCSV()
+{
+}
+
+void ToolboxCSV::init(PJ::PlotDataMapRef& src_data, PJ::TransformsMap& transform_map)
+{
+  _plot_data = &src_data;
+  _transforms = &transform_map;
+}
+
+std::pair<QWidget*, PJ::ToolboxPlugin::WidgetType> ToolboxCSV::providedWidget() const
+{
+  return { _widget, PJ::ToolboxPlugin::WidgetType::FIXED };
+}
+
+bool ToolboxCSV::onShowWidget()
+{
+  QSettings settings;
+  QString theme = settings.value("StyleSheet::theme", "light").toString();
+
+  ui->clearButton->setIcon(LoadSvg(":/resources/svg/clear.svg", theme));
+  ui->saveButton->setIcon(LoadSvg(":/resources/svg/save.svg", theme));
+
+  auto* corner = ui->tableWidget->findChild<QAbstractButton*>();
+  if (corner)
+  {
+    corner->setToolTip("Click to select all topics");
+  }
+
+  ui->tableWidget->setStyleSheet("QTableCornerButton::section {"
+                                 "  background-color: palette(button);"
+                                 "  border: 1px solid palette(mid);"
+                                 "}");
+
+  ui->tableWidget->horizontalHeader()->setStyleSheet("QHeaderView::section { font-weight: bold; }");
+
+  updateTimeControlsEnabled();
+
+  // Check if there is new info who change the time
+  updateTimeRange();
 
   return true;
 }
@@ -254,6 +259,35 @@ bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev)
   return false;
 }
 
+void ToolboxCSV::saveAll()
+{
+  double t_start = ui->startTime->value();
+  double t_end = ui->endTime->value();
+
+  if (ui->relativeBox->isChecked())
+  {
+    t_start += _t0;
+    t_end += _t0;
+  }
+
+  std::vector<std::string> selected_topics;
+
+  for (int r = 0; r < ui->tableWidget->rowCount(); r++)
+  {
+    auto* item = ui->tableWidget->item(r, 0);
+    if (!item)
+      continue;
+
+    const std::string name = item->text().trimmed().toStdString();
+    if (!name.empty())
+    {
+      selected_topics.push_back(name);
+    }
+  }
+
+  emit this->closed();
+}
+
 void ToolboxCSV::onClosed()
 {
   emit this->closed();
@@ -320,6 +354,7 @@ void ToolboxCSV::updateTimeControlsEnabled()
   ui->endTime->setEnabled(has_data);
   ui->rangeSlider->setEnabled(has_data);
   ui->toolButton->setEnabled(has_data);
+  ui->saveButton->setEnabled(has_data);
 }
 
 bool ToolboxCSV::getTimeRange(double& tmin, double& tmax) const
