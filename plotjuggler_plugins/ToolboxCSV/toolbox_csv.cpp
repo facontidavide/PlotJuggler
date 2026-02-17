@@ -3,6 +3,7 @@
 #include "ui_toolbox_csv.h"
 
 #include <QEvent>
+#include <QFileDialog>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QDropEvent>
@@ -49,6 +50,8 @@ bool ToolboxCSV::onShowWidget()
   ui->clearButton->setIcon(LoadSvg(":/resources/svg/clear.svg", theme));
   ui->saveButton->setIcon(LoadSvg(":/resources/svg/save.svg", theme));
 
+  ui->csvButton->setChecked(true);
+
   auto* corner = ui->tableWidget->findChild<QAbstractButton*>();
   if (corner)
   {
@@ -59,6 +62,8 @@ bool ToolboxCSV::onShowWidget()
                                  "  background-color: palette(button);"
                                  "  border: 1px solid palette(mid);"
                                  "}");
+
+  ui->tableWidget->horizontalHeader()->setStyleSheet("QHeaderView::section { font-weight: bold; }");
 
   ui->rangeSlider->setOptions(RangeSlider::DoubleHandles);
   ui->rangeSlider->setRangeReal(0.0, 1.0, 2);
@@ -119,6 +124,22 @@ bool ToolboxCSV::onShowWidget()
   connect(ui->clearButton, &QToolButton::clicked, _widget, [this]() {
     ui->tableWidget->setRowCount(0);
     updateTimeControlsEnabled();
+  });
+
+  // Searcher folder/file button
+  connect(ui->toolButton, &QToolButton::clicked, this, &ToolboxCSV::on_toolButton_clicked);
+
+  // Reset Path line if u changed the format
+  connect(ui->csvButton, &QRadioButton::toggled, _widget, [this](bool checked) {
+    if (!checked)
+      return;
+    ui->lineEditPath->clear();
+  });
+
+  connect(ui->parquetButton, &QRadioButton::toggled, _widget, [this](bool checked) {
+    if (!checked)
+      return;
+    ui->lineEditPath->clear();
   });
 
   return true;
@@ -234,10 +255,65 @@ void ToolboxCSV::onClosed()
   emit this->closed();
 }
 
+void ToolboxCSV::on_toolButton_clicked()
+{
+  QSettings settings;
+
+  const bool is_csv = ui->csvButton->isChecked();
+  const QString fmt_key = is_csv ? "csv" : "parquet";
+
+  const QString last_file =
+      settings.value(QString("Export.%1.lastFile").arg(fmt_key), QString()).toString();
+
+  const QString start_dir = settings.value("Export.lastDirectory", QDir::homePath()).toString();
+
+  const QString default_name = is_csv ? "export.csv" : "export.parquet";
+
+  const QString start_path =
+      last_file.isEmpty() ? QDir(start_dir).filePath(default_name) : last_file;
+
+  QFileDialog dialog(_widget);
+  dialog.setAcceptMode(QFileDialog::AcceptSave);
+  dialog.setFileMode(QFileDialog::AnyFile);
+
+  if (is_csv)
+  {
+    dialog.setNameFilter("CSV (*.csv)");
+    dialog.setDefaultSuffix("csv");
+  }
+  else
+  {
+    dialog.setNameFilter("Parquet (*.parquet *.pq)");
+    dialog.setDefaultSuffix("parquet");
+  }
+
+  dialog.selectFile(start_path);
+  dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+
+  if (dialog.exec() != QDialog::Accepted || dialog.selectedFiles().isEmpty())
+  {
+    return;
+  }
+
+  const QString file_path = dialog.selectedFiles().first();
+  if (file_path.isEmpty())
+  {
+    return;
+  }
+
+  const QFileInfo info(file_path);
+
+  settings.setValue(QString("Export.%1.lastFile").arg(fmt_key), file_path);
+  settings.setValue("Export.lastDirectory", info.absolutePath());
+
+  ui->lineEditPath->setText(file_path);
+}
+
 void ToolboxCSV::updateTimeControlsEnabled()
 {
   const bool has_data = ui->tableWidget->rowCount() > 0;
   ui->startTime->setEnabled(has_data);
   ui->endTime->setEnabled(has_data);
   ui->rangeSlider->setEnabled(has_data);
+  ui->toolButton->setEnabled(has_data);
 }
