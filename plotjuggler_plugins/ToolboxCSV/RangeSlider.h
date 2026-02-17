@@ -51,6 +51,13 @@ public:
 
   bool showTicks() const;
 
+  void setRangeReal(double minV, double maxV, int decimals);
+  void setLowerValueReal(double v);
+  void setUpperValueReal(double v);
+  double lowerValueReal() const;
+  double upperValueReal() const;
+  int decimals() const;
+
 protected:
   void paintEvent(QPaintEvent* aEvent) override;
   void mousePressEvent(QMouseEvent* aEvent) override;
@@ -106,6 +113,13 @@ private:
 
   void maybeShowHandleTooltip(const QPoint& globalPos, const QPoint& localPos);
   QString handleValueText(bool left) const;
+
+  double mMinReal;
+  double mMaxReal;
+  int mDecimals;
+  int mScale;
+  int toInt(double v) const;
+  double toReal(int v) const;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(RangeSlider::Options)

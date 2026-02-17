@@ -13,18 +13,14 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="locale">
+   <locale language="English" country="Eswatini"/>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_7">
      <item>
-      <widget class="QLineEdit" name="lineEdit_3">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-      </widget>
+      <widget class="QDoubleSpinBox" name="startTime"/>
      </item>
      <item>
       <widget class="RangeSlider" name="rangeSlider" native="true">
@@ -37,12 +33,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="lineEdit_2">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+      <widget class="QDoubleSpinBox" name="endTime">
+       <property name="locale">
+        <locale language="English" country="Eswatini"/>
        </property>
       </widget>
      </item>
@@ -128,6 +121,9 @@ The selected path must be a folder.
             </property>
             <property name="acceptDrops">
              <bool>true</bool>
+            </property>
+            <property name="locale">
+             <locale language="English" country="Eswatini"/>
             </property>
             <property name="editTriggers">
              <set>QAbstractItemView::NoEditTriggers</set>
