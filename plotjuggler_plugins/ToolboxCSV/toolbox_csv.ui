@@ -89,7 +89,7 @@
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_5">
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_9">
+           <layout class="QHBoxLayout" name="horizontalLayout_9" stretch="0,1,0">
             <item>
              <widget class="QLabel" name="label_13">
               <property name="text">
