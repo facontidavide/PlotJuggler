@@ -152,7 +152,7 @@ The selected path must be a folder.
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_6">
           <item>
-           <widget class="QPushButton" name="removedButton">
+           <widget class="QPushButton" name="removeButton">
             <property name="text">
              <string>Remove</string>
             </property>

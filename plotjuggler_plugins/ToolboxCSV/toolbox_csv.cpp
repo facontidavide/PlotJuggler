@@ -97,6 +97,30 @@ bool ToolboxCSV::onShowWidget()
             ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(t));
           });
 
+  connect(ui->removeButton, &QToolButton::clicked, _widget, [this]() {
+    auto* table = ui->tableWidget;
+    QModelIndexList rows = table->selectionModel()->selectedRows();
+    if (rows.isEmpty())
+    {
+      return;
+    }
+
+    std::sort(rows.begin(), rows.end(),
+              [](const QModelIndex& a, const QModelIndex& b) { return a.row() > b.row(); });
+
+    for (const auto& idx : rows)
+    {
+      table->removeRow(idx.row());
+    }
+
+    updateTimeControlsEnabled();
+  });
+
+  connect(ui->clearButton, &QToolButton::clicked, _widget, [this]() {
+    ui->tableWidget->setRowCount(0);
+    updateTimeControlsEnabled();
+  });
+
   return true;
 }
 
