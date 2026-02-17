@@ -43,7 +43,6 @@ private:
   QWidget* _widget;
   Ui::toolBoxUI* ui;
 
-  PJ::PlotWidgetBase* _plot_widget = nullptr;
   PJ::PlotDataMapRef* _plot_data = nullptr;
   PJ::TransformsMap* _transforms = nullptr;
 
@@ -51,4 +50,9 @@ private:
 
   bool eventFilter(QObject* obj, QEvent* ev) override;
   void updateTimeControlsEnabled();
+  bool getTimeRange(double& tmin, double& tmax) const;
+  void setTimeRange(double tmin, double tmax);
+  void updateTimeRange();
+
+  double _t0 = 0.0;
 };
