@@ -61,17 +61,41 @@ bool ToolboxCSV::onShowWidget()
                                  "}");
 
   ui->rangeSlider->setOptions(RangeSlider::DoubleHandles);
-  ui->rangeSlider->setRangeReal(0.0, 1.0, 3);
+  ui->rangeSlider->setRangeReal(0.0, 1.0, 2);
   ui->rangeSlider->setShowTicks(false);
 
   ui->startTime->setRange(0.0, 1.0);
+  ui->startTime->setDecimals(2);
   ui->startTime->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
   ui->endTime->setRange(0.0, 1.0);
   ui->endTime->setValue(1.0);
+  ui->endTime->setDecimals(2);
   ui->endTime->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
   updateTimeControlsEnabled();
+
+  connect(ui->rangeSlider, &RangeSlider::lowerValueChanged, _widget, [this](int v) {
+    QSignalBlocker b(*ui->startTime);
+    ui->startTime->setValue(ui->rangeSlider->toReal(v));
+  });
+
+  connect(ui->rangeSlider, &RangeSlider::upperValueChanged, _widget, [this](int v) {
+    QSignalBlocker b(*ui->endTime);
+    ui->endTime->setValue(ui->rangeSlider->toReal(v));
+  });
+
+  connect(ui->startTime, QOverload<double>::of(&QDoubleSpinBox::valueChanged), _widget,
+          [this](double t) {
+            QSignalBlocker b(*ui->rangeSlider);
+            ui->rangeSlider->setLowerValue(ui->rangeSlider->toInt(t));
+          });
+
+  connect(ui->endTime, QOverload<double>::of(&QDoubleSpinBox::valueChanged), _widget,
+          [this](double t) {
+            QSignalBlocker b(*ui->rangeSlider);
+            ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(t));
+          });
 
   return true;
 }
