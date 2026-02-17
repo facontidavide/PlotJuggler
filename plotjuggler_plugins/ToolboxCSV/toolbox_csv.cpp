@@ -33,8 +33,6 @@ void ToolboxCSV::init(PJ::PlotDataMapRef& src_data, PJ::TransformsMap& transform
 {
   _plot_data = &src_data;
   _transforms = &transform_map;
-
-  _plot_widget = new PJ::PlotWidgetBase(ui->frame);
 }
 
 std::pair<QWidget*, PJ::ToolboxPlugin::WidgetType> ToolboxCSV::providedWidget() const
@@ -119,11 +117,13 @@ bool ToolboxCSV::onShowWidget()
     }
 
     updateTimeControlsEnabled();
+    updateTimeRange();
   });
 
   connect(ui->clearButton, &QToolButton::clicked, _widget, [this]() {
     ui->tableWidget->setRowCount(0);
     updateTimeControlsEnabled();
+    updateTimeRange();
   });
 
   // Searcher folder/file button
@@ -141,6 +141,9 @@ bool ToolboxCSV::onShowWidget()
       return;
     ui->lineEditPath->clear();
   });
+
+  // Relative/Absolute timestamps shown
+  connect(ui->relativeBox, &QCheckBox::toggled, _widget, [this](bool) { updateTimeRange(); });
 
   return true;
 }
@@ -243,6 +246,7 @@ bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev)
 
     _dragging_curves.clear();
     updateTimeControlsEnabled();
+    updateTimeRange();
     event->acceptProposedAction();
     return true;
   }
@@ -316,4 +320,105 @@ void ToolboxCSV::updateTimeControlsEnabled()
   ui->endTime->setEnabled(has_data);
   ui->rangeSlider->setEnabled(has_data);
   ui->toolButton->setEnabled(has_data);
+}
+
+bool ToolboxCSV::getTimeRange(double& tmin, double& tmax) const
+{
+  bool any = false;
+
+  for (int r = 0; r < ui->tableWidget->rowCount(); r++)
+  {
+    auto* item = ui->tableWidget->item(r, 0);
+    if (!item)
+      continue;
+
+    const std::string name = item->text().trimmed().toStdString();
+    if (name.empty())
+      continue;
+
+    auto it = _plot_data->numeric.find(name);
+    if (it == _plot_data->numeric.end())
+      continue;
+
+    const auto& plot = it->second;
+    if (plot.size() == 0)
+      continue;
+
+    const double a = plot.front().x;
+    const double b = plot.back().x;
+
+    if (!any)
+    {
+      tmin = a;
+      tmax = b;
+      any = true;
+    }
+    else
+    {
+      tmin = std::min(tmin, a);
+      tmax = std::max(tmax, b);
+    }
+  }
+
+  if (!any)
+    return false;
+  if (tmax < tmin)
+    std::swap(tmin, tmax);
+  return true;
+}
+
+void ToolboxCSV::setTimeRange(double tmin, double tmax)
+{
+  const bool relative = ui->relativeBox->isChecked();
+  const int decimals = 3;
+
+  QSignalBlocker b0(*ui->rangeSlider);
+  QSignalBlocker b1(*ui->startTime);
+  QSignalBlocker b2(*ui->endTime);
+
+  if (relative)
+  {
+    _t0 = tmin;
+    double duration = tmax - tmin;
+    if (duration < 0.0)
+      duration = 0.0;
+
+    ui->rangeSlider->setRangeReal(0.0, duration, decimals);
+
+    ui->startTime->setDecimals(decimals);
+    ui->startTime->setRange(0.0, duration);
+    ui->startTime->setValue(0.0);
+
+    ui->endTime->setDecimals(decimals);
+    ui->endTime->setRange(0.0, duration);
+    ui->endTime->setValue(duration);
+
+    ui->rangeSlider->setLowerValue(ui->rangeSlider->toInt(0.0));
+    ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(duration));
+  }
+  else
+  {
+    _t0 = 0.0;
+
+    ui->rangeSlider->setRangeReal(tmin, tmax, decimals);
+
+    ui->startTime->setDecimals(decimals);
+    ui->startTime->setRange(tmin, tmax);
+    ui->startTime->setValue(tmin);
+
+    ui->endTime->setDecimals(decimals);
+    ui->endTime->setRange(tmin, tmax);
+    ui->endTime->setValue(tmax);
+
+    ui->rangeSlider->setLowerValue(ui->rangeSlider->toInt(tmin));
+    ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(tmax));
+  }
+}
+
+void ToolboxCSV::updateTimeRange()
+{
+  double tmin, tmax;
+  if (!getTimeRange(tmin, tmax))
+    return;
+  setTimeRange(tmin, tmax);
 }
