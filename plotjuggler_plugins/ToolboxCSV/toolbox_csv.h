@@ -37,6 +37,7 @@ public slots:
 private slots:
 
   void onClosed();
+  void on_toolButton_clicked();
 
 private:
   QWidget* _widget;

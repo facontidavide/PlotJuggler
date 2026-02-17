@@ -14,7 +14,7 @@
    <string>Form</string>
   </property>
   <property name="locale">
-   <locale language="English" country="Eswatini"/>
+   <locale language="English" country="UnitedStates"/>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
@@ -35,7 +35,7 @@
      <item>
       <widget class="QDoubleSpinBox" name="endTime">
        <property name="locale">
-        <locale language="English" country="Eswatini"/>
+        <locale language="English" country="UnitedStates"/>
        </property>
       </widget>
      </item>
@@ -119,11 +119,16 @@ The selected path must be a folder.
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="font">
+             <font>
+              <bold>false</bold>
+             </font>
+            </property>
             <property name="acceptDrops">
              <bool>true</bool>
             </property>
             <property name="locale">
-             <locale language="English" country="Eswatini"/>
+             <locale language="English" country="UnitedStates"/>
             </property>
             <property name="editTriggers">
              <set>QAbstractItemView::NoEditTriggers</set>
@@ -196,7 +201,7 @@ The selected path must be a folder.
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButton">
+               <widget class="QRadioButton" name="parquetButton">
                 <property name="text">
                  <string>Parquet</string>
                 </property>
