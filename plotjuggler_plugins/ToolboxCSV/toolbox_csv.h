@@ -73,5 +73,6 @@ private:
   ExportTable buildExportTable(const std::vector<std::string>& topics, double t_start,
                                double t_end) const;
 
+  bool serializeCSV(const ToolboxCSV::ExportTable& t, const QString& path);
   void debugPrintTable(const ExportTable& t);
 };

@@ -3,6 +3,9 @@
 #include "ui_toolbox_csv.h"
 
 #include <QEvent>
+#include <QFile>
+#include <QTextStream>
+#include <cmath>
 #include <QFileDialog>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
@@ -38,6 +41,7 @@ ToolboxCSV::ToolboxCSV()
   ui->endTime->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
   ui->csvButton->setChecked(true);
+  ui->relativeBox->setChecked(true);
 
   connect(ui->rangeSlider, &RangeSlider::lowerValueChanged, _widget, [this](int v) {
     QSignalBlocker b(*ui->startTime);
@@ -285,8 +289,21 @@ void ToolboxCSV::saveAll()
     }
   }
 
+  const QString path = ui->lineEditPath->text().trimmed();
+  if (path.isEmpty())
+  {
+    QMessageBox::warning(_widget, "Export", "Please select a file path before saving.");
+    return;
+  }
+
   ExportTable t = buildExportTable(selected_topics, t_start, t_end);
-  debugPrintTable(t);
+
+  const bool ok = ui->csvButton->isChecked();
+
+  if (ok)
+  {
+    serializeCSV(t, path);
+  }
 
   emit this->closed();
 }
@@ -614,6 +631,52 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
   }
 
   return table;
+}
+
+bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& t, const QString& path)
+{
+  if (path.isEmpty())
+    return false;
+  if (t.time.empty())
+    return false;
+  if (t.cols.size() != t.names.size())
+    return false;
+
+  QFile f(path);
+  if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
+    return false;
+
+  QTextStream out(&f);
+  out.setCodec("UTF-8");
+
+  out << "time";
+  for (const auto& n : t.names)
+  {
+    out << "," << QString::fromStdString(n);
+  }
+  out << "\n";
+
+  const int time_decimals = 6;
+  const int val_sig = 12;
+
+  const int rows = static_cast<int>(t.time.size());
+  const int cols = static_cast<int>(t.names.size());
+
+  for (int r = 0; r < rows; r++)
+  {
+    out << QString::number(t.time[r], 'f', time_decimals);
+
+    for (int c = 0; c < cols; c++)
+    {
+      out << ",";
+      const double v = t.cols[c][r];
+      if (std::isfinite(v))
+        out << QString::number(v, 'g', val_sig);
+    }
+    out << "\n";
+  }
+
+  return true;
 }
 
 void ToolboxCSV::debugPrintTable(const ExportTable& t)
