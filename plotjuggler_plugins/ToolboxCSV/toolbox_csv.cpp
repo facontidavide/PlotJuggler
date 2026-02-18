@@ -12,6 +12,16 @@
 #include <parquet/arrow/writer.h>
 #endif
 
+#include <algorithm>
+#include <limits>
+
+#include <QAbstractButton>
+#include <QDialogButtonBox>
+#include <QDir>
+#include <QFileInfo>
+#include <QHeaderView>
+#include <QMessageBox>
+#include <QSettings>
 #include <QEvent>
 #include <QFile>
 #include <QTextStream>
@@ -132,6 +142,8 @@ ToolboxCSV::ToolboxCSV()
 
 ToolboxCSV::~ToolboxCSV()
 {
+  delete ui;
+  delete _widget;
 }
 
 void ToolboxCSV::init(PJ::PlotDataMapRef& src_data, PJ::TransformsMap& transform_map)
@@ -321,20 +333,33 @@ void ToolboxCSV::saveAll()
 
   // Build table and serialize
   ExportTable t = buildExportTable(selected_topics, t_start, t_end);
-
-  const bool ok = ui->csvButton->isChecked();
-
-  if (ok)
+  if (t.time.empty())
   {
-    serializeCSV(t, path);
+    QMessageBox::warning(_widget, "Export", "No samples found in the selected time range.");
+    return;
+  }
+
+  const bool is_csv = ui->csvButton->isChecked();
+  bool ok = false;
+
+  if (is_csv)
+  {
+    ok = serializeCSV(t, path);
   }
   else
   {
 #if TOOLBOXCSV_WITH_PARQUET
-    serializeParquet(t, path);
+    ok = serializeParquet(t, path);
 #else
     QMessageBox::warning(_widget, "Arrow/Parquet", "Can't load Arrow/Parquet");
+    return;
 #endif
+  }
+
+  if (!ok)
+  {
+    QMessageBox::warning(_widget, "Export", "Failed to write the output file.");
+    return;
   }
 
   emit this->closed();
