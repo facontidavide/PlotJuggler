@@ -285,6 +285,9 @@ void ToolboxCSV::saveAll()
     }
   }
 
+  ExportTable t = buildExportTable(selected_topics, t_start, t_end);
+  debugPrintTable(t);
+
   emit this->closed();
 }
 
@@ -456,4 +459,187 @@ void ToolboxCSV::updateTimeRange()
   if (!getTimeRange(tmin, tmax))
     return;
   setTimeRange(tmin, tmax);
+}
+
+double ToolboxCSV::estimateMinDt(const PJ::PlotData& plot, size_t start_idx, double t_end)
+{
+  if (plot.size() < 2 || start_idx + 1 >= plot.size())
+    return 0.0;
+
+  double min_dt = std::numeric_limits<double>::max();
+  size_t last = std::min(plot.size() - 1, start_idx + 2000);
+
+  for (size_t i = start_idx + 1; i <= last; i++)
+  {
+    const double t0 = plot.at(i - 1).x;
+    const double t1 = plot.at(i).x;
+    if (t0 > t_end)
+      break;
+    const double dt = t1 - t0;
+    if (dt > 0.0 && dt < min_dt)
+      min_dt = dt;
+  }
+
+  if (min_dt == std::numeric_limits<double>::max())
+    return 0.0;
+  return min_dt;
+}
+
+ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::string>& topics,
+                                                     double t_start, double t_end) const
+{
+  using ExportTable = ToolboxCSV::ExportTable;
+  ExportTable table;
+
+  struct SeriesRef
+  {
+    std::string name;
+    const PJ::PlotData* plot;
+    size_t idx;
+  };
+
+  std::vector<SeriesRef> series;
+  series.reserve(topics.size());
+
+  for (const auto& name : topics)
+  {
+    auto it = _plot_data->numeric.find(name);
+    if (it == _plot_data->numeric.end())
+      continue;
+
+    const auto& plot = it->second;
+    if (plot.size() == 0)
+      continue;
+    if (plot.front().x > t_end)
+      continue;
+    if (plot.back().x < t_start)
+      continue;
+
+    int index = plot.getIndexFromX(t_start);
+    if (index < 0)
+      continue;
+
+    series.push_back({ name, &plot, static_cast<size_t>(index) });
+  }
+
+  if (series.empty())
+    return table;
+
+  double min_dt = 0.0;
+  {
+    double best = std::numeric_limits<double>::max();
+    for (const auto& s : series)
+    {
+      double dt = estimateMinDt(*s.plot, s.idx, t_end);
+      if (dt > 0.0 && dt < best)
+        best = dt;
+    }
+    if (best != std::numeric_limits<double>::max())
+      min_dt = best;
+  }
+
+  const double tol = (min_dt > 0.0) ? (0.5 * min_dt) : 0.0;
+
+  const size_t N = series.size();
+  table.names.reserve(N);
+  table.cols.assign(N, {});
+  for (const auto& s : series)
+    table.names.push_back(s.name);
+
+  const auto NaN = std::numeric_limits<double>::quiet_NaN();
+  std::vector<double> row_values(N, NaN);
+  std::vector<bool> row_used(N, false);
+
+  while (true)
+  {
+    bool done = true;
+    double min_time = std::numeric_limits<double>::max();
+
+    for (size_t i = 0; i < N; i++)
+    {
+      auto& s = series[i];
+      if (s.idx >= s.plot->size())
+        continue;
+
+      const auto& p = s.plot->at(s.idx);
+      if (p.x > t_end)
+        continue;
+
+      done = false;
+      if (p.x < min_time)
+        min_time = p.x;
+    }
+
+    if (done || min_time > t_end)
+      break;
+
+    std::fill(row_values.begin(), row_values.end(), NaN);
+    std::fill(row_used.begin(), row_used.end(), false);
+
+    for (size_t i = 0; i < N; i++)
+    {
+      auto& s = series[i];
+      if (s.idx >= s.plot->size())
+        continue;
+
+      const auto& p = s.plot->at(s.idx);
+      if (p.x > t_end)
+        continue;
+
+      if (tol == 0.0)
+      {
+        if (p.x == min_time)
+        {
+          row_values[i] = p.y;
+          row_used[i] = true;
+        }
+      }
+      else
+      {
+        if (std::abs(p.x - min_time) <= tol)
+        {
+          row_values[i] = p.y;
+          row_used[i] = true;
+        }
+      }
+    }
+
+    table.time.push_back(min_time);
+    for (size_t i = 0; i < N; i++)
+    {
+      table.cols[i].push_back(row_values[i]);
+      if (row_used[i])
+        series[i].idx++;
+    }
+  }
+
+  return table;
+}
+
+void ToolboxCSV::debugPrintTable(const ExportTable& t)
+{
+  std::cout << "\n=== EXPORT TABLE ===\n";
+
+  std::cout << "Columns: time ";
+  for (const auto& n : t.names)
+    std::cout << n << " ";
+  std::cout << "\n";
+
+  for (size_t r = 0; r < t.time.size(); r++)
+  {
+    std::cout << t.time[r] << " ";
+
+    for (size_t c = 0; c < t.names.size(); c++)
+    {
+      double v = t.cols[c][r];
+      if (std::isfinite(v))
+        std::cout << v << " ";
+      else
+        std::cout << "NaN ";
+    }
+    std::cout << "\n";
+  }
+
+  std::cout << "Rows: " << t.time.size() << "\n";
+  std::cout << "====================\n";
 }
