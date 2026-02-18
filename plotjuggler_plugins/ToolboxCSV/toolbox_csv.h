@@ -60,4 +60,18 @@ private:
   void saveAll();
 
   double _t0 = 0.0;
+
+  // Common structure to facilitate future exporter implementations
+  struct ExportTable
+  {
+    std::vector<std::string> names;
+    std::vector<double> time;
+    std::vector<std::vector<double>> cols;
+  };
+
+  static double estimateMinDt(const PJ::PlotData& plot, size_t start_idx, double t_end);
+  ExportTable buildExportTable(const std::vector<std::string>& topics, double t_start,
+                               double t_end) const;
+
+  void debugPrintTable(const ExportTable& t);
 };
