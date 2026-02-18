@@ -18,6 +18,7 @@
 #include <QAbstractButton>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QSet>
 #include <QFileInfo>
 #include <QHeaderView>
 #include <QMessageBox>
@@ -249,7 +250,6 @@ bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev)
   }
   else if (ev->type() == QEvent::Drop)
   {
-    // Add dropped curves as unique rows
     auto* event = static_cast<QDropEvent*>(ev);
 
     if (obj != ui->tableWidget && obj != ui->tableWidget->viewport())
@@ -257,31 +257,32 @@ bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev)
       return false;
     }
 
+    QSet<QString> existing;
+    existing.reserve(ui->tableWidget->rowCount());
+
+    for (int r = 0; r < ui->tableWidget->rowCount(); r++)
+    {
+      auto* item = ui->tableWidget->item(r, 0);
+      if (item)
+      {
+        const QString t = item->text().trimmed();
+        if (!t.isEmpty())
+          existing.insert(t);
+      }
+    }
+
     for (const QString& raw : _dragging_curves)
     {
-      QString topic = raw.trimmed();
+      const QString topic = raw.trimmed();
       if (topic.isEmpty())
-      {
         continue;
-      }
 
-      bool exists = false;
-      for (int r = 0; r < ui->tableWidget->rowCount(); r++)
-      {
-        QTableWidgetItem* item = ui->tableWidget->item(r, 0);
-        if (item && item->text() == topic)
-        {
-          exists = true;
-          break;
-        }
-      }
-
-      if (exists)
-      {
+      if (existing.contains(topic))
         continue;
-      }
 
-      int row = ui->tableWidget->rowCount();
+      existing.insert(topic);
+
+      const int row = ui->tableWidget->rowCount();
       ui->tableWidget->insertRow(row);
       ui->tableWidget->setItem(row, 0, new QTableWidgetItem(topic));
     }
