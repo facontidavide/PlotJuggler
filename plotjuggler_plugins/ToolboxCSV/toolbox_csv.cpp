@@ -674,6 +674,9 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
   return table;
 }
 
+// Serialize ExportTable to a plain CSV file.
+// Layout: first column "time", followed by one column per topic.
+// Missing or non-finite values are written as empty cells.
 bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& t, const QString& path)
 {
   // Write a simple CSV: time + one column per topic (empty cell for missing/NaN)
@@ -722,12 +725,16 @@ bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& t, const QString& p
 }
 
 #if TOOLBOXCSV_WITH_PARQUET
+// Build an Arrow Float64 array from a std::vector<double>.
+// Finite values are appended normally; non-finite values (NaN/Inf)
+// are written as NULL so Parquet can represent missing data explicitly.
 static arrow::Result<std::shared_ptr<arrow::Array>> makeDoubleArray(const std::vector<double>& v)
 {
   arrow::DoubleBuilder b;
   ARROW_RETURN_NOT_OK(b.Reserve(static_cast<int64_t>(v.size())));
   for (double x : v)
   {
+    // AppendNull() instead of raw NaN to ensure proper null semantics in Parquet.
     if (std::isfinite(x))
       ARROW_RETURN_NOT_OK(b.Append(x));
     else
@@ -738,6 +745,9 @@ static arrow::Result<std::shared_ptr<arrow::Array>> makeDoubleArray(const std::v
   return arr;
 }
 
+// Serialize the merged ExportTable to a Parquet file using Arrow.
+// Each column is stored as Float64, with missing values encoded as NULL.
+// Schema layout: "time" + one column per selected topic.
 bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QString& path)
 {
   if (path.isEmpty())
