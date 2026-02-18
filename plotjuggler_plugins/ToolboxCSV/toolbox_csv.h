@@ -1,7 +1,10 @@
 #pragma once
 
-#include <QtPlugin>
+#include <string>
+#include <vector>
 #include <thread>
+
+#include <QtPlugin>
 #include "PlotJuggler/toolbox_base.h"
 #include "PlotJuggler/plotwidget_base.h"
 
