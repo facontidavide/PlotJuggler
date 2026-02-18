@@ -2,6 +2,16 @@
 #include "PlotJuggler/svg_util.h"
 #include "ui_toolbox_csv.h"
 
+#if TOOLBOXCSV_WITH_PARQUET
+#ifdef signals
+#undef signals
+#endif
+
+#include <arrow/api.h>
+#include <arrow/io/api.h>
+#include <parquet/arrow/writer.h>
+#endif
+
 #include <QEvent>
 #include <QFile>
 #include <QTextStream>
@@ -317,6 +327,14 @@ void ToolboxCSV::saveAll()
   if (ok)
   {
     serializeCSV(t, path);
+  }
+  else
+  {
+#if TOOLBOXCSV_WITH_PARQUET
+    serializeParquet(t, path);
+#else
+    QMessageBox::warning(_widget, "Arrow/Parquet", "Can't load Arrow/Parquet");
+#endif
   }
 
   emit this->closed();
@@ -702,6 +720,70 @@ bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& t, const QString& p
 
   return true;
 }
+
+#if TOOLBOXCSV_WITH_PARQUET
+static arrow::Result<std::shared_ptr<arrow::Array>> makeDoubleArray(const std::vector<double>& v)
+{
+  arrow::DoubleBuilder b;
+  ARROW_RETURN_NOT_OK(b.Reserve(static_cast<int64_t>(v.size())));
+  for (double x : v)
+  {
+    if (std::isfinite(x))
+      ARROW_RETURN_NOT_OK(b.Append(x));
+    else
+      ARROW_RETURN_NOT_OK(b.AppendNull());
+  }
+  std::shared_ptr<arrow::Array> arr;
+  ARROW_RETURN_NOT_OK(b.Finish(&arr));
+  return arr;
+}
+
+bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QString& path)
+{
+  if (path.isEmpty())
+    return false;
+  if (t.time.empty())
+    return false;
+  if (t.cols.size() != t.names.size())
+    return false;
+
+  std::vector<std::shared_ptr<arrow::Field>> fields;
+  std::vector<std::shared_ptr<arrow::Array>> arrays;
+
+  fields.push_back(arrow::field("time", arrow::float64()));
+  auto time_arr_res = makeDoubleArray(t.time);
+  if (!time_arr_res.ok())
+    return false;
+  arrays.push_back(*time_arr_res);
+
+  for (size_t i = 0; i < t.names.size(); i++)
+  {
+    fields.push_back(arrow::field(t.names[i], arrow::float64()));
+    auto arr_res = makeDoubleArray(t.cols[i]);
+    if (!arr_res.ok())
+      return false;
+    arrays.push_back(*arr_res);
+  }
+
+  auto schema = std::make_shared<arrow::Schema>(fields);
+  auto table = arrow::Table::Make(schema, arrays);
+
+  auto outfile_res = arrow::io::FileOutputStream::Open(path.toStdString());
+  if (!outfile_res.ok())
+    return false;
+  std::shared_ptr<arrow::io::FileOutputStream> outfile = *outfile_res;
+
+  parquet::WriterProperties::Builder pb;
+  std::shared_ptr<parquet::WriterProperties> props = pb.build();
+
+  auto st =
+      parquet::arrow::WriteTable(*table, arrow::default_memory_pool(), outfile, 1024 * 64, props);
+  if (!st.ok())
+    return false;
+
+  return true;
+}
+#endif
 
 void ToolboxCSV::debugPrintTable(const ExportTable& t)
 {

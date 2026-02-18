@@ -8,6 +8,9 @@ add_library(ToolboxCSV SHARED
   ${UI_SRC}
 )
 
+find_package(Arrow CONFIG QUIET)
+find_package(Parquet CONFIG QUIET)
+
 target_link_libraries(
   ToolboxCSV PRIVATE
   Qt5::Widgets
@@ -15,6 +18,13 @@ target_link_libraries(
   plotjuggler_base
   plotjuggler_qwt
 )
+
+if(Arrow_FOUND AND Parquet_FOUND)
+  target_link_libraries(ToolboxCSV PRIVATE Arrow::arrow_shared Parquet::parquet_shared)
+  target_compile_definitions(ToolboxCSV PRIVATE TOOLBOXCSV_WITH_PARQUET=1)
+else()
+  target_compile_definitions(ToolboxCSV PRIVATE TOOLBOXCSV_WITH_PARQUET=0)
+endif()
 
 target_compile_definitions(ToolboxCSV PRIVATE QT_PLUGIN)
 
