@@ -3,11 +3,12 @@
 #include "fmt/core.h"
 #include <queue>
 #include <algorithm>
-#include <unordered_map>
-#include <tuple>
-#include <vector>
+#include <limits>
 #include <string>
+#include <tuple>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 using namespace PJ;
 using namespace RosMsgParser;
@@ -16,6 +17,162 @@ static ROSType quaternion_type(Msg::Quaternion::id());
 constexpr double RAD_TO_DEG = 180.0 / M_PI;
 
 static std::unordered_map<uint64_t, DataTamerParser::Schema> _global_data_tamer_schemas;
+
+namespace
+{
+struct VariableArrayRef
+{
+  size_t slot = 0;
+  // Unique array context path for one variable-length dimension.
+  // Example: for a[2]/b[5]/x this may be "a" and "a[2]/b".
+  std::string group_key;
+};
+
+std::vector<VariableArrayRef> FindVariableArrayRefs(const RosMsgParser::FieldsVector& key)
+{
+  std::vector<VariableArrayRef> refs;
+  refs.reserve(key.index_array.size());
+
+  std::string path;
+  size_t array_slot = 0;
+  for (size_t field_index = 0; field_index < key.fields.size(); field_index++)
+  {
+    const auto* field = key.fields[field_index];
+    const bool is_root = (field_index == 0);
+
+    if (!is_root)
+    {
+      path += "/";
+    }
+    path += field->name();
+
+    if (!is_root && field->isArray())
+    {
+      if (field->arraySize() == -1)
+      {
+        refs.push_back({ array_slot, path });
+      }
+      if (array_slot < key.index_array.size())
+      {
+        path += "[" + std::to_string(key.index_array[array_slot]) + "]";
+      }
+      array_slot++;
+    }
+  }
+  return refs;
+}
+
+using LastIndexByPath = std::unordered_map<std::string, uint16_t>;
+
+void UpdateLastIndexCache(const RosMsgParser::FieldsVector& key, LastIndexByPath& last_indices)
+{
+  const auto refs = FindVariableArrayRefs(key);
+  for (const auto& ref : refs)
+  {
+    if (ref.slot >= key.index_array.size())
+    {
+      continue;
+    }
+    const auto index = key.index_array[ref.slot];
+    auto it = last_indices.find(ref.group_key);
+    if (it == last_indices.end() || index > it->second)
+    {
+      last_indices[ref.group_key] = index;
+    }
+  }
+}
+
+std::string BuildAliasName(const RosMsgParser::FieldsVector& key,
+                           const std::vector<size_t>& bit_index_by_slot, size_t mask)
+{
+  std::string alias_name;
+  alias_name.reserve(128);
+
+  size_t array_slot = 0;
+  for (size_t field_index = 0; field_index < key.fields.size(); field_index++)
+  {
+    const auto* field = key.fields[field_index];
+    const bool is_root = (field_index == 0);
+
+    if (!is_root)
+    {
+      alias_name += '/';
+    }
+    alias_name += field->name();
+
+    if (!is_root && field->isArray())
+    {
+      alias_name += '[';
+      if (array_slot < key.index_array.size())
+      {
+        const size_t bit = bit_index_by_slot[array_slot];
+        if (bit != std::numeric_limits<size_t>::max() && (mask & (size_t(1) << bit)) != 0)
+        {
+          alias_name += "-1";
+        }
+        else
+        {
+          alias_name += std::to_string(key.index_array[array_slot]);
+        }
+      }
+      alias_name += ']';
+      array_slot++;
+    }
+  }
+
+  return alias_name;
+}
+
+std::vector<std::string> BuildLastElementAliasNames(const RosMsgParser::FieldsVector& key,
+                                                    const LastIndexByPath& last_indices)
+{
+  std::vector<size_t> last_slots;
+  const auto refs = FindVariableArrayRefs(key);
+  for (const auto& ref : refs)
+  {
+    if (ref.slot >= key.index_array.size())
+    {
+      continue;
+    }
+    auto it = last_indices.find(ref.group_key);
+    if (it != last_indices.end() && key.index_array[ref.slot] == it->second)
+    {
+      last_slots.push_back(ref.slot);
+    }
+  }
+  if (last_slots.empty() || last_slots.size() >= std::numeric_limits<size_t>::digits)
+  {
+    return {};
+  }
+
+  const size_t invalid_bit = std::numeric_limits<size_t>::max();
+  std::vector<size_t> bit_index_by_slot(key.index_array.size(), invalid_bit);
+  for (size_t bit = 0; bit < last_slots.size(); bit++)
+  {
+    const size_t slot = last_slots[bit];
+    if (slot < bit_index_by_slot.size())
+    {
+      bit_index_by_slot[slot] = bit;
+    }
+  }
+
+  std::vector<std::string> aliases;
+  // For nested arrays emit all non-empty combinations, so both partial and full
+  // aliases exist, e.g. a[-1]/b[2], a[1]/b[-1], a[-1]/b[-1].
+  const size_t combinations = size_t(1) << last_slots.size();
+  aliases.reserve(combinations - 1);
+
+  for (size_t mask = 1; mask < combinations; mask++)
+  {
+    aliases.push_back(BuildAliasName(key, bit_index_by_slot, mask));
+  }
+
+  std::sort(aliases.begin(), aliases.end());
+  aliases.erase(std::unique(aliases.begin(), aliases.end()), aliases.end());
+  return aliases;
+}
+
+}  // namespace
 
 ParserROS::ParserROS(const std::string& topic_name, const std::string& type_name,
                      const std::string& schema, RosMsgParser::Deserializer* deserializer,
@@ -132,36 +289,69 @@ bool ParserROS::parseMessage(const PJ::MessageRef serialized_msg, double& timest
   }
 
   std::string series_name;
+  LastIndexByPath last_index_by_array_path;
+
+  // First pass over all flattened fields: compute last index per dynamic array context.
+  for (const auto& name_entry : _flat_msg.name)
+  {
+    UpdateLastIndexCache(name_entry.first, last_index_by_array_path);
+  }
+  for (const auto& value_entry : _flat_msg.value)
+  {
+    UpdateLastIndexCache(value_entry.first, last_index_by_array_path);
+  }
 
   for (const auto& [key, str] : _flat_msg.name)
   {
     key.toStr(series_name);
     StringSeries& data = getStringSeries(series_name);
     data.pushBack({ timestamp, str });
+
+    const auto alias_names = BuildLastElementAliasNames(key, last_index_by_array_path);
+    for (const auto& alias_name : alias_names)
+    {
+      auto& alias_data = getStringSeries(alias_name);
+      alias_data.pushBack({ timestamp, str });
+    }
   }
 
   for (const auto& [key, value] : _flat_msg.value)
   {
     key.toStr(series_name);
     PlotData& data = getSeries(series_name);
+    const auto alias_names = BuildLastElementAliasNames(key, last_index_by_array_path);
+
+    auto push_aliases = [&](double converted_value) {
+      for (const auto& alias_name : alias_names)
+      {
+        auto& alias_data = getSeries(alias_name);
+        alias_data.pushBack({ timestamp, converted_value });
+      }
+    };
 
     if (!_strict_truncation_check)
     {
       // bypass the truncation check
       if (value.getTypeID() == BuiltinType::INT64)
       {
-        data.pushBack({ timestamp, double(value.convert<int64_t>()) });
+        const double converted = static_cast<double>(value.convert<int64_t>());
+        data.pushBack({ timestamp, converted });
+        push_aliases(converted);
         continue;
       }
       if (value.getTypeID() == BuiltinType::UINT64)
       {
-        data.pushBack({ timestamp, double(value.convert<uint64_t>()) });
+        const double converted = static_cast<double>(value.convert<uint64_t>());
+        data.pushBack({ timestamp, converted });
+        push_aliases(converted);
         continue;
       }
     }
     try
     {
-      data.pushBack({ timestamp, value.convert<double>() });
+      const double converted = value.convert<double>();
+      data.pushBack({ timestamp, converted });
+      push_aliases(converted);
     }
     catch (RangeException& ex)
     {

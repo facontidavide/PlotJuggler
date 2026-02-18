@@ -115,7 +115,7 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg, double& times
       {
         if (clampLargeArray())
         {
-          count = std::max(count, maxArraySize());
+          count = std::min(count, maxArraySize());
         }
         else
         {
@@ -125,6 +125,9 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg, double& times
 
       for (unsigned index = 0; index < count; index++)
       {
+        const bool emit_back_alias = repeated && !field->is_map() && (index + 1 == count);
+        const std::string back_alias_suffix = emit_back_alias ? "[-1]" : "";
+
         if (repeated)
         {
           suffix = fmt::format("[{}]", index);
@@ -181,6 +184,11 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg, double& times
 
             auto& series = this->getStringSeries(key + suffix);
             series.pushBack({ timestamp, std::string(tmp->name()) });
+            if (emit_back_alias)
+            {
+              auto& back_series = this->getStringSeries(key + back_alias_suffix);
+              back_series.pushBack({ timestamp, std::string(tmp->name()) });
+            }
             is_double = false;
           }
           break;
@@ -195,6 +203,11 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg, double& times
             }
             auto& series = this->getStringSeries(key + suffix);
             series.pushBack({ timestamp, tmp });
+            if (emit_back_alias)
+            {
+              auto& back_series = this->getStringSeries(key + back_alias_suffix);
+              back_series.pushBack({ timestamp, tmp });
+            }
             is_double = false;
           }
           break;
@@ -238,6 +251,10 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg, double& times
               }
             }
             ParseImpl(new_msg, key + suffix, field->is_map());
+            if (emit_back_alias)
+            {
+              ParseImpl(new_msg, key + back_alias_suffix, field->is_map());
+            }
 
             is_double = false;
           }
@@ -248,6 +265,11 @@ bool ProtobufParser::parseMessage(const MessageRef serialized_msg, double& times
         {
           auto& series = this->getSeries(key + suffix);
           series.pushBack({ timestamp, value });
+          if (emit_back_alias)
+          {
+            auto& back_series = this->getSeries(key + back_alias_suffix);
+            back_series.pushBack({ timestamp, value });
+          }
         }
       }
     }

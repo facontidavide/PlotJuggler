@@ -376,7 +376,7 @@ void CurveListPanel::refreshValues()
 
 QString StringifyArray(QString str)
 {
-  static const QRegExp rx("(\\[\\d+\\])");
+  static const QRegExp rx("(\\[-?\\d+\\])");
   int pos = 0;
   std::vector<std::pair<int, int>> index_positions;
 
