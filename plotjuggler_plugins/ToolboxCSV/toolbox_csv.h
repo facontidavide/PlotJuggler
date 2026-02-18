@@ -87,5 +87,6 @@ private:
                                double t_end) const;
 
   bool serializeCSV(const ToolboxCSV::ExportTable& t, const QString& path);
+  bool serializeParquet(const ToolboxCSV::ExportTable& t, const QString& path);
   void debugPrintTable(const ExportTable& t);
 };
