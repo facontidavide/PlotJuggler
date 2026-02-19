@@ -202,6 +202,9 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
   {
     return false;
   }
+
+  ui->listWidgetSeries->clear();
+
   infile = result.ValueOrDie();
 
   // Create Arrow FileReader
