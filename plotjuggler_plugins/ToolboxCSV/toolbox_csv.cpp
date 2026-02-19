@@ -334,7 +334,7 @@ void ToolboxCSV::saveAll()
 
   // Build table and serialize
   const bool do_split = ui->checkBoxTime->isChecked();
-  const double gap_sec = 60.0;
+  const double gap_sec = 10000.0;
 
   if (!do_split)
   {
