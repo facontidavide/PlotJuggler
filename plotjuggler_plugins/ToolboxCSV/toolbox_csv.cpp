@@ -767,26 +767,35 @@ bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& t, const QString& p
 // Build an Arrow Float64 array from a std::vector<double>.
 // Finite values are appended normally; non-finite values (NaN/Inf)
 // are written as NULL so Parquet can represent missing data explicitly.
-static arrow::Result<std::shared_ptr<arrow::Array>> makeDoubleArray(const std::vector<double>& v)
+static arrow::Result<std::shared_ptr<arrow::Array>>
+makeDoubleArray(const std::vector<double>& v, const std::vector<uint8_t>& present)
 {
   arrow::DoubleBuilder b;
   ARROW_RETURN_NOT_OK(b.Reserve(static_cast<int64_t>(v.size())));
-  for (double x : v)
+
+  if (present.size() != v.size())
+    return arrow::Status::Invalid("size mismatch");
+
+  for (size_t i = 0; i < v.size(); i++)
   {
-    // AppendNull() instead of raw NaN to ensure proper null semantics in Parquet.
-    if (std::isfinite(x))
-      ARROW_RETURN_NOT_OK(b.Append(x));
-    else
-      ARROW_RETURN_NOT_OK(b.AppendNull());
+    if (!present[i])
+    {
+      ARROW_RETURN_NOT_OK(b.AppendNull());  // No sample -> Null
+      continue;
+    }
+
+    const double x = v[i];
+    ARROW_RETURN_NOT_OK(b.Append(x));  // Nan sample -> Nan
   }
+
   std::shared_ptr<arrow::Array> arr;
   ARROW_RETURN_NOT_OK(b.Finish(&arr));
   return arr;
 }
 
 // Serialize the merged ExportTable to a Parquet file using Arrow.
-// Each column is stored as Float64, with missing values encoded as NULL.
-// Schema layout: "time" + one column per selected topic.
+// Each column is stored as Float64, with missing values encoded as has_value==0/1 ->
+// Null/Value(inf/Nan) Schema layout: "time" + one column per selected topic.
 bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QString& path)
 {
   if (path.isEmpty())
@@ -800,7 +809,9 @@ bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QStrin
   std::vector<std::shared_ptr<arrow::Array>> arrays;
 
   fields.push_back(arrow::field("time", arrow::float64()));
-  auto time_arr_res = makeDoubleArray(t.time);
+
+  auto time_present = std::vector<uint8_t>(t.time.size(), 1);
+  auto time_arr_res = makeDoubleArray(t.time, time_present);
   if (!time_arr_res.ok())
     return false;
   arrays.push_back(*time_arr_res);
@@ -808,7 +819,7 @@ bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QStrin
   for (size_t i = 0; i < t.names.size(); i++)
   {
     fields.push_back(arrow::field(t.names[i], arrow::float64()));
-    auto arr_res = makeDoubleArray(t.cols[i]);
+    auto arr_res = makeDoubleArray(t.cols[i], t.has_value[i]);
     if (!arr_res.ok())
       return false;
     arrays.push_back(*arr_res);
@@ -833,32 +844,3 @@ bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QStrin
   return true;
 }
 #endif
-
-void ToolboxCSV::debugPrintTable(const ExportTable& t)
-{
-  // Debug helper: dump the built table to stdout
-  std::cout << "\n=== EXPORT TABLE ===\n";
-
-  std::cout << "Columns: time ";
-  for (const auto& n : t.names)
-    std::cout << n << " ";
-  std::cout << "\n";
-
-  for (size_t r = 0; r < t.time.size(); r++)
-  {
-    std::cout << t.time[r] << " ";
-
-    for (size_t c = 0; c < t.names.size(); c++)
-    {
-      double v = t.cols[c][r];
-      if (std::isfinite(v))
-        std::cout << v << " ";
-      else
-        std::cout << "NaN ";
-    }
-    std::cout << "\n";
-  }
-
-  std::cout << "Rows: " << t.time.size() << "\n";
-  std::cout << "====================\n";
-}
