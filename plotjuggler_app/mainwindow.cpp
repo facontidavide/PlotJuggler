@@ -2061,7 +2061,7 @@ bool MainWindow::loadLayoutFromFile(QString filename)
     }
     // A custom plot may depend on other custom plots.
     // Use topological sort to respect nested dependencies (e.g. A -> B -> C).
-      // Build a map from alias_name to index
+    // Build a map from alias_name to index for quick lookup
     std::map<QString, size_t> name_to_index;
     for (size_t i = 0; i < snippets.size(); i++)
     {
@@ -2106,7 +2106,7 @@ bool MainWindow::loadLayoutFromFile(QString filename)
     {
       size_t current = queue.front();
       queue.pop();
-      sorted_snippets.push_back(snippets[current]);
+      sorted_snippets.push_back(std::move(snippets[current]));
 
       // Process all dependents
       for (size_t dependent : dependents[current])
@@ -2119,13 +2119,18 @@ bool MainWindow::loadLayoutFromFile(QString filename)
       }
     }
 
-    // Check if all snippets were processed (detect cycles)
-    if (sorted_snippets.size() != snippets.size())
+    // If there are remaining snippets (circular dependency), append them as-is
+    if (sorted_snippets.size() < snippets.size())
     {
       QMessageBox::warning(this, tr("Exception"),
-                           tr("Cyclic dependency detected in custom equations. "
-                              "Equations will be loaded in an arbitrary order, which may cause errors."));
-      sorted_snippets = snippets;
+                            tr("Cyclic dependency detected in custom equations."));
+      for (size_t i = 0; i < snippets.size(); i++)
+      {
+        if (in_degree[i] != 0)
+        {
+          sorted_snippets.push_back(std::move(snippets[i]));
+        }
+      }
     }
 
     for (const auto& [snippet, custom_eq] : sorted_snippets)
