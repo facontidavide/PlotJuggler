@@ -619,11 +619,29 @@ void RangeSlider::setRangeReal(double minV, double maxV, int decimals)
 
   mMinReal = minV;
   mMaxReal = maxV;
-  mDecimals = std::max(0, decimals);
-  mScale = pow10i(mDecimals);
+
+  double span = mMaxReal - mMinReal;
+  if (span <= 0.0)
+    span = 1.0;
+
+  int d = std::max(0, decimals);
+  while (d > 0)
+  {
+    long long s = 1;
+    for (int i = 0; i < d; i++)
+      s *= 10;
+    if (span * double(s) <= double(std::numeric_limits<int>::max()))
+      break;
+    d--;
+  }
+
+  mDecimals = d;
+  mScale = 1;
+  for (int i = 0; i < mDecimals; i++)
+    mScale *= 10;
 
   int imin = 0;
-  int imax = std::max(1, int((mMaxReal - mMinReal) * mScale + 0.5));
+  int imax = std::max(1, int(span * double(mScale) + 0.5));
 
   setMinimum(imin);
   setMaximum(imax);
