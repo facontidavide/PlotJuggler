@@ -41,14 +41,14 @@ ToolboxCSV::ToolboxCSV()
 
   ui->setupUi(_widget);
 
-  // Enable drag & drop into the table
+  // Enable drag & drop into the table.
   ui->tableWidget->installEventFilter(this);
   ui->tableWidget->viewport()->installEventFilter(this);
 
   // Close/cancel
   connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &ToolboxCSV::onClosed);
 
-  // Time range controls (initial dummy range; real range computed from selected topics)
+  // Initialize time controls with a dummy range; real range computed from selected topics.
   ui->rangeSlider->setOptions(RangeSlider::DoubleHandles);
   ui->rangeSlider->setRangeReal(0.0, 1.0, 2);
   ui->rangeSlider->setShowTicks(false);
@@ -62,11 +62,11 @@ ToolboxCSV::ToolboxCSV()
   ui->endTime->setDecimals(2);
   ui->endTime->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
-  // Default export mode
+  // Default export mode.
   ui->csvButton->setChecked(true);
   ui->relativeBox->setChecked(true);
 
-  // Slider -> SpinBoxes sync
+  // Slider -> SpinBox sync (prevent feedback loops).
   connect(ui->rangeSlider, &RangeSlider::lowerValueChanged, _widget, [this](int v) {
     QSignalBlocker b(*ui->startTime);
     ui->startTime->setValue(ui->rangeSlider->toReal(v));
@@ -77,7 +77,7 @@ ToolboxCSV::ToolboxCSV()
     ui->endTime->setValue(ui->rangeSlider->toReal(v));
   });
 
-  // SpinBoxes -> Slider sync
+  // SpinBox -> Slider sync (prevent recursive updates).
   connect(ui->startTime, QOverload<double>::of(&QDoubleSpinBox::valueChanged), _widget,
           [this](double t) {
             QSignalBlocker b(*ui->rangeSlider);
@@ -90,7 +90,7 @@ ToolboxCSV::ToolboxCSV()
             ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(t));
           });
 
-  // Remove selected topics (delete bottom-up to keep row indices valid)
+  // Remove selected rows bottom-up to keep indices valid.
   connect(ui->removeButton, &QToolButton::clicked, _widget, [this]() {
     auto* table = ui->tableWidget;
     QModelIndexList rows = table->selectionModel()->selectedRows();
@@ -111,17 +111,17 @@ ToolboxCSV::ToolboxCSV()
     updateTimeRange();
   });
 
-  // Clear all topics
+  // Clear all topics.
   connect(ui->clearButton, &QToolButton::clicked, _widget, [this]() {
     ui->tableWidget->setRowCount(0);
     updateTimeControlsEnabled();
     updateTimeRange();
   });
 
-  // Pick output file
+  // Pick output file.
   connect(ui->toolButton, &QToolButton::clicked, this, &ToolboxCSV::on_toolButton_clicked);
 
-  // Reset output path when switching format
+  // Reset output path when switching format.
   connect(ui->csvButton, &QRadioButton::toggled, _widget, [this](bool checked) {
     if (!checked)
       return;
@@ -134,10 +134,10 @@ ToolboxCSV::ToolboxCSV()
     ui->lineEditPath->clear();
   });
 
-  // Recompute visible time range when switching relative/absolute
+  // Recompute visible time range when switching relative/absolute.
   connect(ui->relativeBox, &QCheckBox::toggled, this, &ToolboxCSV::updateTimeRange);
 
-  // Export
+  // Exporter.
   connect(ui->saveButton, &QPushButton::clicked, this, &ToolboxCSV::saveAll);
 }
 
@@ -160,14 +160,14 @@ std::pair<QWidget*, PJ::ToolboxPlugin::WidgetType> ToolboxCSV::providedWidget() 
 
 bool ToolboxCSV::onShowWidget()
 {
-  // Load icons based on current theme
+  // Load icons based on current theme.
   QSettings settings;
   QString theme = settings.value("StyleSheet::theme", "light").toString();
 
   ui->clearButton->setIcon(LoadSvg(":/resources/svg/clear.svg", theme));
   ui->saveButton->setIcon(LoadSvg(":/resources/svg/save.svg", theme));
 
-  // Small UI polish
+  // Small UI polish.
   auto* corner = ui->tableWidget->findChild<QAbstractButton*>();
   if (corner)
   {
@@ -183,7 +183,7 @@ bool ToolboxCSV::onShowWidget()
 
   updateTimeControlsEnabled();
 
-  // Check if there is new info who change the time
+  // Recompute time range on show in case selected topics changed.
   updateTimeRange();
 
   return true;
@@ -193,11 +193,12 @@ bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev)
 {
   if (ev->type() == QEvent::DragEnter)
   {
-    // Accept PlotJuggler curve drags onto the table
+    // Accept PlotJuggler curve drags onto the table.
     auto* event = static_cast<QDragEnterEvent*>(ev);
     const QMimeData* mimeData = event->mimeData();
     const QStringList mimeFormats = mimeData->formats();
 
+    // Parse PlotJuggler curve list from drag MIME payload.
     for (const QString& format : mimeFormats)
     {
       if (format != "curveslist/add_curve")
@@ -299,7 +300,7 @@ bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev)
 
 void ToolboxCSV::saveAll()
 {
-  // Convert UI times to absolute time if needed
+  // Convert relative time range to absolute time if needed.
   double t_start = ui->startTime->value();
   double t_end = ui->endTime->value();
 
@@ -309,7 +310,7 @@ void ToolboxCSV::saveAll()
     t_end += _t0;
   }
 
-  // Collect selected topics
+  // Collect selected topic names from the UI table.
   std::vector<std::string> selected_topics;
   for (int r = 0; r < ui->tableWidget->rowCount(); r++)
   {
@@ -324,7 +325,7 @@ void ToolboxCSV::saveAll()
     }
   }
 
-  // Validate output path
+  // Validate output path.
   const QString path = ui->lineEditPath->text().trimmed();
   if (path.isEmpty())
   {
@@ -335,6 +336,7 @@ void ToolboxCSV::saveAll()
   const bool do_split = ui->checkBoxTime->isChecked();
   const double gap_sec = 10000.0;
 
+  // Optionally split export into segments separated by large time gaps.
   auto ranges = getGlobalRangesByGap(selected_topics, t_start, t_end, gap_sec);
 
   if (!do_split || ranges.size() <= 1)
@@ -430,7 +432,7 @@ void ToolboxCSV::onClosed()
 
 void ToolboxCSV::on_toolButton_clicked()
 {
-  // Persist last used file/dir per format
+  // Persist last used file/dir per format.
   QSettings settings;
 
   const bool is_csv = ui->csvButton->isChecked();
@@ -483,9 +485,9 @@ void ToolboxCSV::on_toolButton_clicked()
   ui->lineEditPath->setText(file_path);
 }
 
+// Disable time and export controls when no topics are selected.
 void ToolboxCSV::updateTimeControlsEnabled()
 {
-  // Disable time/path/export controls when no topics are selected
   const bool has_data = ui->tableWidget->rowCount() > 0;
   ui->startTime->setEnabled(has_data);
   ui->endTime->setEnabled(has_data);
@@ -494,9 +496,9 @@ void ToolboxCSV::updateTimeControlsEnabled()
   ui->saveButton->setEnabled(has_data);
 }
 
+// Compute global [tmin, tmax] across selected numeric topics.
 bool ToolboxCSV::getTimeRange(double& tmin, double& tmax) const
 {
-  // Compute global [tmin, tmax] over the currently selected topics
   bool any = false;
 
   for (int r = 0; r < ui->tableWidget->rowCount(); r++)
@@ -540,9 +542,10 @@ bool ToolboxCSV::getTimeRange(double& tmin, double& tmax) const
   return true;
 }
 
+// Update UI time range in relative or absolute mode.
 void ToolboxCSV::setTimeRange(double tmin, double tmax)
 {
-  // Update slider/spinboxes with either relative time (starting at 0) or absolute time
+  // Update slider/spinboxes with either relative time (starting at 0) or absolute time.
   const bool relative = ui->relativeBox->isChecked();
   const int decimals = 3;
 
@@ -593,13 +596,13 @@ void ToolboxCSV::updateTimeRange()
 {
   double tmin, tmax;
   if (!getTimeRange(tmin, tmax))
-    return;
+    return;  // No valid topics -> keep current UI range
   setTimeRange(tmin, tmax);
 }
 
+// Estimate local minimum dt to derive adaptive merge tolerance.
 double ToolboxCSV::estimateMinDt(const PJ::PlotData& plot, size_t start_idx, double t_end)
 {
-  // Estimate a robust "minimum dt" from a limited window (used to build a safe merge tolerance)
   if (plot.size() < 2 || start_idx + 1 >= plot.size())
     return 0.0;
 
@@ -622,10 +625,10 @@ double ToolboxCSV::estimateMinDt(const PJ::PlotData& plot, size_t start_idx, dou
   return min_dt;
 }
 
+// Merge multiple time series into a row-aligned table using adaptive tolerance.
 ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::string>& topics,
                                                      double t_start, double t_end) const
 {
-  // Merge multiple series into a row-based table by time, with adaptive tolerance
   using ExportTable = ToolboxCSV::ExportTable;
   ExportTable table;
 
@@ -663,7 +666,7 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
   if (series.empty())
     return table;
 
-  // Compute tolerance from the minimum observed sample period
+  // Compute tolerance from the minimum observed sample period.
   double min_dt = 0.0;
   {
     double best = std::numeric_limits<double>::max();
@@ -677,6 +680,7 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
       min_dt = best;
   }
 
+  // Tolerance = 0.5 * min_dt to avoid merging consecutive distinct samples.
   const double tol = (min_dt > 0.0) ? (0.5 * min_dt) : 0.0;
 
   const size_t N = series.size();
@@ -688,11 +692,13 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
 
   const auto NaN = std::numeric_limits<double>::quiet_NaN();
   std::vector<double> row_values(N, NaN);
+
+  // Track sample presence separately from numeric value (handles NaN correctly).
   std::vector<bool> row_used(N, false);
 
   while (true)
   {
-    // Find next row time as the minimum current timestamp among series
+    // Find next row time as the minimum current timestamp among series.
     bool done = true;
     double min_time = std::numeric_limits<double>::max();
 
@@ -717,7 +723,7 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
     std::fill(row_values.begin(), row_values.end(), NaN);
     std::fill(row_used.begin(), row_used.end(), false);
 
-    // Fill values for this row (within tolerance), then advance only the series that contributed
+    // Fill values for this row (within tolerance), then advance only the series that contributed.
     for (size_t i = 0; i < N; i++)
     {
       auto& s = series[i];
@@ -761,10 +767,9 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
 
 // Serialize ExportTable to a plain CSV file.
 // Layout: first column "time", followed by one column per topic.
-// Missing or non-finite values are written as empty cells.
 bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& t, const QString& path)
 {
-  // Write a simple CSV: time + one column per topic (empty cell for missing/NaN)
+  // Write CSV: empty cell for missing samples; explicit NaN/Inf when present.
   if (path.isEmpty())
     return false;
   if (t.time.empty())
@@ -801,7 +806,7 @@ bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& t, const QString& p
       out << ",";
       if (t.has_value[c][r] == 0)
       {
-        // No sample
+        // Missing sample -> empty cell
       }
       else
       {
@@ -822,8 +827,7 @@ bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& t, const QString& p
 
 #if TOOLBOXCSV_WITH_PARQUET
 // Build an Arrow Float64 array from a std::vector<double>.
-// Finite values are appended normally; non-finite values (NaN/Inf)
-// are written as NULL so Parquet can represent missing data explicitly.
+// NULL represents missing sample; NaN/Inf preserved as Float64 values.
 static arrow::Result<std::shared_ptr<arrow::Array>>
 makeDoubleArray(const std::vector<double>& v, const std::vector<uint8_t>& present)
 {
@@ -842,7 +846,7 @@ makeDoubleArray(const std::vector<double>& v, const std::vector<uint8_t>& presen
     }
 
     const double x = v[i];
-    ARROW_RETURN_NOT_OK(b.Append(x));  // Nan sample -> Nan
+    ARROW_RETURN_NOT_OK(b.Append(x));  // Present sample (may be NaN/Inf)
   }
 
   std::shared_ptr<arrow::Array> arr;
@@ -851,8 +855,7 @@ makeDoubleArray(const std::vector<double>& v, const std::vector<uint8_t>& presen
 }
 
 // Serialize the merged ExportTable to a Parquet file using Arrow.
-// Each column is stored as Float64, with missing values encoded as has_value==0/1 ->
-// Null/Value(inf/Nan) Schema layout: "time" + one column per selected topic.
+// Each column is stored as Float64.
 bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QString& path)
 {
   if (path.isEmpty())
@@ -902,6 +905,7 @@ bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QStrin
 }
 #endif
 
+// Detect continuous time segments separated by gaps larger than gap_sec.
 std::vector<std::pair<double, double>> ToolboxCSV::getGlobalRangesByGap(
     const std::vector<std::string>& topics, double t_start, double t_end, double gap_sec) const
 {
@@ -1003,6 +1007,7 @@ std::vector<std::pair<double, double>> ToolboxCSV::getGlobalRangesByGap(
   return ranges;
 }
 
+// Append "_partXX" suffix while preserving original file extension.
 QString ToolboxCSV::addPartSuffix(const QString& path, int part_idx, int parts_total)
 {
   QFileInfo info(path);
