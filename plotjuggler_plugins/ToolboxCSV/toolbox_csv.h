@@ -92,4 +92,9 @@ private:
 
   bool serializeCSV(const ToolboxCSV::ExportTable& t, const QString& path);
   bool serializeParquet(const ToolboxCSV::ExportTable& t, const QString& path);
+
+  std::vector<std::pair<double, double>> getGlobalRangesByGap(
+      const std::vector<std::string>& topics, double t_start, double t_end, double gap_sec) const;
+
+  static QString addPartSuffix(const QString& path, int part_idx, int parts_total);
 };
