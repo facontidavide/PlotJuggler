@@ -77,9 +77,10 @@ private:
   // Generic table representation for exporters (time + N columns)
   struct ExportTable
   {
-    std::vector<std::string> names;         // column names
-    std::vector<double> time;               // time axis
-    std::vector<std::vector<double>> cols;  // per-topic values
+    std::vector<std::string> names;               // column names
+    std::vector<double> time;                     // time axis
+    std::vector<std::vector<double>> cols;        // per-topic values
+    std::vector<std::vector<uint8_t>> has_value;  // Values checker
   };
 
   // Tolerance helper

@@ -625,6 +625,7 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
   const size_t N = series.size();
   table.names.reserve(N);
   table.cols.assign(N, {});
+  table.has_value.assign(N, {});
   for (const auto& s : series)
     table.names.push_back(s.name);
 
@@ -692,6 +693,7 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
     for (size_t i = 0; i < N; i++)
     {
       table.cols[i].push_back(row_values[i]);
+      table.has_value[i].push_back(row_used[i] ? 1 : 0);
       if (row_used[i])
         series[i].idx++;
     }
@@ -740,9 +742,20 @@ bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& t, const QString& p
     for (int c = 0; c < cols; c++)
     {
       out << ",";
-      const double v = t.cols[c][r];
-      if (std::isfinite(v))
-        out << QString::number(v, 'g', val_sig);
+      if (t.has_value[c][r] == 0)
+      {
+        // No sample
+      }
+      else
+      {
+        const double v = t.cols[c][r];
+        if (std::isnan(v))
+          out << "NaN";
+        else if (std::isfinite(v))
+          out << QString::number(v, 'g', val_sig);
+        else
+          out << "Inf";
+      }
     }
     out << "\n";
   }
