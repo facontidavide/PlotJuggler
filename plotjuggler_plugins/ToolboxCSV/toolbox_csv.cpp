@@ -332,11 +332,12 @@ void ToolboxCSV::saveAll()
     return;
   }
 
-  // Build table and serialize
   const bool do_split = ui->checkBoxTime->isChecked();
   const double gap_sec = 10000.0;
 
-  if (!do_split)
+  auto ranges = getGlobalRangesByGap(selected_topics, t_start, t_end, gap_sec);
+
+  if (!do_split || ranges.size() <= 1)
   {
     ExportTable t = buildExportTable(selected_topics, t_start, t_end);
     if (t.time.empty())
@@ -370,7 +371,6 @@ void ToolboxCSV::saveAll()
     return;
   }
 
-  auto ranges = getGlobalRangesByGap(selected_topics, t_start, t_end, gap_sec);
   if (ranges.empty())
   {
     QMessageBox::warning(_widget, "Export", "No samples found in the selected time range.");
