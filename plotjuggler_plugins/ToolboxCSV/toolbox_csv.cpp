@@ -48,7 +48,7 @@ ToolboxCSV::ToolboxCSV()
   // Close/cancel
   connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &ToolboxCSV::onClosed);
 
-  // Initialize time controls with a dummy range; real range computed from selected topics.
+  // Dummy initial range; actual range recomputed from selected topics.
   ui->rangeSlider->setOptions(RangeSlider::DoubleHandles);
   ui->rangeSlider->setRangeReal(0.0, 1.0, 2);
   ui->rangeSlider->setShowTicks(false);
