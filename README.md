@@ -157,7 +157,7 @@ Please note that some third-party dependencies (including Qt) use the
 
 [![Star History Chart](https://api.star-history.com/svg?repos=facontidavide/PlotJuggler&type=Date)](https://star-history.com/#facontidavide/PlotJuggler&Date)
 
-# Contributors
+# Contributors list
 
 <a href="https://github.com/facontidavide/plotjuggler/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=facontidavide/plotjuggler" />
