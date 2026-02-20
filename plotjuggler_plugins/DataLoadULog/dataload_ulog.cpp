@@ -58,6 +58,7 @@ bool DataLoadULog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
 
       for (size_t i = 0; i < data.second.size(); i++)
       {
+        assert(i < timeseries.timestamps.size());
         const uint64_t timestamp = timeseries.timestamps[i].value_or(static_cast<uint64_t>(i));
         double msg_time = static_cast<double>(timestamp) * 0.000001;
         min_msg_time = std::min(min_msg_time, msg_time);
