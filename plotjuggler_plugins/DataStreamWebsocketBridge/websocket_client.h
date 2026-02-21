@@ -91,7 +91,7 @@ private:
   bool _paused;
   WsState _state;
 
-  WebsocketDialog* _dialog;
+  QPointer<WebsocketDialog> _dialog;
   QTimer _topicsTimer;
   QTimer _heartBeatTimer;
 
