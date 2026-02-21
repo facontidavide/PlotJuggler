@@ -24,6 +24,7 @@
        <property name="font">
         <font>
          <pointsize>11</pointsize>
+         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -46,6 +47,7 @@
        <property name="font">
         <font>
          <pointsize>11</pointsize>
+         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -59,6 +61,7 @@
        <property name="font">
         <font>
          <pointsize>11</pointsize>
+         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -78,6 +81,7 @@
       <widget class="QLabel" name="label_6">
        <property name="font">
         <font>
+         <weight>75</weight>
          <bold>true</bold>
         </font>
        </property>
@@ -87,9 +91,9 @@
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer_3">
+      <spacer name="horizontalSpacer">
        <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
+        <enum>Qt::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -124,7 +128,7 @@
    <item>
     <widget class="QTreeWidget" name="topicsList">
      <property name="selectionMode">
-      <enum>QAbstractItemView::SelectionMode::MultiSelection</enum>
+      <enum>QAbstractItemView::NoSelection</enum>
      </property>
      <property name="uniformRowHeights">
       <bool>true</bool>
@@ -150,9 +154,9 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_4">
      <item>
-      <spacer name="horizontalSpacer_2">
+      <spacer name="horizontalSpacer_3">
        <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
+        <enum>Qt::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -179,7 +183,7 @@
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
-      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
+      <set>QDialogButtonBox::NoButton</set>
      </property>
      <property name="centerButtons">
       <bool>true</bool>

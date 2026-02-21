@@ -3,18 +3,8 @@ project(DataStreamWebsocketBridge)
 
 find_package(Qt5 REQUIRED COMPONENTS Widgets WebSockets Xml)
 
-find_path(ZSTD_INCLUDE_DIR zstd.h)
-find_library(ZSTD_LIBRARY NAMES zstd libzstd)
-
-if(NOT Qt5WebSockets_FOUND)
-  message(STATUS "Qt5WebSockets not found: disabling DataStreamWebsocketBridge")
-  return()
-endif()
-
-if(NOT ZSTD_INCLUDE_DIR OR NOT ZSTD_LIBRARY)
-  message(STATUS "ZSTD not found: disabling DataStreamWebsocketBridge")
-  return()
-endif()
+find_path(ZSTD_INCLUDE_DIR REQUIRED zstd.h)
+find_library(ZSTD_LIBRARY REQUIRED NAMES zstd libzstd)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -28,6 +18,8 @@ qt5_wrap_ui(UI_SRC
 
 set(SRC
   websocket_client.cpp
+  websocket_client_config.cpp
+  websocket_dialog.cpp
 )
 
 add_library(DataStreamWebsocketBridge SHARED

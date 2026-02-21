@@ -3,9 +3,11 @@
 #include <QWebSocket>
 #include <QTimer>
 
-#include <unordered_map>
+#include <QHash>
 
 #include "websocket_client_config.h"
+#include "websocket_dialog.h"
+
 #include "PlotJuggler/datastreamer_base.h"
 #include "PlotJuggler/messageparser_base.h"
 
@@ -22,22 +24,6 @@ struct WsState
   Mode mode = Mode::Close;
   bool req_in_flight = false;
 };
-
-struct TopicInfo
-{
-  QString name;
-  QString type;
-  QString schema_name;
-  QString schema_encoding;
-  QString schema_definition;
-};
-
-namespace Ui
-{
-class WebSocketDialog;
-}
-
-class WebsocketDialog;
 
 class WebsocketClient : public PJ::DataStreamer
 {
@@ -59,11 +45,14 @@ public:
     return _running;
   }
 
-  ~WebsocketClient() override = default;
+  ~WebsocketClient() override
+  {
+    shutdown();
+  }
 
   virtual const char* name() const override
   {
-    return "WebSocket Client";
+    return "PJ Websocket Bridge";
   }
 
   virtual bool isDebugPlugin() override
@@ -76,13 +65,12 @@ public:
 
   bool pause();
   bool resume();
-  bool unsubscribe();
 
 private:
   QAction* _action_settings = nullptr;
   std::vector<QAction*> _actions;
 
-  websocket_client_config _config;
+  WebsocketClientConfig _config;
 
   QWebSocket _socket;
   QUrl _url;
@@ -92,19 +80,20 @@ private:
   WsState _state;
 
   QPointer<WebsocketDialog> _dialog;
-  QTimer _topicsTimer;
-  QTimer _heartBeatTimer;
+  QTimer _topics_timer;
+  QTimer _heartbeat_timer;
 
   std::vector<TopicInfo> _topics;
 
 #ifdef PJ_BUILD
-  std::unordered_map<std::string, PJ::MessageParserPtr> _parsers_topic;
+  QHash<QString, PJ::MessageParserPtr> _parsers_topic;
 #endif
 
   QString sendCommand(QJsonObject obj);
-  QString _pendingRequestId;
-  WsState::Mode _pendingMode = WsState::Mode::Close;
+  QString _pending_request_id;
+  WsState::Mode _pending_mode = WsState::Mode::Close;
 
+  void resetState();
   void saveDefaultSettings();
   void loadDefaultSettings();
   void setupSettings();
