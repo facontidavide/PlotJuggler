@@ -5,6 +5,7 @@
  */
 
 #include <functional>
+#include <queue>
 #include <stdio.h>
 
 #include <QApplication>
@@ -2065,24 +2066,80 @@ bool MainWindow::loadLayoutFromFile(QString filename)
       snippets.push_back({ GetSnippetFromXML(custom_eq), custom_eq });
     }
     // A custom plot may depend on other custom plots.
-    // Reorder them to respect the mutual dependency.
-    auto DependOn = [](const SnippetPair& a, const SnippetPair& b) {
-      if (b.first.linked_source == a.first.alias_name)
+    // Use topological sort to respect nested dependencies (e.g. A -> B -> C).
+    // Build a map from alias_name to index for quick lookup
+    std::map<QString, size_t> name_to_index;
+    for (size_t i = 0; i < snippets.size(); i++)
+    {
+      name_to_index[snippets[i].first.alias_name] = i;
+    }
+
+      // Build adjacency list: edges[i] contains indices that i depends on
+      // (i.e. must come before i)
+      std::vector<std::vector<size_t>> dependents(snippets.size());
+      std::vector<int> in_degree(snippets.size(), 0);
+
+      for (size_t i = 0; i < snippets.size(); i++)
       {
-        return true;
-      }
-      for (const auto& source : b.first.additional_sources)
-      {
-        if (source == a.first.alias_name)
+        auto addDep = [&](const QString& dep_name) {
+          auto it = name_to_index.find(dep_name);
+          if (it != name_to_index.end() && it->second != i)
+          {
+            dependents[it->second].push_back(i);
+            in_degree[i]++;
+          }
+        };
+        addDep(snippets[i].first.linked_source);
+        for (const auto& source : snippets[i].first.additional_sources)
         {
-          return true;
+          addDep(source);
         }
       }
-      return false;
-    };
-    std::sort(snippets.begin(), snippets.end(), DependOn);
 
-    for (const auto& [snippet, custom_eq] : snippets)
+    // Kahn's algorithm for topological sorting
+    std::queue<size_t> queue;
+    for (size_t i = 0; i < in_degree.size(); i++)
+    {
+      if (in_degree[i] == 0)
+      {
+        queue.push(i);
+      }
+    }
+
+    std::vector<SnippetPair> sorted_snippets;
+    sorted_snippets.reserve(snippets.size());
+    while (!queue.empty())
+    {
+      size_t current = queue.front();
+      queue.pop();
+      sorted_snippets.push_back(std::move(snippets[current]));
+
+      // Process all dependents
+      for (size_t dependent : dependents[current])
+      {
+        in_degree[dependent]--;
+        if (in_degree[dependent] == 0)
+        {
+          queue.push(dependent);
+        }
+      }
+    }
+
+    // If there are remaining snippets (circular dependency), append them as-is
+    if (sorted_snippets.size() < snippets.size())
+    {
+      QMessageBox::warning(this, tr("Exception"),
+                            tr("Cyclic dependency detected in custom equations."));
+      for (size_t i = 0; i < snippets.size(); i++)
+      {
+        if (in_degree[i] != 0)
+        {
+          sorted_snippets.push_back(std::move(snippets[i]));
+        }
+      }
+    }
+
+    for (const auto& [snippet, custom_eq] : sorted_snippets)
     {
       try
       {
