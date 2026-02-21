@@ -543,3 +543,23 @@ TEST(ParseCsvData, HeaderOnly)
   EXPECT_EQ(result.column_names.size(), 3u);
   EXPECT_EQ(result.lines_processed, 0);
 }
+
+TEST(ParseCsvData, ScientificNotation)  // PR #1280
+{
+  std::string csv = "val\n1.5e3\n2.0E-4\n-3e2\n1e10\n";
+  CsvParseConfig config;
+  config.delimiter = ',';
+  config.time_column_index = -1;
+
+  auto result = ParseCsvData(csv, config);
+  ASSERT_TRUE(result.success);
+  ASSERT_EQ(result.columns.size(), 1u);
+
+  // All values should be parsed as numeric, not string
+  EXPECT_EQ(result.columns[0].string_points.size(), 0u);
+  ASSERT_EQ(result.columns[0].numeric_points.size(), 4u);
+  EXPECT_DOUBLE_EQ(result.columns[0].numeric_points[0].second, 1500.0);
+  EXPECT_DOUBLE_EQ(result.columns[0].numeric_points[1].second, 0.0002);
+  EXPECT_DOUBLE_EQ(result.columns[0].numeric_points[2].second, -300.0);
+  EXPECT_DOUBLE_EQ(result.columns[0].numeric_points[3].second, 1e10);
+}

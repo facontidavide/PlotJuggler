@@ -7,7 +7,7 @@ qt5_wrap_ui(UI_SRC dataload_csv.ui datetimehelp.ui)
 
 # Pure parsing library (no Qt Widgets dependency)
 add_library(csv_parser_lib STATIC csv_parser.cpp timestamp_parsing.cpp)
-target_link_libraries(csv_parser_lib PUBLIC Qt5::Core)
+target_link_libraries(csv_parser_lib PRIVATE Qt5::Core)
 target_include_directories(csv_parser_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/3rdparty/date-3.0.4/include)

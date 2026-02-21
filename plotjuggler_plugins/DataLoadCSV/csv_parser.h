@@ -62,6 +62,7 @@ struct CsvParseConfig
   int time_column_index = -1;      // -1 = use row number as time
   std::string custom_time_format;  // empty = auto-detect
   int skip_rows = 0;               // lines to skip before header
+  int total_lines = 0;             // 0 = count internally if progress callback set
 };
 
 struct CsvColumnData

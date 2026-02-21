@@ -316,9 +316,9 @@ CsvParseResult ParseCsvData(std::istream& input, const CsvParseConfig& config,
   int linenumber = config.skip_rows + 1;  // header was this line
   int samplecount = 0;
 
-  // Optionally count total lines for progress (scan ahead if seekable)
-  int total_lines = 0;
-  if (progress)
+  // Use caller-provided total_lines for progress, or count internally
+  int total_lines = config.total_lines;
+  if (progress && total_lines <= 0)
   {
     auto pos = input.tellg();
     if (pos != std::istream::pos_type(-1))

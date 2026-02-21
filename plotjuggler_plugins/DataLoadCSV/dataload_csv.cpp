@@ -16,7 +16,6 @@
 
 #include <array>
 #include <set>
-#include <sstream>
 
 #include <QStandardItemModel>
 
@@ -341,14 +340,13 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   }
 
   //--- Count lines for progress ---
-  int tot_lines = 0;
   {
     file.open(QFile::ReadOnly);
     QTextStream in(&file);
     while (!in.atEnd())
     {
       in.readLine();
-      tot_lines++;
+      config.total_lines++;
     }
     file.close();
   }
@@ -357,7 +355,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   progress_dialog.setWindowTitle("Loading the CSV file");
   progress_dialog.setLabelText("Loading... please wait");
   progress_dialog.setWindowModality(Qt::ApplicationModal);
-  progress_dialog.setRange(0, tot_lines);
+  progress_dialog.setRange(0, config.total_lines);
   progress_dialog.setAutoClose(true);
   progress_dialog.setAutoReset(true);
   progress_dialog.show();
@@ -370,9 +368,8 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   file.close();
 
   std::string file_str(file_data.constData(), file_data.size());
-  std::istringstream stream(file_str);
 
-  auto result = PJ::CSV::ParseCsvData(stream, config, [&](int current, int) -> bool {
+  auto result = PJ::CSV::ParseCsvData(file_str, config, [&](int current, int) -> bool {
     progress_dialog.setValue(current);
     QApplication::processEvents();
     if (progress_dialog.wasCanceled())
