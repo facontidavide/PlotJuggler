@@ -892,3 +892,36 @@ TEST(ParseCsvData, CombinedDateTimeWithInvalidRow)
   }
   EXPECT_TRUE(found_warning);
 }
+
+// ===========================================================================
+// Timestamp column starting with "0"
+// ===========================================================================
+
+TEST(DetectColumnType, ZeroIsNumber)
+{
+  auto info = DetectColumnType("0");
+  EXPECT_EQ(info.type, ColumnType::NUMBER);
+}
+
+TEST(ParseCsvData, TimestampColumnStartingAtZero)
+{
+  std::string csv = "time,val\n"
+                    "0,10\n"
+                    "0.003,20\n"
+                    "0.005,30\n";
+
+  CsvParseConfig config;
+  config.delimiter = ',';
+  config.time_column_index = 0;
+
+  auto result = ParseCsvData(csv, config);
+  ASSERT_TRUE(result.success);
+  EXPECT_EQ(result.lines_processed, 3);
+  EXPECT_EQ(result.lines_skipped, 0);
+  EXPECT_EQ(result.columns[0].detected_type.type, ColumnType::NUMBER);
+
+  ASSERT_EQ(result.columns[1].numeric_points.size(), 3u);
+  EXPECT_DOUBLE_EQ(result.columns[1].numeric_points[0].first, 0.0);
+  EXPECT_NEAR(result.columns[1].numeric_points[1].first, 0.003, 1e-9);
+  EXPECT_NEAR(result.columns[1].numeric_points[2].first, 0.005, 1e-9);
+}
