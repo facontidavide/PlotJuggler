@@ -5,6 +5,7 @@ add_subdirectory(DataLoadULog)
 
 add_subdirectory(DataStreamSample)
 add_subdirectory(DataStreamWebsocket)
+add_subdirectory(DataStreamWebsocketBridge)
 add_subdirectory(DataStreamUDP)
 add_subdirectory(DataStreamMQTT)
 add_subdirectory(DataStreamZMQ)
