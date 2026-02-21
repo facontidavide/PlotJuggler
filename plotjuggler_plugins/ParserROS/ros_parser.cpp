@@ -372,16 +372,24 @@ void ParserROS::parseDiagnosticMsg(const std::string& prefix, double& timestamp)
 
   for (const auto& status : msg.status)
   {
-    for (const auto& kv : status.key_value)
-    {
+    auto make_name = [&](const std::string& value_name) {
       if (status.hardware_id.empty())
       {
-        series_name = fmt::format("{}/{}/{}", prefix, status.name, kv.first);
+        return fmt::format("{}/{}/{}", prefix, status.name, value_name);
       }
       else
       {
-        series_name = fmt::format("{}/{}/{}/{}", prefix, status.hardware_id, status.name, kv.first);
+        return fmt::format("{}/{}/{}/{}", prefix, status.hardware_id, status.name, value_name);
       }
+    };
+    series_name = make_name("level");
+    getSeries(series_name).pushBack({ timestamp, static_cast<double>(status.level) });
+    series_name = make_name("message");
+    getStringSeries(series_name).pushBack({ timestamp, status.message });
+
+    for (const auto& kv : status.key_value)
+    {
+      series_name = make_name(kv.first);
 
       bool ok;
       double value = QString::fromStdString(kv.second).toDouble(&ok);

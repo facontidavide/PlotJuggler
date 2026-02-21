@@ -96,6 +96,24 @@ void MergeData(PlotDataXY& src_plot, PlotDataXY& dst_plot)
   src_plot.clear();
 }
 
+void MergeData(StringSeries& src_plot, StringSeries& dst_plot)
+{
+  if (src_plot.size() == 0)
+  {
+    return;
+  }
+  if (dst_plot.size() == 0)
+  {
+    std::swap(dst_plot, src_plot);
+    return;
+  }
+  for (size_t i = 0; i < src_plot.size(); i++)
+  {
+    dst_plot.pushBack(src_plot.at(i));
+  }
+  src_plot.clear();
+}
+
 MoveDataRet MoveData(PlotDataMapRef& source, PlotDataMapRef& destination, bool remove_older)
 {
   MoveDataRet ret;

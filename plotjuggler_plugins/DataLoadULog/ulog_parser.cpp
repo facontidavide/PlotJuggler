@@ -157,7 +157,7 @@ void ULogParser::parseDataMessage(const ULogParser::Subscription& sub, char* mes
 }
 
 char* ULogParser::parseSimpleDataMessage(Timeseries& timeseries, const Format* format,
-                                         char* message, size_t* index)
+                                         char* message, size_t* index, bool read_timestamp)
 {
   for (const auto& field : format->fields)
   {
@@ -168,7 +168,7 @@ char* ULogParser::parseSimpleDataMessage(Timeseries& timeseries, const Format* f
       continue;
     }
 
-    bool timestamp_done = false;
+    bool timestamp_done = !read_timestamp;
     for (int array_pos = 0; array_pos < field.array_size; array_pos++)
     {
       if (format->timestamp_idx < 0)
@@ -250,7 +250,7 @@ char* ULogParser::parseSimpleDataMessage(Timeseries& timeseries, const Format* f
           // recursion!!!
           auto child_format = _formats.at(field.other_type_ID);
           message += sizeof(uint64_t);  // skip timestamp
-          message = parseSimpleDataMessage(timeseries, &child_format, message, index);
+          message = parseSimpleDataMessage(timeseries, &child_format, message, index, false);
         }
         break;
 
