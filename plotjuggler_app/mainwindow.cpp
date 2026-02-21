@@ -401,6 +401,9 @@ void MainWindow::onUndoableChange()
 
 void MainWindow::onRedoInvoked()
 {
+  if (QApplication::activePopupWidget() || QApplication::activeModalWidget())
+    return;
+
   _disable_undo_logging = true;
   if (_redo_states.size() > 0)
   {
@@ -418,6 +421,9 @@ void MainWindow::onRedoInvoked()
 
 void MainWindow::onUndoInvoked()
 {
+  if (QApplication::activePopupWidget() || QApplication::activeModalWidget())
+    return;
+
   _disable_undo_logging = true;
   if (_undo_states.size() > 1)
   {
