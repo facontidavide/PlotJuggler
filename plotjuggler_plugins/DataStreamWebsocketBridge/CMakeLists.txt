@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(DataStreamWebsocketBridge)
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets WebSockets)
+find_package(Qt5 REQUIRED COMPONENTS Widgets WebSockets Xml)
 
 find_path(ZSTD_INCLUDE_DIR zstd.h)
 find_library(ZSTD_LIBRARY NAMES zstd libzstd)
@@ -43,6 +43,7 @@ target_include_directories(DataStreamWebsocketBridge PRIVATE
 target_link_libraries(DataStreamWebsocketBridge PRIVATE
   Qt5::Widgets
   Qt5::WebSockets
+  Qt5::Xml
   plotjuggler_base
   ${ZSTD_LIBRARY}
 )
