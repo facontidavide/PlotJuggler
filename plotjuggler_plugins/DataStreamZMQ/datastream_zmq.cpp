@@ -73,6 +73,10 @@ bool DataStreamZMQ::start(QStringList*)
   QSettings settings;
   QString address = settings.value("ZMQ_Subscriber::address", "localhost").toString();
   QString protocol = settings.value("ZMQ_Subscriber::protocol", "JSON").toString();
+  if (parserFactories()->find(protocol) == parserFactories()->end())
+  {
+    protocol = parserFactories()->begin()->first;
+  }
   QString topics = settings.value("ZMQ_Subscriber::topics", "").toString();
   _is_connect = settings.value("ZMQ_Subscriber::is_connect", true).toBool();
 
