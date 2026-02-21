@@ -10,6 +10,21 @@
 
 bool NlohmannParser::parseMessageImpl(double& timestamp)
 {
+  // Support batched messages: if the top-level value is an array,
+  // treat each element as a separate data point with its own timestamp.
+  // This allows senders to batch multiple samples into a single message,
+  // reducing per-message overhead for high-rate data sources.
+  if (_json.is_array())
+  {
+    nlohmann::json array = std::move(_json);
+    for (auto& element : array)
+    {
+      _json = std::move(element);
+      parseMessageImpl(timestamp);
+    }
+    return true;
+  }
+
   if (_use_message_stamp && _stamp_fieldname.empty() == false)
   {
     auto ts = _json.find(_stamp_fieldname);
