@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <iostream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -56,6 +57,13 @@ std::vector<std::string> ParseHeaderLine(const std::string& header_line, char de
 // Configuration and results for full CSV parsing
 // ---------------------------------------------------------------------------
 
+struct CombinedColumnPair
+{
+  int date_column_index;
+  int time_column_index;
+  std::string virtual_name;  // e.g., "Date + Time"
+};
+
 struct CsvParseConfig
 {
   char delimiter = ',';
@@ -63,6 +71,9 @@ struct CsvParseConfig
   std::string custom_time_format;  // empty = auto-detect
   int skip_rows = 0;               // lines to skip before header
   int total_lines = 0;             // 0 = count internally if progress callback set
+
+  std::vector<CombinedColumnPair> combined_columns;  // detected date+time pairs
+  int combined_column_index = -1;                    // which pair to use for time; -1 = not used
 };
 
 struct CsvColumnData
@@ -96,7 +107,21 @@ struct CsvParseResult
   bool time_is_non_monotonic = false;
   int lines_processed = 0;
   int lines_skipped = 0;
+  std::set<int> combined_component_indices;  // columns used as date/time components
 };
+
+/**
+ * @brief Detect adjacent date+time column pairs that can be combined.
+ *
+ * Scans column types for adjacent DATE_ONLY+TIME_ONLY pairs (either order).
+ * Non-overlapping: after finding a pair, skips both columns.
+ *
+ * @param column_names The column names from the header
+ * @param column_types The detected types for each column
+ * @return Vector of combined column pairs found
+ */
+std::vector<CombinedColumnPair> DetectCombinedDateTimeColumns(
+    const std::vector<std::string>& column_names, const std::vector<ColumnTypeInfo>& column_types);
 
 /**
  * @brief Parse CSV data from an input stream.

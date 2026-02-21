@@ -252,6 +252,47 @@ std::vector<std::string> ParseHeaderLine(const std::string& header_line, char de
 }
 
 // ---------------------------------------------------------------------------
+// DetectCombinedDateTimeColumns
+// ---------------------------------------------------------------------------
+
+std::vector<CombinedColumnPair> DetectCombinedDateTimeColumns(
+    const std::vector<std::string>& column_names, const std::vector<ColumnTypeInfo>& column_types)
+{
+  std::vector<CombinedColumnPair> pairs;
+
+  for (size_t i = 0; i + 1 < column_types.size(); i++)
+  {
+    int date_idx = -1;
+    int time_idx = -1;
+
+    if (column_types[i].type == ColumnType::DATE_ONLY &&
+        column_types[i + 1].type == ColumnType::TIME_ONLY)
+    {
+      date_idx = static_cast<int>(i);
+      time_idx = static_cast<int>(i + 1);
+    }
+    else if (column_types[i].type == ColumnType::TIME_ONLY &&
+             column_types[i + 1].type == ColumnType::DATE_ONLY)
+    {
+      time_idx = static_cast<int>(i);
+      date_idx = static_cast<int>(i + 1);
+    }
+
+    if (date_idx >= 0 && time_idx >= 0)
+    {
+      CombinedColumnPair pair;
+      pair.date_column_index = date_idx;
+      pair.time_column_index = time_idx;
+      pair.virtual_name = column_names[date_idx] + " + " + column_names[time_idx];
+      pairs.push_back(pair);
+      i++;  // skip the second column of the pair
+    }
+  }
+
+  return pairs;
+}
+
+// ---------------------------------------------------------------------------
 // ParseCsvData
 // ---------------------------------------------------------------------------
 
@@ -311,6 +352,15 @@ CsvParseResult ParseCsvData(std::istream& input, const CsvParseConfig& config,
 
   // Column types detected from first data row
   std::vector<ColumnTypeInfo> column_types(num_columns);
+
+  // Populate combined component indices if using combined columns
+  if (config.combined_column_index >= 0 &&
+      config.combined_column_index < static_cast<int>(config.combined_columns.size()))
+  {
+    const auto& combo = config.combined_columns[config.combined_column_index];
+    result.combined_component_indices.insert(combo.date_column_index);
+    result.combined_component_indices.insert(combo.time_column_index);
+  }
 
   double prev_time = std::numeric_limits<double>::lowest();
   int linenumber = config.skip_rows + 1;  // header was this line
@@ -378,17 +428,42 @@ CsvParseResult ParseCsvData(std::istream& input, const CsvParseConfig& config,
 
     // Determine timestamp
     double timestamp = samplecount;
+    bool timestamp_valid = false;
 
-    if (config.time_column_index >= 0 && config.time_column_index < static_cast<int>(num_columns))
+    if (config.combined_column_index >= 0 &&
+        config.combined_column_index < static_cast<int>(config.combined_columns.size()))
+    {
+      const auto& combo = config.combined_columns[config.combined_column_index];
+      const std::string& date_val = Trim(parts[combo.date_column_index]);
+      const std::string& time_val = Trim(parts[combo.time_column_index]);
+
+      if (auto ts = ParseCombinedDateTime(date_val, time_val, column_types[combo.date_column_index],
+                                          column_types[combo.time_column_index]))
+      {
+        timestamp_valid = true;
+        timestamp = *ts;
+      }
+      else
+      {
+        CsvParseWarning warn;
+        warn.type = CsvParseWarning::INVALID_TIMESTAMP;
+        warn.line_number = linenumber;
+        warn.detail = "Invalid combined timestamp: \"" + date_val + "\" + \"" + time_val + "\"";
+        result.warnings.push_back(warn);
+        result.lines_skipped++;
+        continue;
+      }
+    }
+    else if (config.time_column_index >= 0 &&
+             config.time_column_index < static_cast<int>(num_columns))
     {
       const std::string& t_str = Trim(parts[config.time_column_index]);
-      bool is_number = false;
 
       if (!config.custom_time_format.empty())
       {
         if (auto ts = FormatParseTimestamp(t_str, config.custom_time_format))
         {
-          is_number = true;
+          timestamp_valid = true;
           timestamp = *ts;
         }
       }
@@ -399,13 +474,13 @@ CsvParseResult ParseCsvData(std::istream& input, const CsvParseConfig& config,
         {
           if (auto ts = ParseWithType(t_str, time_type))
           {
-            is_number = true;
+            timestamp_valid = true;
             timestamp = *ts;
           }
         }
       }
 
-      if (!is_number)
+      if (!timestamp_valid)
       {
         CsvParseWarning warn;
         warn.type = CsvParseWarning::INVALID_TIMESTAMP;
@@ -415,7 +490,10 @@ CsvParseResult ParseCsvData(std::istream& input, const CsvParseConfig& config,
         result.lines_skipped++;
         continue;
       }
+    }
 
+    if (timestamp_valid)
+    {
       // Non-monotonic time detection
       if (prev_time > timestamp && !result.time_is_non_monotonic)
       {
@@ -433,6 +511,11 @@ CsvParseResult ParseCsvData(std::istream& input, const CsvParseConfig& config,
     // Parse column values
     for (size_t i = 0; i < num_columns; i++)
     {
+      if (result.combined_component_indices.count(static_cast<int>(i)) > 0)
+      {
+        continue;
+      }
+
       const auto& str = parts[i];
       const auto& col_type = column_types[i];
 

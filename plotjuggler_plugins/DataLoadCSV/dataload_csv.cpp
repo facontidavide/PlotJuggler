@@ -19,6 +19,7 @@
 
 #include <QStandardItemModel>
 
+static constexpr int TIME_INDEX_COMBINED = -3;
 static constexpr int TIME_INDEX_NOT_DEFINED = -2;
 static constexpr int TIME_INDEX_GENERATED = -1;
 static constexpr const char* INDEX_AS_TIME = "__TIME_INDEX_GENERATED__";
@@ -62,9 +63,17 @@ DataLoadCSV::DataLoadCSV()
     bool box_enabled = !checked || selected.size() == 1;
     _ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(box_enabled);
   });
+  connect(_ui->radioButtonDateTimeColumns, &QRadioButton::toggled, this, [this](bool checked) {
+    _ui->listWidgetSeries->setEnabled(!checked && _ui->radioButtonSelect->isChecked());
+    if (checked)
+    {
+      _ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
+    }
+  });
   connect(_ui->listWidgetSeries, &QListWidget::itemSelectionChanged, this, [this]() {
     auto selected = _ui->listWidgetSeries->selectionModel()->selectedIndexes();
-    bool box_enabled = _ui->radioButtonIndex->isChecked() || selected.size() == 1;
+    bool box_enabled = _ui->radioButtonIndex->isChecked() ||
+                       _ui->radioButtonDateTimeColumns->isChecked() || selected.size() == 1;
     _ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(box_enabled);
   });
 
@@ -177,6 +186,36 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
   _ui->rawText->setPlainText(preview_lines);
   _ui->tableView->resizeColumnsToContents();
 
+  // Detect combined date+time column pairs
+  _combined_columns.clear();
+  _ui->radioButtonDateTimeColumns->setEnabled(false);
+  _ui->radioButtonDateTimeColumns->setText(tr("Combine Date + Time columns"));
+
+  if (!lines.isEmpty())
+  {
+    QStringList first_tokens;
+    SplitLine(lines[0], _delimiter, first_tokens);
+
+    std::vector<PJ::CSV::ColumnTypeInfo> col_types(column_names.size());
+    for (size_t i = 0; i < col_types.size() && i < static_cast<size_t>(first_tokens.size()); i++)
+    {
+      if (!first_tokens[i].isEmpty())
+      {
+        col_types[i] = PJ::CSV::DetectColumnType(first_tokens[i].toStdString());
+      }
+    }
+
+    _combined_columns = PJ::CSV::DetectCombinedDateTimeColumns(column_names, col_types);
+
+    if (!_combined_columns.empty())
+    {
+      _ui->radioButtonDateTimeColumns->setEnabled(true);
+      _ui->radioButtonDateTimeColumns->setText(
+          tr("Combine Date + Time columns (%1)")
+              .arg(QString::fromStdString(_combined_columns[0].virtual_name)));
+    }
+  }
+
   file.close();
 }
 
@@ -277,6 +316,13 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
     return TIME_INDEX_GENERATED;
   }
 
+  if (_ui->radioButtonDateTimeColumns->isChecked() && !_combined_columns.empty())
+  {
+    settings.setValue("DataLoadCSV.timeIndex",
+                      QString::fromStdString(_combined_columns[0].virtual_name));
+    return TIME_INDEX_COMBINED;
+  }
+
   QModelIndexList indexes = _ui->listWidgetSeries->selectionModel()->selectedRows();
   if (indexes.size() == 1)
   {
@@ -322,6 +368,19 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
           break;
         }
       }
+
+      // Check if the saved time axis matches a combined column pair
+      if (time_index == TIME_INDEX_NOT_DEFINED)
+      {
+        for (size_t i = 0; i < _combined_columns.size(); i++)
+        {
+          if (_combined_columns[i].virtual_name == _default_time_axis)
+          {
+            time_index = TIME_INDEX_COMBINED;
+            break;
+          }
+        }
+      }
     }
   }
 
@@ -333,7 +392,15 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   //--- Build CsvParseConfig from UI state ---
   PJ::CSV::CsvParseConfig config;
   config.delimiter = _delimiter.toLatin1();
-  config.time_column_index = time_index;
+  if (time_index == TIME_INDEX_COMBINED)
+  {
+    config.combined_columns = _combined_columns;
+    config.combined_column_index = 0;
+  }
+  else
+  {
+    config.time_column_index = time_index;
+  }
   if (_ui->radioCustomTime->isChecked())
   {
     config.custom_time_format = _ui->lineEditDateFormat->text().toStdString();
@@ -454,7 +521,11 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   }
 
   //--- Update default time axis ---
-  if (time_index >= 0 && time_index < static_cast<int>(result.column_names.size()))
+  if (time_index == TIME_INDEX_COMBINED && !_combined_columns.empty())
+  {
+    _default_time_axis = _combined_columns[0].virtual_name;
+  }
+  else if (time_index >= 0 && time_index < static_cast<int>(result.column_names.size()))
   {
     _default_time_axis = result.column_names[time_index];
   }

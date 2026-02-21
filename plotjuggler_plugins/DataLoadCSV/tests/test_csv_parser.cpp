@@ -1,5 +1,7 @@
 #include "csv_parser.h"
+#include "timestamp_parsing.h"
 #include <gtest/gtest.h>
+#include <cmath>
 #include <sstream>
 
 using namespace PJ::CSV;
@@ -562,4 +564,331 @@ TEST(ParseCsvData, ScientificNotation)  // PR #1280
   EXPECT_DOUBLE_EQ(result.columns[0].numeric_points[1].second, 0.0002);
   EXPECT_DOUBLE_EQ(result.columns[0].numeric_points[2].second, -300.0);
   EXPECT_DOUBLE_EQ(result.columns[0].numeric_points[3].second, 1e10);
+}
+
+// ===========================================================================
+// DetectColumnType — DATE_ONLY / TIME_ONLY tests
+// ===========================================================================
+
+TEST(DetectColumnType, DateOnlyISO)
+{
+  auto info = DetectColumnType("2024-01-15");
+  EXPECT_EQ(info.type, ColumnType::DATE_ONLY);
+  EXPECT_EQ(info.format, "%Y-%m-%d");
+}
+
+TEST(DetectColumnType, DateOnlySlash)
+{
+  auto info = DetectColumnType("2024/06/15");
+  EXPECT_EQ(info.type, ColumnType::DATE_ONLY);
+  EXPECT_EQ(info.format, "%Y/%m/%d");
+}
+
+TEST(DetectColumnType, DateOnlyDayFirst)
+{
+  auto info = DetectColumnType("15/06/2024");
+  EXPECT_EQ(info.type, ColumnType::DATE_ONLY);
+  // 15 > 12, so unambiguously day-first
+  EXPECT_EQ(info.format, "%d/%m/%Y");
+}
+
+TEST(DetectColumnType, TimeOnlyHMS)
+{
+  auto info = DetectColumnType("14:30:25");
+  EXPECT_EQ(info.type, ColumnType::TIME_ONLY);
+  EXPECT_EQ(info.format, "%H:%M:%S");
+}
+
+TEST(DetectColumnType, TimeOnlyWithFractional)
+{
+  auto info = DetectColumnType("14:30:25.123");
+  EXPECT_EQ(info.type, ColumnType::TIME_ONLY);
+  EXPECT_EQ(info.format, "%H:%M:%S");
+  EXPECT_TRUE(info.has_fractional);
+}
+
+TEST(DetectColumnType, DateTimeStillDetected)
+{
+  // Full datetime should still be DATETIME, not DATE_ONLY
+  auto info = DetectColumnType("2024-01-15T14:30:25");
+  EXPECT_EQ(info.type, ColumnType::DATETIME);
+}
+
+// ===========================================================================
+// ParseWithType — DATE_ONLY / TIME_ONLY tests
+// ===========================================================================
+
+TEST(ParseWithType, DateOnlyReturnsEpoch)
+{
+  ColumnTypeInfo info;
+  info.type = ColumnType::DATE_ONLY;
+  info.format = "%Y-%m-%d";
+
+  auto result = ParseWithType("2024-01-15", info);
+  ASSERT_TRUE(result.has_value());
+  // 2024-01-15 midnight UTC = 1705276800.0
+  EXPECT_NEAR(*result, 1705276800.0, 1.0);
+}
+
+TEST(ParseWithType, TimeOnlyReturnsSecondsFromMidnight)
+{
+  ColumnTypeInfo info;
+  info.type = ColumnType::TIME_ONLY;
+  info.format = "%H:%M:%S";
+
+  auto result = ParseWithType("14:30:25", info);
+  ASSERT_TRUE(result.has_value());
+  // 14*3600 + 30*60 + 25 = 52225
+  EXPECT_DOUBLE_EQ(*result, 52225.0);
+}
+
+TEST(ParseWithType, TimeOnlyWithFractionalSeconds)
+{
+  ColumnTypeInfo info;
+  info.type = ColumnType::TIME_ONLY;
+  info.format = "%H:%M:%S";
+  info.has_fractional = true;
+
+  auto result = ParseWithType("10:30:25.500", info);
+  ASSERT_TRUE(result.has_value());
+  // 10*3600 + 30*60 + 25.5 = 37825.5
+  EXPECT_NEAR(*result, 37825.5, 1e-3);
+}
+
+// ===========================================================================
+// ParseCombinedDateTime tests
+// ===========================================================================
+
+TEST(ParseCombinedDateTime, BasicCombination)
+{
+  ColumnTypeInfo date_info;
+  date_info.type = ColumnType::DATE_ONLY;
+  date_info.format = "%Y-%m-%d";
+
+  ColumnTypeInfo time_info;
+  time_info.type = ColumnType::TIME_ONLY;
+  time_info.format = "%H:%M:%S";
+
+  auto result = ParseCombinedDateTime("2024-01-15", "14:30:25", date_info, time_info);
+  ASSERT_TRUE(result.has_value());
+  // 2024-01-15 14:30:25 UTC = 1705329025.0
+  EXPECT_NEAR(*result, 1705329025.0, 1.0);
+}
+
+TEST(ParseCombinedDateTime, WithFractionalSeconds)
+{
+  ColumnTypeInfo date_info;
+  date_info.type = ColumnType::DATE_ONLY;
+  date_info.format = "%Y-%m-%d";
+
+  ColumnTypeInfo time_info;
+  time_info.type = ColumnType::TIME_ONLY;
+  time_info.format = "%H:%M:%S";
+  time_info.has_fractional = true;
+
+  auto r1 = ParseCombinedDateTime("2024-01-15", "14:30:25.000", date_info, time_info);
+  auto r2 = ParseCombinedDateTime("2024-01-15", "14:30:25.500", date_info, time_info);
+  ASSERT_TRUE(r1.has_value());
+  ASSERT_TRUE(r2.has_value());
+  EXPECT_NEAR(*r2 - *r1, 0.5, 1e-3);
+}
+
+TEST(ParseCombinedDateTime, InvalidDateReturnsNullopt)
+{
+  ColumnTypeInfo date_info;
+  date_info.type = ColumnType::DATE_ONLY;
+  date_info.format = "%Y-%m-%d";
+
+  ColumnTypeInfo time_info;
+  time_info.type = ColumnType::TIME_ONLY;
+  time_info.format = "%H:%M:%S";
+
+  auto result = ParseCombinedDateTime("not-a-date", "14:30:25", date_info, time_info);
+  EXPECT_FALSE(result.has_value());
+}
+
+TEST(ParseCombinedDateTime, InvalidTimeReturnsNullopt)
+{
+  ColumnTypeInfo date_info;
+  date_info.type = ColumnType::DATE_ONLY;
+  date_info.format = "%Y-%m-%d";
+
+  ColumnTypeInfo time_info;
+  time_info.type = ColumnType::TIME_ONLY;
+  time_info.format = "%H:%M:%S";
+
+  auto result = ParseCombinedDateTime("2024-01-15", "bad-time", date_info, time_info);
+  EXPECT_FALSE(result.has_value());
+}
+
+TEST(ParseCombinedDateTime, EmptyStringsReturnNullopt)
+{
+  ColumnTypeInfo date_info;
+  date_info.type = ColumnType::DATE_ONLY;
+  date_info.format = "%Y-%m-%d";
+
+  ColumnTypeInfo time_info;
+  time_info.type = ColumnType::TIME_ONLY;
+  time_info.format = "%H:%M:%S";
+
+  EXPECT_FALSE(ParseCombinedDateTime("", "14:30:25", date_info, time_info).has_value());
+  EXPECT_FALSE(ParseCombinedDateTime("2024-01-15", "", date_info, time_info).has_value());
+}
+
+// ===========================================================================
+// DetectCombinedDateTimeColumns tests
+// ===========================================================================
+
+TEST(DetectCombinedDateTimeColumns, AdjacentPair)
+{
+  std::vector<std::string> names = { "Date", "Time", "Value" };
+  std::vector<ColumnTypeInfo> types(3);
+  types[0].type = ColumnType::DATE_ONLY;
+  types[0].format = "%Y-%m-%d";
+  types[1].type = ColumnType::TIME_ONLY;
+  types[1].format = "%H:%M:%S";
+  types[2].type = ColumnType::NUMBER;
+
+  auto pairs = DetectCombinedDateTimeColumns(names, types);
+  ASSERT_EQ(pairs.size(), 1u);
+  EXPECT_EQ(pairs[0].date_column_index, 0);
+  EXPECT_EQ(pairs[0].time_column_index, 1);
+  EXPECT_EQ(pairs[0].virtual_name, "Date + Time");
+}
+
+TEST(DetectCombinedDateTimeColumns, ReversedOrder)
+{
+  std::vector<std::string> names = { "Time", "Date", "Value" };
+  std::vector<ColumnTypeInfo> types(3);
+  types[0].type = ColumnType::TIME_ONLY;
+  types[0].format = "%H:%M:%S";
+  types[1].type = ColumnType::DATE_ONLY;
+  types[1].format = "%Y-%m-%d";
+  types[2].type = ColumnType::NUMBER;
+
+  auto pairs = DetectCombinedDateTimeColumns(names, types);
+  ASSERT_EQ(pairs.size(), 1u);
+  EXPECT_EQ(pairs[0].date_column_index, 1);
+  EXPECT_EQ(pairs[0].time_column_index, 0);
+  EXPECT_EQ(pairs[0].virtual_name, "Date + Time");
+}
+
+TEST(DetectCombinedDateTimeColumns, NonAdjacentNoPair)
+{
+  std::vector<std::string> names = { "Date", "Value", "Time" };
+  std::vector<ColumnTypeInfo> types(3);
+  types[0].type = ColumnType::DATE_ONLY;
+  types[1].type = ColumnType::NUMBER;
+  types[2].type = ColumnType::TIME_ONLY;
+
+  auto pairs = DetectCombinedDateTimeColumns(names, types);
+  EXPECT_TRUE(pairs.empty());
+}
+
+TEST(DetectCombinedDateTimeColumns, MultiplePairs)
+{
+  std::vector<std::string> names = { "Date1", "Time1", "Date2", "Time2" };
+  std::vector<ColumnTypeInfo> types(4);
+  types[0].type = ColumnType::DATE_ONLY;
+  types[0].format = "%Y-%m-%d";
+  types[1].type = ColumnType::TIME_ONLY;
+  types[1].format = "%H:%M:%S";
+  types[2].type = ColumnType::DATE_ONLY;
+  types[2].format = "%Y-%m-%d";
+  types[3].type = ColumnType::TIME_ONLY;
+  types[3].format = "%H:%M:%S";
+
+  auto pairs = DetectCombinedDateTimeColumns(names, types);
+  ASSERT_EQ(pairs.size(), 2u);
+  EXPECT_EQ(pairs[0].date_column_index, 0);
+  EXPECT_EQ(pairs[0].time_column_index, 1);
+  EXPECT_EQ(pairs[1].date_column_index, 2);
+  EXPECT_EQ(pairs[1].time_column_index, 3);
+}
+
+// ===========================================================================
+// End-to-end: ParseCsvData with combined columns
+// ===========================================================================
+
+TEST(ParseCsvData, CombinedDateTimeColumns)
+{
+  std::string csv = "Date,Time,Temperature\n"
+                    "2024-01-15,10:30:25.000,23.5\n"
+                    "2024-01-15,10:30:26.000,23.6\n"
+                    "2024-01-15,10:30:27.000,23.7\n";
+
+  CsvParseConfig config;
+  config.delimiter = ',';
+
+  // Set up combined columns
+  CombinedColumnPair combo;
+  combo.date_column_index = 0;
+  combo.time_column_index = 1;
+  combo.virtual_name = "Date + Time";
+  config.combined_columns.push_back(combo);
+  config.combined_column_index = 0;
+
+  auto result = ParseCsvData(csv, config);
+  ASSERT_TRUE(result.success);
+  ASSERT_EQ(result.columns.size(), 3u);
+
+  // Temperature column (index 2) should have 3 data points
+  ASSERT_EQ(result.columns[2].numeric_points.size(), 3u);
+  EXPECT_DOUBLE_EQ(result.columns[2].numeric_points[0].second, 23.5);
+  EXPECT_DOUBLE_EQ(result.columns[2].numeric_points[1].second, 23.6);
+  EXPECT_DOUBLE_EQ(result.columns[2].numeric_points[2].second, 23.7);
+
+  // Timestamps should be 1 second apart
+  double ts0 = result.columns[2].numeric_points[0].first;
+  double ts1 = result.columns[2].numeric_points[1].first;
+  double ts2 = result.columns[2].numeric_points[2].first;
+  EXPECT_NEAR(ts1 - ts0, 1.0, 1e-3);
+  EXPECT_NEAR(ts2 - ts1, 1.0, 1e-3);
+
+  // Combined component columns should be tracked
+  EXPECT_TRUE(result.combined_component_indices.count(0) > 0);
+  EXPECT_TRUE(result.combined_component_indices.count(1) > 0);
+
+  // Date and Time columns should have been skipped (no data points)
+  EXPECT_EQ(result.columns[0].numeric_points.size(), 0u);
+  EXPECT_EQ(result.columns[0].string_points.size(), 0u);
+  EXPECT_EQ(result.columns[1].numeric_points.size(), 0u);
+  EXPECT_EQ(result.columns[1].string_points.size(), 0u);
+}
+
+TEST(ParseCsvData, CombinedDateTimeWithInvalidRow)
+{
+  std::string csv = "Date,Time,Value\n"
+                    "2024-01-15,10:30:25,100\n"
+                    "bad-date,10:30:26,200\n"
+                    "2024-01-15,10:30:27,300\n";
+
+  CsvParseConfig config;
+  config.delimiter = ',';
+
+  CombinedColumnPair combo;
+  combo.date_column_index = 0;
+  combo.time_column_index = 1;
+  combo.virtual_name = "Date + Time";
+  config.combined_columns.push_back(combo);
+  config.combined_column_index = 0;
+
+  auto result = ParseCsvData(csv, config);
+  ASSERT_TRUE(result.success);
+
+  // 2 valid lines, 1 skipped
+  EXPECT_EQ(result.lines_processed, 2);
+  EXPECT_EQ(result.lines_skipped, 1);
+
+  // Check that an INVALID_TIMESTAMP warning was emitted
+  bool found_warning = false;
+  for (const auto& w : result.warnings)
+  {
+    if (w.type == CsvParseWarning::INVALID_TIMESTAMP)
+    {
+      found_warning = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found_warning);
 }

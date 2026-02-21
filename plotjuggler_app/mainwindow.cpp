@@ -1899,7 +1899,7 @@ std::tuple<double, double, int> MainWindow::calculateVisibleRangeX()
         const double t1 = data.back().x;
         min_time = std::min(min_time, t0);
         max_time = std::max(max_time, t1);
-        max_steps = std::max(max_steps, (int)data.size());
+        max_steps = std::max(max_steps, (int)data.size() - 1);
       }
     }
   });
@@ -1916,7 +1916,7 @@ std::tuple<double, double, int> MainWindow::calculateVisibleRangeX()
         const double t1 = data.back().x;
         min_time = std::min(min_time, t0);
         max_time = std::max(max_time, t1);
-        max_steps = std::max(max_steps, (int)data.size());
+        max_steps = std::max(max_steps, (int)data.size() - 1);
       }
     }
   }
