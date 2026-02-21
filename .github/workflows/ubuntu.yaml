@@ -10,6 +10,10 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   ubuntu-build:
@@ -31,7 +35,7 @@ jobs:
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           packages: software-properties-common qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev ccache libmosquitto-dev ca-certificates lsb-release wget libcurl4-openssl-dev
-          version: 2.0
+          version: 2.1
 
       - name: Install Apache Arrow for Parquet support
         shell: bash
