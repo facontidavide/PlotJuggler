@@ -95,7 +95,9 @@ private:
     ~CompressedFrame()
     {
       if (data)
+      {
         free(data);
+      }
     }
 
     int length;

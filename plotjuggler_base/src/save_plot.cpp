@@ -37,7 +37,9 @@ PlotSaveHelper::PlotSaveHelper(QSize dims, QWidget* parent)
   _save_filename =
       save_dialog.getSaveFileName(parent, "Save plot", "", filters.join(";;"), &selected_filter);
   if (_save_filename.isEmpty())
+  {
     return;
+  }
 
   if (QFileInfo(_save_filename).suffix().isEmpty())
   {
@@ -77,7 +79,9 @@ void PlotSaveHelper::paint(QwtPlot* plot, QRect paint_at) const
 {
   static const auto margin = 5;
   if (_save_filename.isEmpty())
+  {
     return;
+  }
 
   paint_at.adjust(margin, margin, -margin, -margin);
   _renderer->render(plot, _painter.get(), paint_at);
@@ -86,7 +90,9 @@ void PlotSaveHelper::paint(QwtPlot* plot, QRect paint_at) const
 void PlotSaveHelper::paintTitle(const QString& title, QRectF paint_at, QWidget* parent) const
 {
   if (_save_filename.isEmpty())
+  {
     return;
+  }
 
   QFont font;
   _painter->setFont(parent->font());

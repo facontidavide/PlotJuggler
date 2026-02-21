@@ -11,11 +11,15 @@
 void PlotPanner::moveCanvas(int dx, int dy)
 {
   if (dx == 0 && dy == 0)
+  {
     return;
+  }
 
   QwtPlot* plot = this->plot();
   if (plot == NULL)
+  {
     return;
+  }
 
   const bool doAutoReplot = plot->autoReplot();
   plot->setAutoReplot(false);
@@ -27,7 +31,9 @@ void PlotPanner::moveCanvas(int dx, int dy)
     const QwtAxisId axisId(axisPos);
 
     if (!isAxisEnabled(axisId))
+    {
       continue;
+    }
 
     const QwtScaleMap map = plot->canvasMap(axisId);
 

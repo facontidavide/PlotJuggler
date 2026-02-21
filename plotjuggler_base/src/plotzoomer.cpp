@@ -97,7 +97,9 @@ bool PlotZoomer::accept(QPolygon& pa) const
   QApplication::restoreOverrideCursor();
 
   if (pa.count() < 2)
+  {
     return false;
+  }
 
   QRect rect = QRect(pa[0], pa[int(pa.count()) - 1]);
   QRectF zoomRect = invTransform(rect.normalized());

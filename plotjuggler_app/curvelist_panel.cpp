@@ -297,7 +297,9 @@ void CurveListPanel::refreshValues()
         idx--;
       }
       if (num_text[idx] == '.')
+      {
         num_text[idx] = ' ';
+      }
     }
     return num_text + " ";
   };

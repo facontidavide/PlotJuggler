@@ -176,7 +176,9 @@ void DialogTransformEditor::on_listTransforms_itemSelectionChanged()
 
   QString transform_ID = selected_transforms.front()->text();
   if (transform_ID == ui->listTransforms->item(0)->text())
+  {
     transform_ID.clear();
+  }
 
   if (transform_ID.isEmpty())
   {

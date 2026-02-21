@@ -73,7 +73,9 @@ public:
   {
     const auto& str = p.y;
     if (str.data() == nullptr || str.size() == 0)
+    {
       return;
+    }
     if (str.isSSO())
     {
       TimeseriesBase<StringRef>::pushUnsorted(p);
@@ -83,7 +85,9 @@ public:
       _tmp_str.assign(str.data(), str.size());
       auto it = _storage.find(_tmp_str);
       if (it == _storage.end())
+      {
         it = _storage.insert(_tmp_str).first;
+      }
       TimeseriesBase<StringRef>::pushUnsorted({ p.x, StringRef(*it) });
     }
   }

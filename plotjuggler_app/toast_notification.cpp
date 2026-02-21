@@ -194,7 +194,9 @@ void ToastNotification::setIcon(const QPixmap& icon)
 QPixmap ToastNotification::createRoundedPixmap(const QPixmap& source, int radius)
 {
   if (source.isNull())
+  {
     return source;
+  }
 
   QPixmap result(source.size());
   result.fill(Qt::transparent);

@@ -382,7 +382,9 @@ MainWindow::~MainWindow()
 void MainWindow::onUndoableChange()
 {
   if (_disable_undo_logging)
+  {
     return;
+  }
 
   int elapsed_ms = _undo_timer.restart();
 
@@ -390,11 +392,15 @@ void MainWindow::onUndoableChange()
   if (elapsed_ms < 100)
   {
     if (_undo_states.empty() == false)
+    {
       _undo_states.pop_back();
+    }
   }
 
   while (_undo_states.size() >= 100)
+  {
     _undo_states.pop_front();
+  }
   _undo_states.push_back(xmlSaveState());
   _redo_states.clear();
   // qDebug() << "undo " << _undo_states.size();
@@ -403,14 +409,18 @@ void MainWindow::onUndoableChange()
 void MainWindow::onRedoInvoked()
 {
   if (QApplication::activePopupWidget() || QApplication::activeModalWidget())
+  {
     return;
+  }
 
   _disable_undo_logging = true;
   if (_redo_states.size() > 0)
   {
     QDomDocument state_document = _redo_states.back();
     while (_undo_states.size() >= 100)
+    {
       _undo_states.pop_front();
+    }
     _undo_states.push_back(state_document);
     _redo_states.pop_back();
 
@@ -423,14 +433,18 @@ void MainWindow::onRedoInvoked()
 void MainWindow::onUndoInvoked()
 {
   if (QApplication::activePopupWidget() || QApplication::activeModalWidget())
+  {
     return;
+  }
 
   _disable_undo_logging = true;
   if (_undo_states.size() > 1)
   {
     QDomDocument state_document = _undo_states.back();
     while (_redo_states.size() >= 100)
+    {
       _redo_states.pop_front();
+    }
     _redo_states.push_back(state_document);
     _undo_states.pop_back();
     state_document = _undo_states.back();
@@ -821,7 +835,9 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
   connect(plot, &PlotWidget::legendSizeChanged, this, [=](int point_size) {
     auto visitor = [=](PlotWidget* p) {
       if (plot != p)
+      {
         p->setLegendSize(point_size);
+      }
     };
     this->forEachWidget(visitor);
   });

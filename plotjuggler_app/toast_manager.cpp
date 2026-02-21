@@ -57,7 +57,9 @@ void ToastManager::showToast(const QString& message, const QPixmap& icon, int ti
 void ToastManager::updatePosition()
 {
   if (!_parent_widget)
+  {
     return;
+  }
 
   int container_width = _max_width + _margin_right * 2;
   int container_height = _parent_widget->height();
@@ -124,7 +126,9 @@ void ToastManager::onToastClosed()
 void ToastManager::repositionToasts()
 {
   if (_toasts.isEmpty())
+  {
     return;
+  }
 
   const int container_width = _container->width();
   const int container_height = _container->height();
