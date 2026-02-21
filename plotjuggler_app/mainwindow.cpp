@@ -2074,27 +2074,27 @@ bool MainWindow::loadLayoutFromFile(QString filename)
       name_to_index[snippets[i].first.alias_name] = i;
     }
 
-      // Build adjacency list: edges[i] contains indices that i depends on
-      // (i.e. must come before i)
-      std::vector<std::vector<size_t>> dependents(snippets.size());
-      std::vector<int> in_degree(snippets.size(), 0);
+    // Build adjacency list: edges[i] contains indices that i depends on
+    // (i.e. must come before i)
+    std::vector<std::vector<size_t>> dependents(snippets.size());
+    std::vector<int> in_degree(snippets.size(), 0);
 
-      for (size_t i = 0; i < snippets.size(); i++)
-      {
-        auto addDep = [&](const QString& dep_name) {
-          auto it = name_to_index.find(dep_name);
-          if (it != name_to_index.end() && it->second != i)
-          {
-            dependents[it->second].push_back(i);
-            in_degree[i]++;
-          }
-        };
-        addDep(snippets[i].first.linked_source);
-        for (const auto& source : snippets[i].first.additional_sources)
+    for (size_t i = 0; i < snippets.size(); i++)
+    {
+      auto addDep = [&](const QString& dep_name) {
+        auto it = name_to_index.find(dep_name);
+        if (it != name_to_index.end() && it->second != i)
         {
-          addDep(source);
+          dependents[it->second].push_back(i);
+          in_degree[i]++;
         }
+      };
+      addDep(snippets[i].first.linked_source);
+      for (const auto& source : snippets[i].first.additional_sources)
+      {
+        addDep(source);
       }
+    }
 
     // Kahn's algorithm for topological sorting
     std::queue<size_t> queue;
@@ -2129,7 +2129,7 @@ bool MainWindow::loadLayoutFromFile(QString filename)
     if (sorted_snippets.size() < snippets.size())
     {
       QMessageBox::warning(this, tr("Exception"),
-                            tr("Cyclic dependency detected in custom equations."));
+                           tr("Cyclic dependency detected in custom equations."));
       for (size_t i = 0; i < snippets.size(); i++)
       {
         if (in_degree[i] != 0)
