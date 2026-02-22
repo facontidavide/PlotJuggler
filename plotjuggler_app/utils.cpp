@@ -33,12 +33,12 @@ void MergeData(TimeseriesBase<Value>& src_plot, TimeseriesBase<Value>& dst_plot)
     bool need_sorting = false;
     for (size_t i = 0; i < src_plot.size(); i++)
     {
-      auto& src_point = src_plot[i];
-      auto& dst_point = dst_plot[i];
+      auto src_point = src_plot[i];
+      auto dst_point = dst_plot[i];
       if (isEqual(src_point.x, dst_point.x))
       {
         // update only
-        dst_point.y = src_point.y;
+        dst_plot.setY(i, src_point.y);
       }
       else
       {
@@ -112,7 +112,7 @@ void MergeData(StringSeries& src_plot, StringSeries& dst_plot)
   }
   for (size_t i = 0; i < src_plot.size(); i++)
   {
-    auto& pt = src_plot.at(i);
+    auto pt = src_plot.at(i);
     auto str = src_plot.getString(pt.y);
     dst_plot.pushBack({ pt.x, str });
   }
