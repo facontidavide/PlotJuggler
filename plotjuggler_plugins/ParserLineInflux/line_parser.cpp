@@ -67,8 +67,7 @@ public:
         if (value.startsWith('"') && value.endsWith('"'))
         {
           auto& data = _plot_data.getOrCreateStringSeries(key);
-          data.pushBack(
-              PJ::StringSeries::Point(ts_sec, StringRef(value.data() + 1, value.size() - 2)));
+          data.pushBack({ ts_sec, StringRef(value.data() + 1, value.size() - 2) });
         }
         else if (value == "t" || value == "T" || value == "true" || value == "True" ||
                  value == "TRUE")

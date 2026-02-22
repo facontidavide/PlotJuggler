@@ -178,11 +178,7 @@ bool WebsocketClient::start(QStringList*)
     }
 
     // Phase 2: subscribe to selected topics
-    if (_state.mode != WsState::Mode::GetTopics || _state.req_in_flight)
-    {
-      return;
-    }
-    if (!dialog.hasSelection())
+    if (_state.mode != WsState::Mode::GetTopics || _state.req_in_flight || !dialog.hasSelection())
     {
       return;
     }
@@ -269,11 +265,7 @@ void WebsocketClient::shutdown()
 bool WebsocketClient::pause()
 {
   // Pause streaming on server side
-  if (!_running)
-  {
-    return false;
-  }
-  if (_state.req_in_flight)
+  if (!_running || _state.req_in_flight)
   {
     return false;
   }
@@ -287,11 +279,7 @@ bool WebsocketClient::pause()
 bool WebsocketClient::resume()
 {
   // Resume streaming on server side
-  if (!_running)
-  {
-    return false;
-  }
-  if (_state.req_in_flight)
+  if (!_running || _state.req_in_flight)
   {
     return false;
   }
@@ -446,11 +434,7 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
   switch (handledMode)
   {
     case WsState::Mode::GetTopics: {
-      if (!obj.contains("topics") || !obj.value("topics").isArray())
-      {
-        break;
-      }
-      if (!_dialog)
+      if (!_dialog || !obj.contains("topics") || !obj.value("topics").isArray())
       {
         break;
       }
@@ -550,11 +534,7 @@ bool WebsocketClient::parseDecompressedPayload(const QByteArray& decompressed,
   while (q < qend)
   {
     uint16_t name_len = 0;
-    if (!readLE(q, qend, name_len))
-    {
-      return false;
-    }
-    if (q + name_len > qend)
+    if (!readLE(q, qend, name_len) || (q + name_len > qend))
     {
       return false;
     }
@@ -570,11 +550,7 @@ bool WebsocketClient::parseDecompressedPayload(const QByteArray& decompressed,
     double ts_sec = double(ts_ns) * 1e-9;
 
     uint32_t data_len = 0;
-    if (!readLE(q, qend, data_len))
-    {
-      return false;
-    }
-    if (q + data_len > qend)
+    if (!readLE(q, qend, data_len) || (q + data_len > qend))
     {
       return false;
     }
@@ -621,19 +597,8 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
   uint32_t uncompressed_size = 0;
   uint32_t flags = 0;
 
-  if (!readLE(ptr, end, magic))
-  {
-    return;
-  }
-  if (!readLE(ptr, end, message_count))
-  {
-    return;
-  }
-  if (!readLE(ptr, end, uncompressed_size))
-  {
-    return;
-  }
-  if (!readLE(ptr, end, flags))
+  if (!readLE(ptr, end, magic) || !readLE(ptr, end, message_count) ||
+      !readLE(ptr, end, uncompressed_size) || !readLE(ptr, end, flags))
   {
     return;
   }
@@ -724,15 +689,7 @@ void WebsocketClient::requestTopics()
   }
 
   // Only poll when connected and idle
-  if (!_running)
-  {
-    return;
-  }
-  if (_state.mode != WsState::Mode::GetTopics)
-  {
-    return;
-  }
-  if (_state.req_in_flight)
+  if (!_running || (_state.mode != WsState::Mode::GetTopics) || _state.req_in_flight)
   {
     return;
   }
@@ -749,17 +706,8 @@ void WebsocketClient::requestTopics()
 
 void WebsocketClient::sendHeartBeat()
 {
-  if (_socket.state() != QAbstractSocket::ConnectedState)
-  {
-    return;
-  }
-
-  // Heartbeat only in Data mode
-  if (!_running)
-  {
-    return;
-  }
-  if (_state.mode != WsState::Mode::Data)
+  if (_socket.state() != QAbstractSocket::ConnectedState || !_running ||
+      (_state.mode != WsState::Mode::Data))
   {
     return;
   }
