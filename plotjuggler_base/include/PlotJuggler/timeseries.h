@@ -9,6 +9,7 @@
 
 #include "plotdatabase.h"
 #include <algorithm>
+#include <numeric>
 
 namespace PJ
 {
@@ -17,10 +18,10 @@ class TimeseriesBase : public PlotDataBase<double, Value>
 {
 protected:
   double _max_range_x;
-  using PlotDataBase<double, Value>::_points;
 
 public:
   using Point = typename PlotDataBase<double, Value>::Point;
+  using ConstIterator = typename PlotDataBase<double, Value>::ConstIterator;
 
   TimeseriesBase(const std::string& name, PlotGroup::Ptr group)
     : PlotDataBase<double, Value>(name, group), _max_range_x(std::numeric_limits<double>::max())
@@ -54,7 +55,11 @@ public:
   std::optional<Value> getYfromX(double x) const
   {
     int index = getIndexFromX(x);
-    return (index < 0) ? std::nullopt : std::optional(_points[index].y);
+    if (index < 0)
+    {
+      return std::nullopt;
+    }
+    return std::optional(this->_values.valueAt(index));
   }
 
   void pushBack(const Point& p) override
@@ -65,11 +70,11 @@ public:
 
   void pushBack(Point&& p) override
   {
-    bool need_sorting = (!_points.empty() && p.x < this->back().x);
+    bool need_sorting = (!this->_timestamps.empty() && p.x < this->back().x);
 
     if (need_sorting)
     {
-      auto it = std::upper_bound(_points.begin(), _points.end(), p,
+      auto it = std::upper_bound(this->begin(), this->end(), p,
                                  [](const auto& a, const auto& b) { return a.x < b.x; });
       PlotDataBase<double, Value>::insert(it, std::move(p));
     }
@@ -91,27 +96,63 @@ public:
     }
     if (!std::isinf(p.x) && !std::isnan(p.x))
     {
-      _points.push_back(std::move(p));
+      this->_timestamps.push_back(p.x);
+      this->_values.push_back(p.y);
+      this->tryDeduplicateLastSealedTimestamp();
     }
   }
 
   void sort()
   {
-    std::sort(_points.begin(), _points.end(),
-              [](const auto& a, const auto& b) { return a.x < b.x; });
-
-    Range range_x;
-    Range range_y;
-
-    for (const auto& p : _points)
+    size_t n = this->_timestamps.size();
+    if (n == 0)
     {
-      range_x.min = std::max(range_x.min, p.x);
-      range_x.max = std::min(range_x.max, p.x);
+      return;
+    }
+
+    // Build index array and sort by timestamp
+    std::vector<size_t> indices(n);
+    std::iota(indices.begin(), indices.end(), 0);
+    std::sort(indices.begin(), indices.end(),
+              [this](size_t a, size_t b) { return this->_timestamps[a] < this->_timestamps[b]; });
+
+    // Flatten timestamps and values, then rebuild in sorted order
+    std::vector<double> sorted_ts(n);
+    std::vector<Value> sorted_vals(n);
+    for (size_t i = 0; i < n; i++)
+    {
+      sorted_ts[i] = this->_timestamps[indices[i]];
+      sorted_vals[i] = this->_values.valueAt(indices[i]);
+    }
+
+    this->_timestamps.clear();
+    this->_values.clear();
+    for (size_t i = 0; i < n; i++)
+    {
+      this->_timestamps.push_back(sorted_ts[i]);
+      this->_values.push_back(std::move(sorted_vals[i]));
+      this->tryDeduplicateLastSealedTimestamp();
+    }
+
+    // Recompute ranges
+    Range range_x;
+    range_x.min = std::numeric_limits<double>::max();
+    range_x.max = std::numeric_limits<double>::lowest();
+    Range range_y;
+    range_y.min = std::numeric_limits<double>::max();
+    range_y.max = std::numeric_limits<double>::lowest();
+
+    for (size_t i = 0; i < n; i++)
+    {
+      double x = this->_timestamps[i];
+      range_x.min = std::min(range_x.min, x);
+      range_x.max = std::max(range_x.max, x);
 
       if constexpr (std::is_arithmetic_v<Value>)
       {
-        range_y.min = std::max(range_y.min, p.y);
-        range_y.max = std::min(range_y.max, p.y);
+        double y = static_cast<double>(this->_values.valueAt(i));
+        range_y.min = std::min(range_y.min, y);
+        range_y.max = std::max(range_y.max, y);
       }
     }
     this->_range_x = range_x;
@@ -124,19 +165,14 @@ public:
 private:
   void trimRange()
   {
-    if (_max_range_x < std::numeric_limits<double>::max() && !_points.empty())
+    if (_max_range_x < std::numeric_limits<double>::max() && !this->_timestamps.empty())
     {
-      auto const back_point_x = _points.back().x;
-      while (_points.size() > 2 && (back_point_x - _points.front().x) > _max_range_x)
+      auto const back_x = this->_timestamps.back();
+      while (this->_timestamps.size() > 2 && (back_x - this->_timestamps.front()) > _max_range_x)
       {
         this->popFront();
       }
     }
-  }
-
-  static bool TimeCompare(const Point& a, const Point& b)
-  {
-    return a.x < b.x;
   }
 };
 
@@ -145,23 +181,25 @@ private:
 template <typename Value>
 inline int TimeseriesBase<Value>::getIndexFromX(double x) const
 {
-  if (_points.size() == 0)
+  if (this->_timestamps.empty())
   {
     return -1;
   }
-  auto lower = std::lower_bound(_points.begin(), _points.end(), Point(x, {}), TimeCompare);
-  auto index = std::distance(_points.begin(), lower);
 
-  if (index >= _points.size())
+  size_t lb = this->_timestamps.lowerBound(x);
+  int index = static_cast<int>(lb);
+
+  if (index >= static_cast<int>(this->_timestamps.size()))
   {
-    return _points.size() - 1;
+    return this->_timestamps.size() - 1;
   }
   if (index < 0)
   {
     return 0;
   }
 
-  if (index > 0 && (abs(_points[index - 1].x - x) < abs(_points[index].x - x)))
+  if (index > 0 &&
+      (std::abs(this->_timestamps[index - 1] - x) < std::abs(this->_timestamps[index] - x)))
   {
     index = index - 1;
   }

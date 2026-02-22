@@ -44,7 +44,7 @@ void QuaternionToRollPitchYaw::calculate()
 
   while (index < data_x.size())
   {
-    auto& point_x = data_x.at(index);
+    auto point_x = data_x.at(index);
     double timestamp = point_x.x;
     double q_x = point_x.y;
     double q_y = data_y.at(index).y;

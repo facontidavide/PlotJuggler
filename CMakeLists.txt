@@ -272,6 +272,21 @@ target_include_directories(
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/qwt/src>
          $<INSTALL_INTERFACE:include>)
 
+# ########################  TESTS  ####################################
+
+if(BUILD_TESTING)
+  find_package(GTest QUIET)
+  if(GTest_FOUND)
+    enable_testing()
+    add_executable(test_chunked_timestamps
+                   plotjuggler_base/tests/test_chunked_timestamps.cpp)
+    target_link_libraries(test_chunked_timestamps
+                          PRIVATE plotjuggler_base GTest::gtest_main)
+    include(GoogleTest)
+    gtest_discover_tests(test_chunked_timestamps)
+  endif()
+endif()
+
 # ########################  INSTALL  ####################################
 
 if(COMPILING_WITH_CATKIN)

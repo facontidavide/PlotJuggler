@@ -15,9 +15,13 @@
 #include <cstdlib>
 #include <unordered_map>
 #include <optional>
+#include <iterator>
 
 #include <QVariant>
 #include <QtGlobal>
+
+#include "chunked_values.h"
+#include "chunked_timestamps.h"
 
 namespace PJ
 {
@@ -112,9 +116,15 @@ public:
     return (it == _attributes.end()) ? QVariant() : it->second;
   }
 
+  TimestampRegistry& timestampRegistry()
+  {
+    return _ts_registry;
+  }
+
 private:
   const std::string _name;
   Attributes _attributes;
+  TimestampRegistry _ts_registry;
 };
 
 // A Generic series of points
@@ -139,8 +149,129 @@ public:
     ASYNC_BUFFER_CAPACITY = 1024
   };
 
-  typedef typename std::deque<Point>::iterator Iterator;
-  typedef typename std::deque<Point>::const_iterator ConstIterator;
+  class ConstIterator
+  {
+    const PlotDataBase* _owner;
+    size_t _index;
+    mutable Point _cached;
+
+  public:
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = Point;
+    using difference_type = std::ptrdiff_t;
+    using reference = const Point&;
+    using pointer = const Point*;
+
+    ConstIterator() : _owner(nullptr), _index(0)
+    {
+    }
+    ConstIterator(const PlotDataBase* owner, size_t index) : _owner(owner), _index(index)
+    {
+    }
+
+    const Point& operator*() const
+    {
+      _cached.x = _owner->_timestamps[_index];
+      _cached.y = _owner->_values.valueAt(_index);
+      return _cached;
+    }
+
+    const Point* operator->() const
+    {
+      operator*();
+      return &_cached;
+    }
+
+    const Point& operator[](difference_type n) const
+    {
+      _cached.x = _owner->_timestamps[_index + n];
+      _cached.y = _owner->_values.valueAt(_index + n);
+      return _cached;
+    }
+
+    ConstIterator& operator++()
+    {
+      ++_index;
+      return *this;
+    }
+    ConstIterator operator++(int)
+    {
+      auto tmp = *this;
+      ++_index;
+      return tmp;
+    }
+    ConstIterator& operator--()
+    {
+      --_index;
+      return *this;
+    }
+    ConstIterator operator--(int)
+    {
+      auto tmp = *this;
+      --_index;
+      return tmp;
+    }
+
+    ConstIterator& operator+=(difference_type n)
+    {
+      _index += n;
+      return *this;
+    }
+    ConstIterator& operator-=(difference_type n)
+    {
+      _index -= n;
+      return *this;
+    }
+    ConstIterator operator+(difference_type n) const
+    {
+      return { _owner, _index + n };
+    }
+    ConstIterator operator-(difference_type n) const
+    {
+      return { _owner, _index - n };
+    }
+    difference_type operator-(const ConstIterator& other) const
+    {
+      return static_cast<difference_type>(_index) - static_cast<difference_type>(other._index);
+    }
+
+    bool operator==(const ConstIterator& other) const
+    {
+      return _index == other._index;
+    }
+    bool operator!=(const ConstIterator& other) const
+    {
+      return _index != other._index;
+    }
+    bool operator<(const ConstIterator& other) const
+    {
+      return _index < other._index;
+    }
+    bool operator>(const ConstIterator& other) const
+    {
+      return _index > other._index;
+    }
+    bool operator<=(const ConstIterator& other) const
+    {
+      return _index <= other._index;
+    }
+    bool operator>=(const ConstIterator& other) const
+    {
+      return _index >= other._index;
+    }
+
+    friend ConstIterator operator+(difference_type n, const ConstIterator& it)
+    {
+      return it + n;
+    }
+
+    size_t iterIndex() const
+    {
+      return _index;
+    }
+  };
+
+  typedef ConstIterator Iterator;
   typedef Value ValueT;
 
   PlotDataBase(const std::string& name, PlotGroup::Ptr group)
@@ -156,7 +287,8 @@ public:
 
   void clonePoints(const PlotDataBase& other)
   {
-    _points = other._points;
+    _timestamps = other._timestamps;
+    _values = other._values;
     _range_x = other._range_x;
     _range_y = other._range_y;
     _range_x_dirty = other._range_x_dirty;
@@ -165,7 +297,8 @@ public:
 
   void clonePoints(PlotDataBase&& other)
   {
-    _points = std::move(other._points);
+    _timestamps = std::move(other._timestamps);
+    _values = std::move(other._values);
     _range_x = other._range_x;
     _range_y = other._range_y;
     _range_x_dirty = other._range_x_dirty;
@@ -191,7 +324,12 @@ public:
 
   virtual size_t size() const
   {
-    return _points.size();
+    return _timestamps.size();
+  }
+
+  bool empty() const
+  {
+    return _timestamps.empty();
   }
 
   virtual bool isTimeseries() const
@@ -199,29 +337,20 @@ public:
     return false;
   }
 
-  const Point& at(size_t index) const
+  Point at(size_t index) const
   {
-    return _points[index];
+    return Point(_timestamps[index], _values.valueAt(index));
   }
 
-  Point& at(size_t index)
-  {
-    return _points[index];
-  }
-
-  const Point& operator[](size_t index) const
-  {
-    return at(index);
-  }
-
-  Point& operator[](size_t index)
+  Point operator[](size_t index) const
   {
     return at(index);
   }
 
   virtual void clear()
   {
-    _points.clear();
+    _timestamps.clear();
+    _values.clear();
     _range_x_dirty = true;
     _range_y_dirty = true;
   }
@@ -251,34 +380,34 @@ public:
     return (it == _attributes.end()) ? QVariant() : it->second;
   }
 
-  const Point& front() const
+  Point front() const
   {
-    return _points.front();
+    return Point(_timestamps.front(), _values.valueAt(0));
   }
 
-  const Point& back() const
+  Point back() const
   {
-    return _points.back();
+    return Point(_timestamps.back(), _values.valueAt(_values.size() - 1));
   }
 
   ConstIterator begin() const
   {
-    return _points.begin();
+    return ConstIterator(this, 0);
   }
 
   ConstIterator end() const
   {
-    return _points.end();
+    return ConstIterator(this, _timestamps.size());
   }
 
   Iterator begin()
   {
-    return _points.begin();
+    return Iterator(this, 0);
   }
 
   Iterator end()
   {
-    return _points.end();
+    return Iterator(this, _timestamps.size());
   }
 
   // template specialization for types that support compare operator
@@ -286,18 +415,19 @@ public:
   {
     if constexpr (std::is_arithmetic_v<TypeX>)
     {
-      if (_points.empty())
+      if (_timestamps.empty())
       {
         return std::nullopt;
       }
       if (_range_x_dirty)
       {
-        _range_x.min = front().x;
-        _range_x.max = _range_x.min;
-        for (const auto& p : _points)
+        _range_x.min = std::numeric_limits<double>::max();
+        _range_x.max = std::numeric_limits<double>::lowest();
+        for (size_t i = 0; i < _timestamps.size(); i++)
         {
-          _range_x.min = std::min(_range_x.min, p.x);
-          _range_x.max = std::max(_range_x.max, p.x);
+          double v = _timestamps[i];
+          _range_x.min = std::min(_range_x.min, v);
+          _range_x.max = std::max(_range_x.max, v);
         }
         _range_x_dirty = false;
       }
@@ -306,23 +436,24 @@ public:
     return std::nullopt;
   }
 
-  // template specialization for types that support compare operator
+  // Optimized: scans chunk metadata instead of every point
   virtual RangeOpt rangeY() const
   {
     if constexpr (std::is_arithmetic_v<Value>)
     {
-      if (_points.empty())
+      if (_timestamps.empty())
       {
         return std::nullopt;
       }
       if (_range_y_dirty)
       {
-        _range_y.min = front().y;
-        _range_y.max = _range_y.min;
-        for (const auto& p : _points)
+        _range_y.min = std::numeric_limits<double>::max();
+        _range_y.max = std::numeric_limits<double>::lowest();
+        for (size_t i = 0; i < _values.size(); i++)
         {
-          _range_y.min = std::min(_range_y.min, p.y);
-          _range_y.max = std::max(_range_y.max, p.y);
+          double v = static_cast<double>(_values.valueAt(i));
+          _range_y.min = std::min(_range_y.min, v);
+          _range_y.max = std::max(_range_y.max, v);
         }
         _range_y_dirty = false;
       }
@@ -356,11 +487,14 @@ public:
       pushUpdateRangeY(p);
     }
 
-    _points.emplace_back(p);
+    _timestamps.push_back(p.x);
+    _values.push_back(std::move(p.y));
+    tryDeduplicateLastSealedTimestamp();
   }
 
-  virtual void insert(Iterator it, Point&& p)
+  virtual void insert(ConstIterator it, Point&& p)
   {
+    size_t index = it.iterIndex();
     if constexpr (std::is_arithmetic_v<TypeX>)
     {
       if (std::isinf(p.x) || std::isnan(p.x))
@@ -378,16 +512,18 @@ public:
       pushUpdateRangeY(p);
     }
 
-    _points.insert(it, p);
+    _timestamps.insert(index, p.x);
+    _values.insert(index, std::move(p.y));
   }
 
   virtual void popFront()
   {
-    const auto& p = _points.front();
+    const double x = _timestamps.front();
+    const auto y = _values.valueAt(0);
 
     if constexpr (std::is_arithmetic_v<TypeX>)
     {
-      if (!_range_x_dirty && (p.x == _range_x.max || p.x == _range_x.min))
+      if (!_range_x_dirty && (x == _range_x.max || x == _range_x.min))
       {
         _range_x_dirty = true;
       }
@@ -395,18 +531,44 @@ public:
 
     if constexpr (std::is_arithmetic_v<Value>)
     {
-      if (!_range_y_dirty && (p.y == _range_y.max || p.y == _range_y.min))
+      if (!_range_y_dirty && (y == _range_y.max || y == _range_y.min))
       {
         _range_y_dirty = true;
       }
     }
-    _points.pop_front();
+    _timestamps.pop_front();
+    _values.pop_front();
+  }
+
+  void setY(size_t index, const Value& y)
+  {
+    _values.valueRef(index) = y;
+    _range_y_dirty = true;
+  }
+
+  void setPoint(size_t index, TypeX x, const Value& y)
+  {
+    _timestamps.mutableRef(index) = x;
+    _values.valueRef(index) = y;
+    _range_x_dirty = true;
+    _range_y_dirty = true;
+  }
+
+  const ChunkedTimestamps& timestamps() const
+  {
+    return _timestamps;
+  }
+
+  const ChunkedValues<Value>& values() const
+  {
+    return _values;
   }
 
 protected:
   std::string _name;
   Attributes _attributes;
-  std::deque<Point> _points;
+  ChunkedTimestamps _timestamps;
+  ChunkedValues<Value> _values;
 
   mutable Range _range_x;
   mutable Range _range_y;
@@ -414,12 +576,30 @@ protected:
   mutable bool _range_y_dirty;
   mutable std::shared_ptr<PlotGroup> _group;
 
+  void tryDeduplicateLastSealedTimestamp()
+  {
+    if (!_group)
+    {
+      return;
+    }
+    auto sealed = _timestamps.lastSealedChunk();
+    if (!sealed)
+    {
+      return;
+    }
+    auto deduped = _group->timestampRegistry().deduplicate(sealed);
+    if (deduped != sealed)
+    {
+      _timestamps.replaceChunk(_timestamps.lastSealedChunkIndex(), std::move(deduped));
+    }
+  }
+
   // template specialization for types that support compare operator
   virtual void pushUpdateRangeX(const Point& p)
   {
     if constexpr (std::is_arithmetic_v<TypeX>)
     {
-      if (_points.empty())
+      if (_timestamps.empty())
       {
         _range_x_dirty = false;
         _range_x.min = p.x;
