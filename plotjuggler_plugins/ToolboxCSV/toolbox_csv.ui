@@ -18,7 +18,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_7">
+    <layout class="QHBoxLayout" name="timeSliderLayout">
      <item>
       <widget class="QDoubleSpinBox" name="startTime"/>
      </item>
@@ -42,12 +42,12 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="2">
+    <layout class="QHBoxLayout" name="mainLayout" stretch="2">
      <property name="topMargin">
       <number>22</number>
      </property>
      <item>
-      <widget class="QFrame" name="frame">
+      <widget class="QFrame" name="mainFrame">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -62,7 +62,7 @@
        </property>
        <layout class="QVBoxLayout" name="verticalLayoutLeft_3" stretch="0,1,0">
         <item alignment="Qt::AlignHCenter">
-         <widget class="QLabel" name="label_19">
+         <widget class="QLabel" name="mainFrameLabel">
           <property name="font">
            <font>
             <pointsize>13</pointsize>
@@ -87,11 +87,11 @@
          </widget>
         </item>
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_5">
+         <layout class="QVBoxLayout" name="verticaFrameLayout">
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_9" stretch="0,1,0">
+           <layout class="QHBoxLayout" name="horizontalFrameLayout" stretch="0,1,0">
             <item>
-             <widget class="QLabel" name="label_13">
+             <widget class="QLabel" name="topMainLabel">
               <property name="text">
                <string>Drag and Drop the data:</string>
               </property>
@@ -162,7 +162,7 @@ The selected path must be a folder.
          </layout>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <layout class="QHBoxLayout" name="botMainLayout">
           <item>
            <widget class="QPushButton" name="removeButton">
             <property name="text">
@@ -217,7 +217,7 @@ The selected path must be a folder.
              </layout>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_5">
+             <layout class="QHBoxLayout" name="fileLineLayout">
               <item>
                <widget class="QLineEdit" name="lineEditPath">
                 <property name="sizePolicy">
@@ -275,9 +275,9 @@ The selected path must be a folder.
              </layout>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <layout class="QHBoxLayout" name="saveLayout">
               <item>
-               <spacer name="horizontalSpacer_2">
+               <spacer name="saveSpacer">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
@@ -303,7 +303,7 @@ The selected path must be a folder.
                </widget>
               </item>
               <item>
-               <spacer name="horizontalSpacer_3">
+               <spacer name="saveSpacer_2">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
@@ -327,12 +327,12 @@ The selected path must be a folder.
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_4">
+    <layout class="QHBoxLayout" name="closeLayout">
      <property name="topMargin">
       <number>11</number>
      </property>
      <item>
-      <spacer name="horizontalSpacer_7">
+      <spacer name="closeSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
