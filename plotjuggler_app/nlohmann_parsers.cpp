@@ -54,6 +54,7 @@ bool NlohmannParser::parseMessageImpl(double& timestamp)
         {
           flatten(fmt::format("{}[{}]", prefix, i), value[i]);
         }
+        flatten(fmt::format("{}[-1]", prefix), value.back());
         break;
       }
 
