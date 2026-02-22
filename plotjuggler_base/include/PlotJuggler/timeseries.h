@@ -87,7 +87,6 @@ public:
 
   virtual void pushUnsorted(const Point& p)
   {
-    this->flushTempPoint();
     if constexpr (std::is_arithmetic_v<Value>)
     {
       if (std::isinf(p.y) || std::isnan(p.y))
@@ -104,7 +103,6 @@ public:
 
   void sort()
   {
-    this->flushTempPoint();
     size_t n = this->_timestamps.size();
     if (n == 0)
     {
@@ -134,21 +132,25 @@ public:
       this->_values.push_back(std::move(sorted_vals[i]));
     }
 
-    // Recompute ranges (preserving original behavior)
+    // Recompute ranges
     Range range_x;
+    range_x.min = std::numeric_limits<double>::max();
+    range_x.max = std::numeric_limits<double>::lowest();
     Range range_y;
+    range_y.min = std::numeric_limits<double>::max();
+    range_y.max = std::numeric_limits<double>::lowest();
 
     for (size_t i = 0; i < n; i++)
     {
       double x = this->_timestamps[i];
-      range_x.min = std::max(range_x.min, x);
-      range_x.max = std::min(range_x.max, x);
+      range_x.min = std::min(range_x.min, x);
+      range_x.max = std::max(range_x.max, x);
 
       if constexpr (std::is_arithmetic_v<Value>)
       {
         double y = static_cast<double>(this->_values.valueAt(i));
-        range_y.min = std::max(range_y.min, y);
-        range_y.max = std::min(range_y.max, y);
+        range_y.min = std::min(range_y.min, y);
+        range_y.max = std::max(range_y.max, y);
       }
     }
     this->_range_x = range_x;

@@ -180,8 +180,7 @@ std::pair<double, double> TimeseriesRef::at(unsigned i) const
 
 void TimeseriesRef::set(unsigned index, double x, double y)
 {
-  auto& p = _plot_data->at(index);
-  p = { x, y };
+  _plot_data->setPoint(index, x, y);
 }
 
 double TimeseriesRef::atTime(double t) const

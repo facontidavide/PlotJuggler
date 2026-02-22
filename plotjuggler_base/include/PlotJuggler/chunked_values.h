@@ -101,25 +101,6 @@ public:
     return _chunks[ci].valueRef(li);
   }
 
-  void writeBack(size_t index, const Value& v)
-  {
-    auto [ci, li] = locate(index);
-    auto& chunk = _chunks[ci];
-    chunk.valueRef(li) = v;
-    if constexpr (std::is_arithmetic_v<Value>)
-    {
-      double dv = static_cast<double>(v);
-      if (dv < chunk.min_y)
-      {
-        chunk.min_y = dv;
-      }
-      if (dv > chunk.max_y)
-      {
-        chunk.max_y = dv;
-      }
-    }
-  }
-
   void push_back(const Value& v)
   {
     if (_chunks.empty() || _chunks.back().count == ValueChunk<Value>::CAPACITY)
