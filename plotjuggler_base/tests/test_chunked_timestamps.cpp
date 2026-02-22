@@ -1164,6 +1164,112 @@ TEST(PlotDataBaseIntegration, NanInfFiltered)
 // Large scale test (stress)
 // ===========================================================================
 
+// ===========================================================================
+// BUG 1: Stale metadata after setPoint/setY on non-front chunks
+// ===========================================================================
+
+TEST(StaleMetadataBug, RangeXAfterSetPointOnNonFrontChunk)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+  Timeseries series("test", group);
+
+  const uint32_t CAP = TimestampChunk::CAPACITY;
+  // Fill 2 chunks: [0..CAP-1] and [CAP..2*CAP-1]
+  for (uint32_t i = 0; i < 2 * CAP; i++)
+  {
+    series.pushBack({ static_cast<double>(i), 0.0 });
+  }
+
+  // Verify initial range
+  auto range = series.rangeX();
+  ASSERT_TRUE(range.has_value());
+  EXPECT_DOUBLE_EQ(range->max, static_cast<double>(2 * CAP - 1));
+
+  // setPoint on index in 2nd chunk to value > chunk max_x
+  // Index 1500 is in chunk[1] (indices CAP..2*CAP-1)
+  series.setPoint(CAP + 500, 9999.0, 0.0);
+
+  range = series.rangeX();
+  ASSERT_TRUE(range.has_value());
+  EXPECT_DOUBLE_EQ(range->max, 9999.0);
+}
+
+TEST(StaleMetadataBug, RangeXAfterSetPointReducesRange)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+  Timeseries series("test", group);
+
+  // Push [0..9] — the max is 9.0
+  for (int i = 0; i < 10; i++)
+  {
+    series.pushBack({ static_cast<double>(i), 0.0 });
+  }
+
+  auto range = series.rangeX();
+  ASSERT_TRUE(range.has_value());
+  EXPECT_DOUBLE_EQ(range->max, 9.0);
+
+  // Replace the max element (index 9) with a smaller value
+  series.setPoint(9, 5.5, 0.0);
+
+  range = series.rangeX();
+  ASSERT_TRUE(range.has_value());
+  EXPECT_DOUBLE_EQ(range->max, 8.0);  // new max is 8.0 at index 8
+  EXPECT_DOUBLE_EQ(range->min, 0.0);
+}
+
+TEST(StaleMetadataBug, RangeYAfterSetYOnNonFrontChunk)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+  Timeseries series("test", group);
+
+  const uint32_t CAP = TimestampChunk::CAPACITY;
+  // Fill 2 chunks, y values = [0..2*CAP-1]
+  for (uint32_t i = 0; i < 2 * CAP; i++)
+  {
+    series.pushBack({ static_cast<double>(i), static_cast<double>(i) });
+  }
+
+  auto range = series.rangeY();
+  ASSERT_TRUE(range.has_value());
+  EXPECT_DOUBLE_EQ(range->max, static_cast<double>(2 * CAP - 1));
+
+  // setY on index in 2nd chunk to value > chunk max_y
+  series.setY(CAP + 500, 9999.0);
+
+  range = series.rangeY();
+  ASSERT_TRUE(range.has_value());
+  EXPECT_DOUBLE_EQ(range->max, 9999.0);
+}
+
+TEST(StaleMetadataBug, RangeYAfterSetYReducesRange)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+  Timeseries series("test", group);
+
+  // Push [0..9] with y = i*10
+  for (int i = 0; i < 10; i++)
+  {
+    series.pushBack({ static_cast<double>(i), static_cast<double>(i * 10) });
+  }
+
+  auto range = series.rangeY();
+  ASSERT_TRUE(range.has_value());
+  EXPECT_DOUBLE_EQ(range->max, 90.0);
+
+  // Replace the max Y element (index 9, y=90) with a smaller value
+  series.setY(9, 5.0);
+
+  range = series.rangeY();
+  ASSERT_TRUE(range.has_value());
+  EXPECT_DOUBLE_EQ(range->max, 80.0);  // new max is 80.0 at index 8
+  EXPECT_DOUBLE_EQ(range->min, 0.0);
+}
+
+// ===========================================================================
+// Large scale test (stress)
+// ===========================================================================
+
 TEST(PlotDataBaseIntegration, LargeScaleStreamingWithDedup)
 {
   auto group = std::make_shared<PlotGroup>("grp");
@@ -1208,5 +1314,467 @@ TEST(PlotDataBaseIntegration, LargeScaleStreamingWithDedup)
     {
       EXPECT_DOUBLE_EQ(series[s]->at(i).x, static_cast<double>(i));
     }
+  }
+}
+
+// ===========================================================================
+// Group 2: lowerBound edge cases
+// ===========================================================================
+
+TEST(ChunkedTimestamps, LowerBoundDuplicateTimestamps)
+{
+  ChunkedTimestamps ts;
+  // Push 10 copies of 5.0
+  for (int i = 0; i < 10; i++)
+  {
+    ts.push_back(5.0);
+  }
+
+  // lowerBound should return 0 for the duplicate value
+  EXPECT_EQ(ts.lowerBound(5.0), 0u);
+  // Anything larger than 5.0 should return past-the-end
+  EXPECT_EQ(ts.lowerBound(5.1), 10u);
+  // Anything smaller should return 0
+  EXPECT_EQ(ts.lowerBound(4.9), 0u);
+}
+
+TEST(ChunkedTimestamps, LowerBoundNegativeTimestamps)
+{
+  ChunkedTimestamps ts;
+  std::vector<double> vals = { -100.0, -50.0, 0.0, 50.0, 100.0 };
+  for (double v : vals)
+  {
+    ts.push_back(v);
+  }
+
+  EXPECT_EQ(ts.lowerBound(-100.0), 0u);
+  EXPECT_EQ(ts.lowerBound(-75.0), 1u);  // first >= -75 is -50 at index 1
+  EXPECT_EQ(ts.lowerBound(-50.0), 1u);
+  EXPECT_EQ(ts.lowerBound(0.0), 2u);
+  EXPECT_EQ(ts.lowerBound(100.0), 4u);
+  EXPECT_EQ(ts.lowerBound(101.0), 5u);   // past the end
+  EXPECT_EQ(ts.lowerBound(-200.0), 0u);  // before all
+}
+
+TEST(ChunkedTimestamps, LowerBoundAllSameValue)
+{
+  ChunkedTimestamps ts;
+  const uint32_t CAP = TimestampChunk::CAPACITY;
+  // Fill 2 full chunks with the same value
+  for (uint32_t i = 0; i < 2 * CAP; i++)
+  {
+    ts.push_back(42.0);
+  }
+
+  EXPECT_EQ(ts.lowerBound(42.0), 0u);
+  EXPECT_EQ(ts.lowerBound(43.0), 2 * CAP);
+  EXPECT_EQ(ts.lowerBound(41.0), 0u);
+}
+
+TEST(ChunkedTimestamps, LowerBoundExactChunkBoundary)
+{
+  ChunkedTimestamps ts;
+  const uint32_t CAP = TimestampChunk::CAPACITY;
+  // Fill 3 chunks
+  for (uint32_t i = 0; i < 3 * CAP; i++)
+  {
+    ts.push_back(static_cast<double>(i));
+  }
+
+  // Query for exactly chunk[0].max_x = CAP-1
+  EXPECT_EQ(ts.lowerBound(static_cast<double>(CAP - 1)), CAP - 1);
+  // Query for CAP (first element of chunk[1])
+  EXPECT_EQ(ts.lowerBound(static_cast<double>(CAP)), CAP);
+  // Query for 2*CAP-1 (last element of chunk[1])
+  EXPECT_EQ(ts.lowerBound(static_cast<double>(2 * CAP - 1)), 2 * CAP - 1);
+}
+
+// ===========================================================================
+// Group 3: COW deeper scenarios
+// ===========================================================================
+
+TEST(ChunkedTimestamps, CowMultipleDetachments)
+{
+  ChunkedTimestamps ts1;
+  const uint32_t CAP = TimestampChunk::CAPACITY;
+
+  for (uint32_t i = 0; i < 2 * CAP; i++)
+  {
+    ts1.push_back(static_cast<double>(i));
+  }
+
+  // Copy 1
+  ChunkedTimestamps ts2;
+  ts2 = ts1;
+
+  // Mutate ts1
+  ts1.mutableRef(0) = 111.0;
+
+  // Copy 2 (from mutated ts1)
+  ChunkedTimestamps ts3;
+  ts3 = ts1;
+
+  // Mutate ts3
+  ts3.mutableRef(0) = 222.0;
+
+  // All 3 copies must be independent
+  EXPECT_DOUBLE_EQ(ts1[0], 111.0);
+  EXPECT_DOUBLE_EQ(ts2[0], 0.0);
+  EXPECT_DOUBLE_EQ(ts3[0], 222.0);
+
+  // Non-mutated elements should be unchanged
+  EXPECT_DOUBLE_EQ(ts1[1], 1.0);
+  EXPECT_DOUBLE_EQ(ts2[1], 1.0);
+  EXPECT_DOUBLE_EQ(ts3[1], 1.0);
+}
+
+TEST(ChunkedTimestamps, CowPopFrontThenMutableRefSameChunk)
+{
+  ChunkedTimestamps ts1;
+  const uint32_t CAP = TimestampChunk::CAPACITY;
+
+  for (uint32_t i = 0; i < 2 * CAP; i++)
+  {
+    ts1.push_back(static_cast<double>(i));
+  }
+
+  // Share chunks
+  ChunkedTimestamps ts2;
+  ts2 = ts1;
+
+  // pop_front COW-detaches the front chunk in ts1
+  ts1.pop_front();
+  EXPECT_DOUBLE_EQ(ts1.front(), 1.0);
+
+  // Now mutableRef on the same (already detached) front chunk
+  // should NOT re-detach since use_count is already 1
+  ts1.mutableRef(0) = 999.0;
+  EXPECT_DOUBLE_EQ(ts1[0], 999.0);
+
+  // ts2 should still have original
+  EXPECT_DOUBLE_EQ(ts2[0], 0.0);
+  EXPECT_DOUBLE_EQ(ts2[1], 1.0);
+}
+
+TEST(DedupIntegration, CowDedupThenPopFront)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+  Timeseries series_a("a", group);
+  Timeseries series_b("b", group);
+
+  const uint32_t CAP = TimestampChunk::CAPACITY;
+
+  // Push identical timestamps so dedup shares the sealed chunk
+  for (uint32_t i = 0; i < CAP + 10; i++)
+  {
+    double t = static_cast<double>(i);
+    series_a.pushBack({ t, 1.0 });
+    series_b.pushBack({ t, 2.0 });
+  }
+
+  // Confirm shared
+  EXPECT_EQ(series_a.timestamps().chunks()[0].get(), series_b.timestamps().chunks()[0].get());
+
+  // Pop from series_a until the shared chunk is consumed
+  for (uint32_t i = 0; i < CAP; i++)
+  {
+    series_a.popFront();
+  }
+
+  // series_b should still be intact
+  EXPECT_EQ(series_b.size(), CAP + 10);
+  for (uint32_t i = 0; i < CAP + 10; i++)
+  {
+    EXPECT_DOUBLE_EQ(series_b.at(i).x, static_cast<double>(i));
+  }
+
+  // series_a should have only the remaining 10
+  EXPECT_EQ(series_a.size(), 10u);
+  EXPECT_DOUBLE_EQ(series_a.front().x, static_cast<double>(CAP));
+}
+
+TEST(DedupIntegration, CowSetPointOnDedupedChunk)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+  Timeseries series_a("a", group);
+  Timeseries series_b("b", group);
+
+  const uint32_t CAP = TimestampChunk::CAPACITY;
+
+  for (uint32_t i = 0; i < CAP + 10; i++)
+  {
+    double t = static_cast<double>(i);
+    series_a.pushBack({ t, 1.0 });
+    series_b.pushBack({ t, 2.0 });
+  }
+
+  // Confirm shared
+  EXPECT_EQ(series_a.timestamps().chunks()[0].get(), series_b.timestamps().chunks()[0].get());
+
+  // setPoint on series_a — should COW the deduped chunk
+  series_a.setPoint(500, 9999.0, 999.0);
+
+  // series_b should be unchanged
+  EXPECT_DOUBLE_EQ(series_b.at(500).x, 500.0);
+  EXPECT_DOUBLE_EQ(series_b.at(500).y, 2.0);
+
+  // series_a should have the new value
+  EXPECT_DOUBLE_EQ(series_a.at(500).x, 9999.0);
+  EXPECT_DOUBLE_EQ(series_a.at(500).y, 999.0);
+
+  // Chunks should no longer be shared
+  EXPECT_NE(series_a.timestamps().chunks()[0].get(), series_b.timestamps().chunks()[0].get());
+}
+
+// ===========================================================================
+// Group 4: Streaming edge cases
+// ===========================================================================
+
+TEST(StreamingEdgeCases, PushAfterPopAll)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+  Timeseries series("test", group);
+
+  // Push some data, pop all
+  for (int i = 0; i < 100; i++)
+  {
+    series.pushBack({ static_cast<double>(i), static_cast<double>(i) });
+  }
+  for (int i = 0; i < 100; i++)
+  {
+    series.popFront();
+  }
+  EXPECT_TRUE(series.empty());
+  EXPECT_EQ(series.size(), 0u);
+
+  // Push new data — should work cleanly with no stale state
+  for (int i = 0; i < 50; i++)
+  {
+    series.pushBack({ static_cast<double>(i + 1000), static_cast<double>(i) });
+  }
+  EXPECT_EQ(series.size(), 50u);
+  EXPECT_DOUBLE_EQ(series.front().x, 1000.0);
+  EXPECT_DOUBLE_EQ(series.back().x, 1049.0);
+
+  auto range = series.rangeX();
+  ASSERT_TRUE(range.has_value());
+  EXPECT_DOUBLE_EQ(range->min, 1000.0);
+  EXPECT_DOUBLE_EQ(range->max, 1049.0);
+}
+
+TEST(StreamingEdgeCases, InterleavedPushPopAtChunkBoundary)
+{
+  ChunkedTimestamps ts;
+  const uint32_t CAP = TimestampChunk::CAPACITY;
+
+  // Push exactly CAPACITY
+  for (uint32_t i = 0; i < CAP; i++)
+  {
+    ts.push_back(static_cast<double>(i));
+  }
+  EXPECT_EQ(ts.size(), CAP);
+
+  // Pop 1, push 1 (crosses into pop territory of chunk boundary)
+  ts.pop_front();
+  ts.push_back(static_cast<double>(CAP));
+
+  EXPECT_EQ(ts.size(), CAP);
+  EXPECT_DOUBLE_EQ(ts.front(), 1.0);
+  EXPECT_DOUBLE_EQ(ts.back(), static_cast<double>(CAP));
+
+  // Pop all but 1
+  for (uint32_t i = 0; i < CAP - 1; i++)
+  {
+    ts.pop_front();
+  }
+  EXPECT_EQ(ts.size(), 1u);
+  EXPECT_DOUBLE_EQ(ts.front(), static_cast<double>(CAP));
+}
+
+TEST(StreamingEdgeCases, SingleElementOperations)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+  Timeseries series("test", group);
+
+  series.pushBack({ 42.0, 99.0 });
+
+  EXPECT_EQ(series.size(), 1u);
+  EXPECT_DOUBLE_EQ(series.front().x, 42.0);
+  EXPECT_DOUBLE_EQ(series.back().x, 42.0);
+  EXPECT_DOUBLE_EQ(series.at(0).x, 42.0);
+  EXPECT_DOUBLE_EQ(series.at(0).y, 99.0);
+
+  auto range_x = series.rangeX();
+  ASSERT_TRUE(range_x.has_value());
+  EXPECT_DOUBLE_EQ(range_x->min, 42.0);
+  EXPECT_DOUBLE_EQ(range_x->max, 42.0);
+
+  auto range_y = series.rangeY();
+  ASSERT_TRUE(range_y.has_value());
+  EXPECT_DOUBLE_EQ(range_y->min, 99.0);
+  EXPECT_DOUBLE_EQ(range_y->max, 99.0);
+
+  // getIndexFromX
+  EXPECT_EQ(series.getIndexFromX(42.0), 0);
+
+  // pop the only element
+  series.popFront();
+  EXPECT_TRUE(series.empty());
+  EXPECT_FALSE(series.rangeX().has_value());
+}
+
+TEST(StreamingEdgeCases, NegativeTimestamps)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+  Timeseries series("test", group);
+
+  std::vector<double> times = { -100.0, -50.0, 0.0, 50.0 };
+  for (double t : times)
+  {
+    series.pushBack({ t, t * 2.0 });
+  }
+
+  EXPECT_EQ(series.size(), 4u);
+  EXPECT_DOUBLE_EQ(series.front().x, -100.0);
+  EXPECT_DOUBLE_EQ(series.back().x, 50.0);
+
+  auto range = series.rangeX();
+  ASSERT_TRUE(range.has_value());
+  EXPECT_DOUBLE_EQ(range->min, -100.0);
+  EXPECT_DOUBLE_EQ(range->max, 50.0);
+
+  // getIndexFromX with negative query
+  EXPECT_EQ(series.getIndexFromX(-100.0), 0);
+  EXPECT_EQ(series.getIndexFromX(-50.0), 1);
+  EXPECT_EQ(series.getIndexFromX(-75.0), 1);  // nearest to -50
+}
+
+TEST(StreamingEdgeCases, RangeXWithStreamingWindow)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+  Timeseries series("test", group);
+
+  const int window = 500;
+  const int total = 5000;
+
+  for (int i = 0; i < total; i++)
+  {
+    series.pushBack({ static_cast<double>(i), static_cast<double>(i) });
+    if (series.size() > static_cast<size_t>(window))
+    {
+      series.popFront();
+    }
+
+    // Verify rangeX is correct at every step
+    auto range = series.rangeX();
+    ASSERT_TRUE(range.has_value());
+    EXPECT_DOUBLE_EQ(range->max, static_cast<double>(i));
+    EXPECT_DOUBLE_EQ(range->min, series.front().x);
+  }
+}
+
+// ===========================================================================
+// Group 5: Dedup edge cases
+// ===========================================================================
+
+TEST(DedupEdgeCases, DedupRegistryMemoryRelease)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+  const uint32_t CAP = TimestampChunk::CAPACITY;
+
+  std::weak_ptr<TimestampChunk> weak_chunk;
+
+  {
+    Timeseries series("test", group);
+    for (uint32_t i = 0; i < 2 * CAP; i++)
+    {
+      series.pushBack({ static_cast<double>(i), 0.0 });
+    }
+
+    // The sealed chunk is in the registry
+    weak_chunk = series.timestamps().chunks()[0];
+    EXPECT_FALSE(weak_chunk.expired());
+  }
+
+  // After series destruction, registry still holds a ref
+  EXPECT_FALSE(weak_chunk.expired());
+
+  // Clear the registry — chunk should be freed
+  group->timestampRegistry().clear();
+  EXPECT_TRUE(weak_chunk.expired());
+}
+
+TEST(DedupEdgeCases, DedupMultipleChunks)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+
+  const int NUM_SERIES = 5;
+  std::vector<std::unique_ptr<Timeseries>> series;
+  for (int s = 0; s < NUM_SERIES; s++)
+  {
+    series.push_back(std::make_unique<Timeseries>("s" + std::to_string(s), group));
+  }
+
+  const uint32_t CAP = TimestampChunk::CAPACITY;
+  const size_t N = 5 * CAP;
+
+  for (size_t i = 0; i < N; i++)
+  {
+    double t = static_cast<double>(i);
+    for (int s = 0; s < NUM_SERIES; s++)
+    {
+      series[s]->pushBack({ t, static_cast<double>(s) });
+    }
+  }
+
+  // Verify ALL sealed chunks are shared, not just the first
+  size_t num_chunks = series[0]->timestamps().chunks().size();
+  size_t num_sealed = num_chunks - 1;  // last chunk is active
+  EXPECT_GE(num_sealed, 4u);           // 5*CAP / CAP = 5, minus 1 active = 4 sealed
+
+  for (size_t ci = 0; ci < num_sealed; ci++)
+  {
+    auto ref = series[0]->timestamps().chunks()[ci].get();
+    for (int s = 1; s < NUM_SERIES; s++)
+    {
+      EXPECT_EQ(series[s]->timestamps().chunks()[ci].get(), ref)
+          << "Chunk " << ci << " not shared between series 0 and " << s;
+    }
+  }
+}
+
+TEST(DedupEdgeCases, DedupAfterInsert)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+  Timeseries series_a("a", group);
+  Timeseries series_b("b", group);
+
+  const uint32_t CAP = TimestampChunk::CAPACITY;
+
+  // Push identical timestamps into both
+  for (uint32_t i = 0; i < 2 * CAP; i++)
+  {
+    double t = static_cast<double>(i);
+    series_a.pushBack({ t, 1.0 });
+    series_b.pushBack({ t, 2.0 });
+  }
+
+  // Confirm shared sealed chunk
+  EXPECT_EQ(series_a.timestamps().chunks()[0].get(), series_b.timestamps().chunks()[0].get());
+
+  // Insert into series_a (triggers flatten-rebuild, losing shared chunks)
+  series_a.pushBack({ 0.5, 1.5 });  // out-of-order insert
+
+  // series_a data should be correct after insert
+  EXPECT_DOUBLE_EQ(series_a.at(0).x, 0.0);
+  EXPECT_DOUBLE_EQ(series_a.at(1).x, 0.5);
+  EXPECT_DOUBLE_EQ(series_a.at(2).x, 1.0);
+  EXPECT_EQ(series_a.size(), 2 * CAP + 1);
+
+  // series_b should be completely unchanged
+  EXPECT_EQ(series_b.size(), 2 * CAP);
+  for (uint32_t i = 0; i < 2 * CAP; i++)
+  {
+    EXPECT_DOUBLE_EQ(series_b.at(i).x, static_cast<double>(i));
   }
 }
