@@ -297,9 +297,20 @@ public:
   {
     uint64_t h = hashChunk(*chunk);
     auto it = _map.find(h);
-    if (it != _map.end() && chunksEqual(*it->second, *chunk))
+    if (it != _map.end())
     {
-      return it->second;
+      if (auto existing = it->second.lock())
+      {
+        if (chunksEqual(*existing, *chunk))
+        {
+          return existing;
+        }
+      }
+      else
+      {
+        // Expired entry — remove it and fall through to insert
+        _map.erase(it);
+      }
     }
     _map[h] = chunk;
     return chunk;
@@ -327,7 +338,7 @@ private:
                        a.count * sizeof(double)) == 0;
   }
 
-  std::unordered_map<uint64_t, std::shared_ptr<TimestampChunk>> _map;
+  std::unordered_map<uint64_t, std::weak_ptr<TimestampChunk>> _map;
 };
 
 }  // namespace PJ

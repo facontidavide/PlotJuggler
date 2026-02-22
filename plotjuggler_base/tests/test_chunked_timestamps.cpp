@@ -1696,12 +1696,38 @@ TEST(DedupEdgeCases, DedupRegistryMemoryRelease)
     EXPECT_FALSE(weak_chunk.expired());
   }
 
-  // After series destruction, registry still holds a ref
-  EXPECT_FALSE(weak_chunk.expired());
-
-  // Clear the registry — chunk should be freed
-  group->timestampRegistry().clear();
+  // After series destruction, registry uses weak_ptr so chunk is freed
   EXPECT_TRUE(weak_chunk.expired());
+}
+
+TEST(DedupEdgeCases, DedupRegistryExpiredEntryReused)
+{
+  auto group = std::make_shared<PlotGroup>("grp");
+  const uint32_t CAP = TimestampChunk::CAPACITY;
+
+  // Create and destroy a series to leave an expired weak_ptr in the registry
+  {
+    Timeseries series("first", group);
+    for (uint32_t i = 0; i < 2 * CAP; i++)
+    {
+      series.pushBack({ static_cast<double>(i), 0.0 });
+    }
+  }
+
+  // Now create a new series with identical timestamps.
+  // The expired registry entry should not prevent dedup from working —
+  // the new chunk should be registered fresh.
+  Timeseries series_a("a", group);
+  Timeseries series_b("b", group);
+  for (uint32_t i = 0; i < 2 * CAP; i++)
+  {
+    double t = static_cast<double>(i);
+    series_a.pushBack({ t, 1.0 });
+    series_b.pushBack({ t, 2.0 });
+  }
+
+  // The sealed chunks should still be shared between the two live series
+  EXPECT_EQ(series_a.timestamps().chunks()[0].get(), series_b.timestamps().chunks()[0].get());
 }
 
 TEST(DedupEdgeCases, DedupMultipleChunks)
