@@ -98,6 +98,7 @@ public:
     {
       this->_timestamps.push_back(p.x);
       this->_values.push_back(p.y);
+      this->tryDeduplicateLastSealedTimestamp();
     }
   }
 
@@ -130,6 +131,7 @@ public:
     {
       this->_timestamps.push_back(sorted_ts[i]);
       this->_values.push_back(std::move(sorted_vals[i]));
+      this->tryDeduplicateLastSealedTimestamp();
     }
 
     // Recompute ranges
@@ -183,10 +185,11 @@ inline int TimeseriesBase<Value>::getIndexFromX(double x) const
   {
     return -1;
   }
-  auto lower = std::lower_bound(this->_timestamps.begin(), this->_timestamps.end(), x);
-  auto index = std::distance(this->_timestamps.begin(), lower);
 
-  if (index >= static_cast<decltype(index)>(this->_timestamps.size()))
+  size_t lb = this->_timestamps.lowerBound(x);
+  int index = static_cast<int>(lb);
+
+  if (index >= static_cast<int>(this->_timestamps.size()))
   {
     return this->_timestamps.size() - 1;
   }
