@@ -423,29 +423,11 @@ public:
       {
         _range_x.min = std::numeric_limits<double>::max();
         _range_x.max = std::numeric_limits<double>::lowest();
-        auto& chunks = _timestamps.chunks();
-        for (size_t ci = 0; ci < chunks.size(); ci++)
+        for (size_t i = 0; i < _timestamps.size(); i++)
         {
-          auto& chunk = *chunks[ci];
-          if (chunk.count == 0)
-          {
-            continue;
-          }
-          // Front chunk may have start_offset > 0, making metadata stale
-          if (ci == 0 && chunk.start_offset > 0)
-          {
-            for (uint32_t li = 0; li < chunk.count; li++)
-            {
-              double v = chunk.valueAt(li);
-              _range_x.min = std::min(_range_x.min, v);
-              _range_x.max = std::max(_range_x.max, v);
-            }
-          }
-          else
-          {
-            _range_x.min = std::min(_range_x.min, chunk.min_x);
-            _range_x.max = std::max(_range_x.max, chunk.max_x);
-          }
+          double v = _timestamps[i];
+          _range_x.min = std::min(_range_x.min, v);
+          _range_x.max = std::max(_range_x.max, v);
         }
         _range_x_dirty = false;
       }
@@ -467,29 +449,11 @@ public:
       {
         _range_y.min = std::numeric_limits<double>::max();
         _range_y.max = std::numeric_limits<double>::lowest();
-        auto& chunks = _values.chunks();
-        for (size_t ci = 0; ci < chunks.size(); ci++)
+        for (size_t i = 0; i < _values.size(); i++)
         {
-          auto& chunk = chunks[ci];
-          if (chunk.count == 0)
-          {
-            continue;
-          }
-          // Front chunk may have start_offset > 0, making metadata stale
-          if (ci == 0 && chunk.start_offset > 0)
-          {
-            for (uint32_t li = 0; li < chunk.count; li++)
-            {
-              double v = static_cast<double>(chunk.valueAt(li));
-              _range_y.min = std::min(_range_y.min, v);
-              _range_y.max = std::max(_range_y.max, v);
-            }
-          }
-          else
-          {
-            _range_y.min = std::min(_range_y.min, chunk.min_y);
-            _range_y.max = std::max(_range_y.max, chunk.max_y);
-          }
+          double v = static_cast<double>(_values.valueAt(i));
+          _range_y.min = std::min(_range_y.min, v);
+          _range_y.max = std::max(_range_y.max, v);
         }
         _range_y_dirty = false;
       }
