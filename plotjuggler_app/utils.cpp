@@ -13,6 +13,10 @@ namespace PJ
 template <typename Value>
 void MergeData(TimeseriesBase<Value>& src_plot, TimeseriesBase<Value>& dst_plot)
 {
+  static_assert(!std::is_same_v<Value, StringRef>,
+                "Use the MergeData(StringSeries&, StringSeries&) overload for StringRef "
+                "to avoid dangling pointers from bypassing _storage");
+
   if (src_plot.size() == 0)
   {
     return;

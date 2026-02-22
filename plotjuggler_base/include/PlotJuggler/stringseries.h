@@ -36,6 +36,34 @@ public:
     TimeseriesBase<StringRef>::clear();
   }
 
+  // Hide base-class clonePoints to ensure _storage is transferred alongside _points.
+  // Without this, non-SSO StringRefs (>15 bytes) dangle after the source destructs.
+  void clonePoints(StringSeries&& other)
+  {
+    _storage = std::move(other._storage);
+    PlotDataBase<double, StringRef>::clonePoints(std::move(other));
+  }
+
+  void clonePoints(const StringSeries& other)
+  {
+    _storage = other._storage;
+    PlotDataBase<double, StringRef>::clonePoints(other);
+    // Re-seat non-SSO StringRefs to point into our own _storage copy,
+    // since the copied strings live at different addresses.
+    for (auto& point : _points)
+    {
+      if (!point.y.isSSO())
+      {
+        _tmp_str.assign(point.y.data(), point.y.size());
+        auto it = _storage.find(_tmp_str);
+        if (it != _storage.end())
+        {
+          point.y = StringRef(*it);
+        }
+      }
+    }
+  }
+
   void pushBack(const Point& p) override
   {
     auto temp = p;
