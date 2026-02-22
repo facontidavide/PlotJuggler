@@ -21,8 +21,6 @@ namespace PJ
 class StringSeries : public TimeseriesBase<StringDictIndex>
 {
 public:
-  using TimeseriesBase<StringDictIndex>::_points;
-
   StringSeries(const std::string& name, PlotGroup::Ptr group)
     : TimeseriesBase<StringDictIndex>(name, group)
   {
@@ -80,7 +78,7 @@ public:
     {
       return std::nullopt;
     }
-    return getString(_points[index].y);
+    return getString(this->_values.valueAt(index));
   }
 
   void clonePoints(StringSeries&& other)
