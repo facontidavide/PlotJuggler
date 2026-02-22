@@ -77,7 +77,8 @@ void QuaternionToRollPitchYaw::calculateNextPoint(size_t index, const std::array
   double quat_norm2 = (q_w * q_w) + (q_x * q_x) + (q_y * q_y) + (q_z * q_z);
   if (quat_norm2 < 1e-10)
   {
-    rpy = { 0.0, 0.0, 0.0 };
+    const auto NaN = std::numeric_limits<double>::quiet_NaN();
+    rpy = { NaN, NaN, NaN };
     return;
   }
   if (std::abs(quat_norm2 - 1.0) > std::numeric_limits<double>::epsilon())

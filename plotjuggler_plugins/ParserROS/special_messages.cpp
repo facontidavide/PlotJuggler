@@ -8,9 +8,10 @@ PJ::Msg::RPY PJ::Msg::QuaternionToRPY(PJ::Msg::Quaternion q)
   double quat_norm2 = (q.w * q.w) + (q.x * q.x) + (q.y * q.y) + (q.z * q.z);
   if (quat_norm2 < 1e-10)
   {
-    rpy.roll = 0.0;
-    rpy.pitch = 0.0;
-    rpy.yaw = 0.0;
+    const auto NaN = std::numeric_limits<double>::quiet_NaN();
+    rpy.roll = NaN;
+    rpy.pitch = NaN;
+    rpy.yaw = NaN;
     return rpy;
   }
   if (std::abs(quat_norm2 - 1.0) > std::numeric_limits<double>::epsilon())
