@@ -487,9 +487,12 @@ public:
       pushUpdateRangeY(p);
     }
 
-    _timestamps.push_back(p.x);
+    bool chunk_sealed = _timestamps.push_back(p.x);
     _values.push_back(std::move(p.y));
-    tryDeduplicateLastSealedTimestamp();
+    if (chunk_sealed)
+    {
+      tryDeduplicateLastSealedTimestamp();
+    }
   }
 
   virtual void insert(ConstIterator it, Point&& p)

@@ -96,9 +96,12 @@ public:
     }
     if (!std::isinf(p.x) && !std::isnan(p.x))
     {
-      this->_timestamps.push_back(p.x);
+      bool chunk_sealed = this->_timestamps.push_back(p.x);
       this->_values.push_back(p.y);
-      this->tryDeduplicateLastSealedTimestamp();
+      if (chunk_sealed)
+      {
+        this->tryDeduplicateLastSealedTimestamp();
+      }
     }
   }
 
@@ -129,9 +132,12 @@ public:
     this->_values.clear();
     for (size_t i = 0; i < n; i++)
     {
-      this->_timestamps.push_back(sorted_ts[i]);
+      bool chunk_sealed = this->_timestamps.push_back(sorted_ts[i]);
       this->_values.push_back(std::move(sorted_vals[i]));
-      this->tryDeduplicateLastSealedTimestamp();
+      if (chunk_sealed)
+      {
+        this->tryDeduplicateLastSealedTimestamp();
+      }
     }
 
     // Recompute ranges

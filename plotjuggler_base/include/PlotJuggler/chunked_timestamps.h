@@ -82,10 +82,13 @@ public:
     return last.valueAt(last.count - 1);
   }
 
-  void push_back(double x)
+  // Returns true when a new chunk was created (meaning the previous back chunk is now sealed).
+  bool push_back(double x)
   {
+    bool sealed = false;
     if (_chunks.empty() || _chunks.back()->count == TimestampChunk::CAPACITY)
     {
+      sealed = !_chunks.empty();
       _chunks.push_back(std::make_shared<TimestampChunk>());
     }
 
@@ -103,6 +106,7 @@ public:
     }
 
     _total_size++;
+    return sealed;
   }
 
   void pop_front()
