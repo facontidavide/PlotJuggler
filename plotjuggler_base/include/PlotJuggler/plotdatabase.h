@@ -21,6 +21,7 @@
 #include <QtGlobal>
 
 #include "chunked_values.h"
+#include "chunked_timestamps.h"
 
 namespace PJ
 {
@@ -115,9 +116,15 @@ public:
     return (it == _attributes.end()) ? QVariant() : it->second;
   }
 
+  TimestampRegistry& timestampRegistry()
+  {
+    return _ts_registry;
+  }
+
 private:
   const std::string _name;
   Attributes _attributes;
+  TimestampRegistry _ts_registry;
 };
 
 // A Generic series of points
@@ -414,12 +421,31 @@ public:
       }
       if (_range_x_dirty)
       {
-        _range_x.min = _timestamps.front();
-        _range_x.max = _range_x.min;
-        for (double x : _timestamps)
+        _range_x.min = std::numeric_limits<double>::max();
+        _range_x.max = std::numeric_limits<double>::lowest();
+        auto& chunks = _timestamps.chunks();
+        for (size_t ci = 0; ci < chunks.size(); ci++)
         {
-          _range_x.min = std::min(_range_x.min, x);
-          _range_x.max = std::max(_range_x.max, x);
+          auto& chunk = *chunks[ci];
+          if (chunk.count == 0)
+          {
+            continue;
+          }
+          // Front chunk may have start_offset > 0, making metadata stale
+          if (ci == 0 && chunk.start_offset > 0)
+          {
+            for (uint32_t li = 0; li < chunk.count; li++)
+            {
+              double v = chunk.valueAt(li);
+              _range_x.min = std::min(_range_x.min, v);
+              _range_x.max = std::max(_range_x.max, v);
+            }
+          }
+          else
+          {
+            _range_x.min = std::min(_range_x.min, chunk.min_x);
+            _range_x.max = std::max(_range_x.max, chunk.max_x);
+          }
         }
         _range_x_dirty = false;
       }
@@ -441,9 +467,25 @@ public:
       {
         _range_y.min = std::numeric_limits<double>::max();
         _range_y.max = std::numeric_limits<double>::lowest();
-        for (const auto& chunk : _values.chunks())
+        auto& chunks = _values.chunks();
+        for (size_t ci = 0; ci < chunks.size(); ci++)
         {
-          if (chunk.count > 0)
+          auto& chunk = chunks[ci];
+          if (chunk.count == 0)
+          {
+            continue;
+          }
+          // Front chunk may have start_offset > 0, making metadata stale
+          if (ci == 0 && chunk.start_offset > 0)
+          {
+            for (uint32_t li = 0; li < chunk.count; li++)
+            {
+              double v = static_cast<double>(chunk.valueAt(li));
+              _range_y.min = std::min(_range_y.min, v);
+              _range_y.max = std::max(_range_y.max, v);
+            }
+          }
+          else
           {
             _range_y.min = std::min(_range_y.min, chunk.min_y);
             _range_y.max = std::max(_range_y.max, chunk.max_y);
@@ -483,6 +525,7 @@ public:
 
     _timestamps.push_back(p.x);
     _values.push_back(std::move(p.y));
+    tryDeduplicateLastSealedTimestamp();
   }
 
   virtual void insert(ConstIterator it, Point&& p)
@@ -505,7 +548,7 @@ public:
       pushUpdateRangeY(p);
     }
 
-    _timestamps.insert(_timestamps.begin() + index, p.x);
+    _timestamps.insert(index, p.x);
     _values.insert(index, std::move(p.y));
   }
 
@@ -541,13 +584,13 @@ public:
 
   void setPoint(size_t index, TypeX x, const Value& y)
   {
-    _timestamps[index] = x;
+    _timestamps.mutableRef(index) = x;
     _values.valueRef(index) = y;
     _range_x_dirty = true;
     _range_y_dirty = true;
   }
 
-  const std::deque<double>& timestamps() const
+  const ChunkedTimestamps& timestamps() const
   {
     return _timestamps;
   }
@@ -560,7 +603,7 @@ public:
 protected:
   std::string _name;
   Attributes _attributes;
-  std::deque<double> _timestamps;
+  ChunkedTimestamps _timestamps;
   ChunkedValues<Value> _values;
 
   mutable Range _range_x;
@@ -568,6 +611,24 @@ protected:
   mutable bool _range_x_dirty;
   mutable bool _range_y_dirty;
   mutable std::shared_ptr<PlotGroup> _group;
+
+  void tryDeduplicateLastSealedTimestamp()
+  {
+    if (!_group)
+    {
+      return;
+    }
+    auto sealed = _timestamps.lastSealedChunk();
+    if (!sealed)
+    {
+      return;
+    }
+    auto deduped = _group->timestampRegistry().deduplicate(sealed);
+    if (deduped != sealed)
+    {
+      _timestamps.replaceChunk(_timestamps.lastSealedChunkIndex(), std::move(deduped));
+    }
+  }
 
   // template specialization for types that support compare operator
   virtual void pushUpdateRangeX(const Point& p)
