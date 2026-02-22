@@ -9,18 +9,22 @@
 
 #include "PlotJuggler/timeseries.h"
 #include "PlotJuggler/string_ref_sso.h"
+#include "PlotJuggler/string_dict_index.h"
 #include <algorithm>
-#include <unordered_set>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <vector>
 
 namespace PJ
 {
-class StringSeries : public TimeseriesBase<StringRef>
+class StringSeries : public TimeseriesBase<StringDictIndex>
 {
 public:
-  using TimeseriesBase<StringRef>::_points;
+  using TimeseriesBase<StringDictIndex>::_points;
 
   StringSeries(const std::string& name, PlotGroup::Ptr group)
-    : TimeseriesBase<StringRef>(name, group)
+    : TimeseriesBase<StringDictIndex>(name, group)
   {
   }
 
@@ -32,97 +36,85 @@ public:
 
   virtual void clear() override
   {
-    _storage.clear();
-    TimeseriesBase<StringRef>::clear();
-  }
-
-  // Hide base-class clonePoints to ensure _storage is transferred alongside _points.
-  // Without this, non-SSO StringRefs (>15 bytes) dangle after the source destructs.
-  void clonePoints(StringSeries&& other)
-  {
-    _storage = std::move(other._storage);
-    PlotDataBase<double, StringRef>::clonePoints(std::move(other));
-  }
-
-  void clonePoints(const StringSeries& other)
-  {
-    _storage = other._storage;
-    PlotDataBase<double, StringRef>::clonePoints(other);
-    // Re-seat non-SSO StringRefs to point into our own _storage copy,
-    // since the copied strings live at different addresses.
-    for (auto& point : _points)
-    {
-      if (!point.y.isSSO())
-      {
-        _tmp_str.assign(point.y.data(), point.y.size());
-        auto it = _storage.find(_tmp_str);
-        if (it != _storage.end())
-        {
-          point.y = StringRef(*it);
-        }
-      }
-    }
+    _index_to_string.clear();
+    _string_to_index.clear();
+    TimeseriesBase<StringDictIndex>::clear();
   }
 
   void pushBack(const Point& p) override
   {
-    auto temp = p;
-    pushBack(std::move(temp));
+    // Point.y is StringDictIndex — forward to base
+    TimeseriesBase<StringDictIndex>::pushBack(p);
   }
 
-  virtual void pushBack(Point&& p) override
+  void pushBack(Point&& p) override
   {
-    const auto& str = p.y;
-    // do not add empty strings
+    TimeseriesBase<StringDictIndex>::pushBack(std::move(p));
+  }
+
+  // Backward-compatible overload: accepts {timestamp, StringRef}
+  void pushBack(std::pair<double, StringRef> p)
+  {
+    const auto& str = p.second;
     if (str.data() == nullptr || str.size() == 0)
     {
       return;
     }
-    if (str.isSSO())
-    {
-      // the object stored the string already, just push it
-      TimeseriesBase<StringRef>::pushBack(std::move(p));
-    }
-    else
-    {
-      // save a copy of the string in the flywheel structure _storage
-      // create a reference to that cached value.
-      _tmp_str.assign(str.data(), str.size());
-
-      auto it = _storage.find(_tmp_str);
-      if (it == _storage.end())
-      {
-        it = _storage.insert(_tmp_str).first;
-      }
-      TimeseriesBase<StringRef>::pushBack({ p.x, StringRef(*it) });
-    }
+    StringDictIndex idx = internString(std::string_view(str.data(), str.size()));
+    TimeseriesBase<StringDictIndex>::pushBack({ p.first, idx });
   }
-  void pushUnsorted(const Point& p) override
+
+  std::string_view getString(StringDictIndex idx) const
   {
-    const auto& str = p.y;
-    if (str.data() == nullptr || str.size() == 0)
+    if (!idx.isValid() || idx.index >= _index_to_string.size())
     {
-      return;
+      return {};
     }
-    if (str.isSSO())
+    return _index_to_string[idx.index];
+  }
+
+  std::optional<std::string_view> getStringFromX(double x) const
+  {
+    int index = getIndexFromX(x);
+    if (index < 0)
     {
-      TimeseriesBase<StringRef>::pushUnsorted(p);
+      return std::nullopt;
     }
-    else
-    {
-      _tmp_str.assign(str.data(), str.size());
-      auto it = _storage.find(_tmp_str);
-      if (it == _storage.end())
-      {
-        it = _storage.insert(_tmp_str).first;
-      }
-      TimeseriesBase<StringRef>::pushUnsorted({ p.x, StringRef(*it) });
-    }
+    return getString(_points[index].y);
+  }
+
+  void clonePoints(StringSeries&& other)
+  {
+    _index_to_string = std::move(other._index_to_string);
+    _string_to_index = std::move(other._string_to_index);
+    PlotDataBase<double, StringDictIndex>::clonePoints(std::move(other));
+  }
+
+  void clonePoints(const StringSeries& other)
+  {
+    _index_to_string = other._index_to_string;
+    _string_to_index = other._string_to_index;
+    PlotDataBase<double, StringDictIndex>::clonePoints(other);
   }
 
 private:
+  StringDictIndex internString(std::string_view str)
+  {
+    _tmp_str.assign(str.data(), str.size());
+    auto it = _string_to_index.find(_tmp_str);
+    if (it != _string_to_index.end())
+    {
+      return StringDictIndex(it->second);
+    }
+    uint32_t new_index = static_cast<uint32_t>(_index_to_string.size());
+    _index_to_string.push_back(_tmp_str);
+    _string_to_index.emplace(_tmp_str, new_index);
+    return StringDictIndex(new_index);
+  }
+
   std::string _tmp_str;
-  std::unordered_set<std::string> _storage;
+  std::vector<std::string> _index_to_string;
+  std::unordered_map<std::string, uint32_t> _string_to_index;
 };
 
 }  // namespace PJ
