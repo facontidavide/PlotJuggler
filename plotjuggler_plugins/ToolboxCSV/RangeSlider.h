@@ -85,7 +85,6 @@ public slots:
 
 private:
   Q_DISABLE_COPY(RangeSlider)
-  float currentPercentage();
   int validLength() const;
 
   int mMinimum;
