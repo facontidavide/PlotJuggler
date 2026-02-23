@@ -63,11 +63,15 @@ void RangeSlider::paintEvent(QPaintEvent* aEvent)
   // Background
   QRectF backgroundRect;
   if (orientation == Qt::Horizontal)
+  {
     backgroundRect = QRectF(scLeftRightMargin, (height() - scSliderBarHeight) / 2,
                             width() - scLeftRightMargin * 2, scSliderBarHeight);
+  }
   else
+  {
     backgroundRect = QRectF((width() - scSliderBarHeight) / 2, scLeftRightMargin, scSliderBarHeight,
                             height() - scLeftRightMargin * 2);
+  }
 
   QPen pen(Qt::gray, 0.8);
   painter.setPen(pen);
@@ -77,7 +81,9 @@ void RangeSlider::paintEvent(QPaintEvent* aEvent)
   painter.drawRoundedRect(backgroundRect, 1, 1);
 
   if (mShowTicks)
+  {
     drawTicks(painter, backgroundRect);
+  }
 
   // First value handle rect
   pen.setColor(Qt::darkGray);
@@ -88,12 +94,16 @@ void RangeSlider::paintEvent(QPaintEvent* aEvent)
   painter.setBrush(handleBrush);
   QRectF leftHandleRect = firstHandleRect();
   if (type.testFlag(LeftHandle))
+  {
     painter.drawRoundedRect(leftHandleRect, 2, 2);
+  }
 
   // Second value handle rect
   QRectF rightHandleRect = secondHandleRect();
   if (type.testFlag(RightHandle))
+  {
     painter.drawRoundedRect(rightHandleRect, 2, 2);
+  }
 
   // Handles
   painter.setRenderHint(QPainter::Antialiasing, false);
@@ -133,11 +143,15 @@ QRectF RangeSlider::secondHandleRect() const
 QRectF RangeSlider::handleRect(int aValue) const
 {
   if (orientation == Qt::Horizontal)
+  {
     return QRect(aValue, (height() - scHandleSideLength) / 2, scHandleSideLength,
                  scHandleSideLength);
+  }
   else
+  {
     return QRect((width() - scHandleSideLength) / 2, aValue, scHandleSideLength,
                  scHandleSideLength);
+  }
 }
 
 void RangeSlider::mousePressEvent(QMouseEvent* aEvent)
@@ -168,24 +182,38 @@ void RangeSlider::mousePressEvent(QMouseEvent* aEvent)
     {
       int step = mInterval / 10 < 1 ? 1 : mInterval / 10;
       if (posValue < firstHandleRectPosValue)
+      {
         setLowerValue(mLowerValue - step);
+      }
       else if (((posValue > firstHandleRectPosValue + scHandleSideLength) ||
                 !type.testFlag(LeftHandle)) &&
                ((posValue < secondHandleRectPosValue) || !type.testFlag(RightHandle)))
       {
         if (type.testFlag(DoubleHandles))
+        {
           if (posValue - (firstHandleRectPosValue + scHandleSideLength) <
               (secondHandleRectPosValue - (firstHandleRectPosValue + scHandleSideLength)) / 2)
+          {
             setLowerValue((mLowerValue + step < mUpperValue) ? mLowerValue + step : mUpperValue);
+          }
           else
+          {
             setUpperValue((mUpperValue - step > mLowerValue) ? mUpperValue - step : mLowerValue);
+          }
+        }
         else if (type.testFlag(LeftHandle))
+        {
           setLowerValue((mLowerValue + step < mUpperValue) ? mLowerValue + step : mUpperValue);
+        }
         else if (type.testFlag(RightHandle))
+        {
           setUpperValue((mUpperValue - step > mLowerValue) ? mUpperValue - step : mLowerValue);
+        }
       }
       else if (posValue > secondHandleRectPosValue + scHandleSideLength)
+      {
         setUpperValue(mUpperValue + step);
+      }
     }
   }
 
@@ -442,22 +470,34 @@ bool RangeSlider::showTicks() const
 int RangeSlider::niceStep(int raw) const
 {
   if (raw <= 1)
+  {
     return 1;
+  }
 
   int p = 1;
   while (p * 10 <= raw)
+  {
     p *= 10;
+  }
 
   int d = raw / p;
   int step = 1;
   if (d <= 1)
+  {
     step = 1;
+  }
   else if (d <= 2)
+  {
     step = 2;
+  }
   else if (d <= 5)
+  {
     step = 5;
+  }
   else
+  {
     step = 10;
+  }
 
   return step * p;
 }
@@ -465,7 +505,9 @@ int RangeSlider::niceStep(int raw) const
 int RangeSlider::firstTick(int min, int step) const
 {
   if (step <= 0)
+  {
     return min;
+  }
   int r = min % step;
   return (r == 0) ? min : (min + (step - r));
 }
@@ -473,11 +515,15 @@ int RangeSlider::firstTick(int min, int step) const
 void RangeSlider::drawTicks(QPainter& painter, const QRectF& backgroundRect)
 {
   if (mInterval <= 0)
+  {
     return;
+  }
 
   int pxLen = validLength();
   if (pxLen <= 0)
+  {
     return;
+  }
 
   int approxCount = std::max(2, pxLen / std::max(10, mMinTickPx));
   int idealStep = std::max(1, (mMaximum - mMinimum) / approxCount);
@@ -491,7 +537,9 @@ void RangeSlider::drawTicks(QPainter& painter, const QRectF& backgroundRect)
 
   int minorStep = step / 2;
   if (minorStep < 1)
+  {
     minorStep = 1;
+  }
 
   auto valueToPos = [&](int value) {
     float percentage = (value - mMinimum) * 1.0f / mInterval;
@@ -563,15 +611,21 @@ QString RangeSlider::handleValueText(bool left) const
 void RangeSlider::maybeShowHandleTooltip(const QPoint& globalPos, const QPoint& localPos)
 {
   if (!mShowHandleValueTooltip)
+  {
     return;
+  }
 
   bool overLeft = type.testFlag(LeftHandle) && firstHandleRect().contains(localPos);
   bool overRight = type.testFlag(RightHandle) && secondHandleRect().contains(localPos);
 
   if (mFirstHandlePressed && type.testFlag(LeftHandle))
+  {
     overLeft = true;
+  }
   if (mSecondHandlePressed && type.testFlag(RightHandle))
+  {
     overRight = true;
+  }
 
   if (overLeft)
   {
@@ -594,16 +648,22 @@ static int pow10i(int d)
 {
   int s = 1;
   for (int i = 0; i < d; i++)
+  {
     s *= 10;
+  }
   return s;
 }
 
 int RangeSlider::toInt(double v) const
 {
   if (v < mMinReal)
+  {
     v = mMinReal;
+  }
   if (v > mMaxReal)
+  {
     v = mMaxReal;
+  }
   return int((v - mMinReal) * mScale + 0.5);
 }
 
@@ -615,30 +675,40 @@ double RangeSlider::toReal(int v) const
 void RangeSlider::setRangeReal(double minV, double maxV, int decimals)
 {
   if (minV > maxV)
+  {
     std::swap(minV, maxV);
+  }
 
   mMinReal = minV;
   mMaxReal = maxV;
 
   double span = mMaxReal - mMinReal;
   if (span <= 0.0)
+  {
     span = 1.0;
+  }
 
   int d = std::max(0, decimals);
   while (d > 0)
   {
     long long s = 1;
     for (int i = 0; i < d; i++)
+    {
       s *= 10;
+    }
     if (span * double(s) <= double(std::numeric_limits<int>::max()))
+    {
       break;
+    }
     d--;
   }
 
   mDecimals = d;
   mScale = 1;
   for (int i = 0; i < mDecimals; i++)
+  {
     mScale *= 10;
+  }
 
   int imin = 0;
   int imax = std::max(1, int(span * double(mScale) + 0.5));

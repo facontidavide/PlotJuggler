@@ -124,13 +124,17 @@ ToolboxCSV::ToolboxCSV()
   // Reset output path when switching format.
   connect(ui->csvButton, &QRadioButton::toggled, _widget, [this](bool checked) {
     if (!checked)
+    {
       return;
+    }
     ui->lineEditPath->clear();
   });
 
   connect(ui->parquetButton, &QRadioButton::toggled, _widget, [this](bool checked) {
     if (!checked)
+    {
       return;
+    }
     ui->lineEditPath->clear();
   });
 
@@ -268,7 +272,9 @@ bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev)
       {
         const QString t = item->text().trimmed();
         if (!t.isEmpty())
+        {
           existing.insert(t);
+        }
       }
     }
 
@@ -276,10 +282,14 @@ bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev)
     {
       const QString topic = raw.trimmed();
       if (topic.isEmpty())
+      {
         continue;
+      }
 
       if (existing.contains(topic))
+      {
         continue;
+      }
 
       existing.insert(topic);
 
@@ -316,7 +326,9 @@ void ToolboxCSV::saveAll()
   {
     auto* item = ui->tableWidget->item(r, 0);
     if (!item)
+    {
       continue;
+    }
 
     const std::string name = item->text().trimmed().toStdString();
     if (!name.empty())
@@ -388,7 +400,9 @@ void ToolboxCSV::saveAll()
 
     ExportTable t = buildExportTable(selected_topics, a, b);
     if (t.time.empty())
+    {
       continue;
+    }
 
     const QString out_path = addPartSuffix(path, k + 1, static_cast<int>(ranges.size()));
 
@@ -505,19 +519,27 @@ bool ToolboxCSV::getTimeRange(double& tmin, double& tmax) const
   {
     auto* item = ui->tableWidget->item(r, 0);
     if (!item)
+    {
       continue;
+    }
 
     const std::string name = item->text().trimmed().toStdString();
     if (name.empty())
+    {
       continue;
+    }
 
     auto it = _plot_data->numeric.find(name);
     if (it == _plot_data->numeric.end())
+    {
       continue;
+    }
 
     const auto& plot = it->second;
     if (plot.size() == 0)
+    {
       continue;
+    }
 
     const double a = plot.front().x;
     const double b = plot.back().x;
@@ -536,9 +558,13 @@ bool ToolboxCSV::getTimeRange(double& tmin, double& tmax) const
   }
 
   if (!any)
+  {
     return false;
+  }
   if (tmax < tmin)
+  {
     std::swap(tmin, tmax);
+  }
   return true;
 }
 
@@ -558,7 +584,9 @@ void ToolboxCSV::setTimeRange(double tmin, double tmax)
     _t0 = tmin;
     double duration = tmax - tmin;
     if (duration < 0.0)
+    {
       duration = 0.0;
+    }
 
     ui->rangeSlider->setRangeReal(0.0, duration, decimals);
 
@@ -596,7 +624,9 @@ void ToolboxCSV::updateTimeRange()
 {
   double tmin, tmax;
   if (!getTimeRange(tmin, tmax))
+  {
     return;  // No valid topics -> keep current UI range
+  }
   setTimeRange(tmin, tmax);
 }
 
@@ -604,7 +634,9 @@ void ToolboxCSV::updateTimeRange()
 double ToolboxCSV::estimateMinDt(const PJ::PlotData& plot, size_t start_idx, double t_end)
 {
   if (plot.size() < 2 || start_idx + 1 >= plot.size())
+  {
     return 0.0;
+  }
 
   double min_dt = std::numeric_limits<double>::max();
   size_t last = std::min(plot.size() - 1, start_idx + 2000);
@@ -614,14 +646,20 @@ double ToolboxCSV::estimateMinDt(const PJ::PlotData& plot, size_t start_idx, dou
     const double t0 = plot.at(i - 1).x;
     const double t1 = plot.at(i).x;
     if (t0 > t_end)
+    {
       break;
+    }
     const double dt = t1 - t0;
     if (dt > 0.0 && dt < min_dt)
+    {
       min_dt = dt;
+    }
   }
 
   if (min_dt == std::numeric_limits<double>::max())
+  {
     return 0.0;
+  }
   return min_dt;
 }
 
@@ -646,25 +684,37 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
   {
     auto it = _plot_data->numeric.find(name);
     if (it == _plot_data->numeric.end())
+    {
       continue;
+    }
 
     const auto& plot = it->second;
     if (plot.size() == 0)
+    {
       continue;
+    }
     if (plot.front().x > t_end)
+    {
       continue;
+    }
     if (plot.back().x < t_start)
+    {
       continue;
+    }
 
     int index = plot.getIndexFromX(t_start);
     if (index < 0)
+    {
       continue;
+    }
 
     series.push_back({ name, &plot, static_cast<size_t>(index) });
   }
 
   if (series.empty())
+  {
     return table;
+  }
 
   // Compute tolerance from the minimum observed sample period.
   double min_dt = 0.0;
@@ -674,10 +724,14 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
     {
       double dt = estimateMinDt(*s.plot, s.idx, t_end);
       if (dt > 0.0 && dt < best)
+      {
         best = dt;
+      }
     }
     if (best != std::numeric_limits<double>::max())
+    {
       min_dt = best;
+    }
   }
 
   // Tolerance = 0.5 * min_dt to avoid merging consecutive distinct samples.
@@ -688,7 +742,9 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
   table.cols.assign(N, {});
   table.has_value.assign(N, {});
   for (const auto& s : series)
+  {
     table.names.push_back(s.name);
+  }
 
   const auto NaN = std::numeric_limits<double>::quiet_NaN();
   std::vector<double> row_values(N, NaN);
@@ -706,19 +762,27 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
     {
       auto& s = series[i];
       if (s.idx >= s.plot->size())
+      {
         continue;
+      }
 
       const auto& p = s.plot->at(s.idx);
       if (p.x > t_end)
+      {
         continue;
+      }
 
       done = false;
       if (p.x < min_time)
+      {
         min_time = p.x;
+      }
     }
 
     if (done || min_time > t_end)
+    {
       break;
+    }
 
     std::fill(row_values.begin(), row_values.end(), NaN);
     std::fill(row_used.begin(), row_used.end(), false);
@@ -728,11 +792,15 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
     {
       auto& s = series[i];
       if (s.idx >= s.plot->size())
+      {
         continue;
+      }
 
       const auto& p = s.plot->at(s.idx);
       if (p.x > t_end)
+      {
         continue;
+      }
 
       if (tol == 0.0)
       {
@@ -758,7 +826,9 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
       table.cols[i].push_back(row_values[i]);
       table.has_value[i].push_back(row_used[i] ? 1 : 0);
       if (row_used[i])
+      {
         series[i].idx++;
+      }
     }
   }
 
@@ -771,15 +841,23 @@ bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& t, const QString& p
 {
   // Write CSV: empty cell for missing samples; explicit NaN/Inf when present.
   if (path.isEmpty())
+  {
     return false;
+  }
   if (t.time.empty())
+  {
     return false;
+  }
   if (t.cols.size() != t.names.size())
+  {
     return false;
+  }
 
   QFile f(path);
   if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
+  {
     return false;
+  }
 
   QTextStream out(&f);
   out.setCodec("UTF-8");
@@ -812,11 +890,17 @@ bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& t, const QString& p
       {
         const double v = t.cols[c][r];
         if (std::isnan(v))
+        {
           out << "NaN";
+        }
         else if (std::isfinite(v))
+        {
           out << QString::number(v, 'g', val_sig);
+        }
         else
+        {
           out << "Inf";
+        }
       }
     }
     out << "\n";
@@ -835,7 +919,9 @@ makeDoubleArray(const std::vector<double>& v, const std::vector<uint8_t>& presen
   ARROW_RETURN_NOT_OK(b.Reserve(static_cast<int64_t>(v.size())));
 
   if (present.size() != v.size())
+  {
     return arrow::Status::Invalid("size mismatch");
+  }
 
   for (size_t i = 0; i < v.size(); i++)
   {
@@ -859,11 +945,17 @@ makeDoubleArray(const std::vector<double>& v, const std::vector<uint8_t>& presen
 bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QString& path)
 {
   if (path.isEmpty())
+  {
     return false;
+  }
   if (t.time.empty())
+  {
     return false;
+  }
   if (t.cols.size() != t.names.size())
+  {
     return false;
+  }
 
   std::vector<std::shared_ptr<arrow::Field>> fields;
   std::vector<std::shared_ptr<arrow::Array>> arrays;
@@ -873,7 +965,9 @@ bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QStrin
   auto time_present = std::vector<uint8_t>(t.time.size(), 1);
   auto time_arr_res = makeDoubleArray(t.time, time_present);
   if (!time_arr_res.ok())
+  {
     return false;
+  }
   arrays.push_back(*time_arr_res);
 
   for (size_t i = 0; i < t.names.size(); i++)
@@ -881,7 +975,9 @@ bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QStrin
     fields.push_back(arrow::field(t.names[i], arrow::float64()));
     auto arr_res = makeDoubleArray(t.cols[i], t.has_value[i]);
     if (!arr_res.ok())
+    {
       return false;
+    }
     arrays.push_back(*arr_res);
   }
 
@@ -890,7 +986,9 @@ bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QStrin
 
   auto outfile_res = arrow::io::FileOutputStream::Open(path.toStdString());
   if (!outfile_res.ok())
+  {
     return false;
+  }
   std::shared_ptr<arrow::io::FileOutputStream> outfile = *outfile_res;
 
   parquet::WriterProperties::Builder pb;
@@ -899,7 +997,9 @@ bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QStrin
   auto st =
       parquet::arrow::WriteTable(*table, arrow::default_memory_pool(), outfile, 1024 * 64, props);
   if (!st.ok())
+  {
     return false;
+  }
 
   return true;
 }
@@ -922,25 +1022,37 @@ std::vector<std::pair<double, double>> ToolboxCSV::getGlobalRangesByGap(
   {
     auto it = _plot_data->numeric.find(name);
     if (it == _plot_data->numeric.end())
+    {
       continue;
+    }
 
     const auto& plot = it->second;
     if (plot.size() == 0)
+    {
       continue;
+    }
     if (plot.front().x > t_end)
+    {
       continue;
+    }
     if (plot.back().x < t_start)
+    {
       continue;
+    }
 
     int idx = plot.getIndexFromX(t_start);
     if (idx < 0)
+    {
       continue;
+    }
 
     s.push_back({ &plot, static_cast<size_t>(idx) });
   }
 
   if (s.empty())
+  {
     return {};
+  }
 
   std::vector<std::pair<double, double>> ranges;
 
@@ -956,17 +1068,25 @@ std::vector<std::pair<double, double>> ToolboxCSV::getGlobalRangesByGap(
     for (auto& x : s)
     {
       if (x.i >= x.p->size())
+      {
         continue;
+      }
       const double t = x.p->at(x.i).x;
       if (t > t_end)
+      {
         continue;
+      }
       done = false;
       if (t < min_time)
+      {
         min_time = t;
+      }
     }
 
     if (done || min_time > t_end)
+    {
       break;
+    }
 
     if (!started)
     {
@@ -993,17 +1113,25 @@ std::vector<std::pair<double, double>> ToolboxCSV::getGlobalRangesByGap(
     for (auto& x : s)
     {
       if (x.i >= x.p->size())
+      {
         continue;
+      }
       const double t = x.p->at(x.i).x;
       if (t > t_end)
+      {
         continue;
+      }
       if (t == min_time)
+      {
         x.i++;
+      }
     }
   }
 
   if (started)
+  {
     ranges.push_back({ seg_a, seg_b });
+  }
   return ranges;
 }
 
