@@ -185,5 +185,5 @@ private:
   void parseDataMessage(const Subscription& sub, char* message);
 
   char* parseSimpleDataMessage(Timeseries& timeseries, const Format* format, char* message,
-                               size_t* index);
+                               size_t* index, bool read_timestamp = true);
 };

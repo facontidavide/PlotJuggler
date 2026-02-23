@@ -285,12 +285,16 @@ std::optional<QPointF> curvePointAt(const QwtPlotCurve* curve, double x)
   {
     int index = qwtUpperSampleIndex<QPointF>(*curve->data(), x, compareX());
 
-    if (index > 0)
+    if (index > 0 && index < curve->dataSize())
     {
       auto p1 = (curve->sample(index - 1));
       auto p2 = (curve->sample(index));
       double middle_X = (p1.x() + p2.x()) / 2.0;
       return (x < middle_X) ? p1 : p2;
+    }
+    else if (index >= curve->dataSize())
+    {
+      return curve->sample(curve->dataSize() - 1);
     }
   }
   return std::nullopt;

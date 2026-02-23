@@ -3,6 +3,7 @@
 #include "PlotJuggler/messageparser_base.h"
 
 #include "mcap/reader.hpp"
+#include "mcap/internal.hpp"
 #include "dialog_mcap.h"
 
 #include <QTextStream>
@@ -19,6 +20,158 @@
 #include <QtConcurrent>
 
 #include <set>
+
+namespace
+{
+
+struct McapSummaryInfo
+{
+  std::unordered_map<mcap::SchemaId, mcap::SchemaPtr> schemas;
+  std::unordered_map<mcap::ChannelId, mcap::ChannelPtr> channels;
+  std::optional<mcap::Statistics> statistics;
+  mcap::ByteOffset summaryStart = 0;
+};
+
+// Reads only Schema, Channel, and Statistics records from the MCAP summary
+// by using SummaryOffset entries to seek directly to each group, skipping
+// expensive MessageIndex and ChunkIndex data.
+mcap::Status readSelectiveSummary(mcap::IReadable& reader, McapSummaryInfo& info)
+{
+  const uint64_t fileSize = reader.size();
+
+  // 1. Read the Footer (last 37 bytes of the file)
+  mcap::Footer footer;
+  auto status =
+      mcap::McapReader::ReadFooter(reader, fileSize - mcap::internal::FooterLength, &footer);
+  if (!status.ok())
+  {
+    return status;
+  }
+
+  if (footer.summaryStart == 0)
+  {
+    return mcap::Status{ mcap::StatusCode::MissingStatistics, "no summary section" };
+  }
+
+  info.summaryStart = footer.summaryStart;
+
+  const mcap::ByteOffset summaryOffsetStart = footer.summaryOffsetStart != 0 ?
+                                                  footer.summaryOffsetStart :
+                                                  fileSize - mcap::internal::FooterLength;
+
+  if (summaryOffsetStart <= footer.summaryStart)
+  {
+    return mcap::Status{ mcap::StatusCode::InvalidFooter, "no SummaryOffset section available" };
+  }
+
+  // 2. Read the SummaryOffset section to find group byte ranges
+  struct GroupRange
+  {
+    mcap::ByteOffset start = 0;
+    mcap::ByteOffset end = 0;
+  };
+  GroupRange schemaRange, channelRange, statsRange;
+  bool foundAny = false;
+
+  mcap::RecordReader offsetReader(reader, summaryOffsetStart,
+                                  fileSize - mcap::internal::FooterLength);
+  while (auto record = offsetReader.next())
+  {
+    if (record->opcode != mcap::OpCode::SummaryOffset)
+    {
+      continue;
+    }
+    mcap::SummaryOffset so;
+    if (!mcap::McapReader::ParseSummaryOffset(*record, &so).ok())
+    {
+      continue;
+    }
+    if (so.groupOpCode == mcap::OpCode::Schema)
+    {
+      schemaRange = { so.groupStart, so.groupStart + so.groupLength };
+      foundAny = true;
+    }
+    else if (so.groupOpCode == mcap::OpCode::Channel)
+    {
+      channelRange = { so.groupStart, so.groupStart + so.groupLength };
+      foundAny = true;
+    }
+    else if (so.groupOpCode == mcap::OpCode::Statistics)
+    {
+      statsRange = { so.groupStart, so.groupStart + so.groupLength };
+      foundAny = true;
+    }
+  }
+
+  if (!foundAny)
+  {
+    return mcap::Status{ mcap::StatusCode::MissingStatistics,
+                         "no relevant SummaryOffset records found" };
+  }
+
+  // 3. Read each targeted group
+  if (schemaRange.start != 0)
+  {
+    mcap::RecordReader rdr(reader, schemaRange.start, schemaRange.end);
+    while (auto record = rdr.next())
+    {
+      if (record->opcode != mcap::OpCode::Schema)
+      {
+        continue;
+      }
+      auto ptr = std::make_shared<mcap::Schema>();
+      if (mcap::McapReader::ParseSchema(*record, ptr.get()).ok())
+      {
+        info.schemas.try_emplace(ptr->id, ptr);
+      }
+    }
+  }
+
+  if (channelRange.start != 0)
+  {
+    mcap::RecordReader rdr(reader, channelRange.start, channelRange.end);
+    while (auto record = rdr.next())
+    {
+      if (record->opcode != mcap::OpCode::Channel)
+      {
+        continue;
+      }
+      auto ptr = std::make_shared<mcap::Channel>();
+      if (mcap::McapReader::ParseChannel(*record, ptr.get()).ok())
+      {
+        info.channels.try_emplace(ptr->id, ptr);
+      }
+    }
+  }
+
+  if (statsRange.start != 0)
+  {
+    mcap::RecordReader rdr(reader, statsRange.start, statsRange.end);
+    while (auto record = rdr.next())
+    {
+      if (record->opcode != mcap::OpCode::Statistics)
+      {
+        continue;
+      }
+      mcap::Statistics stats;
+      if (mcap::McapReader::ParseStatistics(*record, &stats).ok())
+      {
+        info.statistics = stats;
+        break;  // only one Statistics record expected
+      }
+    }
+  }
+
+  if (!info.statistics)
+  {
+    return mcap::Status{ mcap::StatusCode::MissingStatistics,
+                         "Statistics record not found in summary" };
+  }
+
+  return mcap::StatusCode::Success;
+}
+
+}  // anonymous namespace
 
 DataLoadMCAP::DataLoadMCAP()
 {
@@ -89,19 +242,43 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
     return false;
   }
 
-  status = reader.readSummary(mcap::ReadSummaryMethod::NoFallbackScan);
-  if (!status.ok())
+  // --- Read summary information (schemas, channels, statistics) ---
+  // Try selective read first (reads only Schema/Channel/Statistics via SummaryOffset,
+  // skipping expensive MessageIndex and ChunkIndex data).
+  // Falls back to full readSummary() for files without a SummaryOffset section.
+  McapSummaryInfo summaryInfo;
+  bool usedSelectiveSummary = false;
+  status = readSelectiveSummary(*reader.dataSource(), summaryInfo);
+  if (status.ok())
   {
-    QMessageBox::warning(nullptr, "Can't open summary of the file",
-                         tr("Code: %0\n Message: %1")
-                             .arg(int(status.code))
-                             .arg(QString::fromStdString(status.message)));
-    return false;
+    usedSelectiveSummary = true;
   }
+  else
+  {
+    status = reader.readSummary(mcap::ReadSummaryMethod::NoFallbackScan);
+    if (!status.ok())
+    {
+      QMessageBox::warning(nullptr, "Can't open summary of the file",
+                           tr("Code: %0\n Message: %1")
+                               .arg(int(status.code))
+                               .arg(QString::fromStdString(status.message)));
+      return false;
+    }
+    for (const auto& [id, ptr] : reader.schemas())
+    {
+      summaryInfo.schemas.insert({ id, ptr });
+    }
+    for (const auto& [id, ptr] : reader.channels())
+    {
+      summaryInfo.channels.insert({ id, ptr });
+    }
+    summaryInfo.statistics = reader.statistics();
+  }
+
   plot_data.addUserDefined("plotjuggler::mcap::file_path")
       ->second.pushBack({ 0, std::any(info->filename.toStdString()) });
 
-  const std::optional<mcap::Statistics> statistics = reader.statistics();
+  const auto& statistics = summaryInfo.statistics;
 
   std::unordered_map<int, mcap::SchemaPtr> mcap_schemas;         // schema_id
   std::unordered_map<int, mcap::ChannelPtr> channels;            // channel_id
@@ -112,7 +289,7 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
   std::unordered_set<mcap::ChannelId> channels_containing_datatamer_schema;
   std::unordered_set<mcap::ChannelId> channels_containing_datatamer_data;
 
-  for (const auto& [schema_id, schema_ptr] : reader.schemas())
+  for (const auto& [schema_id, schema_ptr] : summaryInfo.schemas)
   {
     mcap_schemas.insert({ schema_id, schema_ptr });
   }
@@ -122,7 +299,7 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
     _dialog_parameters = std::nullopt;
   }
 
-  for (const auto& [channel_id, channel_ptr] : reader.channels())
+  for (const auto& [channel_id, channel_ptr] : summaryInfo.channels)
   {
     channels.insert({ channel_id, channel_ptr });
   }
@@ -276,7 +453,21 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
     qDebug() << QString::fromStdString(problem.message);
   };
 
-  auto messages = reader.readMessages(onProblem);
+  // When selective summary was used, readSummary() was not called, so
+  // reader.dataEnd_ still includes the summary section. Construct
+  // LinearMessageView with explicit byte range to avoid reading expensive
+  // summary records during iteration.
+  auto createMessageView = [&]() -> mcap::LinearMessageView {
+    if (usedSelectiveSummary)
+    {
+      auto [dataStart, dataEndUnused] = reader.byteRange(0);
+      return mcap::LinearMessageView(reader, dataStart, summaryInfo.summaryStart, 0, mcap::MaxTime,
+                                     onProblem);
+    }
+    return reader.readMessages(onProblem);
+  };
+
+  auto messages = createMessageView();
 
   QProgressDialog progress_dialog("Loading... please wait", "Cancel", 0, 0, nullptr);
   progress_dialog.setWindowTitle("Loading the MCAP file");

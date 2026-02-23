@@ -15,7 +15,9 @@ RangeOpt QwtSeriesWrapper::getVisualizationRangeY(Range range_x)
 {
   if (range_x.min <= std::numeric_limits<double>::lowest() &&
       range_x.min <= std::numeric_limits<double>::max())
+  {
     return _data->rangeY();
+  }
 
   double min_y = (std::numeric_limits<double>::max());
   double max_y = (std::numeric_limits<double>::lowest());

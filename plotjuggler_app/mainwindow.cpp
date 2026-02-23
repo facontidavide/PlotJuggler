@@ -5,6 +5,7 @@
  */
 
 #include <functional>
+#include <queue>
 #include <stdio.h>
 
 #include <QApplication>
@@ -381,7 +382,9 @@ MainWindow::~MainWindow()
 void MainWindow::onUndoableChange()
 {
   if (_disable_undo_logging)
+  {
     return;
+  }
 
   int elapsed_ms = _undo_timer.restart();
 
@@ -389,11 +392,15 @@ void MainWindow::onUndoableChange()
   if (elapsed_ms < 100)
   {
     if (_undo_states.empty() == false)
+    {
       _undo_states.pop_back();
+    }
   }
 
   while (_undo_states.size() >= 100)
+  {
     _undo_states.pop_front();
+  }
   _undo_states.push_back(xmlSaveState());
   _redo_states.clear();
   // qDebug() << "undo " << _undo_states.size();
@@ -401,12 +408,19 @@ void MainWindow::onUndoableChange()
 
 void MainWindow::onRedoInvoked()
 {
+  if (QApplication::activePopupWidget() || QApplication::activeModalWidget())
+  {
+    return;
+  }
+
   _disable_undo_logging = true;
   if (_redo_states.size() > 0)
   {
     QDomDocument state_document = _redo_states.back();
     while (_undo_states.size() >= 100)
+    {
       _undo_states.pop_front();
+    }
     _undo_states.push_back(state_document);
     _redo_states.pop_back();
 
@@ -418,12 +432,19 @@ void MainWindow::onRedoInvoked()
 
 void MainWindow::onUndoInvoked()
 {
+  if (QApplication::activePopupWidget() || QApplication::activeModalWidget())
+  {
+    return;
+  }
+
   _disable_undo_logging = true;
   if (_undo_states.size() > 1)
   {
     QDomDocument state_document = _undo_states.back();
     while (_redo_states.size() >= 100)
+    {
       _redo_states.pop_front();
+    }
     _redo_states.push_back(state_document);
     _undo_states.pop_back();
     state_document = _undo_states.back();
@@ -679,10 +700,10 @@ void MainWindow::initializePlugins()
     connect(action, &QAction::triggered, toolbox_ptr, &ToolboxPlugin::onShowWidget);
 
     connect(action, &QAction::triggered, this,
-            [=]() { ui->widgetStack->setCurrentIndex(new_index); });
+            [this, new_index]() { ui->widgetStack->setCurrentIndex(new_index); });
 
     connect(toolbox_ptr, &ToolboxPlugin::closed, this,
-            [=]() { ui->widgetStack->setCurrentIndex(0); });
+            [this]() { ui->widgetStack->setCurrentIndex(0); });
 
     connect(toolbox_ptr, &ToolboxPlugin::importData, this,
             [this](PlotDataMapRef& new_data, bool remove_old) {
@@ -812,9 +833,11 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
   connect(plot, &PlotWidget::curvesDropped, _curvelist_widget, &CurveListPanel::clearSelections);
 
   connect(plot, &PlotWidget::legendSizeChanged, this, [=](int point_size) {
-    auto visitor = [=](PlotWidget* p) {
+    auto visitor = [this, plot, point_size](PlotWidget* p) {
       if (plot != p)
+      {
         p->setLegendSize(point_size);
+      }
     };
     this->forEachWidget(visitor);
   });
@@ -1892,7 +1915,7 @@ std::tuple<double, double, int> MainWindow::calculateVisibleRangeX()
         const double t1 = data.back().x;
         min_time = std::min(min_time, t0);
         max_time = std::max(max_time, t1);
-        max_steps = std::max(max_steps, (int)data.size());
+        max_steps = std::max(max_steps, (int)data.size() - 1);
       }
     }
   });
@@ -1909,7 +1932,7 @@ std::tuple<double, double, int> MainWindow::calculateVisibleRangeX()
         const double t1 = data.back().x;
         min_time = std::min(min_time, t0);
         max_time = std::max(max_time, t1);
-        max_steps = std::max(max_steps, (int)data.size());
+        max_steps = std::max(max_steps, (int)data.size() - 1);
       }
     }
   }
@@ -2059,24 +2082,80 @@ bool MainWindow::loadLayoutFromFile(QString filename)
       snippets.push_back({ GetSnippetFromXML(custom_eq), custom_eq });
     }
     // A custom plot may depend on other custom plots.
-    // Reorder them to respect the mutual dependency.
-    auto DependOn = [](const SnippetPair& a, const SnippetPair& b) {
-      if (b.first.linked_source == a.first.alias_name)
-      {
-        return true;
-      }
-      for (const auto& source : b.first.additional_sources)
-      {
-        if (source == a.first.alias_name)
+    // Use topological sort to respect nested dependencies (e.g. A -> B -> C).
+    // Build a map from alias_name to index for quick lookup
+    std::map<QString, size_t> name_to_index;
+    for (size_t i = 0; i < snippets.size(); i++)
+    {
+      name_to_index[snippets[i].first.alias_name] = i;
+    }
+
+    // Build adjacency list: edges[i] contains indices that i depends on
+    // (i.e. must come before i)
+    std::vector<std::vector<size_t>> dependents(snippets.size());
+    std::vector<int> in_degree(snippets.size(), 0);
+
+    for (size_t i = 0; i < snippets.size(); i++)
+    {
+      auto addDep = [&](const QString& dep_name) {
+        auto it = name_to_index.find(dep_name);
+        if (it != name_to_index.end() && it->second != i)
         {
-          return true;
+          dependents[it->second].push_back(i);
+          in_degree[i]++;
+        }
+      };
+      addDep(snippets[i].first.linked_source);
+      for (const auto& source : snippets[i].first.additional_sources)
+      {
+        addDep(source);
+      }
+    }
+
+    // Kahn's algorithm for topological sorting
+    std::queue<size_t> queue;
+    for (size_t i = 0; i < in_degree.size(); i++)
+    {
+      if (in_degree[i] == 0)
+      {
+        queue.push(i);
+      }
+    }
+
+    std::vector<SnippetPair> sorted_snippets;
+    sorted_snippets.reserve(snippets.size());
+    while (!queue.empty())
+    {
+      size_t current = queue.front();
+      queue.pop();
+      sorted_snippets.push_back(std::move(snippets[current]));
+
+      // Process all dependents
+      for (size_t dependent : dependents[current])
+      {
+        in_degree[dependent]--;
+        if (in_degree[dependent] == 0)
+        {
+          queue.push(dependent);
         }
       }
-      return false;
-    };
-    std::sort(snippets.begin(), snippets.end(), DependOn);
+    }
 
-    for (const auto& [snippet, custom_eq] : snippets)
+    // If there are remaining snippets (circular dependency), append them as-is
+    if (sorted_snippets.size() < snippets.size())
+    {
+      QMessageBox::warning(this, tr("Exception"),
+                           tr("Cyclic dependency detected in custom equations."));
+      for (size_t i = 0; i < snippets.size(); i++)
+      {
+        if (in_degree[i] != 0)
+        {
+          sorted_snippets.push_back(std::move(snippets[i]));
+        }
+      }
+    }
+
+    for (const auto& [snippet, custom_eq] : sorted_snippets)
     {
       try
       {
@@ -3087,6 +3166,7 @@ void MainWindow::on_buttonSaveLayout_clicked()
       colormap.appendChild(colormap_script);
       color_maps.appendChild(colormap);
     }
+    root.appendChild(color_maps);
   }
   root.appendChild(doc.createComment(" - - - - - - - - - - - - - - "));
   //------------------------------------

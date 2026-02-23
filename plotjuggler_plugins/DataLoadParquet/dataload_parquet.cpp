@@ -20,15 +20,15 @@ DataLoadParquet::DataLoadParquet()
   ui->setupUi(_dialog);
 
   connect(ui->checkBoxDateFormat, &QCheckBox::toggled, this,
-          [=](bool checked) { ui->lineEditDateFormat->setEnabled(checked); });
+          [this](bool checked) { ui->lineEditDateFormat->setEnabled(checked); });
 
   connect(ui->listWidgetSeries, &QListWidget::currentTextChanged, this,
-          [=](QString text) { ui->buttonBox->setEnabled(!text.isEmpty()); });
+          [this](QString text) { ui->buttonBox->setEnabled(!text.isEmpty()); });
 
   connect(ui->listWidgetSeries, &QListWidget::doubleClicked, this,
-          [=](const QModelIndex&) { _dialog->accept(); });
+          [this](const QModelIndex&) { _dialog->accept(); });
 
-  connect(ui->radioButtonIndex, &QRadioButton::toggled, this, [=](bool checked) {
+  connect(ui->radioButtonIndex, &QRadioButton::toggled, this, [this](bool checked) {
     ui->buttonBox->setEnabled(checked);
     ui->listWidgetSeries->setEnabled(!checked);
   });

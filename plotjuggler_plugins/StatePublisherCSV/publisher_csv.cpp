@@ -152,11 +152,7 @@ QString StatePublisherCSV::generateStatisticsCSV(double time_start, double time_
 
     auto point = plot.at(index);
 
-    if (point.x > time_end)  // out of range
-    {
-      continue;
-    }
-    if (index + 1 == plot.size())  // out of range
+    if (point.x > time_end || index + 1 == plot.size())  // out of range
     {
       continue;
     }

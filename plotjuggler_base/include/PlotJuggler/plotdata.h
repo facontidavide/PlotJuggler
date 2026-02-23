@@ -11,6 +11,7 @@
 #include "timeseries.h"
 #include "stringseries.h"
 #include <any>
+#include <unordered_set>
 
 namespace PJ
 {

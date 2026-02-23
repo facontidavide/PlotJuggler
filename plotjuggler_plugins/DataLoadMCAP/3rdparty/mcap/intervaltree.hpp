@@ -122,15 +122,15 @@ public:
       interval_vector rights;
 
       for (typename interval_vector::const_iterator i = ivals.begin(); i != ivals.end(); ++i) {
-        const interval& interval = *i;
-        if (interval.stop < center) {
-          lefts.push_back(interval);
-        } else if (interval.start > center) {
-          rights.push_back(interval);
+        const interval& cur = *i;
+        if (cur.stop < center) {
+          lefts.push_back(cur);
+        } else if (cur.start > center) {
+          rights.push_back(cur);
         } else {
-          assert(interval.start <= center);
-          assert(center <= interval.stop);
-          intervals.push_back(interval);
+          assert(cur.start <= center);
+          assert(center <= cur.stop);
+          intervals.push_back(cur);
         }
       }
 
@@ -170,10 +170,10 @@ public:
   // Call f on all intervals overlapping [start, stop]
   template <class UnaryFunction>
   void visit_overlapping(const Scalar& start, const Scalar& stop, UnaryFunction f) const {
-    auto filterF = [&](const interval& interval) {
-      if (interval.stop >= start && interval.start <= stop) {
+    auto filterF = [&](const interval& cur) {
+      if (cur.stop >= start && cur.start <= stop) {
         // Only apply f if overlapping
-        f(interval);
+        f(cur);
       }
     };
     visit_near(start, stop, filterF);
@@ -182,9 +182,9 @@ public:
   // Call f on all intervals contained within [start, stop]
   template <class UnaryFunction>
   void visit_contained(const Scalar& start, const Scalar& stop, UnaryFunction f) const {
-    auto filterF = [&](const interval& interval) {
-      if (start <= interval.start && interval.stop <= stop) {
-        f(interval);
+    auto filterF = [&](const interval& cur) {
+      if (start <= cur.start && cur.stop <= stop) {
+        f(cur);
       }
     };
     visit_near(start, stop, filterF);
@@ -192,16 +192,16 @@ public:
 
   interval_vector find_overlapping(const Scalar& start, const Scalar& stop) const {
     interval_vector result;
-    visit_overlapping(start, stop, [&](const interval& interval) {
-      result.emplace_back(interval);
+    visit_overlapping(start, stop, [&](const interval& cur) {
+      result.emplace_back(cur);
     });
     return result;
   }
 
   interval_vector find_contained(const Scalar& start, const Scalar& stop) const {
     interval_vector result;
-    visit_contained(start, stop, [&](const interval& interval) {
-      result.push_back(interval);
+    visit_contained(start, stop, [&](const interval& cur) {
+      result.push_back(cur);
     });
     return result;
   }
@@ -234,15 +234,15 @@ public:
     struct Extent {
       std::pair<Scalar, Scalar> x{std::numeric_limits<Scalar>::max(),
                                   std::numeric_limits<Scalar>::min()};
-      void operator()(const interval& interval) {
-        x.first = std::min(x.first, interval.start);
-        x.second = std::max(x.second, interval.stop);
+      void operator()(const interval& cur) {
+        x.first = std::min(x.first, cur.start);
+        x.second = std::max(x.second, cur.stop);
       }
     };
     Extent extent;
 
-    visit_all([&](const interval& interval) {
-      extent(interval);
+    visit_all([&](const interval& cur) {
+      extent(cur);
     });
     return extent.x;
   }

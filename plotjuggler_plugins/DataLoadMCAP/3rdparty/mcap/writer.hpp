@@ -104,8 +104,8 @@ struct MCAP_PUBLIC McapWriterOptions {
   bool noStatistics = false;
   bool noSummaryOffsets = false;
 
-  McapWriterOptions(const std::string_view profile)
-      : profile(profile) {}
+  McapWriterOptions(const std::string_view _profile)
+      : profile(_profile) {}
 };
 
 /**

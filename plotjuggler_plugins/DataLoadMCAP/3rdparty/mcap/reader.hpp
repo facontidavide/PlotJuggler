@@ -80,6 +80,18 @@ public:
   uint64_t read(std::byte** output, uint64_t offset, uint64_t size) override;
 
 private:
+  // Numeric type returned by the tell/seek operations. Necessary because long on Windows is 32
+  // bits so the standard C library interfaces don't work for files larger than 2GiB.
+#if defined _WIN32 || defined __CYGWIN__
+  typedef __int64 offset_type;
+#else
+  typedef long offset_type;
+#endif
+
+  static_assert((offset_type)(uint64_t)std::numeric_limits<offset_type>::max() ==
+                  std::numeric_limits<offset_type>::max(),
+                "offset_type should fit in uint64_t");
+
   std::FILE* file_;
   std::vector<std::byte> buffer_;
   uint64_t size_;

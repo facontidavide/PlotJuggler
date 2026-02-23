@@ -78,6 +78,10 @@ bool DataStreamMQTT::start(QStringList*)
 
   QSettings settings;
   _protocol = settings.value("MosquittoMQTT::serialization_protocol", "JSON").toString();
+  if (parserFactories()->find(_protocol) == parserFactories()->end())
+  {
+    _protocol = parserFactories()->begin()->first;
+  }
   _dialog->ui->comboBoxProtocol->setCurrentText(_protocol);
 
   if (_dialog->exec() == QDialog::Rejected)

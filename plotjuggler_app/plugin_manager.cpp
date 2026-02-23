@@ -2,6 +2,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QDebug>
+#include <iostream>
 
 #ifdef WASM_RUNTIME_ENABLED
 #include "wasm_runtime.hpp"

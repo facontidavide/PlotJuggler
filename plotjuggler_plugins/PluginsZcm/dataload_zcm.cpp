@@ -110,20 +110,26 @@ static int processInputLog(const string& logpath,
 
       evt = inlog.readNextEvent();
       if (evt == nullptr)
+      {
         break;
+      }
 
       processEvent(evt);
     }
     if (verbose)
     {
       if (lastPrintPercent != 100 && !interrupted)
+      {
         cout << "\r"
              << "Percent Complete: 100" << flush;
+      }
       cout << endl;
     }
 
     if (interrupted)
+    {
       progress_dialog.cancel();
+    }
   };
 
   processLog(processEvent);
@@ -276,7 +282,9 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
     {
       auto itr = plot_data.numeric.find(evt->channel);
       if (itr == plot_data.numeric.end())
+      {
         itr = plot_data.addNumeric(evt->channel);
+      }
       itr->second.pushBack({ (double)evt->timestamp / 1e6, 0 });
       return;
     }
@@ -287,14 +295,18 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
     {
       auto itr = plot_data.numeric.find(n.first);
       if (itr == plot_data.numeric.end())
+      {
         itr = plot_data.addNumeric(n.first);
+      }
       itr->second.pushBack({ (double)evt->timestamp / 1e6, n.second });
     }
     for (auto& s : usr.strings)
     {
       auto itr = plot_data.strings.find(s.first);
       if (itr == plot_data.strings.end())
+      {
         itr = plot_data.addStringSeries(s.first);
+      }
       itr->second.pushBack({ (double)evt->timestamp / 1e6, s.second });
     }
 
@@ -303,7 +315,9 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   };
 
   if (processInputLog(filepath, processEvent) != 0)
+  {
     return false;
+  }
 
   return true;
 }
@@ -374,7 +388,9 @@ bool DataLoadZcm::xmlLoadState(const QDomElement& parent_element)
 
     QStringList selected_channels;
     for (auto& c : _selected_channels)
+    {
       selected_channels.push_back(QString::fromStdString(c));
+    }
 
     QSettings settings;
     settings.setValue("DataLoadZcm.selected_channels", selected_channels);
