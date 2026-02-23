@@ -542,9 +542,9 @@ void RangeSlider::drawTicks(QPainter& painter, const QRectF& backgroundRect)
   }
 
   auto valueToPos = [&](int value) {
-    float percentage = (value - mMinimum) * 1.0f / mInterval;
-    int base = percentage * pxLen + scLeftRightMargin +
-               (type.testFlag(DoubleHandles) ? scHandleSideLength : 0);
+    const float percentage = (value - mMinimum) * 1.0f / mInterval;
+    const int offset = scLeftRightMargin + (type.testFlag(DoubleHandles) ? scHandleSideLength : 0);
+    const int base = static_cast<int>(percentage * pxLen) + offset;
     return base;
   };
 
@@ -642,16 +642,6 @@ void RangeSlider::maybeShowHandleTooltip(const QPoint& globalPos, const QPoint& 
     QToolTip::hideText();
     mTooltipVisible = false;
   }
-}
-
-static int pow10i(int d)
-{
-  int s = 1;
-  for (int i = 0; i < d; i++)
-  {
-    s *= 10;
-  }
-  return s;
 }
 
 int RangeSlider::toInt(double v) const
