@@ -2,7 +2,6 @@
 
 #include <string>
 #include <vector>
-#include <thread>
 
 #include <QtPlugin>
 #include "PlotJuggler/toolbox_base.h"
