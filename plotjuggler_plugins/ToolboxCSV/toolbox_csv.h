@@ -7,11 +7,7 @@
 #include <QtPlugin>
 #include "PlotJuggler/toolbox_base.h"
 #include "PlotJuggler/plotwidget_base.h"
-
-namespace Ui
-{
-class toolBoxUI;
-}
+#include "toolbox_ui.h"
 
 // Toolbox plugin to export selected PlotJuggler topics to CSV (extensible to other formats)
 class ToolboxCSV : public PJ::ToolboxPlugin
@@ -48,31 +44,17 @@ private slots:
   void on_toolButton_clicked();
 
 private:
-  QWidget* _widget;
-  Ui::toolBoxUI* ui;
+  ToolBoxUI _ui;
 
   // References to PlotJuggler data structures
   PJ::PlotDataMapRef* _plot_data = nullptr;
   PJ::TransformsMap* _transforms = nullptr;
 
-  // Temporary storage for drag & drop topics
-  QStringList _dragging_curves;
-
-  bool eventFilter(QObject* obj, QEvent* ev) override;
-
-  void updateTimeControlsEnabled();
-
   // Compute global time range across selected topics
   bool getTimeRange(double& tmin, double& tmax) const;
 
-  // Apply time range to slider and spinboxes
-  void setTimeRange(double tmin, double tmax);
-
   void updateTimeRange();
   void saveAll();
-
-  // Reference time offset for relative mode
-  double _t0 = 0.0;
 
   // Generic table representation for exporters (time + N columns)
   struct ExportTable

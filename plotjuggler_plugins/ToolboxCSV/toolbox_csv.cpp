@@ -1,6 +1,4 @@
 #include "toolbox_csv.h"
-#include "PlotJuggler/svg_util.h"
-#include "ui_toolbox_csv.h"
 
 #if TOOLBOXCSV_WITH_PARQUET
 #ifdef signals
@@ -33,122 +31,39 @@
 #include <QDropEvent>
 #include <QMimeData>
 #include <QDataStream>
+#include <QToolButton>
 
 ToolboxCSV::ToolboxCSV()
 {
-  _widget = new QWidget();
-  ui = new Ui::toolBoxUI();
-
-  ui->setupUi(_widget);
-
-  // Enable drag & drop into the table.
-  ui->tableWidget->installEventFilter(this);
-  ui->tableWidget->viewport()->installEventFilter(this);
-
-  // Close/cancel
-  connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &ToolboxCSV::onClosed);
-
-  // Dummy initial range; actual range recomputed from selected topics.
-  ui->rangeSlider->setOptions(RangeSlider::DoubleHandles);
-  ui->rangeSlider->setRangeReal(0.0, 1.0, 2);
-  ui->rangeSlider->setShowTicks(false);
-
-  ui->startTime->setRange(0.0, 1.0);
-  ui->startTime->setDecimals(2);
-  ui->startTime->setButtonSymbols(QAbstractSpinBox::NoButtons);
-
-  ui->endTime->setRange(0.0, 1.0);
-  ui->endTime->setValue(1.0);
-  ui->endTime->setDecimals(2);
-  ui->endTime->setButtonSymbols(QAbstractSpinBox::NoButtons);
-
-  // Default export mode.
-  ui->csvButton->setChecked(true);
-  ui->relativeBox->setChecked(true);
-
-  // Slider -> SpinBox sync (prevent feedback loops).
-  connect(ui->rangeSlider, &RangeSlider::lowerValueChanged, _widget, [this](int v) {
-    QSignalBlocker b(*ui->startTime);
-    ui->startTime->setValue(ui->rangeSlider->toReal(v));
-  });
-
-  connect(ui->rangeSlider, &RangeSlider::upperValueChanged, _widget, [this](int v) {
-    QSignalBlocker b(*ui->endTime);
-    ui->endTime->setValue(ui->rangeSlider->toReal(v));
-  });
-
-  // SpinBox -> Slider sync (prevent recursive updates).
-  connect(ui->startTime, QOverload<double>::of(&QDoubleSpinBox::valueChanged), _widget,
-          [this](double t) {
-            QSignalBlocker b(*ui->rangeSlider);
-            ui->rangeSlider->setLowerValue(ui->rangeSlider->toInt(t));
-          });
-
-  connect(ui->endTime, QOverload<double>::of(&QDoubleSpinBox::valueChanged), _widget,
-          [this](double t) {
-            QSignalBlocker b(*ui->rangeSlider);
-            ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(t));
-          });
-
   // Remove selected rows bottom-up to keep indices valid.
-  connect(ui->removeButton, &QToolButton::clicked, _widget, [this]() {
-    auto* table = ui->tableWidget;
-    QModelIndexList rows = table->selectionModel()->selectedRows();
-    if (rows.isEmpty())
-    {
-      return;
-    }
-
-    std::sort(rows.begin(), rows.end(),
-              [](const QModelIndex& a, const QModelIndex& b) { return a.row() > b.row(); });
-
-    for (const auto& idx : rows)
-    {
-      table->removeRow(idx.row());
-    }
-
-    updateTimeControlsEnabled();
+  connect(&_ui, &ToolBoxUI::removeRequested, this, [this]() {
+    _ui.clearTable(false);
+    _ui.updateTimeControlsEnabled();
     updateTimeRange();
   });
 
   // Clear all topics.
-  connect(ui->clearButton, &QToolButton::clicked, _widget, [this]() {
-    ui->tableWidget->setRowCount(0);
-    updateTimeControlsEnabled();
+  connect(&_ui, &ToolBoxUI::clearRequested, this, [this]() {
+    _ui.clearTable(true);
+    _ui.updateTimeControlsEnabled();
     updateTimeRange();
   });
 
+  // Recompute visible time range when switching relative/absolute or table changed.
+  connect(&_ui, &ToolBoxUI::recomputeTime, this, &ToolboxCSV::updateTimeRange);
+
+  // Close/cancel
+  connect(&_ui, &ToolBoxUI::closed, this, &ToolboxCSV::onClosed);
+
   // Pick output file.
-  connect(ui->toolButton, &QToolButton::clicked, this, &ToolboxCSV::on_toolButton_clicked);
-
-  // Reset output path when switching format.
-  connect(ui->csvButton, &QRadioButton::toggled, _widget, [this](bool checked) {
-    if (!checked)
-    {
-      return;
-    }
-    ui->lineEditPath->clear();
-  });
-
-  connect(ui->parquetButton, &QRadioButton::toggled, _widget, [this](bool checked) {
-    if (!checked)
-    {
-      return;
-    }
-    ui->lineEditPath->clear();
-  });
-
-  // Recompute visible time range when switching relative/absolute.
-  connect(ui->relativeBox, &QCheckBox::toggled, this, &ToolboxCSV::updateTimeRange);
+  connect(&_ui, &ToolBoxUI::pickFileRequested, this, &ToolboxCSV::on_toolButton_clicked);
 
   // Exporter.
-  connect(ui->saveButton, &QPushButton::clicked, this, &ToolboxCSV::saveAll);
+  connect(&_ui, &ToolBoxUI::saveRequested, this, &ToolboxCSV::saveAll);
 }
 
 ToolboxCSV::~ToolboxCSV()
 {
-  delete ui;
-  delete _widget;
 }
 
 void ToolboxCSV::init(PJ::PlotDataMapRef& src_data, PJ::TransformsMap& transform_map)
@@ -159,33 +74,12 @@ void ToolboxCSV::init(PJ::PlotDataMapRef& src_data, PJ::TransformsMap& transform
 
 std::pair<QWidget*, PJ::ToolboxPlugin::WidgetType> ToolboxCSV::providedWidget() const
 {
-  return { _widget, PJ::ToolboxPlugin::WidgetType::FIXED };
+  return { _ui.widget(), PJ::ToolboxPlugin::WidgetType::FIXED };
 }
 
 bool ToolboxCSV::onShowWidget()
 {
-  // Load icons based on current theme.
-  QSettings settings;
-  QString theme = settings.value("StyleSheet::theme", "light").toString();
-
-  ui->clearButton->setIcon(LoadSvg(":/resources/svg/clear.svg", theme));
-  ui->saveButton->setIcon(LoadSvg(":/resources/svg/save.svg", theme));
-
-  // Small UI polish.
-  auto* corner = ui->tableWidget->findChild<QAbstractButton*>();
-  if (corner)
-  {
-    corner->setToolTip("Click to select all topics");
-  }
-
-  ui->tableWidget->setStyleSheet("QTableCornerButton::section {"
-                                 "  background-color: palette(button);"
-                                 "  border: 1px solid palette(mid);"
-                                 "}");
-
-  ui->tableWidget->horizontalHeader()->setStyleSheet("QHeaderView::section { font-weight: bold; }");
-
-  updateTimeControlsEnabled();
+  _ui.updateTimeControlsEnabled();
 
   // Recompute time range on show in case selected topics changed.
   updateTimeRange();
@@ -193,159 +87,32 @@ bool ToolboxCSV::onShowWidget()
   return true;
 }
 
-bool ToolboxCSV::eventFilter(QObject* obj, QEvent* ev)
-{
-  if (ev->type() == QEvent::DragEnter)
-  {
-    // Accept PlotJuggler curve drags onto the table.
-    auto* event = static_cast<QDragEnterEvent*>(ev);
-    const QMimeData* mimeData = event->mimeData();
-    const QStringList mimeFormats = mimeData->formats();
-
-    // Parse PlotJuggler curve list from drag MIME payload.
-    for (const QString& format : mimeFormats)
-    {
-      if (format != "curveslist/add_curve")
-      {
-        continue;
-      }
-
-      QByteArray encoded = mimeData->data(format);
-      QDataStream stream(&encoded, QIODevice::ReadOnly);
-
-      QStringList curves;
-      while (!stream.atEnd())
-      {
-        QString curve_name;
-        stream >> curve_name;
-        if (!curve_name.isEmpty())
-        {
-          curves.push_back(curve_name);
-        }
-      }
-
-      if (curves.isEmpty())
-      {
-        return false;
-      }
-
-      _dragging_curves = curves;
-
-      if (obj == ui->tableWidget || obj == ui->tableWidget->viewport())
-      {
-        event->acceptProposedAction();
-        return true;
-      }
-    }
-
-    return false;
-  }
-  else if (ev->type() == QEvent::DragMove)
-  {
-    auto* event = static_cast<QDragMoveEvent*>(ev);
-    if (obj == ui->tableWidget || obj == ui->tableWidget->viewport())
-    {
-      if (event->mimeData() && event->mimeData()->hasFormat("curveslist/add_curve"))
-      {
-        event->acceptProposedAction();
-        return true;
-      }
-    }
-    return false;
-  }
-  else if (ev->type() == QEvent::Drop)
-  {
-    auto* event = static_cast<QDropEvent*>(ev);
-
-    if (obj != ui->tableWidget && obj != ui->tableWidget->viewport())
-    {
-      return false;
-    }
-
-    QSet<QString> existing;
-    existing.reserve(ui->tableWidget->rowCount());
-
-    for (int r = 0; r < ui->tableWidget->rowCount(); r++)
-    {
-      auto* item = ui->tableWidget->item(r, 0);
-      if (item)
-      {
-        const QString t = item->text().trimmed();
-        if (!t.isEmpty())
-        {
-          existing.insert(t);
-        }
-      }
-    }
-
-    for (const QString& raw : _dragging_curves)
-    {
-      const QString topic = raw.trimmed();
-      if (topic.isEmpty())
-      {
-        continue;
-      }
-
-      if (existing.contains(topic))
-      {
-        continue;
-      }
-
-      existing.insert(topic);
-
-      const int row = ui->tableWidget->rowCount();
-      ui->tableWidget->insertRow(row);
-      ui->tableWidget->setItem(row, 0, new QTableWidgetItem(topic));
-    }
-
-    _dragging_curves.clear();
-    updateTimeControlsEnabled();
-    updateTimeRange();
-    event->acceptProposedAction();
-    return true;
-  }
-
-  return false;
-}
-
 void ToolboxCSV::saveAll()
 {
   // Convert relative time range to absolute time if needed.
-  double t_start = ui->startTime->value();
-  double t_end = ui->endTime->value();
+  double t_start = _ui.getStartTime();
+  double t_end = _ui.getEndTime();
 
-  if (ui->relativeBox->isChecked())
+  qDebug() << t_start << Qt::endl;
+  qDebug() << t_end << Qt::endl;
+
+  if (_ui.isRelativeBox())
   {
-    t_start += _t0;
-    t_end += _t0;
+    t_start += _ui.getRelativeTime();
+    t_end += _ui.getRelativeTime();
   }
 
-  // Collect selected topic names from the UI table.
-  std::vector<std::string> selected_topics;
-  for (int r = 0; r < ui->tableWidget->rowCount(); r++)
-  {
-    auto* item = ui->tableWidget->item(r, 0);
-    if (!item)
-    {
-      continue;
-    }
-
-    const std::string name = item->text().trimmed().toStdString();
-    if (!name.empty())
-    {
-      selected_topics.push_back(name);
-    }
-  }
+  std::vector<std::string> selected_topics = _ui.getSelectedTopics();
 
   // Validate output path.
-  const QString path = ui->lineEditPath->text().trimmed();
+  const QString path = _ui.getPath();
   if (path.isEmpty())
   {
-    QMessageBox::warning(_widget, "Export", "Please select a file path before saving.");
+    QMessageBox::warning(_ui.widget(), "Export", "Please select a file path before saving.");
     return;
   }
 
-  const bool do_split = ui->checkBoxTime->isChecked();
+  const bool do_split = _ui.isCheckBoxTime();
   const double gap_sec = 10000.0;
 
   // Optionally split export into segments separated by large time gaps.
@@ -356,12 +123,12 @@ void ToolboxCSV::saveAll()
     ExportTable t = buildExportTable(selected_topics, t_start, t_end);
     if (t.time.empty())
     {
-      QMessageBox::warning(_widget, "Export", "No samples found in the selected time range.");
+      QMessageBox::warning(_ui.widget(), "Export", "No samples found in the selected time range.");
       return;
     }
 
     bool ok = false;
-    if (ui->csvButton->isChecked())
+    if (_ui.isCsvButton())
     {
       ok = serializeCSV(t, path);
     }
@@ -377,7 +144,7 @@ void ToolboxCSV::saveAll()
 
     if (!ok)
     {
-      QMessageBox::warning(_widget, "Export", "Failed to write the output file.");
+      QMessageBox::warning(_ui.widget(), "Export", "Failed to write the output file.");
       return;
     }
 
@@ -387,7 +154,7 @@ void ToolboxCSV::saveAll()
 
   if (ranges.empty())
   {
-    QMessageBox::warning(_widget, "Export", "No samples found in the selected time range.");
+    QMessageBox::warning(_ui.widget(), "Export", "No samples found in the selected time range.");
     return;
   }
 
@@ -407,7 +174,8 @@ void ToolboxCSV::saveAll()
     const QString out_path = addPartSuffix(path, k + 1, static_cast<int>(ranges.size()));
 
     bool ok = false;
-    if (ui->csvButton->isChecked())
+    void updateTimeControlsEnabled();
+    if (_ui.isCsvButton())
     {
       ok = serializeCSV(t, out_path);
     }
@@ -423,7 +191,7 @@ void ToolboxCSV::saveAll()
 
     if (!ok)
     {
-      QMessageBox::warning(_widget, "Export", "Failed to write one of the output files.");
+      QMessageBox::warning(_ui.widget(), "Export", "Failed to write one of the output files.");
       return;
     }
 
@@ -432,16 +200,16 @@ void ToolboxCSV::saveAll()
 
   if (parts_written == 0)
   {
-    QMessageBox::warning(_widget, "Export", "No samples found in the selected time range.");
+    QMessageBox::warning(_ui.widget(), "Export", "No samples found in the selected time range.");
     return;
   }
 
-  emit this->closed();
+  emit closed();
 }
 
 void ToolboxCSV::onClosed()
 {
-  emit this->closed();
+  emit closed();
 }
 
 void ToolboxCSV::on_toolButton_clicked()
@@ -449,7 +217,7 @@ void ToolboxCSV::on_toolButton_clicked()
   // Persist last used file/dir per format.
   QSettings settings;
 
-  const bool is_csv = ui->csvButton->isChecked();
+  const bool is_csv = _ui.isCsvButton();
   const QString fmt_key = is_csv ? "csv" : "parquet";
 
   const QString last_file =
@@ -462,7 +230,7 @@ void ToolboxCSV::on_toolButton_clicked()
   const QString start_path =
       last_file.isEmpty() ? QDir(start_dir).filePath(default_name) : last_file;
 
-  QFileDialog dialog(_widget);
+  QFileDialog dialog(_ui.widget());
   dialog.setAcceptMode(QFileDialog::AcceptSave);
   dialog.setFileMode(QFileDialog::AnyFile);
 
@@ -496,18 +264,7 @@ void ToolboxCSV::on_toolButton_clicked()
   settings.setValue(QString("Export.%1.lastFile").arg(fmt_key), file_path);
   settings.setValue("Export.lastDirectory", info.absolutePath());
 
-  ui->lineEditPath->setText(file_path);
-}
-
-// Disable time and export controls when no topics are selected.
-void ToolboxCSV::updateTimeControlsEnabled()
-{
-  const bool has_data = ui->tableWidget->rowCount() > 0;
-  ui->startTime->setEnabled(has_data);
-  ui->endTime->setEnabled(has_data);
-  ui->rangeSlider->setEnabled(has_data);
-  ui->toolButton->setEnabled(has_data);
-  ui->saveButton->setEnabled(has_data);
+  _ui.setPath(file_path);
 }
 
 // Compute global [tmin, tmax] across selected numeric topics.
@@ -515,20 +272,10 @@ bool ToolboxCSV::getTimeRange(double& tmin, double& tmax) const
 {
   bool any = false;
 
-  for (int r = 0; r < ui->tableWidget->rowCount(); r++)
+  const auto topics = _ui.getSelectedTopics();
+
+  for (const auto& name : topics)
   {
-    auto* item = ui->tableWidget->item(r, 0);
-    if (!item)
-    {
-      continue;
-    }
-
-    const std::string name = item->text().trimmed().toStdString();
-    if (name.empty())
-    {
-      continue;
-    }
-
     auto it = _plot_data->numeric.find(name);
     if (it == _plot_data->numeric.end())
     {
@@ -568,58 +315,6 @@ bool ToolboxCSV::getTimeRange(double& tmin, double& tmax) const
   return true;
 }
 
-// Update UI time range in relative or absolute mode.
-void ToolboxCSV::setTimeRange(double tmin, double tmax)
-{
-  // Update slider/spinboxes with either relative time (starting at 0) or absolute time.
-  const bool relative = ui->relativeBox->isChecked();
-  const int decimals = 3;
-
-  QSignalBlocker b0(*ui->rangeSlider);
-  QSignalBlocker b1(*ui->startTime);
-  QSignalBlocker b2(*ui->endTime);
-
-  if (relative)
-  {
-    _t0 = tmin;
-    double duration = tmax - tmin;
-    if (duration < 0.0)
-    {
-      duration = 0.0;
-    }
-
-    ui->rangeSlider->setRangeReal(0.0, duration, decimals);
-
-    ui->startTime->setDecimals(decimals);
-    ui->startTime->setRange(0.0, duration);
-    ui->startTime->setValue(0.0);
-
-    ui->endTime->setDecimals(decimals);
-    ui->endTime->setRange(0.0, duration);
-    ui->endTime->setValue(duration);
-
-    ui->rangeSlider->setLowerValue(ui->rangeSlider->toInt(0.0));
-    ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(duration));
-  }
-  else
-  {
-    _t0 = 0.0;
-
-    ui->rangeSlider->setRangeReal(tmin, tmax, decimals);
-
-    ui->startTime->setDecimals(decimals);
-    ui->startTime->setRange(tmin, tmax);
-    ui->startTime->setValue(tmin);
-
-    ui->endTime->setDecimals(decimals);
-    ui->endTime->setRange(tmin, tmax);
-    ui->endTime->setValue(tmax);
-
-    ui->rangeSlider->setLowerValue(ui->rangeSlider->toInt(tmin));
-    ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(tmax));
-  }
-}
-
 void ToolboxCSV::updateTimeRange()
 {
   double tmin, tmax;
@@ -627,7 +322,7 @@ void ToolboxCSV::updateTimeRange()
   {
     return;  // No valid topics -> keep current UI range
   }
-  setTimeRange(tmin, tmax);
+  _ui.setTimeRange(tmin, tmax);
 }
 
 // Estimate local minimum dt to derive adaptive merge tolerance.
