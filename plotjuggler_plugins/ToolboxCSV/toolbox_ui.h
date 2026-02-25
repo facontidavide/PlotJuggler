@@ -1,9 +1,9 @@
 #pragma once
 
 #include <QObject>
+#include <QWidget>
 #include <QString>
 #include <QStringList>
-#include <QWidget>
 #include <QEvent>
 #include <vector>
 #include <string>

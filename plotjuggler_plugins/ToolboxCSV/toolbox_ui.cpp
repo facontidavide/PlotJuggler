@@ -3,6 +3,18 @@
 #include "PlotJuggler/svg_util.h"
 
 #include <QSettings>
+#include <QSignalBlocker>
+#include <QAbstractSpinBox>
+#include <QHeaderView>
+#include <QTableWidgetItem>
+#include <QDragEnterEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
+#include <QMimeData>
+#include <QDataStream>
+#include <QAbstractButton>
+
+#include <QSettings>
 
 ToolBoxUI::ToolBoxUI()
 {
