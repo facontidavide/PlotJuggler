@@ -137,7 +137,7 @@ void ToolboxCSV::saveAll()
 #if TOOLBOXCSV_WITH_PARQUET
       ok = serializeParquet(t, path);
 #else
-      QMessageBox::warning(_widget, "Arrow/Parquet", "Can't load Arrow/Parquet");
+      QMessageBox::warning(_ui.widget(), "Arrow/Parquet", "Can't load Arrow/Parquet");
       return;
 #endif
     }
@@ -184,7 +184,7 @@ void ToolboxCSV::saveAll()
 #if TOOLBOXCSV_WITH_PARQUET
       ok = serializeParquet(t, out_path);
 #else
-      QMessageBox::warning(_widget, "Arrow/Parquet", "Can't load Arrow/Parquet");
+      QMessageBox::warning(_ui.widget(), "Arrow/Parquet", "Can't load Arrow/Parquet");
       return;
 #endif
     }
