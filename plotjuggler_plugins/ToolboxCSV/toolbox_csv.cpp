@@ -93,9 +93,6 @@ void ToolboxCSV::saveAll()
   double t_start = _ui.getStartTime();
   double t_end = _ui.getEndTime();
 
-  qDebug() << t_start << Qt::endl;
-  qDebug() << t_end << Qt::endl;
-
   if (_ui.isRelativeBox())
   {
     t_start += _ui.getRelativeTime();
