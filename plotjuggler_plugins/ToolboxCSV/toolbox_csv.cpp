@@ -171,7 +171,7 @@ void ToolboxCSV::saveAll()
     const QString out_path = addPartSuffix(path, k + 1, static_cast<int>(ranges.size()));
 
     bool ok = false;
-    void updateTimeControlsEnabled();
+    _ui.updateTimeControlsEnabled();
     if (_ui.isCsvButton())
     {
       ok = serializeCSV(t, out_path);
