@@ -24,7 +24,6 @@
        <property name="font">
         <font>
          <pointsize>11</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -47,7 +46,6 @@
        <property name="font">
         <font>
          <pointsize>11</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -61,7 +59,6 @@
        <property name="font">
         <font>
          <pointsize>11</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -81,7 +78,6 @@
       <widget class="QLabel" name="label_6">
        <property name="font">
         <font>
-         <weight>75</weight>
          <bold>true</bold>
         </font>
        </property>
@@ -128,7 +124,7 @@
    <item>
     <widget class="QTreeWidget" name="topicsList">
      <property name="selectionMode">
-      <enum>QAbstractItemView::NoSelection</enum>
+      <enum>QAbstractItemView::MultiSelection</enum>
      </property>
      <property name="uniformRowHeights">
       <bool>true</bool>
@@ -183,7 +179,7 @@
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
-      <set>QDialogButtonBox::NoButton</set>
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
      </property>
      <property name="centerButtons">
       <bool>true</bool>
