@@ -13,6 +13,9 @@
 #include <QMimeData>
 #include <QDataStream>
 #include <QAbstractButton>
+#include <QDir>
+#include <QFileDialog>
+#include <QFileInfo>
 
 #include <QSettings>
 
@@ -103,7 +106,7 @@ ToolBoxUI::ToolBoxUI()
     }
   });
 
-  connect(ui->checkBoxTime, &QCheckBox::toggled, this, [this](bool multi_file) {
+  connect(ui->checkBoxMultifile, &QCheckBox::toggled, this, [this](bool multi_file) {
     ui->lineEditPrefix->setHidden(!multi_file);
     ui->labelPrefix->setHidden(!multi_file);
   });
@@ -113,8 +116,52 @@ ToolBoxUI::ToolBoxUI()
   connect(ui->comboTime, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
           this, [this](int) { recomputeTime(); });
   connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &ToolBoxUI::closed);
-  connect(ui->saveButton, &QPushButton::clicked, this, &ToolBoxUI::saveRequested);
-  connect(ui->toolButton, &QToolButton::clicked, this, &ToolBoxUI::pickFileRequested);
+  connect(ui->saveButton, &QPushButton::clicked, this, [this]() {
+    const bool is_csv = ui->csvButton->isChecked();
+    const bool multi_file = ui->checkBoxMultifile->isChecked();
+
+    QSettings settings;
+    const QString last_dir = settings.value("Export.lastDirectory", QDir::homePath()).toString();
+
+    if (!multi_file)
+    {
+      const QString filter = is_csv ? "CSV (*.csv)" : "Parquet (*.parquet *.pq)";
+      const QString suffix = is_csv ? "csv" : "parquet";
+      const QString default_name =
+          QDir(last_dir).filePath(is_csv ? "export.csv" : "export.parquet");
+
+      QString filename = QFileDialog::getSaveFileName(_widget, "Export data", default_name, filter);
+      if (filename.isEmpty())
+      {
+        return;
+      }
+      if (!filename.endsWith("." + suffix, Qt::CaseInsensitive))
+      {
+        filename += "." + suffix;
+      }
+
+      settings.setValue("Export.lastDirectory", QFileInfo(filename).absolutePath());
+      emit exportSingleFile(is_csv, filename);
+    }
+    else
+    {
+      QString dir_path =
+          QFileDialog::getExistingDirectory(_widget, "Select export directory", last_dir);
+      if (dir_path.isEmpty())
+      {
+        return;
+      }
+
+      QString prefix = getPathPrefix();
+      if (prefix.isEmpty())
+      {
+        prefix = "export";
+      }
+
+      settings.setValue("Export.lastDirectory", dir_path);
+      emit exportMultipleFiles(is_csv, QDir(dir_path), prefix);
+    }
+  });
 }
 
 QWidget* ToolBoxUI::widget() const
@@ -134,7 +181,7 @@ double ToolBoxUI::getEndTime() const
 
 double ToolBoxUI::getRelativeTime() const
 {
-  return _t0;
+  return _time_offset;
 }
 
 std::vector<std::string> ToolBoxUI::getSelectedTopics() const
@@ -163,19 +210,14 @@ QString ToolBoxUI::getPathPrefix() const
   return ui->lineEditPrefix->text().trimmed();
 }
 
-void ToolBoxUI::setPath(const QString filePath)
-{
-  // FIXME
-}
-
 bool ToolBoxUI::isRelativeTime() const
 {
   return ui->comboTime->currentIndex() == 0;
 }
 
-bool ToolBoxUI::isCheckBoxTime() const
+bool ToolBoxUI::isMultiFileExport() const
 {
-  return ui->checkBoxTime->isChecked();
+  return ui->checkBoxMultifile->isChecked();
 }
 
 bool ToolBoxUI::isCsvButton() const
@@ -330,7 +372,6 @@ void ToolBoxUI::updateTimeControlsEnabled()
   ui->startTime->setEnabled(has_data);
   ui->endTime->setEnabled(has_data);
   ui->rangeSlider->setEnabled(has_data);
-  ui->toolButton->setEnabled(has_data);
   ui->saveButton->setEnabled(has_data);
 }
 
@@ -347,7 +388,7 @@ void ToolBoxUI::setTimeRange(double tmin, double tmax)
 
   if (relative)
   {
-    _t0 = tmin;
+    _time_offset = tmin;
     double duration = tmax - tmin;
     if (duration < 0.0)
     {
@@ -369,7 +410,7 @@ void ToolBoxUI::setTimeRange(double tmin, double tmax)
   }
   else
   {
-    _t0 = 0.0;
+    _time_offset = 0.0;
 
     ui->rangeSlider->setRangeReal(tmin, tmax, decimals);
 
