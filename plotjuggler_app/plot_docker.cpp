@@ -348,9 +348,9 @@ DockWidget::DockWidget(PlotDataMapRef& datamap, QWidget* parent)
   connect(_plot_widget, &PlotWidget::splitVertical, this, &DockWidget::splitVertical);
 
   connect(_toolbar, &DockToolbar::titleChanged, _plot_widget,
-          [=](QString title) { _plot_widget->setStatisticsTitle(title); });
+          [this](QString title) { _plot_widget->setStatisticsTitle(title); });
 
-  auto FullscreenAction = [=]() {
+  auto FullscreenAction = [this]() {
     PlotDocker* parent_docker = static_cast<PlotDocker*>(dockManager());
 
     this->toolBar()->toggleFullscreen();
@@ -369,7 +369,7 @@ DockWidget::DockWidget(PlotDataMapRef& datamap, QWidget* parent)
 
   QObject::connect(_toolbar->buttonFullscreen(), &QPushButton::clicked, FullscreenAction);
 
-  QObject::connect(_toolbar->buttonClose(), &QPushButton::pressed, [=]() {
+  QObject::connect(_toolbar->buttonClose(), &QPushButton::pressed, [this]() {
     dockAreaWidget()->closeArea();
     takeWidget();
     _plot_widget->deleteLater();

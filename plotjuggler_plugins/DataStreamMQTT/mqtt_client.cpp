@@ -69,7 +69,9 @@ void log_callback(struct mosquitto* mosq, void* context, int log_level, const ch
   const auto it = std::find_if(std::begin(log_level_map), std::end(log_level_map),
                                [log_level](const auto& pair) { return log_level == pair.first; });
   if (it == std::end(log_level_map))
+  {
     return;
+  }
 
   debug() << it->second << ": " << msg;
 }

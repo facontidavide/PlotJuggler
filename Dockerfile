@@ -9,7 +9,7 @@ RUN mkdir -p /opt/plotjuggler
 COPY . /opt/plotjuggler
 RUN mkdir /opt/plotjuggler/build
 WORKDIR /opt/plotjuggler/build
-RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DPJ_PLUGINS_DIRECTORY="bin"
 RUN make -j `nproc`
 RUN make install DESTDIR=AppDir
 ENV APPIMAGE_EXTRACT_AND_RUN=1

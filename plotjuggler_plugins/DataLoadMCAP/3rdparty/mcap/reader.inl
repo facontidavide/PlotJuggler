@@ -51,9 +51,21 @@ FileReader::FileReader(std::FILE* file)
   assert(file_);
 
   // Determine the size of the file
-  std::fseek(file_, 0, SEEK_END);
-  size_ = std::ftell(file_);
-  std::fseek(file_, 0, SEEK_SET);
+  if (std::fseek(file_, 0, SEEK_END) != 0) {
+    throw std::system_error(errno, std::generic_category());
+  }
+#if defined _WIN32 || defined __CYGWIN__
+  offset_type s = _ftelli64(file_);
+#else
+  offset_type s = std::ftell(file_);
+#endif
+  if (s < 0) {
+    throw std::system_error(errno, std::generic_category());
+  }
+  size_ = s;
+  if (std::fseek(file_, 0, SEEK_SET) != 0) {
+    throw std::system_error(errno, std::generic_category());
+  }
 }
 
 uint64_t FileReader::size() const {
@@ -64,20 +76,36 @@ uint64_t FileReader::read(std::byte** output, uint64_t offset, uint64_t size) {
   if (offset >= size_) {
     return 0;
   }
+  // Clamp read size to SIZE_MAX. This should only be relevant on 32-bit platforms. If clamping
+  // does happen, allocation will fail, but this ensures the error is surfaced sooner. Otherwise,
+  // wraparound will produce the wrong read size, e.g. a read of 2^32 becomes a read of 0.
+  // We should really be taking a size_t instead and shifting the responsibility to the caller.
+  const std::size_t read_size = size <= (uint64_t)SIZE_MAX ? size : SIZE_MAX;
 
   if (offset != position_) {
-    std::fseek(file_, (long)(offset), SEEK_SET);
     std::fflush(file_);
+    // offset <= size_ and size_ fits into offset_type by definition so these conversions are
+    // lossless.
+#if defined _WIN32 || defined __CYGWIN__
+    int status = _fseeki64(file_, (offset_type)offset, SEEK_SET);
+#else
+    int status = std::fseek(file_, (offset_type)offset, SEEK_SET);
+#endif
+    if (status < 0) {
+      throw std::system_error(errno, std::generic_category());
+    }
     position_ = offset;
   }
 
-  if (size > buffer_.size()) {
-    buffer_.resize(size);
+  if (read_size > buffer_.size()) {
+    buffer_.resize(read_size);
   }
 
-  const uint64_t bytesRead = uint64_t(std::fread(buffer_.data(), 1, size, file_));
+  const uint64_t bytesRead = uint64_t(std::fread(buffer_.data(), 1, read_size, file_));
   *output = buffer_.data();
 
+  // This should not overflow unless the file size exceeds 2^64 - 1 bytes, which should be
+  // impossible even if the file grows while we're reading it.
   position_ += bytesRead;
   return bytesRead;
 }
@@ -1218,9 +1246,9 @@ std::optional<Compression> McapReader::ParseCompression(const std::string_view c
 
 // RecordReader ////////////////////////////////////////////////////////////////
 
-RecordReader::RecordReader(IReadable& dataSource, ByteOffset startOffset, ByteOffset endOffset)
+RecordReader::RecordReader(IReadable& dataSource, ByteOffset startOffset, ByteOffset _endOffset)
     : offset(startOffset)
-    , endOffset(endOffset)
+    , endOffset(_endOffset)
     , dataSource_(&dataSource)
     , status_(StatusCode::Success)
     , curRecord_{} {}

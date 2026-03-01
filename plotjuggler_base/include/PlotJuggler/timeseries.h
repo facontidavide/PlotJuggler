@@ -80,7 +80,7 @@ public:
     trimRange();
   }
 
-  void pushUnsorted(const Point& p)
+  virtual void pushUnsorted(const Point& p)
   {
     if constexpr (std::is_arithmetic_v<Value>)
     {

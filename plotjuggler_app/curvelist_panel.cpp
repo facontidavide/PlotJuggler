@@ -297,7 +297,9 @@ void CurveListPanel::refreshValues()
         idx--;
       }
       if (num_text[idx] == '.')
+      {
         num_text[idx] = ' ';
+      }
     }
     return num_text + " ";
   };
@@ -321,18 +323,17 @@ void CurveListPanel::refreshValues()
       if (it != _plot_data.strings.end())
       {
         auto& plot_data = it->second;
-        auto val = plot_data.getYfromX(_tracker_time);
-        if (val)
+        auto str = plot_data.getStringFromX(_tracker_time);
+        if (str)
         {
-          auto str_view = val.value();
-          char last_byte = str_view.data()[str_view.size() - 1];
+          char last_byte = str->data()[str->size() - 1];
           if (last_byte == '\0')
           {
-            return QString::fromLocal8Bit(str_view.data(), str_view.size() - 1);
+            return QString::fromLocal8Bit(str->data(), str->size() - 1);
           }
           else
           {
-            return QString::fromLocal8Bit(str_view.data(), str_view.size());
+            return QString::fromLocal8Bit(str->data(), str->size());
           }
         }
       }
@@ -351,11 +352,7 @@ void CurveListPanel::refreshValues()
       {
         auto rect = cell->treeWidget()->visualItemRect(cell);
 
-        if (rect.bottom() < 0 || cell->isHidden())
-        {
-          return;
-        }
-        if (rect.top() > vertical_height)
+        if (rect.bottom() < 0 || cell->isHidden() || rect.top() > vertical_height)
         {
           return;
         }

@@ -298,7 +298,9 @@ inline int poll(zmq_pollitem_t* items_, size_t nitems_, long timeout_ = -1)
 {
   int rc = zmq_poll(items_, static_cast<int>(nitems_), timeout_);
   if (rc < 0)
+  {
     throw error_t();
+  }
   return rc;
 }
 
@@ -393,7 +395,9 @@ public:
   {
     int rc = zmq_msg_init_size(&msg, size_);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   template <class ForwardIter>
@@ -405,7 +409,9 @@ public:
     size_t const size_ = static_cast<size_t>(std::distance(first, last)) * sizeof(value_t);
     int const rc = zmq_msg_init_size(&msg, size_);
     if (rc != 0)
+    {
       throw error_t();
+    }
     std::copy(first, last, data<value_t>());
   }
 
@@ -413,7 +419,9 @@ public:
   {
     int rc = zmq_msg_init_size(&msg, size_);
     if (rc != 0)
+    {
       throw error_t();
+    }
     if (size_)
     {
       // this constructor allows (nullptr, 0),
@@ -426,7 +434,9 @@ public:
   {
     int rc = zmq_msg_init_data(&msg, data_, size_, ffn_, hint_);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   // overload set of string-like types and generic containers
@@ -490,7 +500,9 @@ public:
   {
     int rc = zmq_msg_close(&msg);
     if (rc != 0)
+    {
       throw error_t();
+    }
     rc = zmq_msg_init(&msg);
     ZMQ_ASSERT(rc == 0);
   }
@@ -499,20 +511,28 @@ public:
   {
     int rc = zmq_msg_close(&msg);
     if (rc != 0)
+    {
       throw error_t();
+    }
     rc = zmq_msg_init_size(&msg, size_);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   void rebuild(const void* data_, size_t size_)
   {
     int rc = zmq_msg_close(&msg);
     if (rc != 0)
+    {
       throw error_t();
+    }
     rc = zmq_msg_init_size(&msg, size_);
     if (rc != 0)
+    {
       throw error_t();
+    }
     memcpy(data(), data_, size_);
   }
 
@@ -520,10 +540,14 @@ public:
   {
     int rc = zmq_msg_close(&msg);
     if (rc != 0)
+    {
       throw error_t();
+    }
     rc = zmq_msg_init_data(&msg, data_, size_, ffn_, hint_);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   ZMQ_DEPRECATED("from 4.3.1, use move taking non-const reference instead")
@@ -531,14 +555,18 @@ public:
   {
     int rc = zmq_msg_move(&msg, const_cast<zmq_msg_t*>(msg_->handle()));
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   void move(message_t& msg_)
   {
     int rc = zmq_msg_move(&msg, msg_.handle());
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   ZMQ_DEPRECATED("from 4.3.1, use copy taking non-const reference instead")
@@ -546,14 +574,18 @@ public:
   {
     int rc = zmq_msg_copy(&msg, const_cast<zmq_msg_t*>(msg_->handle()));
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   void copy(message_t& msg_)
   {
     int rc = zmq_msg_copy(&msg, msg_.handle());
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   bool more() const ZMQ_NOTHROW
@@ -616,7 +648,9 @@ public:
   {
     int value = zmq_msg_get(&msg, property_);
     if (value == -1)
+    {
       throw error_t();
+    }
     return value;
   }
 #endif
@@ -626,7 +660,9 @@ public:
   {
     const char* value = zmq_msg_gets(&msg, property_);
     if (value == ZMQ_NULLPTR)
+    {
       throw error_t();
+    }
     return value;
   }
 #endif
@@ -641,7 +677,9 @@ public:
   {
     int rc = zmq_msg_set_routing_id(&msg, routing_id);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   const char* group() const
@@ -653,7 +691,9 @@ public:
   {
     int rc = zmq_msg_set_group(&msg, group);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 #endif
 
@@ -700,7 +740,9 @@ public:
 
         is_ascii[1] = (byte >= 32 && byte < 127);
         if (is_ascii[1] != is_ascii[0])
+        {
           os << " ";  // Separate text/non text
+        }
 
         if (is_ascii[1])
         {
@@ -800,14 +842,18 @@ public:
   {
     ptr = zmq_ctx_new();
     if (ptr == ZMQ_NULLPTR)
+    {
       throw error_t();
+    }
   }
 
   explicit context_t(int io_threads_, int max_sockets_ = ZMQ_MAX_SOCKETS_DFLT)
   {
     ptr = zmq_ctx_new();
     if (ptr == ZMQ_NULLPTR)
+    {
       throw error_t();
+    }
 
     int rc = zmq_ctx_set(ptr, ZMQ_IO_THREADS, io_threads_);
     ZMQ_ASSERT(rc == 0);
@@ -853,7 +899,9 @@ public:
   {
     int rc = zmq_ctx_set(ptr, static_cast<int>(option), optval);
     if (rc == -1)
+    {
       throw error_t();
+    }
   }
 
   ZMQ_NODISCARD int get(ctxopt option)
@@ -863,7 +911,9 @@ public:
     // which is unfortunate, and may result in errors
     // that don't make sense
     if (rc == -1)
+    {
       throw error_t();
+    }
     return rc;
   }
 #endif
@@ -872,7 +922,9 @@ public:
   void close() ZMQ_NOTHROW
   {
     if (ptr == ZMQ_NULLPTR)
+    {
       return;
+    }
 
     int rc;
     do
@@ -890,7 +942,9 @@ public:
   void shutdown() ZMQ_NOTHROW
   {
     if (ptr == ZMQ_NULLPTR)
+    {
       return;
+    }
     int rc = zmq_ctx_shutdown(ptr);
     ZMQ_ASSERT(rc == 0);
   }
@@ -998,13 +1052,17 @@ public:
   T& value()
   {
     if (!_has_value)
+    {
       throw std::exception();
+    }
     return _value;
   }
   const T& value() const
   {
     if (!_has_value)
+    {
       throw std::exception();
+    }
     return _value;
   }
 
@@ -1755,7 +1813,9 @@ public:
   {
     int rc = zmq_setsockopt(_handle, option_, optval_, optvallen_);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   ZMQ_CPP11_DEPRECATED("from 4.7.0, use `get` taking option from zmq::sockopt")
@@ -1763,7 +1823,9 @@ public:
   {
     int rc = zmq_getsockopt(_handle, option_, optval_, optvallen_);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   template <typename T>
@@ -1897,7 +1959,9 @@ public:
   {
     int rc = zmq_bind(_handle, addr_);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   void unbind(std::string const& addr)
@@ -1909,7 +1973,9 @@ public:
   {
     int rc = zmq_unbind(_handle, addr_);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   void connect(std::string const& addr)
@@ -1921,7 +1987,9 @@ public:
   {
     int rc = zmq_connect(_handle, addr_);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   void disconnect(std::string const& addr)
@@ -1933,7 +2001,9 @@ public:
   {
     int rc = zmq_disconnect(_handle, addr_);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   bool connected() const ZMQ_NOTHROW
@@ -1946,9 +2016,13 @@ public:
   {
     int nbytes = zmq_send(_handle, buf_, len_, flags_);
     if (nbytes >= 0)
+    {
       return static_cast<size_t>(nbytes);
+    }
     if (zmq_errno() == EAGAIN)
+    {
       return 0;
+    }
     throw error_t();
   }
 
@@ -1958,9 +2032,13 @@ public:
   {
     int nbytes = zmq_msg_send(msg_.handle(), _handle, flags_);
     if (nbytes >= 0)
+    {
       return true;
+    }
     if (zmq_errno() == EAGAIN)
+    {
       return false;
+    }
     throw error_t();
   }
 
@@ -1972,9 +2050,13 @@ public:
     zmq::message_t msg(first, last);
     int nbytes = zmq_msg_send(msg.handle(), _handle, flags_);
     if (nbytes >= 0)
+    {
       return true;
+    }
     if (zmq_errno() == EAGAIN)
+    {
       return false;
+    }
     throw error_t();
   }
 
@@ -1996,9 +2078,13 @@ public:
   {
     const int nbytes = zmq_send(_handle, buf.data(), buf.size(), static_cast<int>(flags));
     if (nbytes >= 0)
+    {
       return static_cast<size_t>(nbytes);
+    }
     if (zmq_errno() == EAGAIN)
+    {
       return {};
+    }
     throw error_t();
   }
 
@@ -2006,9 +2092,13 @@ public:
   {
     int nbytes = zmq_msg_send(msg.handle(), _handle, static_cast<int>(flags));
     if (nbytes >= 0)
+    {
       return static_cast<size_t>(nbytes);
+    }
     if (zmq_errno() == EAGAIN)
+    {
       return {};
+    }
     throw error_t();
   }
 
@@ -2023,9 +2113,13 @@ public:
   {
     int nbytes = zmq_recv(_handle, buf_, len_, flags_);
     if (nbytes >= 0)
+    {
       return static_cast<size_t>(nbytes);
+    }
     if (zmq_errno() == EAGAIN)
+    {
       return 0;
+    }
     throw error_t();
   }
 
@@ -2035,9 +2129,13 @@ public:
   {
     int nbytes = zmq_msg_recv(msg_->handle(), _handle, flags_);
     if (nbytes >= 0)
+    {
       return true;
+    }
     if (zmq_errno() == EAGAIN)
+    {
       return false;
+    }
     throw error_t();
   }
 
@@ -2052,7 +2150,9 @@ public:
                                static_cast<size_t>(nbytes) };
     }
     if (zmq_errno() == EAGAIN)
+    {
       return {};
+    }
     throw error_t();
   }
 
@@ -2066,7 +2166,9 @@ public:
       return static_cast<size_t>(nbytes);
     }
     if (zmq_errno() == EAGAIN)
+    {
       return {};
+    }
     throw error_t();
   }
 #endif
@@ -2076,14 +2178,18 @@ public:
   {
     int rc = zmq_join(_handle, group);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   void leave(const char* group)
   {
     int rc = zmq_leave(_handle, group);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 #endif
 
@@ -2115,14 +2221,18 @@ private:
   {
     int rc = zmq_setsockopt(_handle, option_, optval_, optvallen_);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 
   void get_option(int option_, void* optval_, size_t* optvallen_) const
   {
     int rc = zmq_getsockopt(_handle, option_, optval_, optvallen_);
     if (rc != 0)
+    {
       throw error_t();
+    }
   }
 };
 }  // namespace detail
@@ -2258,7 +2368,9 @@ public:
     : detail::socket_base(zmq_socket(context_.handle(), type_)), ctxptr(context_.handle())
   {
     if (_handle == ZMQ_NULLPTR)
+    {
       throw error_t();
+    }
   }
 
 #ifdef ZMQ_CPP11
@@ -2300,8 +2412,10 @@ public:
   void close() ZMQ_NOTHROW
   {
     if (_handle == ZMQ_NULLPTR)
+    {
       // already closed
       return;
+    }
     int rc = zmq_close(_handle);
     ZMQ_ASSERT(rc == 0);
     _handle = ZMQ_NULLPTR;
@@ -2330,9 +2444,13 @@ private:
     : detail::socket_base(zmq_socket(context_, type_)), ctxptr(context_)
   {
     if (_handle == ZMQ_NULLPTR)
+    {
       throw error_t();
+    }
     if (ctxptr == ZMQ_NULLPTR)
+    {
       throw error_t();
+    }
   }
 };
 
@@ -2346,14 +2464,18 @@ inline void proxy(void* frontend, void* backend, void* capture)
 {
   int rc = zmq_proxy(frontend, backend, capture);
   if (rc != 0)
+  {
     throw error_t();
+  }
 }
 
 inline void proxy(socket_ref frontend, socket_ref backend, socket_ref capture = socket_ref())
 {
   int rc = zmq_proxy(frontend.handle(), backend.handle(), capture.handle());
   if (rc != 0)
+  {
     throw error_t();
+  }
 }
 
 #ifdef ZMQ_HAS_PROXY_STEERABLE
@@ -2362,7 +2484,9 @@ inline void proxy_steerable(void* frontend, void* backend, void* capture, void* 
 {
   int rc = zmq_proxy_steerable(frontend, backend, capture, control);
   if (rc != 0)
+  {
     throw error_t();
+  }
 }
 
 inline void proxy_steerable(socket_ref frontend, socket_ref backend, socket_ref capture,
@@ -2371,7 +2495,9 @@ inline void proxy_steerable(socket_ref frontend, socket_ref backend, socket_ref 
   int rc =
       zmq_proxy_steerable(frontend.handle(), backend.handle(), capture.handle(), control.handle());
   if (rc != 0)
+  {
     throw error_t();
+  }
 }
 #endif
 
@@ -2427,7 +2553,9 @@ public:
   {
     int rc = zmq_socket_monitor(socket.handle(), addr_, events);
     if (rc != 0)
+    {
       throw error_t();
+    }
 
     _socket = socket;
     _monitor_socket = socket_t(socket.ctxptr, ZMQ_PAIR);
@@ -2453,7 +2581,9 @@ public:
     {
       int rc = zmq_msg_recv(&eventMsg, _monitor_socket.handle(), 0);
       if (rc == -1 && zmq_errno() == ETERM)
+      {
         return false;
+      }
       assert(rc != -1);
     }
     else
@@ -2570,7 +2700,9 @@ public:
   void abort()
   {
     if (_socket)
+    {
       zmq_socket_monitor(_socket.handle(), ZMQ_NULLPTR, 0);
+    }
 
     _socket = socket_ref();
   }
@@ -2677,7 +2809,9 @@ private:
   void close() ZMQ_NOTHROW
   {
     if (_socket)
+    {
       zmq_socket_monitor(_socket.handle(), ZMQ_NULLPTR, 0);
+    }
     _monitor_socket.close();
   }
 };
@@ -2736,7 +2870,9 @@ public:
   poller_t() : poller_ptr(zmq_poller_new())
   {
     if (!poller_ptr)
+    {
       throw error_t();
+    }
   }
 
   template <typename Dummy = void,
@@ -2773,7 +2909,9 @@ public:
         poller_ptr.get(), reinterpret_cast<zmq_poller_event_t*>(poller_events.data()),
         static_cast<int>(poller_events.size()), static_cast<long>(timeout.count()));
     if (rc > 0)
+    {
       return static_cast<size_t>(rc);
+    }
 
 #if ZMQ_VERSION >= ZMQ_MAKE_VERSION(4, 2, 3)
     if (zmq_errno() == EAGAIN)

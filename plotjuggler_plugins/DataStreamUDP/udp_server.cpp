@@ -103,7 +103,7 @@ bool UDP_Server::start(QStringList*)
   QString protocol = settings.value("UDP_Server::protocol").toString();
   if (parserFactories()->find(protocol) == parserFactories()->end())
   {
-    protocol = "json";
+    protocol = parserFactories()->begin()->first;
   }
 
   dialog.ui->lineEditAddress->setText(address_str);

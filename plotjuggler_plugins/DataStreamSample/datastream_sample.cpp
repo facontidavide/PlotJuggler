@@ -42,11 +42,11 @@ DataStreamSample::DataStreamSample()
   dataMap().addStringSeries("color");
 
   //------------
-  auto tcGroup = std::make_shared<PJ::PlotGroup>("tc");
+  auto tcGroup = dataMap().getOrCreateGroup("tc");
   tcGroup->setAttribute(TEXT_COLOR, QColor(Qt::blue));
 
-  auto& tc_default = dataMap().addNumeric("tc/default")->second;
-  auto& tc_red = dataMap().addNumeric("tc/red")->second;
+  auto& tc_default = dataMap().addNumeric("tc/default", tcGroup)->second;
+  auto& tc_red = dataMap().addNumeric("tc/red", tcGroup)->second;
 
   tc_red.setAttribute(TEXT_COLOR, QColor(Qt::red));
 }

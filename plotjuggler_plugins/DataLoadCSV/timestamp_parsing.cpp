@@ -116,6 +116,7 @@ struct NumericInfo
 {
   bool is_number = false;
   bool has_decimal = false;
+  bool has_exponent = false;
 };
 
 static NumericInfo CheckNumeric(const std::string& str)
@@ -123,22 +124,61 @@ static NumericInfo CheckNumeric(const std::string& str)
   NumericInfo info;
   info.is_number = true;
 
+  bool has_digit = false;
+
   for (size_t i = 0; i < str.size(); i++)
   {
-    char c = str[i];
-    if (i == 0 && (c == '-' || c == '+'))
+    const char c = str[i];
+
+    if (c == 'e' || c == 'E')
     {
+      if (info.has_exponent)
+      {
+        info.is_number = false;
+        break;
+      }
+      info.has_exponent = true;
       continue;
     }
+
+    if (c == '-' || c == '+')
+    {
+      if (i == 0 || str[i - 1] == 'e' || str[i - 1] == 'E')
+      {
+        continue;
+      }
+      info.is_number = false;
+      break;
+    }
+
     if (c == '.' || c == ',')
     {
+      if (info.has_decimal || info.has_exponent)
+      {
+        info.is_number = false;
+        break;
+      }
       info.has_decimal = true;
       continue;
     }
-    if (!std::isdigit(static_cast<unsigned char>(c)))
+
+    if (std::isdigit(static_cast<unsigned char>(c)))
+    {
+      has_digit = true;
+    }
+    else
     {
       info.is_number = false;
       break;
+    }
+  }
+
+  if (info.is_number)
+  {
+    const char last = str.back();
+    if (!has_digit || last == 'e' || last == 'E' || last == '+' || last == '-')
+    {
+      info.is_number = false;
     }
   }
 
@@ -232,7 +272,7 @@ std::optional<double> AutoParseTimestamp(const std::string& str)
   {
     try
     {
-      if (!num_info.has_decimal)
+      if (!num_info.has_decimal && !num_info.has_exponent)
       {
         int64_t ts = std::stoll(trimmed);
         ColumnType epoch_type = DetectEpochType(ts);
@@ -393,6 +433,58 @@ ColumnTypeInfo DetectColumnType(const std::string& str)
     return !in.fail();
   };
 
+  // Check for DATE_ONLY or TIME_ONLY before trying full DATETIME formats
+  bool has_slash = (trimmed.find('/') != std::string::npos);
+  bool has_dash = (trimmed.find('-') != std::string::npos);
+  bool has_colon = (trimmed.find(':') != std::string::npos);
+
+  if ((has_slash || has_dash) && !has_colon)
+  {
+    // Date-only formats (no time component)
+    auto try_date_format = [&](const char* fmt) -> bool {
+      std::istringstream in{ trimmed };
+      in.imbue(std::locale::classic());
+      date::year_month_day ymd;
+      in >> date::parse(fmt, ymd);
+      return !in.fail() && ymd.ok() && (in.peek() == EOF);
+    };
+
+    const char* date_formats[] = { "%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y",
+                                   "%m/%d/%Y", "%d-%m-%Y", "%m-%d-%Y" };
+    for (const char* fmt : date_formats)
+    {
+      if (try_date_format(fmt))
+      {
+        info.type = ColumnType::DATE_ONLY;
+        info.format = fmt;
+        return info;
+      }
+    }
+  }
+
+  if (has_colon && !has_slash && !has_dash)
+  {
+    // Time-only formats (no date component)
+    auto try_time_format = [&](const char* fmt) -> bool {
+      std::istringstream in{ base_str };
+      in.imbue(std::locale::classic());
+      std::chrono::seconds tod;
+      in >> date::parse(fmt, tod);
+      return !in.fail();
+    };
+
+    const char* time_formats[] = { "%H:%M:%S", "%I:%M:%S %p" };
+    for (const char* fmt : time_formats)
+    {
+      if (try_time_format(fmt))
+      {
+        info.type = ColumnType::TIME_ONLY;
+        info.format = fmt;
+        return info;
+      }
+    }
+  }
+
   for (size_t i = 0; i < NUM_UNAMBIGUOUS_FORMATS; i++)
   {
     if (try_format(UNAMBIGUOUS_FORMATS[i]))
@@ -467,10 +559,94 @@ std::optional<double> ParseWithType(const std::string& str, const ColumnTypeInfo
         return TryParseFormat(base_str, type_info.format.c_str(), fractional_ns);
       }
 
+      case ColumnType::DATE_ONLY: {
+        std::istringstream in{ trimmed };
+        in.imbue(std::locale::classic());
+        date::year_month_day ymd;
+        in >> date::parse(type_info.format.c_str(), ymd);
+        if (!in.fail() && ymd.ok())
+        {
+          auto tp = date::sys_days{ ymd };
+          return std::chrono::duration<double>(tp.time_since_epoch()).count();
+        }
+        return std::nullopt;
+      }
+
+      case ColumnType::TIME_ONLY: {
+        auto [base_str, fractional_ns] = ExtractFractionalSeconds(trimmed);
+        if (!type_info.has_fractional)
+        {
+          fractional_ns = std::chrono::nanoseconds{ 0 };
+        }
+        std::istringstream in{ base_str };
+        in.imbue(std::locale::classic());
+        std::chrono::seconds tod;
+        in >> date::parse(type_info.format.c_str(), tod);
+        if (!in.fail())
+        {
+          auto total_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(tod) + fractional_ns;
+          return std::chrono::duration<double>(total_ns).count();
+        }
+        return std::nullopt;
+      }
+
       case ColumnType::STRING:
       default:
         return std::nullopt;
     }
+  }
+  catch (...)
+  {
+    return std::nullopt;
+  }
+}
+
+std::optional<double> ParseCombinedDateTime(const std::string& date_str,
+                                            const std::string& time_str,
+                                            const ColumnTypeInfo& date_info,
+                                            const ColumnTypeInfo& time_info)
+{
+  std::string trimmed_date = Trim(date_str);
+  std::string trimmed_time = Trim(time_str);
+
+  if (trimmed_date.empty() || trimmed_time.empty())
+  {
+    return std::nullopt;
+  }
+
+  try
+  {
+    // Parse date as year_month_day
+    std::istringstream date_in{ trimmed_date };
+    date_in.imbue(std::locale::classic());
+    date::year_month_day ymd;
+    date_in >> date::parse(date_info.format.c_str(), ymd);
+    if (date_in.fail() || !ymd.ok())
+    {
+      return std::nullopt;
+    }
+
+    // Extract fractional seconds from time string
+    auto [time_base, fractional_ns] = ExtractFractionalSeconds(trimmed_time);
+    if (!time_info.has_fractional)
+    {
+      fractional_ns = std::chrono::nanoseconds{ 0 };
+    }
+
+    // Parse time as seconds since midnight
+    std::istringstream time_in{ time_base };
+    time_in.imbue(std::locale::classic());
+    std::chrono::seconds tod;
+    time_in >> date::parse(time_info.format.c_str(), tod);
+    if (time_in.fail())
+    {
+      return std::nullopt;
+    }
+
+    // Combine: date + time-of-day + fractional
+    auto tp = date::sys_days{ ymd } + std::chrono::duration_cast<std::chrono::nanoseconds>(tod) +
+              fractional_ns;
+    return std::chrono::duration<double>(tp.time_since_epoch()).count();
   }
   catch (...)
   {

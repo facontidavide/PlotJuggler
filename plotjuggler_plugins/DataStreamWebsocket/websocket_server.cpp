@@ -99,6 +99,10 @@ bool WebsocketServer::start(QStringList*)
   // load previous values
   QSettings settings;
   QString protocol = settings.value("WebsocketServer::protocol", "JSON").toString();
+  if (parserFactories()->find(protocol) == parserFactories()->end())
+  {
+    protocol = parserFactories()->begin()->first;
+  }
   int port = settings.value("WebsocketServer::port", 9871).toInt();
 
   dialog->ui->lineEditPort->setText(QString::number(port));

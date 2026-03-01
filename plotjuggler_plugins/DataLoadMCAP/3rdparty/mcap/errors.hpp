@@ -40,8 +40,8 @@ struct [[nodiscard]] Status {
   Status()
       : code(StatusCode::Success) {}
 
-  Status(StatusCode code)
-      : code(code) {
+  Status(StatusCode _code)
+      : code(_code) {
     switch (code) {
       case StatusCode::Success:
         break;
@@ -108,9 +108,9 @@ struct [[nodiscard]] Status {
     }
   }
 
-  Status(StatusCode code, const std::string& message)
-      : code(code)
-      , message(message) {}
+  Status(StatusCode _code, const std::string& _message)
+      : code(_code)
+      , message(_message) {}
 
   bool ok() const {
     return code == StatusCode::Success;

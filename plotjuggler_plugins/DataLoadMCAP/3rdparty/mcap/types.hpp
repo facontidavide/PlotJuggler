@@ -14,7 +14,7 @@
 
 namespace mcap {
 
-#define MCAP_LIBRARY_VERSION "2.1.0"
+#define MCAP_LIBRARY_VERSION "2.1.2"
 
 using SchemaId = uint16_t;
 using ChannelId = uint16_t;
@@ -118,9 +118,9 @@ struct MCAP_PUBLIC Footer {
   uint32_t summaryCrc;
 
   Footer() = default;
-  Footer(ByteOffset summaryStart, ByteOffset summaryOffsetStart)
-      : summaryStart(summaryStart)
-      , summaryOffsetStart(summaryOffsetStart)
+  Footer(ByteOffset _summaryStart, ByteOffset _summaryOffsetStart)
+      : summaryStart(_summaryStart)
+      , summaryOffsetStart(_summaryOffsetStart)
       , summaryCrc(0) {}
 };
 
@@ -137,16 +137,17 @@ struct MCAP_PUBLIC Schema {
 
   Schema() = default;
 
-  Schema(const std::string_view name, const std::string_view encoding, const std::string_view data)
-      : name(name)
-      , encoding(encoding)
-      , data{reinterpret_cast<const std::byte*>(data.data()),
-             reinterpret_cast<const std::byte*>(data.data() + data.size())} {}
+  Schema(const std::string_view _name, const std::string_view _encoding,
+         const std::string_view _data)
+      : name(_name)
+      , encoding(_encoding)
+      , data{reinterpret_cast<const std::byte*>(_data.data()),
+             reinterpret_cast<const std::byte*>(_data.data() + _data.size())} {}
 
-  Schema(const std::string_view name, const std::string_view encoding, const ByteArray& data)
-      : name(name)
-      , encoding(encoding)
-      , data{data} {}
+  Schema(const std::string_view _name, const std::string_view _encoding, const ByteArray& _data)
+      : name(_name)
+      , encoding(_encoding)
+      , data{_data} {}
 };
 
 /**
@@ -165,12 +166,12 @@ struct MCAP_PUBLIC Channel {
 
   Channel() = default;
 
-  Channel(const std::string_view topic, const std::string_view messageEncoding, SchemaId schemaId,
-          const KeyValueMap& metadata = {})
-      : topic(topic)
-      , messageEncoding(messageEncoding)
-      , schemaId(schemaId)
-      , metadata(metadata) {}
+  Channel(const std::string_view _topic, const std::string_view _messageEncoding,
+          SchemaId _schemaId, const KeyValueMap& _metadata = {})
+      : topic(_topic)
+      , messageEncoding(_messageEncoding)
+      , schemaId(_schemaId)
+      , metadata(_metadata) {}
 };
 
 using SchemaPtr = std::shared_ptr<Schema>;
@@ -391,11 +392,11 @@ struct MCAP_PUBLIC MessageView {
   const SchemaPtr schema;
   const RecordOffset messageOffset;
 
-  MessageView(const Message& message, const ChannelPtr channel, const SchemaPtr schema,
+  MessageView(const Message& _message, const ChannelPtr _channel, const SchemaPtr _schema,
               RecordOffset offset)
-      : message(message)
-      , channel(channel)
-      , schema(schema)
+      : message(_message)
+      , channel(_channel)
+      , schema(_schema)
       , messageOffset(offset) {}
 };
 

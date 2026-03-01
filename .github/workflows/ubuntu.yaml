@@ -83,7 +83,7 @@ jobs:
             mv PlotJuggler-${{ matrix.arch }}.AppImage PlotJuggler-${{ github.ref_name }}-${{ matrix.arch }}.AppImage
 
       - name: Upload AppImage
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: startsWith(github.ref, 'refs/tags/')
         with:
           name: PlotJuggler-${{ github.ref_name }}-${{ matrix.arch }}.AppImage

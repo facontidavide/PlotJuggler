@@ -90,15 +90,15 @@ set(PLOTJUGGLER_SRC
     realslider.h
     nlohmann_parsers.cpp)
 
-if(wasmtime_FOUND)
+if(wasmer_FOUND)
   list(APPEND PLOTJUGGLER_SRC wasm_runtime.cpp wasm_parser.cpp)
 endif()
 
 add_executable(plotjuggler ${PLOTJUGGLER_SRC} ${RES_SRC} ${UI_SRC}
                            ${BACKWARD_ENABLE})
 
-if(wasmtime_FOUND)
-  target_link_libraries(plotjuggler PRIVATE wasmtime::wasmtime)
+if(wasmer_FOUND)
+  target_link_libraries(plotjuggler PRIVATE wasmer::wasmer)
   target_compile_definitions(plotjuggler PRIVATE WASM_RUNTIME_ENABLED)
 endif()
 

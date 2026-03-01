@@ -20,7 +20,7 @@ public:
     auto callback = [this, timestamp](const std::string& series_name,
                                       const DataTamerParser::VarNumber& var) {
       auto name = fmt::format("{}/{}", topic_name_, series_name);
-      auto& plot_data = _plot_data.getOrCreateNumeric(name);
+      auto& plot_data = getSeries(name);
 
       double value = std::visit([](auto&& v) { return static_cast<double>(v); }, var);
 

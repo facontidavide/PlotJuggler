@@ -49,12 +49,13 @@ bool DataLoadULog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
   {
     const std::string& sucsctiption_name = it.first;
     const ULogParser::Timeseries& timeseries = it.second;
+    auto group = plot_data.getOrCreateGroup(sucsctiption_name);
 
     for (const auto& data : timeseries.data)
     {
       std::string series_name = sucsctiption_name + data.first;
 
-      auto series = plot_data.addNumeric(series_name);
+      auto series = plot_data.addNumeric(series_name, group);
 
       for (size_t i = 0; i < data.second.size(); i++)
       {
