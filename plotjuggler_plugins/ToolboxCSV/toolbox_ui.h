@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QDir>
 #include <QString>
+#include "PlotJuggler/plotdatabase.h"
 #include <QStringList>
 #include <QEvent>
 #include <vector>
@@ -24,14 +25,15 @@ public:
   double getEndTime() const;
   double getRelativeTime() const;
 
+  // Get absolute time range (adjusting for relative mode offset)
+  PJ::Range getAbsoluteTimeRange() const;
+
   std::vector<std::string> getSelectedTopics() const;
 
   // Return the prefix used to create multiple files
   QString getPathPrefix() const;
 
   bool isRelativeTime() const;
-  bool isMultiFileExport() const;
-  bool isCsvButton() const;
 
   void clearTable(bool clearAll);
 

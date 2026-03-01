@@ -208,18 +208,6 @@
         <item>
          <layout class="QHBoxLayout" name="botMainLayout">
           <item>
-           <widget class="QCheckBox" name="checkBoxMultifile">
-            <property name="toolTip">
-             <string>If enabled, one CSV file per topic will be created.
-The selected path must be a folder.
-</string>
-            </property>
-            <property name="text">
-             <string>One file per group</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <spacer name="horizontalSpacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -233,7 +221,25 @@ The selected path must be a folder.
            </spacer>
           </item>
           <item>
+           <widget class="QCheckBox" name="checkBoxMultifile">
+            <property name="toolTip">
+             <string>If enabled, one CSV file per topic will be created.
+The selected path must be a folder.
+</string>
+            </property>
+            <property name="text">
+             <string>One file per group</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QLabel" name="labelPrefix">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
             <property name="text">
              <string>Prefix:</string>
             </property>
@@ -251,7 +257,7 @@ The selected path must be a folder.
              <string/>
             </property>
             <property name="placeholderText">
-             <string>exported_data_</string>
+             <string/>
             </property>
            </widget>
           </item>
