@@ -86,20 +86,12 @@ bool ToolboxCSV::onShowWidget()
   return true;
 }
 
-void ToolboxCSV::getAbsoluteTimeRange(double& t_start, double& t_end) const
-{
-  t_start = _ui.getStartTime();
-  t_end = _ui.getEndTime();
-
-  if (_ui.isRelativeTime())
-  {
-    t_start += _ui.getRelativeTime();
-    t_end += _ui.getRelativeTime();
-  }
-}
-
 bool ToolboxCSV::serializeTable(const ExportTable& table, const QString& path, bool is_csv)
 {
+  if (path.isEmpty() || table.time.empty() || table.cols.size() != table.names.size())
+  {
+    return false;
+  }
   if (is_csv)
   {
     return serializeCSV(table, path);
@@ -114,8 +106,7 @@ bool ToolboxCSV::serializeTable(const ExportTable& table, const QString& path, b
 
 void ToolboxCSV::onExportSingleFile(bool is_csv, QString filename)
 {
-  double t_start, t_end;
-  getAbsoluteTimeRange(t_start, t_end);
+  const auto [t_start, t_end] = _ui.getAbsoluteTimeRange();
 
   std::vector<std::string> selected_topics = _ui.getSelectedTopics();
   if (selected_topics.empty())
@@ -142,8 +133,7 @@ void ToolboxCSV::onExportSingleFile(bool is_csv, QString filename)
 
 void ToolboxCSV::onExportMultipleFiles(bool is_csv, QDir dir, QString prefix)
 {
-  double t_start, t_end;
-  getAbsoluteTimeRange(t_start, t_end);
+  const auto [t_start, t_end] = _ui.getAbsoluteTimeRange();
 
   std::vector<std::string> selected_topics = _ui.getSelectedTopics();
   if (selected_topics.empty())
@@ -178,6 +168,21 @@ void ToolboxCSV::onExportMultipleFiles(bool is_csv, QDir dir, QString prefix)
     if (table.time.empty())
     {
       continue;
+    }
+
+    // Strip group prefix from column names (e.g. "/robot/imu/accel" -> "accel").
+    for (auto& col_name : table.names)
+    {
+      if (col_name.size() > group_name.size() &&
+          col_name.compare(0, group_name.size(), group_name) == 0)
+      {
+        size_t start = group_name.size();
+        if (start < col_name.size() && col_name[start] == '/')
+        {
+          start++;
+        }
+        col_name.erase(0, start);
+      }
     }
 
     // Sanitize group name for use in filename.
@@ -233,19 +238,19 @@ bool ToolboxCSV::getTimeRange(double& tmin, double& tmax) const
       continue;
     }
 
-    const double a = plot.front().x;
-    const double b = plot.back().x;
+    const double front_time = plot.front().x;
+    const double back_time = plot.back().x;
 
     if (!any)
     {
-      tmin = a;
-      tmax = b;
+      tmin = front_time;
+      tmax = back_time;
       any = true;
     }
     else
     {
-      tmin = std::min(tmin, a);
-      tmax = std::max(tmax, b);
+      tmin = std::min(tmin, front_time);
+      tmax = std::max(tmax, back_time);
     }
   }
 
@@ -281,10 +286,10 @@ double ToolboxCSV::estimateMinDt(const PJ::PlotData& plot, size_t start_idx, dou
   double min_dt = std::numeric_limits<double>::max();
   size_t last = std::min(plot.size() - 1, start_idx + 2000);
 
-  for (size_t i = start_idx + 1; i <= last; i++)
+  for (size_t idx = start_idx + 1; idx <= last; idx++)
   {
-    const double t0 = plot.at(i - 1).x;
-    const double t1 = plot.at(i).x;
+    const double t0 = plot.at(idx - 1).x;
+    const double t1 = plot.at(idx).x;
     if (t0 > t_end)
     {
       break;
@@ -360,9 +365,9 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
   double min_dt = 0.0;
   {
     double best = std::numeric_limits<double>::max();
-    for (const auto& s : series)
+    for (const auto& sr : series)
     {
-      double dt = estimateMinDt(*s.plot, s.idx, t_end);
+      double dt = estimateMinDt(*sr.plot, sr.idx, t_end);
       if (dt > 0.0 && dt < best)
       {
         best = dt;
@@ -381,9 +386,9 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
   table.names.reserve(N);
   table.cols.assign(N, {});
   table.has_value.assign(N, {});
-  for (const auto& s : series)
+  for (const auto& sr : series)
   {
-    table.names.push_back(s.name);
+    table.names.push_back(sr.name);
   }
 
   const auto NaN = std::numeric_limits<double>::quiet_NaN();
@@ -398,24 +403,24 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
     bool done = true;
     double min_time = std::numeric_limits<double>::max();
 
-    for (size_t i = 0; i < N; i++)
+    for (size_t col = 0; col < N; col++)
     {
-      auto& s = series[i];
-      if (s.idx >= s.plot->size())
+      auto& sr = series[col];
+      if (sr.idx >= sr.plot->size())
       {
         continue;
       }
 
-      const auto& p = s.plot->at(s.idx);
-      if (p.x > t_end)
+      const auto& point = sr.plot->at(sr.idx);
+      if (point.x > t_end)
       {
         continue;
       }
 
       done = false;
-      if (p.x < min_time)
+      if (point.x < min_time)
       {
-        min_time = p.x;
+        min_time = point.x;
       }
     }
 
@@ -428,59 +433,46 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
     std::fill(row_used.begin(), row_used.end(), false);
 
     // Fill values for this row (within tolerance), then advance only the series that contributed.
-    for (size_t i = 0; i < N; i++)
+    for (size_t col = 0; col < N; col++)
     {
-      auto& s = series[i];
-      if (s.idx >= s.plot->size())
+      auto& sr = series[col];
+      if (sr.idx >= sr.plot->size())
       {
         continue;
       }
 
-      const auto& p = s.plot->at(s.idx);
-      if (p.x > t_end)
+      const auto& point = sr.plot->at(sr.idx);
+      if (point.x > t_end)
       {
         continue;
       }
 
       if (tol == 0.0)
       {
-        if (p.x == min_time)
+        if (point.x == min_time)
         {
-          row_values[i] = p.y;
-          row_used[i] = true;
+          row_values[col] = point.y;
+          row_used[col] = true;
         }
       }
       else
       {
-        if (std::abs(p.x - min_time) <= tol)
+        if (std::abs(point.x - min_time) <= tol)
         {
-          row_values[i] = p.y;
-          row_used[i] = true;
+          row_values[col] = point.y;
+          row_used[col] = true;
         }
       }
-    }
-
-    // Ensure strict monotonicity of the output time vector.
-    if (!table.time.empty() && min_time <= table.time.back())
-    {
-      for (size_t i = 0; i < N; i++)
-      {
-        if (row_used[i])
-        {
-          series[i].idx++;
-        }
-      }
-      continue;
     }
 
     table.time.push_back(min_time);
-    for (size_t i = 0; i < N; i++)
+    for (size_t col = 0; col < N; col++)
     {
-      table.cols[i].push_back(row_values[i]);
-      table.has_value[i].push_back(row_used[i] ? 1 : 0);
-      if (row_used[i])
+      table.cols[col].push_back(row_values[col]);
+      table.has_value[col].push_back(row_used[col] ? 1 : 0);
+      if (row_used[col])
       {
-        series[i].idx++;
+        series[col].idx++;
       }
     }
   }
@@ -490,65 +482,51 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
 
 // Serialize ExportTable to a plain CSV file.
 // Layout: first column "time", followed by one column per topic.
-bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& t, const QString& path)
+bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& export_table, const QString& path)
 {
-  // Write CSV: empty cell for missing samples; explicit NaN/Inf when present.
-  if (path.isEmpty())
-  {
-    return false;
-  }
-  if (t.time.empty())
-  {
-    return false;
-  }
-  if (t.cols.size() != t.names.size())
+  QFile file(path);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
   {
     return false;
   }
 
-  QFile f(path);
-  if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
-  {
-    return false;
-  }
-
-  QTextStream out(&f);
+  QTextStream out(&file);
   out.setCodec("UTF-8");
 
   out << "time";
-  for (const auto& n : t.names)
+  for (const auto& col_name : export_table.names)
   {
-    out << "," << QString::fromStdString(n);
+    out << "," << QString::fromStdString(col_name);
   }
   out << "\n";
 
   const int time_decimals = 6;
   const int val_sig = 12;
 
-  const int rows = static_cast<int>(t.time.size());
-  const int cols = static_cast<int>(t.names.size());
+  const int num_rows = static_cast<int>(export_table.time.size());
+  const int num_cols = static_cast<int>(export_table.names.size());
 
-  for (int r = 0; r < rows; r++)
+  for (int row = 0; row < num_rows; row++)
   {
-    out << QString::number(t.time[r], 'f', time_decimals);
+    out << QString::number(export_table.time[row], 'f', time_decimals);
 
-    for (int c = 0; c < cols; c++)
+    for (int col = 0; col < num_cols; col++)
     {
       out << ",";
-      if (t.has_value[c][r] == 0)
+      if (export_table.has_value[col][row] == 0)
       {
         // Missing sample -> empty cell
       }
       else
       {
-        const double v = t.cols[c][r];
-        if (std::isnan(v))
+        const double val = export_table.cols[col][row];
+        if (std::isnan(val))
         {
           out << "NaN";
         }
-        else if (std::isfinite(v))
+        else if (std::isfinite(val))
         {
-          out << QString::number(v, 'g', val_sig);
+          out << QString::number(val, 'g', val_sig);
         }
         else
         {
@@ -566,67 +544,54 @@ bool ToolboxCSV::serializeCSV(const ToolboxCSV::ExportTable& t, const QString& p
 // Build an Arrow Float64 array from a std::vector<double>.
 // NULL represents missing sample; NaN/Inf preserved as Float64 values.
 static arrow::Result<std::shared_ptr<arrow::Array>>
-makeDoubleArray(const std::vector<double>& v, const std::vector<uint8_t>& present)
+makeDoubleArray(const std::vector<double>& values, const std::vector<uint8_t>& present)
 {
-  arrow::DoubleBuilder b;
-  ARROW_RETURN_NOT_OK(b.Reserve(static_cast<int64_t>(v.size())));
+  arrow::DoubleBuilder builder;
+  ARROW_RETURN_NOT_OK(builder.Reserve(static_cast<int64_t>(values.size())));
 
-  if (present.size() != v.size())
+  if (present.size() != values.size())
   {
     return arrow::Status::Invalid("size mismatch");
   }
 
-  for (size_t i = 0; i < v.size(); i++)
+  for (size_t idx = 0; idx < values.size(); idx++)
   {
-    if (!present[i])
+    if (!present[idx])
     {
-      ARROW_RETURN_NOT_OK(b.AppendNull());  // No sample -> Null
+      ARROW_RETURN_NOT_OK(builder.AppendNull());  // No sample -> Null
       continue;
     }
 
-    const double x = v[i];
-    ARROW_RETURN_NOT_OK(b.Append(x));  // Present sample (may be NaN/Inf)
+    const double val = values[idx];
+    ARROW_RETURN_NOT_OK(builder.Append(val));  // Present sample (may be NaN/Inf)
   }
 
   std::shared_ptr<arrow::Array> arr;
-  ARROW_RETURN_NOT_OK(b.Finish(&arr));
+  ARROW_RETURN_NOT_OK(builder.Finish(&arr));
   return arr;
 }
 
 // Serialize the merged ExportTable to a Parquet file using Arrow.
 // Each column is stored as Float64.
-bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QString& path)
+bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& export_table, const QString& path)
 {
-  if (path.isEmpty())
-  {
-    return false;
-  }
-  if (t.time.empty())
-  {
-    return false;
-  }
-  if (t.cols.size() != t.names.size())
-  {
-    return false;
-  }
-
   std::vector<std::shared_ptr<arrow::Field>> fields;
   std::vector<std::shared_ptr<arrow::Array>> arrays;
 
   fields.push_back(arrow::field("time", arrow::float64()));
 
-  auto time_present = std::vector<uint8_t>(t.time.size(), 1);
-  auto time_arr_res = makeDoubleArray(t.time, time_present);
+  auto time_present = std::vector<uint8_t>(export_table.time.size(), 1);
+  auto time_arr_res = makeDoubleArray(export_table.time, time_present);
   if (!time_arr_res.ok())
   {
     return false;
   }
   arrays.push_back(*time_arr_res);
 
-  for (size_t i = 0; i < t.names.size(); i++)
+  for (size_t col = 0; col < export_table.names.size(); col++)
   {
-    fields.push_back(arrow::field(t.names[i], arrow::float64()));
-    auto arr_res = makeDoubleArray(t.cols[i], t.has_value[i]);
+    fields.push_back(arrow::field(export_table.names[col], arrow::float64()));
+    auto arr_res = makeDoubleArray(export_table.cols[col], export_table.has_value[col]);
     if (!arr_res.ok())
     {
       return false;
@@ -635,7 +600,7 @@ bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QStrin
   }
 
   auto schema = std::make_shared<arrow::Schema>(fields);
-  auto table = arrow::Table::Make(schema, arrays);
+  auto arrow_table = arrow::Table::Make(schema, arrays);
 
   auto outfile_res = arrow::io::FileOutputStream::Open(path.toStdString());
   if (!outfile_res.ok())
@@ -647,8 +612,8 @@ bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QStrin
   parquet::WriterProperties::Builder pb;
   std::shared_ptr<parquet::WriterProperties> props = pb.build();
 
-  auto st =
-      parquet::arrow::WriteTable(*table, arrow::default_memory_pool(), outfile, 1024 * 64, props);
+  auto st = parquet::arrow::WriteTable(*arrow_table, arrow::default_memory_pool(), outfile,
+                                       1024 * 64, props);
   if (!st.ok())
   {
     return false;

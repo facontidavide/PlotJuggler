@@ -2,7 +2,6 @@
 #include "ui_toolbox_csv.h"
 #include "PlotJuggler/svg_util.h"
 
-#include <QSettings>
 #include <QSignalBlocker>
 #include <QAbstractSpinBox>
 #include <QHeaderView>
@@ -70,41 +69,28 @@ ToolBoxUI::ToolBoxUI()
   ui->tableWidget->horizontalHeader()->setStyleSheet("QHeaderView::section { font-weight: bold; }");
 
   // Slider -> SpinBox sync (prevent feedback loops).
-  connect(ui->rangeSlider, &RangeSlider::lowerValueChanged, _widget, [this](int v) {
-    QSignalBlocker b(*ui->startTime);
-    ui->startTime->setValue(ui->rangeSlider->toReal(v));
+  connect(ui->rangeSlider, &RangeSlider::lowerValueChanged, _widget, [this](int slider_val) {
+    QSignalBlocker blocker(*ui->startTime);
+    ui->startTime->setValue(ui->rangeSlider->toReal(slider_val));
   });
 
-  connect(ui->rangeSlider, &RangeSlider::upperValueChanged, _widget, [this](int v) {
-    QSignalBlocker b(*ui->endTime);
-    ui->endTime->setValue(ui->rangeSlider->toReal(v));
+  connect(ui->rangeSlider, &RangeSlider::upperValueChanged, _widget, [this](int slider_val) {
+    QSignalBlocker blocker(*ui->endTime);
+    ui->endTime->setValue(ui->rangeSlider->toReal(slider_val));
   });
 
   // SpinBox -> Slider sync (prevent recursive updates).
   connect(ui->startTime, QOverload<double>::of(&QDoubleSpinBox::valueChanged), _widget,
-          [this](double t) {
-            QSignalBlocker b(*ui->rangeSlider);
-            ui->rangeSlider->setLowerValue(ui->rangeSlider->toInt(t));
+          [this](double time_val) {
+            QSignalBlocker blocker(*ui->rangeSlider);
+            ui->rangeSlider->setLowerValue(ui->rangeSlider->toInt(time_val));
           });
 
   connect(ui->endTime, QOverload<double>::of(&QDoubleSpinBox::valueChanged), _widget,
-          [this](double t) {
-            QSignalBlocker b(*ui->rangeSlider);
-            ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(t));
+          [this](double time_val) {
+            QSignalBlocker blocker(*ui->rangeSlider);
+            ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(time_val));
           });
-
-  // Reset output path when switching format.
-  connect(ui->csvButton, &QRadioButton::toggled, _widget, [this](bool checked) {
-    if (checked)
-    {
-    }
-  });
-
-  connect(ui->parquetButton, &QRadioButton::toggled, _widget, [this](bool checked) {
-    if (checked)
-    {
-    }
-  });
 
   connect(ui->checkBoxMultifile, &QCheckBox::toggled, this, [this](bool multi_file) {
     ui->lineEditPrefix->setHidden(!multi_file);
@@ -184,13 +170,27 @@ double ToolBoxUI::getRelativeTime() const
   return _time_offset;
 }
 
+PJ::Range ToolBoxUI::getAbsoluteTimeRange() const
+{
+  PJ::Range range;
+  range.min = getStartTime();
+  range.max = getEndTime();
+
+  if (isRelativeTime())
+  {
+    range.min += _time_offset;
+    range.max += _time_offset;
+  }
+  return range;
+}
+
 std::vector<std::string> ToolBoxUI::getSelectedTopics() const
 {
   // Collect selected topic names from the UI table.
   std::vector<std::string> selected_topics;
-  for (int r = 0; r < ui->tableWidget->rowCount(); r++)
+  for (int row = 0; row < ui->tableWidget->rowCount(); row++)
   {
-    auto* item = ui->tableWidget->item(r, 0);
+    auto* item = ui->tableWidget->item(row, 0);
     if (!item)
     {
       continue;
@@ -215,16 +215,6 @@ bool ToolBoxUI::isRelativeTime() const
   return ui->comboTime->currentIndex() == 0;
 }
 
-bool ToolBoxUI::isMultiFileExport() const
-{
-  return ui->checkBoxMultifile->isChecked();
-}
-
-bool ToolBoxUI::isCsvButton() const
-{
-  return ui->csvButton->isChecked();
-}
-
 void ToolBoxUI::clearTable(bool clearAll)
 {
   auto* table = ui->tableWidget;
@@ -242,7 +232,7 @@ void ToolBoxUI::clearTable(bool clearAll)
   }
 
   std::sort(rows.begin(), rows.end(),
-            [](const QModelIndex& a, const QModelIndex& b) { return a.row() > b.row(); });
+            [](const QModelIndex& lhs, const QModelIndex& rhs) { return lhs.row() > rhs.row(); });
 
   for (const auto& idx : rows)
   {
@@ -322,15 +312,15 @@ bool ToolBoxUI::eventFilter(QObject* obj, QEvent* ev)
     QSet<QString> existing;
     existing.reserve(ui->tableWidget->rowCount());
 
-    for (int r = 0; r < ui->tableWidget->rowCount(); r++)
+    for (int row = 0; row < ui->tableWidget->rowCount(); row++)
     {
-      auto* item = ui->tableWidget->item(r, 0);
+      auto* item = ui->tableWidget->item(row, 0);
       if (item)
       {
-        const QString t = item->text().trimmed();
-        if (!t.isEmpty())
+        const QString text = item->text().trimmed();
+        if (!text.isEmpty())
         {
-          existing.insert(t);
+          existing.insert(text);
         }
       }
     }

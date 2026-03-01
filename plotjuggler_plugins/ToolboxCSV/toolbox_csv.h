@@ -53,9 +53,6 @@ private:
   // Compute global time range across selected topics
   bool getTimeRange(double& tmin, double& tmax) const;
 
-  // Get absolute time range from UI (adjusting for relative mode)
-  void getAbsoluteTimeRange(double& t_start, double& t_end) const;
-
   void updateTimeRange();
 
   // Generic table representation for exporters (time + N columns)
