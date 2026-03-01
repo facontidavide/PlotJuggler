@@ -22,12 +22,15 @@ public:
   double getStartTime() const;
   double getEndTime() const;
   double getRelativeTime() const;
+
   std::vector<std::string> getSelectedTopics() const;
-  QString getPath() const;
+
+  // Return the prefix used to create multiple files
+  QString getPathPrefix() const;
 
   void setPath(const QString filePath);
 
-  bool isRelativeBox() const;
+  bool isRelativeTime() const;
   bool isCheckBoxTime() const;
   bool isCsvButton() const;
 
