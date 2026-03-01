@@ -117,7 +117,7 @@ void ToolboxCSV::saveAll()
   double t_start = _ui.getStartTime();
   double t_end = _ui.getEndTime();
 
-  if (_ui.isRelativeBox())
+  if (_ui.isRelativeTime())
   {
     t_start += _ui.getRelativeTime();
     t_end += _ui.getRelativeTime();

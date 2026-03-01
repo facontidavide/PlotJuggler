@@ -43,7 +43,7 @@ ToolBoxUI::ToolBoxUI()
 
   // Default export mode.
   ui->csvButton->setChecked(true);
-  ui->relativeBox->setChecked(true);
+  ui->comboTime->setCurrentIndex(0);  // relative
 
   // Load icons based on current theme.
   QSettings settings;
@@ -92,24 +92,26 @@ ToolBoxUI::ToolBoxUI()
 
   // Reset output path when switching format.
   connect(ui->csvButton, &QRadioButton::toggled, _widget, [this](bool checked) {
-    if (!checked)
+    if (checked)
     {
-      return;
     }
-    ui->lineEditPath->clear();
   });
 
   connect(ui->parquetButton, &QRadioButton::toggled, _widget, [this](bool checked) {
-    if (!checked)
+    if (checked)
     {
-      return;
     }
-    ui->lineEditPath->clear();
+  });
+
+  connect(ui->checkBoxTime, &QCheckBox::toggled, this, [this](bool multi_file) {
+    ui->lineEditPrefix->setHidden(!multi_file);
+    ui->labelPrefix->setHidden(!multi_file);
   });
 
   connect(ui->removeButton, &QToolButton::clicked, this, &ToolBoxUI::removeRequested);
   connect(ui->clearButton, &QToolButton::clicked, this, &ToolBoxUI::clearRequested);
-  connect(ui->relativeBox, &QCheckBox::toggled, this, &ToolBoxUI::recomputeTime);
+  connect(ui->comboTime, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+          this, [this](int) { recomputeTime(); });
   connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &ToolBoxUI::closed);
   connect(ui->saveButton, &QPushButton::clicked, this, &ToolBoxUI::saveRequested);
   connect(ui->toolButton, &QToolButton::clicked, this, &ToolBoxUI::pickFileRequested);
@@ -156,19 +158,19 @@ std::vector<std::string> ToolBoxUI::getSelectedTopics() const
   return selected_topics;
 }
 
-QString ToolBoxUI::getPath() const
+QString ToolBoxUI::getPathPrefix() const
 {
-  return ui->lineEditPath->text().trimmed();
+  return ui->lineEditPrefix->text().trimmed();
 }
 
 void ToolBoxUI::setPath(const QString filePath)
 {
-  ui->lineEditPath->setText(filePath);
+  // FIXME
 }
 
-bool ToolBoxUI::isRelativeBox() const
+bool ToolBoxUI::isRelativeTime() const
 {
-  return ui->relativeBox->isChecked();
+  return ui->comboTime->currentIndex() == 0;
 }
 
 bool ToolBoxUI::isCheckBoxTime() const
@@ -336,7 +338,7 @@ void ToolBoxUI::updateTimeControlsEnabled()
 void ToolBoxUI::setTimeRange(double tmin, double tmax)
 {
   // Update slider/spinboxes with either relative time (starting at 0) or absolute time.
-  const bool relative = ui->relativeBox->isChecked();
+  const bool relative = ui->comboTime->currentIndex() == 0;
   const int decimals = 3;
 
   QSignalBlocker b0(*ui->rangeSlider);
