@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <map>
 
 #include <QAbstractButton>
 #include <QDialogButtonBox>
@@ -55,11 +56,9 @@ ToolboxCSV::ToolboxCSV()
   // Close/cancel
   connect(&_ui, &ToolBoxUI::closed, this, &ToolboxCSV::onClosed);
 
-  // Pick output file.
-  connect(&_ui, &ToolBoxUI::pickFileRequested, this, &ToolboxCSV::on_toolButton_clicked);
-
-  // Exporter.
-  connect(&_ui, &ToolBoxUI::saveRequested, this, &ToolboxCSV::saveAll);
+  // Exporters.
+  connect(&_ui, &ToolBoxUI::exportSingleFile, this, &ToolboxCSV::onExportSingleFile);
+  connect(&_ui, &ToolBoxUI::exportMultipleFiles, this, &ToolboxCSV::onExportMultipleFiles);
 }
 
 ToolboxCSV::~ToolboxCSV()
@@ -87,115 +86,119 @@ bool ToolboxCSV::onShowWidget()
   return true;
 }
 
-void ToolboxCSV::saveAll()
+void ToolboxCSV::getAbsoluteTimeRange(double& t_start, double& t_end) const
 {
-  // Convert relative time range to absolute time if needed.
-  double t_start = _ui.getStartTime();
-  double t_end = _ui.getEndTime();
+  t_start = _ui.getStartTime();
+  t_end = _ui.getEndTime();
 
   if (_ui.isRelativeTime())
   {
     t_start += _ui.getRelativeTime();
     t_end += _ui.getRelativeTime();
   }
+}
+
+bool ToolboxCSV::serializeTable(const ExportTable& table, const QString& path, bool is_csv)
+{
+  if (is_csv)
+  {
+    return serializeCSV(table, path);
+  }
+#if TOOLBOXCSV_WITH_PARQUET
+  return serializeParquet(table, path);
+#else
+  QMessageBox::warning(_ui.widget(), "Arrow/Parquet", "Can't load Arrow/Parquet");
+  return false;
+#endif
+}
+
+void ToolboxCSV::onExportSingleFile(bool is_csv, QString filename)
+{
+  double t_start, t_end;
+  getAbsoluteTimeRange(t_start, t_end);
 
   std::vector<std::string> selected_topics = _ui.getSelectedTopics();
-
-  // Validate output path.
-  const QString path = _ui.getPath();
-  if (path.isEmpty())
+  if (selected_topics.empty())
   {
-    QMessageBox::warning(_ui.widget(), "Export", "Please select a file path before saving.");
+    QMessageBox::warning(_ui.widget(), "Export", "No topics selected.");
     return;
   }
 
-  const bool do_split = _ui.isCheckBoxTime();
-  const double gap_sec = 10000.0;
-
-  // Optionally split export into segments separated by large time gaps.
-  auto ranges = getGlobalRangesByGap(selected_topics, t_start, t_end, gap_sec);
-
-  if (!do_split || ranges.size() <= 1)
-  {
-    ExportTable t = buildExportTable(selected_topics, t_start, t_end);
-    if (t.time.empty())
-    {
-      QMessageBox::warning(_ui.widget(), "Export", "No samples found in the selected time range.");
-      return;
-    }
-
-    bool ok = false;
-    if (_ui.isCsvButton())
-    {
-      ok = serializeCSV(t, path);
-    }
-    else
-    {
-#if TOOLBOXCSV_WITH_PARQUET
-      ok = serializeParquet(t, path);
-#else
-      QMessageBox::warning(_ui.widget(), "Arrow/Parquet", "Can't load Arrow/Parquet");
-      return;
-#endif
-    }
-
-    if (!ok)
-    {
-      QMessageBox::warning(_ui.widget(), "Export", "Failed to write the output file.");
-      return;
-    }
-
-    emit this->closed();
-    return;
-  }
-
-  if (ranges.empty())
+  ExportTable table = buildExportTable(selected_topics, t_start, t_end);
+  if (table.time.empty())
   {
     QMessageBox::warning(_ui.widget(), "Export", "No samples found in the selected time range.");
     return;
   }
 
-  int parts_written = 0;
-
-  for (int k = 0; k < static_cast<int>(ranges.size()); k++)
+  if (!serializeTable(table, filename, is_csv))
   {
-    const double a = ranges[k].first;
-    const double b = ranges[k].second;
+    QMessageBox::warning(_ui.widget(), "Export", "Failed to write the output file.");
+    return;
+  }
 
-    ExportTable t = buildExportTable(selected_topics, a, b);
-    if (t.time.empty())
+  emit closed();
+}
+
+void ToolboxCSV::onExportMultipleFiles(bool is_csv, QDir dir, QString prefix)
+{
+  double t_start, t_end;
+  getAbsoluteTimeRange(t_start, t_end);
+
+  std::vector<std::string> selected_topics = _ui.getSelectedTopics();
+  if (selected_topics.empty())
+  {
+    QMessageBox::warning(_ui.widget(), "Export", "No topics selected.");
+    return;
+  }
+
+  const QString ext = is_csv ? "csv" : "parquet";
+
+  // Group selected topics by their PlotGroup name.
+  std::map<std::string, std::vector<std::string>> groups;
+
+  for (const auto& topic_name : selected_topics)
+  {
+    auto it = _plot_data->numeric.find(topic_name);
+    if (it == _plot_data->numeric.end())
     {
       continue;
     }
 
-    const QString out_path = addPartSuffix(path, k + 1, static_cast<int>(ranges.size()));
-
-    bool ok = false;
-    _ui.updateTimeControlsEnabled();
-    if (_ui.isCsvButton())
-    {
-      ok = serializeCSV(t, out_path);
-    }
-    else
-    {
-#if TOOLBOXCSV_WITH_PARQUET
-      ok = serializeParquet(t, out_path);
-#else
-      QMessageBox::warning(_ui.widget(), "Arrow/Parquet", "Can't load Arrow/Parquet");
-      return;
-#endif
-    }
-
-    if (!ok)
-    {
-      QMessageBox::warning(_ui.widget(), "Export", "Failed to write one of the output files.");
-      return;
-    }
-
-    parts_written++;
+    const auto& group_ptr = it->second.group();
+    std::string group_name = group_ptr ? group_ptr->name() : "ungrouped";
+    groups[group_name].push_back(topic_name);
   }
 
-  if (parts_written == 0)
+  int files_written = 0;
+
+  for (const auto& [group_name, topics] : groups)
+  {
+    ExportTable table = buildExportTable(topics, t_start, t_end);
+    if (table.time.empty())
+    {
+      continue;
+    }
+
+    // Sanitize group name for use in filename.
+    QString safe_group = QString::fromStdString(group_name);
+    safe_group.replace(QChar('/'), QChar('_'));
+    safe_group.replace(QChar('\\'), QChar('_'));
+    safe_group.replace(QChar(':'), QChar('_'));
+
+    const QString filename = dir.filePath(QString("%1_%2.%3").arg(prefix, safe_group, ext));
+
+    if (!serializeTable(table, filename, is_csv))
+    {
+      QMessageBox::warning(_ui.widget(), "Export",
+                           QString("Failed to write file: %1").arg(filename));
+      return;
+    }
+
+    files_written++;
+  }
+
+  if (files_written == 0)
   {
     QMessageBox::warning(_ui.widget(), "Export", "No samples found in the selected time range.");
     return;
@@ -207,61 +210,6 @@ void ToolboxCSV::saveAll()
 void ToolboxCSV::onClosed()
 {
   emit closed();
-}
-
-void ToolboxCSV::on_toolButton_clicked()
-{
-  // Persist last used file/dir per format.
-  QSettings settings;
-
-  const bool is_csv = _ui.isCsvButton();
-  const QString fmt_key = is_csv ? "csv" : "parquet";
-
-  const QString last_file =
-      settings.value(QString("Export.%1.lastFile").arg(fmt_key), QString()).toString();
-
-  const QString start_dir = settings.value("Export.lastDirectory", QDir::homePath()).toString();
-
-  const QString default_name = is_csv ? "export.csv" : "export.parquet";
-
-  const QString start_path =
-      last_file.isEmpty() ? QDir(start_dir).filePath(default_name) : last_file;
-
-  QFileDialog dialog(_ui.widget());
-  dialog.setAcceptMode(QFileDialog::AcceptSave);
-  dialog.setFileMode(QFileDialog::AnyFile);
-
-  if (is_csv)
-  {
-    dialog.setNameFilter("CSV (*.csv)");
-    dialog.setDefaultSuffix("csv");
-  }
-  else
-  {
-    dialog.setNameFilter("Parquet (*.parquet *.pq)");
-    dialog.setDefaultSuffix("parquet");
-  }
-
-  dialog.selectFile(start_path);
-  dialog.setOption(QFileDialog::DontUseNativeDialog, true);
-
-  if (dialog.exec() != QDialog::Accepted || dialog.selectedFiles().isEmpty())
-  {
-    return;
-  }
-
-  const QString file_path = dialog.selectedFiles().first();
-  if (file_path.isEmpty())
-  {
-    return;
-  }
-
-  const QFileInfo info(file_path);
-
-  settings.setValue(QString("Export.%1.lastFile").arg(fmt_key), file_path);
-  settings.setValue("Export.lastDirectory", info.absolutePath());
-
-  _ui.setPath(file_path);
 }
 
 // Compute global [tmin, tmax] across selected numeric topics.
@@ -512,6 +460,19 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
       }
     }
 
+    // Ensure strict monotonicity of the output time vector.
+    if (!table.time.empty() && min_time <= table.time.back())
+    {
+      for (size_t i = 0; i < N; i++)
+      {
+        if (row_used[i])
+        {
+          series[i].idx++;
+        }
+      }
+      continue;
+    }
+
     table.time.push_back(min_time);
     for (size_t i = 0; i < N; i++)
     {
@@ -696,148 +657,3 @@ bool ToolboxCSV::serializeParquet(const ToolboxCSV::ExportTable& t, const QStrin
   return true;
 }
 #endif
-
-// Detect continuous time segments separated by gaps larger than gap_sec.
-std::vector<std::pair<double, double>> ToolboxCSV::getGlobalRangesByGap(
-    const std::vector<std::string>& topics, double t_start, double t_end, double gap_sec) const
-{
-  struct S
-  {
-    const PJ::PlotData* p;
-    size_t i;
-  };
-
-  std::vector<S> s;
-  s.reserve(topics.size());
-
-  for (const auto& name : topics)
-  {
-    auto it = _plot_data->numeric.find(name);
-    if (it == _plot_data->numeric.end())
-    {
-      continue;
-    }
-
-    const auto& plot = it->second;
-    if (plot.size() == 0)
-    {
-      continue;
-    }
-    if (plot.front().x > t_end)
-    {
-      continue;
-    }
-    if (plot.back().x < t_start)
-    {
-      continue;
-    }
-
-    int idx = plot.getIndexFromX(t_start);
-    if (idx < 0)
-    {
-      continue;
-    }
-
-    s.push_back({ &plot, static_cast<size_t>(idx) });
-  }
-
-  if (s.empty())
-  {
-    return {};
-  }
-
-  std::vector<std::pair<double, double>> ranges;
-
-  bool started = false;
-  double seg_a = 0.0, seg_b = 0.0;
-  double prev = 0.0;
-
-  while (true)
-  {
-    bool done = true;
-    double min_time = std::numeric_limits<double>::max();
-
-    for (auto& x : s)
-    {
-      if (x.i >= x.p->size())
-      {
-        continue;
-      }
-      const double t = x.p->at(x.i).x;
-      if (t > t_end)
-      {
-        continue;
-      }
-      done = false;
-      if (t < min_time)
-      {
-        min_time = t;
-      }
-    }
-
-    if (done || min_time > t_end)
-    {
-      break;
-    }
-
-    if (!started)
-    {
-      seg_a = min_time;
-      seg_b = min_time;
-      prev = min_time;
-      started = true;
-    }
-    else
-    {
-      if (min_time - prev > gap_sec)
-      {
-        ranges.push_back({ seg_a, seg_b });
-        seg_a = min_time;
-        seg_b = min_time;
-      }
-      else
-      {
-        seg_b = min_time;
-      }
-      prev = min_time;
-    }
-
-    for (auto& x : s)
-    {
-      if (x.i >= x.p->size())
-      {
-        continue;
-      }
-      const double t = x.p->at(x.i).x;
-      if (t > t_end)
-      {
-        continue;
-      }
-      if (t == min_time)
-      {
-        x.i++;
-      }
-    }
-  }
-
-  if (started)
-  {
-    ranges.push_back({ seg_a, seg_b });
-  }
-  return ranges;
-}
-
-// Append "_partXX" suffix while preserving original file extension.
-QString ToolboxCSV::addPartSuffix(const QString& path, int part_idx, int parts_total)
-{
-  QFileInfo info(path);
-  const QString base = info.completeBaseName();
-  const QString ext = info.suffix();
-  const QString dir = info.absolutePath();
-
-  const int width = (parts_total >= 100) ? 3 : 2;
-  const QString suffix = QString("_part%1").arg(part_idx, width, 10, QChar('0'));
-
-  const QString filename = ext.isEmpty() ? (base + suffix) : (base + suffix + "." + ext);
-  return QDir(dir).filePath(filename);
-}

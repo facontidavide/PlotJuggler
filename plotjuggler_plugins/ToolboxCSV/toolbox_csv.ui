@@ -133,7 +133,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButton">
+             <widget class="QPushButton" name="buttonAddAllFiles">
               <property name="text">
                <string>Add all</string>
               </property>
@@ -208,7 +208,7 @@
         <item>
          <layout class="QHBoxLayout" name="botMainLayout">
           <item>
-           <widget class="QCheckBox" name="checkBoxTime">
+           <widget class="QCheckBox" name="checkBoxMultifile">
             <property name="toolTip">
              <string>If enabled, one CSV file per topic will be created.
 The selected path must be a folder.
@@ -241,6 +241,12 @@ The selected path must be a folder.
           </item>
           <item>
            <widget class="QLineEdit" name="lineEditPrefix">
+            <property name="maximumSize">
+             <size>
+              <width>250</width>
+              <height>16777215</height>
+             </size>
+            </property>
             <property name="text">
              <string/>
             </property>
