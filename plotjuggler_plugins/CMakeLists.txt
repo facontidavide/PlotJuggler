@@ -2,6 +2,7 @@ add_subdirectory(DataLoadCSV)
 add_subdirectory(DataLoadMCAP)
 add_subdirectory(DataLoadParquet)
 add_subdirectory(DataLoadULog)
+add_subdirectory(DataLoadULog2)
 
 add_subdirectory(DataStreamSample)
 add_subdirectory(DataStreamWebsocket)

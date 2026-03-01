@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
 #include "ulog_parser.h"
-#include "ulog_messages.h"
+#include <ulog_cpp/raw_messages.hpp>
 #include <cstring>
 #include <memory>
 #include <string>
 #include <vector>
+
+using ulog_cpp::ULogMessageType;
 
 // ---------------------------------------------------------------------------
 // Helper: builds raw ULog binary buffers for testing
@@ -247,8 +249,7 @@ public:
 // ---------------------------------------------------------------------------
 static std::unique_ptr<ULogParser> parseBuffer(ULogBufferBuilder& b)
 {
-  ULogParser::DataStream ds(b.data(), b.size());
-  return std::make_unique<ULogParser>(ds);
+  return std::make_unique<ULogParser>(reinterpret_cast<const uint8_t*>(b.data()), b.size());
 }
 
 // ===========================================================================
@@ -692,20 +693,18 @@ TEST(ULogParserTest, LoggingMessage)
 
 TEST(ULogParserTest, InvalidMagicThrows)
 {
-  std::vector<char> buf(24, 0);
-  ULogParser::DataStream ds(buf.data(), static_cast<int>(buf.size()));
-  EXPECT_THROW(ULogParser parser(ds), std::runtime_error);
+  std::vector<uint8_t> buf(24, 0);
+  EXPECT_THROW(ULogParser parser(buf.data(), buf.size()), std::runtime_error);
 }
 
 TEST(ULogParserTest, TruncatedAfterHeaderThrows)
 {
   // Valid header but no definition messages follow
   ULogBufferBuilder b;
-  // Pad with ULOG_MSG_HEADER_LEN bytes so the first read doesn't overrun
-  std::vector<char> buf(b.size() + ULOG_MSG_HEADER_LEN, 0);
+  // Pad with 3 bytes (msg header len) so the first read doesn't overrun
+  std::vector<uint8_t> buf(b.size() + 3, 0);
   memcpy(buf.data(), b.data(), b.size());
-  ULogParser::DataStream ds(buf.data(), static_cast<int>(buf.size()));
-  EXPECT_THROW(ULogParser parser(ds), std::runtime_error);
+  EXPECT_THROW(ULogParser parser(buf.data(), buf.size()), std::runtime_error);
 }
 
 TEST(ULogParserTest, EmptyDataSection)

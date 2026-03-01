@@ -39,9 +39,8 @@ bool DataLoadULog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
     throw std::runtime_error("ULog: Failed to open file");
   }
   QByteArray file_array = file.readAll();
-  ULogParser::DataStream datastream(file_array.data(), file_array.size());
 
-  ULogParser parser(datastream);
+  ULogParser parser(reinterpret_cast<const uint8_t*>(file_array.data()), file_array.size());
 
   const auto& timeseries_map = parser.getTimeseriesMap();
   auto min_msg_time = std::numeric_limits<double>::max();
