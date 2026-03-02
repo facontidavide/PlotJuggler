@@ -16,7 +16,7 @@
   <property name="locale">
    <locale language="English" country="UnitedStates"/>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2">
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="mainLayout" stretch="2">
      <property name="topMargin">
@@ -110,7 +110,7 @@
         <item>
          <layout class="QVBoxLayout" name="verticaFrameLayout">
           <item>
-           <layout class="QHBoxLayout" name="horizontalFrameLayout" stretch="0,0,0,0,0">
+           <layout class="QHBoxLayout" name="horizontalFrameLayout" stretch="0,0,0,0,0,0,0">
             <item>
              <widget class="QLabel" name="topMainLabel">
               <property name="text">
@@ -130,6 +130,26 @@
                </size>
               </property>
              </spacer>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_7">
+              <property name="text">
+               <string>Filter: </string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEditFilter">
+              <property name="maximumSize">
+               <size>
+                <width>300</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="clearButtonEnabled">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QPushButton" name="buttonAddAllFiles">

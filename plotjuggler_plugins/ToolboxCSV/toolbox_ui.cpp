@@ -92,6 +92,30 @@ ToolBoxUI::ToolBoxUI()
             ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(time_val));
           });
 
+  // Filter applicator in QtableWidget
+  connect(ui->lineEditFilter, &QLineEdit::textChanged, this, [this](const QString& text) {
+    const QString filter = text.trimmed();
+
+    for (int row = 0; row < ui->tableWidget->rowCount(); row++)
+    {
+      auto* item = ui->tableWidget->item(row, 0);
+      if (!item)
+      {
+        ui->tableWidget->setRowHidden(row, !filter.isEmpty());
+        continue;
+      }
+
+      if (filter.isEmpty())
+      {
+        ui->tableWidget->setRowHidden(row, false);
+        continue;
+      }
+
+      const bool match = item->text().contains(filter, Qt::CaseInsensitive);
+      ui->tableWidget->setRowHidden(row, !match);
+    }
+  });
+
   connect(ui->checkBoxMultifile, &QCheckBox::toggled, this, [this](bool multi_file) {
     ui->lineEditPrefix->setHidden(!multi_file);
     ui->labelPrefix->setHidden(!multi_file);
