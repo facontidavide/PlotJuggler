@@ -42,7 +42,6 @@
           <property name="font">
            <font>
             <pointsize>13</pointsize>
-            <weight>75</weight>
             <bold>true</bold>
            </font>
           </property>
@@ -171,7 +170,6 @@
             </property>
             <property name="font">
              <font>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -189,6 +187,9 @@
             </property>
             <property name="selectionBehavior">
              <enum>QAbstractItemView::SelectRows</enum>
+            </property>
+            <property name="sortingEnabled">
+             <bool>true</bool>
             </property>
             <property name="columnCount">
              <number>1</number>
@@ -236,7 +237,6 @@ The selected path must be a folder.
            <widget class="QLabel" name="labelPrefix">
             <property name="font">
              <font>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
