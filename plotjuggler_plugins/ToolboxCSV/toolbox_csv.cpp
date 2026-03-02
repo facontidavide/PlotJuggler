@@ -50,6 +50,25 @@ ToolboxCSV::ToolboxCSV()
     updateTimeRange();
   });
 
+  // Add all topics of the data
+  connect(&_ui, &ToolBoxUI::addAllRequested, this, [this]() {
+    if (!_plot_data)
+    {
+      return;
+    }
+
+    std::vector<std::string> topics;
+    topics.reserve(_plot_data->numeric.size());
+
+    for (const auto& [name, _] : _plot_data->numeric)
+    {
+      topics.push_back(name);
+    }
+
+    std::sort(topics.begin(), topics.end());
+    _ui.setTopics(topics);
+  });
+
   // Recompute visible time range when switching relative/absolute or table changed.
   connect(&_ui, &ToolBoxUI::recomputeTime, this, &ToolboxCSV::updateTimeRange);
 
@@ -358,15 +377,7 @@ ToolboxCSV::ExportTable ToolboxCSV::buildExportTable(const std::vector<std::stri
     }
 
     const auto& plot = it->second;
-    if (plot.size() == 0)
-    {
-      continue;
-    }
-    if (plot.front().x > t_end)
-    {
-      continue;
-    }
-    if (plot.back().x < t_start)
+    if (plot.size() == 0 || plot.front().x > t_end || plot.back().x < t_start)
     {
       continue;
     }

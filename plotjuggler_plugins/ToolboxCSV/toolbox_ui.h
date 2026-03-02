@@ -42,11 +42,15 @@ public:
   // Apply time range to slider and spinboxes
   void setTimeRange(double tmin, double tmax);
 
+  // Add topics into the QTableWidget
+  void setTopics(const std::vector<std::string>& topics);
+
   QWidget* widget() const;
 
 signals:
   void removeRequested();
   void clearRequested();
+  void addAllRequested();
   void closed();
   void recomputeTime();
 
