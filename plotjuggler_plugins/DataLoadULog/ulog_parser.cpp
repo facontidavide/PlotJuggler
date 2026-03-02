@@ -533,7 +533,9 @@ bool ULogParser::readFormat(DataStream& datastream, uint16_t msg_size)
       }
     }
     if (field_pair.size() < 2)
+    {
       continue;
+    }
 
     auto field_type = field_pair.at(0);
     auto field_name = field_pair.at(1);
