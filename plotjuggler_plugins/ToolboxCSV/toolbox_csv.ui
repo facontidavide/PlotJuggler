@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1305</width>
-    <height>1050</height>
+    <width>1229</width>
+    <height>684</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,33 +18,9 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <layout class="QHBoxLayout" name="timeSliderLayout">
-     <item>
-      <widget class="QDoubleSpinBox" name="startTime"/>
-     </item>
-     <item>
-      <widget class="RangeSlider" name="rangeSlider" native="true">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QDoubleSpinBox" name="endTime">
-       <property name="locale">
-        <locale language="English" country="UnitedStates"/>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
     <layout class="QHBoxLayout" name="mainLayout" stretch="2">
      <property name="topMargin">
-      <number>22</number>
+      <number>0</number>
      </property>
      <item>
       <widget class="QFrame" name="mainFrame">
@@ -55,22 +31,23 @@
         </sizepolicy>
        </property>
        <property name="frameShape">
-        <enum>QFrame::Box</enum>
+        <enum>QFrame::NoFrame</enum>
        </property>
        <property name="frameShadow">
         <enum>QFrame::Plain</enum>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayoutLeft_3" stretch="0,1,0">
+       <layout class="QVBoxLayout" name="verticalLayoutLeft_3" stretch="0,0,0,1,0">
         <item alignment="Qt::AlignHCenter">
          <widget class="QLabel" name="mainFrameLabel">
           <property name="font">
            <font>
             <pointsize>13</pointsize>
+            <weight>75</weight>
             <bold>true</bold>
            </font>
           </property>
           <property name="text">
-           <string>CSV Saver</string>
+           <string>CSV / Parquet Exporter</string>
           </property>
           <property name="textFormat">
            <enum>Qt::AutoText</enum>
@@ -87,9 +64,54 @@
          </widget>
         </item>
         <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Select he time range:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="timeSliderLayout">
+          <item>
+           <widget class="QComboBox" name="comboTime">
+            <item>
+             <property name="text">
+              <string>Relative</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Absolute</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="startTime"/>
+          </item>
+          <item>
+           <widget class="RangeSlider" name="rangeSlider" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="endTime">
+            <property name="locale">
+             <locale language="English" country="UnitedStates"/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
          <layout class="QVBoxLayout" name="verticaFrameLayout">
           <item>
-           <layout class="QHBoxLayout" name="horizontalFrameLayout" stretch="0,1,0">
+           <layout class="QHBoxLayout" name="horizontalFrameLayout" stretch="0,0,0,0,0">
             <item>
              <widget class="QLabel" name="topMainLabel">
               <property name="text">
@@ -97,22 +119,43 @@
               </property>
              </widget>
             </item>
-            <item alignment="Qt::AlignRight">
-             <widget class="QCheckBox" name="relativeBox">
+            <item>
+             <spacer name="horizontalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="buttonAddAllFiles">
               <property name="text">
-               <string>Relative timestamp</string>
+               <string>Add all</string>
               </property>
              </widget>
             </item>
-            <item alignment="Qt::AlignRight">
-             <widget class="QCheckBox" name="checkBoxTime">
-              <property name="toolTip">
-               <string>If enabled, one CSV file per topic will be created.
-The selected path must be a folder.
-</string>
+            <item>
+             <widget class="QPushButton" name="removeButton">
+              <property name="text">
+               <string>Remove</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="clearButton">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
               </property>
               <property name="text">
-               <string>Check timestamp</string>
+               <string/>
               </property>
              </widget>
             </item>
@@ -128,6 +171,7 @@ The selected path must be a folder.
             </property>
             <property name="font">
              <font>
+              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -164,26 +208,6 @@ The selected path must be a folder.
         <item>
          <layout class="QHBoxLayout" name="botMainLayout">
           <item>
-           <widget class="QPushButton" name="removeButton">
-            <property name="text">
-             <string>Remove</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="clearButton">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item>
            <spacer name="horizontalSpacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -197,127 +221,72 @@ The selected path must be a folder.
            </spacer>
           </item>
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout">
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout">
-              <item>
-               <widget class="QRadioButton" name="csvButton">
-                <property name="text">
-                 <string>CSV</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QRadioButton" name="parquetButton">
-                <property name="text">
-                 <string>Parquet</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="fileLineLayout">
-              <item>
-               <widget class="QLineEdit" name="lineEditPath">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="readOnly">
-                 <bool>true</bool>
-                </property>
-                <property name="placeholderText">
-                 <string>Select output file...</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="toolButton">
-                <property name="minimumSize">
-                 <size>
-                  <width>26</width>
-                  <height>26</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>26</width>
-                  <height>26</height>
-                 </size>
-                </property>
-                <property name="focusPolicy">
-                 <enum>Qt::NoFocus</enum>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load data from file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string/>
-                </property>
-                <property name="icon">
-                 <iconset>
-                  <normaloff>:/resources/svg/import.svg</normaloff>:/resources/svg/import.svg</iconset>
-                </property>
-                <property name="iconSize">
-                 <size>
-                  <width>22</width>
-                  <height>22</height>
-                 </size>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="saveLayout">
-              <item>
-               <spacer name="saveSpacer">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item alignment="Qt::AlignLeft">
-               <widget class="QPushButton" name="saveButton">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="layoutDirection">
-                 <enum>Qt::RightToLeft</enum>
-                </property>
-                <property name="text">
-                 <string>Save</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer name="saveSpacer_2">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-             </layout>
-            </item>
-           </layout>
+           <widget class="QCheckBox" name="checkBoxMultifile">
+            <property name="toolTip">
+             <string>If enabled, one CSV file per topic will be created.
+The selected path must be a folder.
+</string>
+            </property>
+            <property name="text">
+             <string>One file per group</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelPrefix">
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Prefix:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lineEditPrefix">
+            <property name="maximumSize">
+             <size>
+              <width>250</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="placeholderText">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="csvButton">
+            <property name="text">
+             <string>CSV</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="parquetButton">
+            <property name="text">
+             <string>Parquet</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="saveButton">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="layoutDirection">
+             <enum>Qt::RightToLeft</enum>
+            </property>
+            <property name="text">
+             <string>Export</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
@@ -327,7 +296,7 @@ The selected path must be a folder.
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="closeLayout">
+    <layout class="QHBoxLayout" name="closeLayout" stretch="1,0">
      <property name="topMargin">
       <number>11</number>
      </property>

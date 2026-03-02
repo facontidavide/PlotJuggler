@@ -2,7 +2,6 @@
 #include "ui_toolbox_csv.h"
 #include "PlotJuggler/svg_util.h"
 
-#include <QSettings>
 #include <QSignalBlocker>
 #include <QAbstractSpinBox>
 #include <QHeaderView>
@@ -13,6 +12,9 @@
 #include <QMimeData>
 #include <QDataStream>
 #include <QAbstractButton>
+#include <QDir>
+#include <QFileDialog>
+#include <QFileInfo>
 
 #include <QSettings>
 
@@ -43,7 +45,7 @@ ToolBoxUI::ToolBoxUI()
 
   // Default export mode.
   ui->csvButton->setChecked(true);
-  ui->relativeBox->setChecked(true);
+  ui->comboTime->setCurrentIndex(0);  // relative
 
   // Load icons based on current theme.
   QSettings settings;
@@ -67,52 +69,85 @@ ToolBoxUI::ToolBoxUI()
   ui->tableWidget->horizontalHeader()->setStyleSheet("QHeaderView::section { font-weight: bold; }");
 
   // Slider -> SpinBox sync (prevent feedback loops).
-  connect(ui->rangeSlider, &RangeSlider::lowerValueChanged, _widget, [this](int v) {
-    QSignalBlocker b(*ui->startTime);
-    ui->startTime->setValue(ui->rangeSlider->toReal(v));
+  connect(ui->rangeSlider, &RangeSlider::lowerValueChanged, _widget, [this](int slider_val) {
+    QSignalBlocker blocker(*ui->startTime);
+    ui->startTime->setValue(ui->rangeSlider->toReal(slider_val));
   });
 
-  connect(ui->rangeSlider, &RangeSlider::upperValueChanged, _widget, [this](int v) {
-    QSignalBlocker b(*ui->endTime);
-    ui->endTime->setValue(ui->rangeSlider->toReal(v));
+  connect(ui->rangeSlider, &RangeSlider::upperValueChanged, _widget, [this](int slider_val) {
+    QSignalBlocker blocker(*ui->endTime);
+    ui->endTime->setValue(ui->rangeSlider->toReal(slider_val));
   });
 
   // SpinBox -> Slider sync (prevent recursive updates).
   connect(ui->startTime, QOverload<double>::of(&QDoubleSpinBox::valueChanged), _widget,
-          [this](double t) {
-            QSignalBlocker b(*ui->rangeSlider);
-            ui->rangeSlider->setLowerValue(ui->rangeSlider->toInt(t));
+          [this](double time_val) {
+            QSignalBlocker blocker(*ui->rangeSlider);
+            ui->rangeSlider->setLowerValue(ui->rangeSlider->toInt(time_val));
           });
 
   connect(ui->endTime, QOverload<double>::of(&QDoubleSpinBox::valueChanged), _widget,
-          [this](double t) {
-            QSignalBlocker b(*ui->rangeSlider);
-            ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(t));
+          [this](double time_val) {
+            QSignalBlocker blocker(*ui->rangeSlider);
+            ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(time_val));
           });
 
-  // Reset output path when switching format.
-  connect(ui->csvButton, &QRadioButton::toggled, _widget, [this](bool checked) {
-    if (!checked)
-    {
-      return;
-    }
-    ui->lineEditPath->clear();
-  });
-
-  connect(ui->parquetButton, &QRadioButton::toggled, _widget, [this](bool checked) {
-    if (!checked)
-    {
-      return;
-    }
-    ui->lineEditPath->clear();
+  connect(ui->checkBoxMultifile, &QCheckBox::toggled, this, [this](bool multi_file) {
+    ui->lineEditPrefix->setHidden(!multi_file);
+    ui->labelPrefix->setHidden(!multi_file);
   });
 
   connect(ui->removeButton, &QToolButton::clicked, this, &ToolBoxUI::removeRequested);
   connect(ui->clearButton, &QToolButton::clicked, this, &ToolBoxUI::clearRequested);
-  connect(ui->relativeBox, &QCheckBox::toggled, this, &ToolBoxUI::recomputeTime);
+  connect(ui->comboTime, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+          this, [this](int) { recomputeTime(); });
   connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &ToolBoxUI::closed);
-  connect(ui->saveButton, &QPushButton::clicked, this, &ToolBoxUI::saveRequested);
-  connect(ui->toolButton, &QToolButton::clicked, this, &ToolBoxUI::pickFileRequested);
+  connect(ui->saveButton, &QPushButton::clicked, this, [this]() {
+    const bool is_csv = ui->csvButton->isChecked();
+    const bool multi_file = ui->checkBoxMultifile->isChecked();
+
+    QSettings settings;
+    const QString last_dir = settings.value("Export.lastDirectory", QDir::homePath()).toString();
+
+    if (!multi_file)
+    {
+      const QString filter = is_csv ? "CSV (*.csv)" : "Parquet (*.parquet *.pq)";
+      const QString suffix = is_csv ? "csv" : "parquet";
+      const QString default_name =
+          QDir(last_dir).filePath(is_csv ? "export.csv" : "export.parquet");
+
+      QString filename = QFileDialog::getSaveFileName(_widget, "Export data", default_name, filter);
+      if (filename.isEmpty())
+      {
+        return;
+      }
+      if (!filename.endsWith("." + suffix, Qt::CaseInsensitive))
+      {
+        filename += "." + suffix;
+      }
+
+      settings.setValue("Export.lastDirectory", QFileInfo(filename).absolutePath());
+      emit exportSingleFile(is_csv, filename);
+    }
+    else
+    {
+      QString dir_path =
+          QFileDialog::getExistingDirectory(_widget, "Select export directory", last_dir);
+      if (dir_path.isEmpty())
+      {
+        return;
+      }
+
+      QString prefix = getPathPrefix();
+      if (prefix.isEmpty())
+      {
+        prefix = "export";
+      }
+
+      settings.setValue("Export.lastDirectory", dir_path);
+      emit exportMultipleFiles(is_csv, QDir(dir_path), prefix);
+    }
+  });
 }
 
 QWidget* ToolBoxUI::widget() const
@@ -132,16 +167,30 @@ double ToolBoxUI::getEndTime() const
 
 double ToolBoxUI::getRelativeTime() const
 {
-  return _t0;
+  return _time_offset;
+}
+
+PJ::Range ToolBoxUI::getAbsoluteTimeRange() const
+{
+  PJ::Range range;
+  range.min = getStartTime();
+  range.max = getEndTime();
+
+  if (isRelativeTime())
+  {
+    range.min += _time_offset;
+    range.max += _time_offset;
+  }
+  return range;
 }
 
 std::vector<std::string> ToolBoxUI::getSelectedTopics() const
 {
   // Collect selected topic names from the UI table.
   std::vector<std::string> selected_topics;
-  for (int r = 0; r < ui->tableWidget->rowCount(); r++)
+  for (int row = 0; row < ui->tableWidget->rowCount(); row++)
   {
-    auto* item = ui->tableWidget->item(r, 0);
+    auto* item = ui->tableWidget->item(row, 0);
     if (!item)
     {
       continue;
@@ -156,29 +205,14 @@ std::vector<std::string> ToolBoxUI::getSelectedTopics() const
   return selected_topics;
 }
 
-QString ToolBoxUI::getPath() const
+QString ToolBoxUI::getPathPrefix() const
 {
-  return ui->lineEditPath->text().trimmed();
+  return ui->lineEditPrefix->text().trimmed();
 }
 
-void ToolBoxUI::setPath(const QString filePath)
+bool ToolBoxUI::isRelativeTime() const
 {
-  ui->lineEditPath->setText(filePath);
-}
-
-bool ToolBoxUI::isRelativeBox() const
-{
-  return ui->relativeBox->isChecked();
-}
-
-bool ToolBoxUI::isCheckBoxTime() const
-{
-  return ui->checkBoxTime->isChecked();
-}
-
-bool ToolBoxUI::isCsvButton() const
-{
-  return ui->csvButton->isChecked();
+  return ui->comboTime->currentIndex() == 0;
 }
 
 void ToolBoxUI::clearTable(bool clearAll)
@@ -198,7 +232,7 @@ void ToolBoxUI::clearTable(bool clearAll)
   }
 
   std::sort(rows.begin(), rows.end(),
-            [](const QModelIndex& a, const QModelIndex& b) { return a.row() > b.row(); });
+            [](const QModelIndex& lhs, const QModelIndex& rhs) { return lhs.row() > rhs.row(); });
 
   for (const auto& idx : rows)
   {
@@ -278,15 +312,15 @@ bool ToolBoxUI::eventFilter(QObject* obj, QEvent* ev)
     QSet<QString> existing;
     existing.reserve(ui->tableWidget->rowCount());
 
-    for (int r = 0; r < ui->tableWidget->rowCount(); r++)
+    for (int row = 0; row < ui->tableWidget->rowCount(); row++)
     {
-      auto* item = ui->tableWidget->item(r, 0);
+      auto* item = ui->tableWidget->item(row, 0);
       if (item)
       {
-        const QString t = item->text().trimmed();
-        if (!t.isEmpty())
+        const QString text = item->text().trimmed();
+        if (!text.isEmpty())
         {
-          existing.insert(t);
+          existing.insert(text);
         }
       }
     }
@@ -328,7 +362,6 @@ void ToolBoxUI::updateTimeControlsEnabled()
   ui->startTime->setEnabled(has_data);
   ui->endTime->setEnabled(has_data);
   ui->rangeSlider->setEnabled(has_data);
-  ui->toolButton->setEnabled(has_data);
   ui->saveButton->setEnabled(has_data);
 }
 
@@ -336,7 +369,7 @@ void ToolBoxUI::updateTimeControlsEnabled()
 void ToolBoxUI::setTimeRange(double tmin, double tmax)
 {
   // Update slider/spinboxes with either relative time (starting at 0) or absolute time.
-  const bool relative = ui->relativeBox->isChecked();
+  const bool relative = ui->comboTime->currentIndex() == 0;
   const int decimals = 3;
 
   QSignalBlocker b0(*ui->rangeSlider);
@@ -345,7 +378,7 @@ void ToolBoxUI::setTimeRange(double tmin, double tmax)
 
   if (relative)
   {
-    _t0 = tmin;
+    _time_offset = tmin;
     double duration = tmax - tmin;
     if (duration < 0.0)
     {
@@ -367,7 +400,7 @@ void ToolBoxUI::setTimeRange(double tmin, double tmax)
   }
   else
   {
-    _t0 = 0.0;
+    _time_offset = 0.0;
 
     ui->rangeSlider->setRangeReal(tmin, tmax, decimals);
 

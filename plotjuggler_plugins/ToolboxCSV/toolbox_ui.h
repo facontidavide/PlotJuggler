@@ -2,7 +2,9 @@
 
 #include <QObject>
 #include <QWidget>
+#include <QDir>
 #include <QString>
+#include "PlotJuggler/plotdatabase.h"
 #include <QStringList>
 #include <QEvent>
 #include <vector>
@@ -22,14 +24,16 @@ public:
   double getStartTime() const;
   double getEndTime() const;
   double getRelativeTime() const;
+
+  // Get absolute time range (adjusting for relative mode offset)
+  PJ::Range getAbsoluteTimeRange() const;
+
   std::vector<std::string> getSelectedTopics() const;
-  QString getPath() const;
 
-  void setPath(const QString filePath);
+  // Return the prefix used to create multiple files
+  QString getPathPrefix() const;
 
-  bool isRelativeBox() const;
-  bool isCheckBoxTime() const;
-  bool isCsvButton() const;
+  bool isRelativeTime() const;
 
   void clearTable(bool clearAll);
 
@@ -44,9 +48,24 @@ signals:
   void removeRequested();
   void clearRequested();
   void closed();
-  void saveRequested();
-  void pickFileRequested();
   void recomputeTime();
+
+  /**
+   * @brief exportSingleFile will export all data in a single file.
+   *
+   * @param has_csv   if false, export as parquet
+   * @param filename  file name of the exported file
+   */
+  void exportSingleFile(bool has_csv, QString filename);
+
+  /**
+   * @brief exportMultipleFiles
+   *
+   * @param has_csv          if false, export as parquet
+   * @param destination_dir  directory where the files should be saved
+   * @param filename_prefix  all files should have this prefix. the suffic is the group name
+   */
+  void exportMultipleFiles(bool has_csv, QDir destination_dir, QString filename_prefix);
 
 private:
   Ui::toolBoxUI* ui = nullptr;
@@ -56,7 +75,7 @@ private:
   QStringList _dragging_curves;
 
   // Reference time offset for relative mode
-  double _t0 = 0.0;
+  double _time_offset = 0.0;
 
   bool eventFilter(QObject* obj, QEvent* ev) override;
 };

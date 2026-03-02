@@ -40,7 +40,8 @@ public slots:
 private slots:
 
   void onClosed();
-  void on_toolButton_clicked();
+  void onExportSingleFile(bool is_csv, QString filename);
+  void onExportMultipleFiles(bool is_csv, QDir dir, QString prefix);
 
 private:
   ToolBoxUI _ui;
@@ -53,7 +54,6 @@ private:
   bool getTimeRange(double& tmin, double& tmax) const;
 
   void updateTimeRange();
-  void saveAll();
 
   // Generic table representation for exporters (time + N columns)
   struct ExportTable
@@ -71,11 +71,9 @@ private:
   ExportTable buildExportTable(const std::vector<std::string>& topics, double t_start,
                                double t_end) const;
 
-  bool serializeCSV(const ToolboxCSV::ExportTable& t, const QString& path);
-  bool serializeParquet(const ToolboxCSV::ExportTable& t, const QString& path);
+  bool serializeCSV(const ExportTable& table, const QString& path);
+  bool serializeParquet(const ExportTable& table, const QString& path);
 
-  std::vector<std::pair<double, double>> getGlobalRangesByGap(
-      const std::vector<std::string>& topics, double t_start, double t_end, double gap_sec) const;
-
-  static QString addPartSuffix(const QString& path, int part_idx, int parts_total);
+  // Format-aware serialization dispatch
+  bool serializeTable(const ExportTable& table, const QString& path, bool is_csv);
 };
