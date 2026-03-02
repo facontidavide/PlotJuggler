@@ -175,6 +175,12 @@ ToolBoxUI::ToolBoxUI()
   });
 }
 
+ToolBoxUI::~ToolBoxUI()
+{
+  delete ui;
+  delete _widget;
+}
+
 QWidget* ToolBoxUI::widget() const
 {
   return _widget;

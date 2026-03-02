@@ -20,6 +20,7 @@ class ToolBoxUI : public QObject
   Q_OBJECT
 public:
   ToolBoxUI();
+  ~ToolBoxUI() override;
 
   double getStartTime() const;
   double getEndTime() const;
