@@ -2,6 +2,7 @@
 
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QPushButton>
 #include <QJsonArray>
 #include <QStringList>
 #include <QTreeWidget>
@@ -51,6 +52,9 @@ public:
   QDialogButtonBox* buttonBox() const;
 
   QTreeWidget* topicsWidget() const;
+
+  QPushButton* connectButton() const;
+  void setConnected(bool connected);
 
 private:
   void applyFilter(const QString& filter);

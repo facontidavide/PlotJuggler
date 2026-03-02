@@ -4,6 +4,7 @@
 #include <QPushButton>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSettings>
 #include <QTimer>
 
 #include "ui_websocket_client.h"
@@ -15,7 +16,6 @@ WebsocketDialog::WebsocketDialog(const WebsocketClientConfig& config)
   setWindowTitle("WebSocket Client");
 
   ui->lineEditPort->setValidator(new QIntValidator(1, 65535, this));
-  ui->comboBox->setEnabled(false);
 
   ui->lineEditAddress->setText(config.address);
   ui->lineEditPort->setText(QString::number(config.port));
@@ -23,15 +23,26 @@ WebsocketDialog::WebsocketDialog(const WebsocketClientConfig& config)
   auto okBtn = ui->buttonBox->button(QDialogButtonBox::Ok);
   if (okBtn)
   {
-    okBtn->setText("Connect");
+    okBtn->setText("Subscribe");
+    okBtn->setEnabled(false);
   }
+
+  // Enable sorting, default by topic name ascending
+  ui->topicsList->setSortingEnabled(true);
+  ui->topicsList->sortByColumn(0, Qt::AscendingOrder);
 
   // Wire up internal filter
   connect(ui->lineEditFilter, &QLineEdit::textChanged, this, &WebsocketDialog::applyFilter);
+
+  // Restore saved geometry
+  QSettings s;
+  restoreGeometry(s.value("WebsocketClient/dialogGeometry").toByteArray());
 }
 
 WebsocketDialog::~WebsocketDialog()
 {
+  QSettings s;
+  s.setValue("WebsocketClient/dialogGeometry", saveGeometry());
   delete ui;
 }
 
@@ -71,6 +82,7 @@ void WebsocketDialog::setTopics(const QJsonArray& topics, const QStringList& pre
   // Batch-update without triggering signals
   view->setUpdatesEnabled(false);
   view->blockSignals(true);
+  view->setSortingEnabled(false);
   view->setVisible(false);
   view->clear();
 
@@ -101,6 +113,7 @@ void WebsocketDialog::setTopics(const QJsonArray& topics, const QStringList& pre
   applyFilter(ui->lineEditFilter->text());
   view->resizeColumnToContents(0);
 
+  view->setSortingEnabled(true);
   view->setVisible(true);
   view->blockSignals(false);
   view->setUpdatesEnabled(true);
@@ -177,6 +190,22 @@ QDialogButtonBox* WebsocketDialog::buttonBox() const
 QTreeWidget* WebsocketDialog::topicsWidget() const
 {
   return ui->topicsList;
+}
+
+QPushButton* WebsocketDialog::connectButton() const
+{
+  return ui->buttonConnect;
+}
+
+void WebsocketDialog::setConnected(bool connected)
+{
+  ui->buttonConnect->blockSignals(true);
+  ui->buttonConnect->setChecked(connected);
+  ui->buttonConnect->setText(connected ? "Connected" : "Connect");
+  ui->buttonConnect->blockSignals(false);
+
+  ui->lineEditAddress->setEnabled(!connected);
+  ui->lineEditPort->setEnabled(!connected);
 }
 
 void WebsocketDialog::applyFilter(const QString& filter)

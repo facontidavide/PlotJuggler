@@ -196,8 +196,8 @@ include(${PROJECT_SOURCE_DIR}/cmake/find_or_download_zstd.cmake)
 find_or_download_zstd()
 
 if(NOT COMPILING_WITH_AMENT)
-  include(cmake/download_wasmtime.cmake)
-  download_wasmtime()
+  include(cmake/download_wasmer.cmake)
+  download_wasmer()
 endif()
 
 

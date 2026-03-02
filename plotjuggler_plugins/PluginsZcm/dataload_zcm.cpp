@@ -278,12 +278,14 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       return;
     }
 
+    auto group = plot_data.getOrCreateGroup(evt->channel);
+
     if (evt->datalen == 0)
     {
       auto itr = plot_data.numeric.find(evt->channel);
       if (itr == plot_data.numeric.end())
       {
-        itr = plot_data.addNumeric(evt->channel);
+        itr = plot_data.addNumeric(evt->channel, group);
       }
       itr->second.pushBack({ (double)evt->timestamp / 1e6, 0 });
       return;
@@ -296,7 +298,7 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       auto itr = plot_data.numeric.find(n.first);
       if (itr == plot_data.numeric.end())
       {
-        itr = plot_data.addNumeric(n.first);
+        itr = plot_data.addNumeric(n.first, group);
       }
       itr->second.pushBack({ (double)evt->timestamp / 1e6, n.second });
     }
@@ -305,7 +307,7 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       auto itr = plot_data.strings.find(s.first);
       if (itr == plot_data.strings.end())
       {
-        itr = plot_data.addStringSeries(s.first);
+        itr = plot_data.addStringSeries(s.first, group);
       }
       itr->second.pushBack({ (double)evt->timestamp / 1e6, s.second });
     }

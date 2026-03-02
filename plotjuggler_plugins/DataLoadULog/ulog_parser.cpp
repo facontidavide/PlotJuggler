@@ -159,8 +159,25 @@ void ULogParser::parseDataMessage(const ULogParser::Subscription& sub, char* mes
 char* ULogParser::parseSimpleDataMessage(Timeseries& timeseries, const Format* format,
                                          char* message, size_t* index, bool read_timestamp)
 {
-  for (const auto& field : format->fields)
+  for (size_t i = 0; i <= format->fields.size(); i++)
   {
+    if (format->timestamp_idx == static_cast<int>(i))
+    {
+      uint64_t time_val = *reinterpret_cast<uint64_t*>(message);
+      message += sizeof(uint64_t);
+      if (read_timestamp)
+      {
+        timeseries.timestamps.push_back(time_val);
+      }
+    }
+
+    if (i == format->fields.size())
+    {
+      break;
+    }
+
+    const auto& field = format->fields[i];
+
     // skip _padding messages which are one byte in size
     if (startsWith(StringView(field.field_name), "_padding"))
     {
@@ -168,21 +185,8 @@ char* ULogParser::parseSimpleDataMessage(Timeseries& timeseries, const Format* f
       continue;
     }
 
-    bool timestamp_done = !read_timestamp;
     for (int array_pos = 0; array_pos < field.array_size; array_pos++)
     {
-      if (format->timestamp_idx < 0)
-      {
-        // No timestamps defined in this message
-        timeseries.timestamps.push_back(std::nullopt);
-      }
-      else if (*index == format->timestamp_idx && !timestamp_done)
-      {
-        timestamp_done = true;
-        uint64_t time_val = *reinterpret_cast<uint64_t*>(message);
-        timeseries.timestamps.push_back(time_val);
-        message += sizeof(uint64_t);
-      }
       double value = 0;
       switch (field.type)
       {
@@ -249,7 +253,6 @@ char* ULogParser::parseSimpleDataMessage(Timeseries& timeseries, const Format* f
         case OTHER: {
           // recursion!!!
           auto child_format = _formats.at(field.other_type_ID);
-          message += sizeof(uint64_t);  // skip timestamp
           message = parseSimpleDataMessage(timeseries, &child_format, message, index, false);
         }
         break;
@@ -262,6 +265,12 @@ char* ULogParser::parseSimpleDataMessage(Timeseries& timeseries, const Format* f
       }
     }  // end for
   }
+
+  if (read_timestamp && format->timestamp_idx < 0)
+  {
+    timeseries.timestamps.push_back(std::nullopt);
+  }
+
   return message;
 }
 
@@ -488,8 +497,6 @@ bool ULogParser::readFlagBits(DataStream& datastream, uint16_t msg_size)
 
 bool ULogParser::readFormat(DataStream& datastream, uint16_t msg_size)
 {
-  static int count = 0;
-
   _read_buffer.reserve(msg_size + 1);
   char* buffer = (char*)_read_buffer.data();
   datastream.read(buffer, msg_size);
@@ -516,7 +523,18 @@ bool ULogParser::readFormat(DataStream& datastream, uint16_t msg_size)
   format.fields.reserve(fields_split.size());
   for (auto field_section : fields_split)
   {
-    auto field_pair = splitString(field_section, ' ');
+    auto raw_tokens = splitString(field_section, ' ');
+    std::vector<StringView> field_pair;
+    for (const auto& token : raw_tokens)
+    {
+      if (!token.empty())
+      {
+        field_pair.push_back(token);
+      }
+    }
+    if (field_pair.size() < 2)
+      continue;
+
     auto field_type = field_pair.at(0);
     auto field_name = field_pair.at(1);
 

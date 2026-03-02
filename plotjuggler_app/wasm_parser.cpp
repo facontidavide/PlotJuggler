@@ -30,9 +30,9 @@ public:
     , _decode_func(_runtime->getFunc("pj_parser_decode"))
   {
     auto create_func = _runtime->getFunc("pj_parser_create");
-    std::vector<wasmtime::Val> params = { _wasm_topic_name, _wasm_topic_type, _wasm_schema };
-    auto results = create_func.call(_runtime->store(), params).unwrap();
-    _parser_instance = results[0].i32();
+    auto results = _runtime->callFunc(
+        create_func, { _wasm_topic_name.ptr(), _wasm_topic_type.ptr(), _wasm_schema.ptr() });
+    _parser_instance = results[0];
 
     _parser_input_buffer_size = 128 * 1024;  // 128 KB
     _parser_input_buffer_ptr = _runtime->allocateBuffer(nullptr, _parser_input_buffer_size);
@@ -44,7 +44,7 @@ public:
     if (_parser_instance != 0)
     {
       auto destroy_func = _runtime->getFunc("pj_parser_destroy");
-      destroy_func.call(_runtime->store(), { _parser_instance }).unwrap();
+      _runtime->callFunc(destroy_func, { _parser_instance });
     }
     if (_parser_input_buffer_ptr != 0)
     {
@@ -70,7 +70,7 @@ public:
     // int32_t pj_parser_decode(void* self, const uint8_t* raw_data, uint32_t raw_data_len,
     //                          uint8_t* output_buffer);
 
-    // copy the memory into the input buffer
+    // copy the message into the input buffer
     uint8_t* input_data = _runtime->memoryPointer(_parser_input_buffer_ptr);
     const uint8_t* output_data = _runtime->memoryPointer(_parser_output_buffer_ptr);
 
@@ -79,8 +79,8 @@ public:
     _params = { _parser_instance, _parser_input_buffer_ptr, int32_t(serialized_msg.size()),
                 _parser_output_buffer_ptr };
 
-    auto results = _decode_func.call(_runtime->store(), _params).unwrap();
-    int32_t output_size = results[0].i32();
+    auto results = _runtime->callFunc(_decode_func, _params);
+    int32_t output_size = results[0];
     if (output_size <= 0)
     {
       return false;
@@ -113,15 +113,15 @@ public:
       }
       if (type == BuiltinType::STRING)
       {
-        std::string_view value_str;
-        output_data += unpack_string(output_data, value_str);
+        std::string_view value_sv;
+        output_data += unpack_string(output_data, value_sv);
         auto string_series_it = _strings_map.find(key_str);
         if (string_series_it == _strings_map.end())
         {
           std::string full_key = _topic_name + std::string(key_str);
           string_series_it = _strings_map.emplace(key_str, &getStringSeries(full_key)).first;
         }
-        string_series_it->second->pushBack({ timestamp, value_str });
+        string_series_it->second->pushBack({ timestamp, value_sv });
       }
       else
       {
@@ -144,11 +144,10 @@ public:
   {
     MessageParser::setLargeArraysPolicy(clamp, max_size);
     // Original function signature:
-    // void pj_parser_set_array_policy(void* self, bool clamp, uint32_t
-    // max_size);
+    // void pj_parser_set_array_policy(void* self, bool clamp, uint32_t max_size);
     auto set_policy_func = _runtime->getFunc("pj_parser_set_array_policy");
-    _params = { _parser_instance, clamp, int32_t(max_size) };
-    set_policy_func.call(_runtime->store(), _params).unwrap();
+    _params = { _parser_instance, int32_t(clamp), int32_t(max_size) };
+    _runtime->callFunc(set_policy_func, _params);
   }
 
 private:
@@ -158,8 +157,8 @@ private:
   WasmString _wasm_topic_type;
   WasmString _wasm_schema;
   int32_t _parser_instance = 0;
-  std::vector<wasmtime::Val> _params;
-  wasmtime::Func _decode_func;
+  std::vector<int32_t> _params;
+  wasm_func_t* _decode_func = nullptr;
   int32_t _parser_input_buffer_size = 128 * 1024;  // 128 KB
   int32_t _parser_input_buffer_ptr = 0;
   int32_t _parser_output_buffer_ptr = 0;

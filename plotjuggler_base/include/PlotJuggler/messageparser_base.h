@@ -76,6 +76,10 @@ public:
   MessageParser(const std::string& topic_name, PlotDataMapRef& plot_data)
     : _plot_data(plot_data), _topic_name(topic_name)
   {
+    if (!_topic_name.empty())
+    {
+      _group = _plot_data.getOrCreateGroup(_topic_name);
+    }
   }
   virtual ~MessageParser() = default;
 
@@ -114,15 +118,16 @@ public:
 protected:
   PlotDataMapRef& _plot_data;
   std::string _topic_name;
+  PlotGroup::Ptr _group;
 
   PlotData& getSeries(const std::string& key)
   {
-    return _plot_data.getOrCreateNumeric(key);
+    return _plot_data.getOrCreateNumeric(key, _group);
   }
 
   StringSeries& getStringSeries(const std::string& key)
   {
-    return _plot_data.getOrCreateStringSeries(key);
+    return _plot_data.getOrCreateStringSeries(key, _group);
   }
 
 private:

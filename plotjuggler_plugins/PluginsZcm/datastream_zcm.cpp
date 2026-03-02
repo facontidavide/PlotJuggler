@@ -227,13 +227,14 @@ void DataStreamZcm::handler(const zcm::ReceiveBuffer* rbuf, const string& channe
                                          processData, this);
   {
     std::lock_guard<std::mutex> lock(mutex());
+    auto group = dataMap().getOrCreateGroup(channel);
 
     for (auto& n : _numerics)
     {
       auto itr = dataMap().numeric.find(n.first);
       if (itr == dataMap().numeric.end())
       {
-        itr = dataMap().addNumeric(n.first);
+        itr = dataMap().addNumeric(n.first, group);
       }
       itr->second.pushBack({ double(rbuf->recv_utime) / 1e6, n.second });
     }
@@ -242,7 +243,7 @@ void DataStreamZcm::handler(const zcm::ReceiveBuffer* rbuf, const string& channe
       auto itr = dataMap().strings.find(s.first);
       if (itr == dataMap().strings.end())
       {
-        itr = dataMap().addStringSeries(s.first);
+        itr = dataMap().addStringSeries(s.first, group);
       }
       itr->second.pushBack({ double(rbuf->recv_utime) / 1e6, s.second });
     }

@@ -35,6 +35,10 @@ WebsocketClient::WebsocketClient()
   _heartbeat_timer.setInterval(1000);
   connect(&_heartbeat_timer, &QTimer::timeout, this, &WebsocketClient::sendHeartBeat);
 
+  // Debug stats timer (5s interval)
+  //  _stats_timer.setInterval(5000);
+  //  connect(&_stats_timer, &QTimer::timeout, this, &WebsocketClient::printStats);
+
   // WebSocket signals
   connect(&_socket, &QWebSocket::connected, this, &WebsocketClient::onConnected);
   connect(&_socket, &QWebSocket::textMessageReceived, this,
@@ -115,19 +119,9 @@ void WebsocketClient::updateOkButton()
     return;
   }
 
-  if (!_running)
-  {
-    _dialog->setOkButton("Connect", true);
-    return;
-  }
-
-  if (_state.mode == WsState::Mode::GetTopics)
-  {
-    _dialog->setOkButton("Subscribe", _dialog->hasSelection() && !_state.req_in_flight);
-    return;
-  }
-
-  _dialog->setOkButton("OK", false);
+  bool enabled = _running && _state.mode == WsState::Mode::GetTopics && !_state.req_in_flight &&
+                 _dialog->hasSelection();
+  _dialog->setOkButton("Subscribe", enabled);
 }
 
 // =======================
@@ -143,42 +137,55 @@ bool WebsocketClient::start(QStringList*)
   WebsocketDialog dialog(_config);
   _dialog = &dialog;
 
-  // Refresh button when topic selection changes
+  // Refresh OK button when topic selection changes
   connect(dialog.topicsWidget(), &QTreeWidget::itemSelectionChanged, this,
           &WebsocketClient::updateOkButton);
 
-  // OK button: connect or subscribe depending on state
-  connect(dialog.buttonBox(), &QDialogButtonBox::accepted, this, [&]() {
-    if (!_running)
+  // Connect button: toggle websocket connection
+  connect(dialog.connectButton(), &QPushButton::toggled, this, [&](bool checked) {
+    if (checked)
     {
-      // Phase 1: validate and connect
+      // Connect
       bool ok = false;
       int p = dialog.port(&ok);
       if (!ok)
       {
         QMessageBox::warning(&dialog, "WebSocket Client", "Invalid Port", QMessageBox::Ok);
+        dialog.setConnected(false);
         return;
       }
       const QString addr = dialog.address();
       if (addr.isEmpty())
       {
         QMessageBox::warning(&dialog, "WebSocket Client", "Invalid Address", QMessageBox::Ok);
+        dialog.setConnected(false);
         return;
       }
 
       _url = QUrl(QString("ws://%1:%2").arg(addr).arg(p));
-      dialog.setOkButton("Connect", false);
 
       _config.address = addr;
       _config.port = p;
       saveDefaultSettings();
 
       _socket.open(_url);
-      return;
     }
+    else
+    {
+      // Disconnect
+      resetState();
+      _socket.abort();
+      _socket.close();
+      _running = false;
+      dialog.clearTopics();
+      updateOkButton();
+    }
+  });
 
-    // Phase 2: subscribe to selected topics
-    if (_state.mode != WsState::Mode::GetTopics || _state.req_in_flight || !dialog.hasSelection())
+  // OK button: subscribe to selected topics
+  connect(dialog.buttonBox(), &QDialogButtonBox::accepted, this, [&]() {
+    if (!_running || _state.mode != WsState::Mode::GetTopics || _state.req_in_flight ||
+        !dialog.hasSelection())
     {
       return;
     }
@@ -295,6 +302,9 @@ void WebsocketClient::resetState()
   // Stop periodic timers
   _topics_timer.stop();
   _heartbeat_timer.stop();
+  _stats_timer.stop();
+  _ws_msg_count = 0;
+  _topic_msg_count.clear();
 
   // Reset state machine
   _state.mode = WsState::Mode::Close;
@@ -316,7 +326,11 @@ void WebsocketClient::resetState()
 void WebsocketClient::onConnected()
 {
   _running = true;
-  qDebug() << "Connected";
+
+  if (_dialog)
+  {
+    _dialog->setConnected(true);
+  }
 
   // First step after connect: request topics
   _state.mode = WsState::Mode::GetTopics;
@@ -338,18 +352,21 @@ void WebsocketClient::onDisconnected()
   if (_dialog)
   {
     _dialog->clearTopics();
-    _dialog->setOkButton("Connect", true);
-  }
-  else if (!_closing)
-  {
-    QMessageBox::warning(nullptr, "WebSocket Client", "Server closed the connection",
-                         QMessageBox::Ok);
+    _dialog->setConnected(false);
+    updateOkButton();
   }
 
   if (!_running)
   {
     return;
   }
+
+  if (!_dialog && !_closing)
+  {
+    QMessageBox::warning(nullptr, "WebSocket Client", "Server closed the connection",
+                         QMessageBox::Ok);
+  }
+
   if (_closing)
   {
     _closing = false;
@@ -358,7 +375,6 @@ void WebsocketClient::onDisconnected()
   resetState();
 
   _running = false;
-  qDebug() << "Disconnected" << Qt::endl;
 }
 
 void WebsocketClient::onError(QAbstractSocket::SocketError)
@@ -484,6 +500,12 @@ void WebsocketClient::onTextMessageReceived(const QString& message)
       _state.mode = WsState::Mode::Data;
       _topics_timer.stop();
       _heartbeat_timer.start();
+
+      // Start debug stats collection
+      _ws_msg_count = 0;
+      _topic_msg_count.clear();
+      _stats_elapsed.start();
+      _stats_timer.start();
 
       break;
     }
@@ -641,6 +663,7 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
 
   // Parse messages inside payload
   parseDecompressedPayload(decompressed, message_count);
+  _ws_msg_count++;
 
   // Notify PlotJuggler that new data is available (once per binary frame)
   emit dataReceived();
@@ -779,6 +802,7 @@ void WebsocketClient::onRos2CdrMessage(const QString& topic, double ts_sec, cons
   try
   {
     it.value()->parseMessage(msg_ref, ts_sec);
+    _topic_msg_count[topic]++;
   }
   catch (std::exception& err)
   {
@@ -797,6 +821,32 @@ void WebsocketClient::onRos2CdrMessage(const QString& topic, double ts_sec, cons
   Q_UNUSED(len);
   qDebug() << "RX msg topic=" << topic << "ts=" << ts_sec << "cdr=" << len;
 #endif
+}
+
+// =======================
+// Debug stats
+// =======================
+void WebsocketClient::printStats()
+{
+  double elapsed_sec = _stats_elapsed.elapsed() / 1000.0;
+  if (elapsed_sec < 0.001)
+  {
+    return;
+  }
+
+  qDebug() << "=== WS Bridge Stats ===";
+  qDebug() << "  WS frames received:" << _ws_msg_count << "(" << (_ws_msg_count / elapsed_sec)
+           << "/sec)";
+
+  for (auto it = _topic_msg_count.constBegin(); it != _topic_msg_count.constEnd(); ++it)
+  {
+    qDebug() << "  " << it.key() << ":" << it.value() << "(" << (it.value() / elapsed_sec)
+             << "/sec)";
+  }
+
+  _ws_msg_count = 0;
+  _topic_msg_count.clear();
+  _stats_elapsed.restart();
 }
 
 // =======================

@@ -2,6 +2,7 @@
 
 #include <QWebSocket>
 #include <QTimer>
+#include <QElapsedTimer>
 
 #include <QHash>
 
@@ -82,6 +83,10 @@ private:
   QPointer<WebsocketDialog> _dialog;
   QTimer _topics_timer;
   QTimer _heartbeat_timer;
+  QTimer _stats_timer;
+  QElapsedTimer _stats_elapsed;
+  uint64_t _ws_msg_count = 0;
+  QHash<QString, uint64_t> _topic_msg_count;
 
   std::vector<TopicInfo> _topics;
 
@@ -105,6 +110,7 @@ private:
   void createParsersForTopics();
   void onRos2CdrMessage(const QString& topic, double ts_sec, const uint8_t* cdr, uint32_t len);
   bool parseDecompressedPayload(const QByteArray& decompressed, uint32_t expected_count);
+  void printStats();
 
 private slots:
   void onConnected();

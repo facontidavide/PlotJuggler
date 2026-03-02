@@ -66,19 +66,19 @@ public:
 
         if (value.startsWith('"') && value.endsWith('"'))
         {
-          auto& data = _plot_data.getOrCreateStringSeries(key);
+          auto& data = getStringSeries(key);
           data.pushBack({ ts_sec, StringRef(value.data() + 1, value.size() - 2) });
         }
         else if (value == "t" || value == "T" || value == "true" || value == "True" ||
                  value == "TRUE")
         {
-          auto& data = _plot_data.getOrCreateNumeric(key);
+          auto& data = getSeries(key);
           data.pushBack({ ts_sec, 1.0 });
         }
         else if (value == "f" || value == "F" || value == "false" || value == "False" ||
                  value == "FALSE")
         {
-          auto& data = _plot_data.getOrCreateNumeric(key);
+          auto& data = getSeries(key);
           data.pushBack({ ts_sec, 0.0 });
         }
         else
@@ -92,7 +92,7 @@ public:
           double num = value.toDouble(&ok);
           if (ok)
           {
-            auto& data = _plot_data.getOrCreateNumeric(key);
+            auto& data = getSeries(key);
             data.pushBack({ ts_sec, num });
           }
         }

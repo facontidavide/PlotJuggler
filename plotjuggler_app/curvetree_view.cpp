@@ -116,9 +116,24 @@ void CurveTreeView::addItem(const QString& group_name, const QString& tree_name,
     return;
   }
 
-  bool prefix_is_group = tree_name.startsWith(group_name);
   bool hasGroup = !group_name.isEmpty();
   auto group_parts = group_name.split('/', PJ::SkipEmptyParts);
+
+  // Check if tree_name already starts with the group prefix by comparing
+  // the split parts (avoids leading-slash mismatch between the two strings).
+  bool prefix_is_group = false;
+  if (hasGroup && group_parts.size() <= parts.size())
+  {
+    prefix_is_group = true;
+    for (int i = 0; i < group_parts.size(); i++)
+    {
+      if (parts[i] != group_parts[i])
+      {
+        prefix_is_group = false;
+        break;
+      }
+    }
+  }
 
   if (hasGroup && !prefix_is_group)
   {
