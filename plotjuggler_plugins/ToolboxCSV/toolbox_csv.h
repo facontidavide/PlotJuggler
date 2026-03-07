@@ -23,7 +23,7 @@ public:
   // Plugin name shown in PlotJuggler
   const char* name() const override
   {
-    return "CSV data saver";
+    return "CSV/Parquet Exporter";
   }
 
   // Called once to provide access to plot data and transforms

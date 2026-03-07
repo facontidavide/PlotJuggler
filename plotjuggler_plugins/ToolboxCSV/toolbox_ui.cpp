@@ -121,6 +121,11 @@ ToolBoxUI::ToolBoxUI()
     ui->labelPrefix->setHidden(!multi_file);
   });
 
+  const bool is_multifile = settings.value("ExportPlugin::multifile", false).toBool();
+  ui->checkBoxMultifile->setChecked(is_multifile);
+  ui->lineEditPrefix->setHidden(!is_multifile);
+  ui->labelPrefix->setHidden(!is_multifile);
+
   connect(ui->removeButton, &QToolButton::clicked, this, &ToolBoxUI::removeRequested);
   connect(ui->clearButton, &QToolButton::clicked, this, &ToolBoxUI::clearRequested);
   connect(ui->buttonAddAllFiles, &QToolButton::clicked, this, &ToolBoxUI::addAllRequested);
@@ -132,14 +137,15 @@ ToolBoxUI::ToolBoxUI()
     const bool multi_file = ui->checkBoxMultifile->isChecked();
 
     QSettings settings;
-    const QString last_dir = settings.value("Export.lastDirectory", QDir::homePath()).toString();
+    const QString last_dir =
+        settings.value("ExportPlugin::lastDirectory", QDir::homePath()).toString();
 
     if (!multi_file)
     {
       const QString filter = is_csv ? "CSV (*.csv)" : "Parquet (*.parquet *.pq)";
       const QString suffix = is_csv ? "csv" : "parquet";
       const QString default_name =
-          QDir(last_dir).filePath(is_csv ? "export.csv" : "export.parquet");
+          QDir(last_dir).filePath(is_csv ? "ExportPlugin::csv" : "ExportPlugin::parquet");
 
       QString filename = QFileDialog::getSaveFileName(_widget, "Export data", default_name, filter);
       if (filename.isEmpty())
@@ -151,7 +157,7 @@ ToolBoxUI::ToolBoxUI()
         filename += "." + suffix;
       }
 
-      settings.setValue("Export.lastDirectory", QFileInfo(filename).absolutePath());
+      settings.setValue("ExportPlugin::lastDirectory", QFileInfo(filename).absolutePath());
       emit exportSingleFile(is_csv, filename);
     }
     else
@@ -166,10 +172,10 @@ ToolBoxUI::ToolBoxUI()
       QString prefix = getPathPrefix();
       if (prefix.isEmpty())
       {
-        prefix = "export";
+        prefix = "pj_export";
       }
 
-      settings.setValue("Export.lastDirectory", dir_path);
+      settings.setValue("ExportPlugin::lastDirectory", dir_path);
       emit exportMultipleFiles(is_csv, QDir(dir_path), prefix);
     }
   });
@@ -178,7 +184,7 @@ ToolBoxUI::ToolBoxUI()
 ToolBoxUI::~ToolBoxUI()
 {
   delete ui;
-  delete _widget;
+  // _widget is reparented by QStackedWidget::addWidget and owned by Qt.
 }
 
 QWidget* ToolBoxUI::widget() const
@@ -479,6 +485,16 @@ void ToolBoxUI::setTopics(const std::vector<std::string>& topics)
     const int row = ui->tableWidget->rowCount();
     ui->tableWidget->insertRow(row);
     ui->tableWidget->setItem(row, 0, new QTableWidgetItem(topic));
+  }
+
+  // Re-apply the active filter so newly inserted rows respect it.
+  const QString filter = ui->lineEditFilter->text().trimmed();
+  for (int row = 0; row < ui->tableWidget->rowCount(); row++)
+  {
+    auto* item = ui->tableWidget->item(row, 0);
+    const bool hidden =
+        !filter.isEmpty() && (!item || !item->text().contains(filter, Qt::CaseInsensitive));
+    ui->tableWidget->setRowHidden(row, hidden);
   }
 
   updateTimeControlsEnabled();

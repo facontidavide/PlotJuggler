@@ -42,6 +42,7 @@
           <property name="font">
            <font>
             <pointsize>13</pointsize>
+            <weight>75</weight>
             <bold>true</bold>
            </font>
           </property>
@@ -65,7 +66,7 @@
         <item>
          <widget class="QLabel" name="label">
           <property name="text">
-           <string>Select he time range:</string>
+           <string>Select the time range:</string>
           </property>
          </widget>
         </item>
@@ -114,7 +115,7 @@
             <item>
              <widget class="QLabel" name="topMainLabel">
               <property name="text">
-               <string>Drag and Drop the data:</string>
+               <string>Drag and Drop series from the left panel:</string>
               </property>
              </widget>
             </item>
@@ -153,6 +154,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="buttonAddAllFiles">
+              <property name="toolTip">
+               <string>Add all the timeseries stored in PlotJuggler</string>
+              </property>
               <property name="text">
                <string>Add all</string>
               </property>
@@ -160,6 +164,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="removeButton">
+              <property name="toolTip">
+               <string>Remove selected rows</string>
+              </property>
               <property name="text">
                <string>Remove</string>
               </property>
@@ -172,6 +179,9 @@
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="toolTip">
+               <string>Remove all curves from the list</string>
               </property>
               <property name="text">
                <string/>
@@ -190,6 +200,7 @@
             </property>
             <property name="font">
              <font>
+              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -209,7 +220,7 @@
              <enum>QAbstractItemView::SelectRows</enum>
             </property>
             <property name="sortingEnabled">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
             <property name="columnCount">
              <number>1</number>
@@ -244,8 +255,7 @@
           <item>
            <widget class="QCheckBox" name="checkBoxMultifile">
             <property name="toolTip">
-             <string>If enabled, one CSV file per topic will be created.
-The selected path must be a folder.
+             <string>If enabled, one file per group (i.e. &quot;topic&quot; or &quot;channel&quot;) will be created in a user provided folder
 </string>
             </property>
             <property name="text">
@@ -257,6 +267,7 @@ The selected path must be a folder.
            <widget class="QLabel" name="labelPrefix">
             <property name="font">
              <font>
+              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -273,6 +284,10 @@ The selected path must be a folder.
               <height>16777215</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>The prefix that will be added to the files exported.
+Suffix will be the group name.</string>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -283,6 +298,9 @@ The selected path must be a folder.
           </item>
           <item>
            <widget class="QRadioButton" name="csvButton">
+            <property name="toolTip">
+             <string>Export to CSV file</string>
+            </property>
             <property name="text">
              <string>CSV</string>
             </property>
@@ -290,6 +308,9 @@ The selected path must be a folder.
           </item>
           <item>
            <widget class="QRadioButton" name="parquetButton">
+            <property name="toolTip">
+             <string>Export to Arrow Parquet file</string>
+            </property>
             <property name="text">
              <string>Parquet</string>
             </property>
