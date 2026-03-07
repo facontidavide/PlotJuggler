@@ -4,7 +4,7 @@ On Ubuntu (20.04/22.04), the dependencies can be installed with the command:
 
 ```shell
 sudo apt -y install qtbase5-dev libqt5svg5-dev libqt5websockets5-dev \
-      libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq3-dev \
+      libqt5serialport5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq3-dev \
       liblz4-dev libzstd-dev
 ```
 
@@ -12,7 +12,7 @@ On Fedora (42):
 
 ```shell
 sudo dnf install qt5-qtbase-devel qt5-qtsvg-devel qt5-qtwebsockets-devel \
-      qt5-qtx11extras-devel
+      qt5-qtserialport-devel qt5-qtx11extras-devel
 ```
 
 Clone the repository into **~/plotjuggler_ws**:
