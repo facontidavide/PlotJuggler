@@ -118,8 +118,12 @@ public:
 
   void setAcceptDrops(bool accept);
 
+  int leftAxisWidth();
+  int bottomAxisHeight();
   double leftAxisExtent() const;
   double bottomAxisExtent() const;
+  void setLeftAxisMinimumWidth(int width);
+  void setBottomAxisMinimumHeight(int height);
   void setLeftAxisMinimumExtent(double extent);
   void setBottomAxisMinimumExtent(double extent);
 
