@@ -488,13 +488,11 @@ void MainWindow::onTrackerTimeUpdated(double absolute_time, bool do_replot)
 
   updateReactivePlots();
 
-  forEachWidget([&](PlotWidget* plot) {
-    plot->setTrackerPosition(_tracker_time);
-    if (do_replot)
-    {
-      plot->replot();
-    }
-  });
+  forEachWidget([&](PlotWidget* plot) { plot->setTrackerPosition(_tracker_time); });
+  if (do_replot)
+  {
+    replotAllPlots("onTrackerTimeUpdated");
+  }
 }
 
 void MainWindow::initializeActions()
@@ -875,6 +873,10 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
     plot->onReferenceLineChecked(ui->buttonReferencePoint->isChecked(),
                                  _reference_tracker_time.value());
   }
+
+  // Let the newly inserted dock/plot settle its Qt layout before recomputing
+  // shared axis extents across the visible group.
+  QTimer::singleShot(0, this, [this]() { replotAllPlots("onPlotAdded"); });
 }
 
 void MainWindow::onPlotZoomChanged(PlotWidget* modified_plot, QRectF new_range)
@@ -902,6 +904,8 @@ void MainWindow::onPlotZoomChanged(PlotWidget* modified_plot, QRectF new_range)
 void MainWindow::onPlotTabAdded(PlotDocker* docker)
 {
   connect(docker, &PlotDocker::plotWidgetAdded, this, &MainWindow::onPlotAdded);
+  connect(docker, &PlotDocker::plotWidgetRemoved, this,
+          [this]() { QTimer::singleShot(0, this, [this]() { replotAllPlots("onPlotRemoved"); }); });
 
   connect(this, &MainWindow::stylesheetChanged, docker, &PlotDocker::on_stylesheetChanged);
 
@@ -1099,7 +1103,7 @@ void MainWindow::onDeleteMultipleCurves(const std::vector<std::string>& curve_na
     _transform_functions.erase(curve_name);
   }
   updateTimeOffset();
-  forEachWidget([](PlotWidget* plot) { plot->replot(); });
+  replotAllPlots("onDeleteMultipleCurves");
 }
 
 void MainWindow::updateRecentDataMenu(QStringList new_filenames)
@@ -1702,7 +1706,7 @@ void MainWindow::loadStyleSheet(QString file_path)
   {
     QString theme = SetApplicationStyleSheet(styleFile.readAll());
 
-    forEachWidget([&](PlotWidget* plot) { plot->replot(); });
+    replotAllPlots("loadStyleSheet");
 
     _curvelist_widget->updateAppearance();
     emit stylesheetChanged(theme);
@@ -2344,6 +2348,33 @@ void MainWindow::forEachWidget(std::function<void(PlotWidget*)> op)
   forEachWidget([&](PlotWidget* plot, PlotDocker*, int) { op(plot); });
 }
 
+void MainWindow::alignAxesAcrossDockers(const QString& reason, bool replot_after_alignment)
+{
+  const bool force_recompute = (reason != "onTrackerTimeUpdated");
+
+  std::set<PlotDocker*> visited;
+  forEachWidget([&](PlotWidget*, PlotDocker* docker, int) {
+    if (!docker || visited.count(docker) != 0)
+    {
+      return;
+    }
+    visited.insert(docker);
+    if (force_recompute)
+    {
+      docker->invalidateAxisAlignment();
+    }
+    if (replot_after_alignment)
+    {
+      docker->replot();
+    }
+  });
+}
+
+void MainWindow::replotAllPlots(const QString& reason)
+{
+  alignAxesAcrossDockers(reason, true);
+}
+
 void MainWindow::updateTimeSlider()
 {
   auto range = calculateVisibleRangeX();
@@ -2511,7 +2542,7 @@ void MainWindow::on_buttonRemoveTimeOffset_toggled(bool)
   updateTimeOffset();
   updatedDisplayTime();
 
-  forEachWidget([](PlotWidget* plot) { plot->replot(); });
+  replotAllPlots("on_buttonRemoveTimeOffset_toggled");
 
   if (this->signalsBlocked() == false)
   {
