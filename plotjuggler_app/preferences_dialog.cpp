@@ -67,6 +67,9 @@ PreferencesDialog::PreferencesDialog(QWidget* parent)
   bool swap_pan_zoom = settings.value("Preferences::swap_pan_zoom", false).toBool();
   ui->checkBoxSwapPanZoom->setChecked(swap_pan_zoom);
 
+  bool align_axes = settings.value("Preferences::align_axes", true).toBool();
+  ui->checkBoxAlignAxes->setChecked(align_axes);
+
   bool truncation_check = settings.value("Preferences::truncation_check", true).toBool();
   ui->checkBoxTruncation->setChecked(truncation_check);
 
@@ -121,6 +124,7 @@ void PreferencesDialog::on_buttonBox_accepted()
   settings.setValue("Preferences::export_plot_size",
                     QSize{ ui->spinBoxExportX->value(), ui->spinBoxExportY->value() });
   settings.setValue("Preferences::swap_pan_zoom", ui->checkBoxSwapPanZoom->isChecked());
+  settings.setValue("Preferences::align_axes", ui->checkBoxAlignAxes->isChecked());
 
   QStringList plugin_folders;
   for (int row = 0; row < ui->listWidgetCustom->count(); row++)

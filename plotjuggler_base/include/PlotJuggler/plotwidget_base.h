@@ -118,6 +118,11 @@ public:
 
   void setAcceptDrops(bool accept);
 
+  double leftAxisExtent() const;
+  double bottomAxisExtent() const;
+  void setLeftAxisMinimumExtent(double extent);
+  void setBottomAxisMinimumExtent(double extent);
+
   void overrideCurvesStyle(std::optional<CurveStyle> style);
   std::optional<CurveStyle> overriddenCurvesStyle() const;
 

@@ -15,6 +15,7 @@
 #include <QDebug>
 #include <QInputDialog>
 #include <QLineEdit>
+#include <algorithm>
 #include "PlotJuggler/svg_util.h"
 
 class SplittableComponentsFactory : public ads::CDockComponentsFactory
@@ -259,6 +260,23 @@ void PlotDocker::zoomOut()
 
 void PlotDocker::replot()
 {
+  QSettings settings;
+  const bool align_axes = settings.value("Preferences::align_axes", true).toBool();
+
+  double max_left_extent = 0.0;
+  double max_bottom_extent = 0.0;
+  for (int index = 0; index < plotCount(); index++)
+  {
+    max_left_extent = std::max(max_left_extent, plotAt(index)->leftAxisExtent());
+    max_bottom_extent = std::max(max_bottom_extent, plotAt(index)->bottomAxisExtent());
+  }
+
+  for (int index = 0; index < plotCount(); index++)
+  {
+    plotAt(index)->setLeftAxisMinimumExtent(align_axes ? max_left_extent : 0.0);
+    plotAt(index)->setBottomAxisMinimumExtent(align_axes ? max_bottom_extent : 0.0);
+  }
+
   for (int index = 0; index < plotCount(); index++)
   {
     plotAt(index)->replot();
