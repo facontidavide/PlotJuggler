@@ -801,6 +801,7 @@ QWidget#leftMainWindowFrame
 QWidget#widgetLabelLoad,
 QWidget#widgetLabelStreaming,
 QWidget#widgetLabelPublishers,
+QWidget#widgetLabelMarkers,
 QWidget#widgetLabelTimeseries
 {
     background-color: #2a2a2a;
@@ -810,6 +811,7 @@ QWidget#widgetLabelTimeseries
 QWidget#widgetLabelLoad QLabel,
 QWidget#widgetLabelStreaming QLabel,
 QWidget#widgetLabelPublishers QLabel,
+QWidget#widgetLabelMarkers QLabel,
 QWidget#widgetLabelTimeseries QLabel
 {
     color: #FFFFFF;
@@ -817,7 +819,9 @@ QWidget#widgetLabelTimeseries QLabel
 
 QPushButton#buttonHideFileFrame,
 QPushButton#buttonHidePublishersFrame,
-QPushButton#buttonHideStreamingFrame {
+QPushButton#buttonHideStreamingFrame,
+QPushButton#buttonHideTimeseriesFrame,
+QPushButton#buttonHideMarkersFrame {
     color: #FFFFFF;
     background-color: transparent;
 }

@@ -90,6 +90,7 @@ public:
 
   void setMarkerLayers(const QVector<MarkerManager::MarkerLayer>& layers);
   void setSelectedMarker(const std::optional<MarkerManager::MarkerItem>& item);
+  void setSelectedMarkerPreviewSource(const std::optional<MarkerManager::MarkerItem>& item);
   void setSelectedMarkerEditable(bool editable);
   void setSelectedMarkerHandlesVisible(bool visible);
 
@@ -108,6 +109,8 @@ signals:
   void rectChanged(PlotWidget* self, QRectF rect);
   void undoableChange();
   void trackerMoved(QPointF pos);
+  void selectedMarkerPreviewChanged(const MarkerManager::MarkerItem& original_item,
+                                    const MarkerManager::MarkerItem& preview_item);
   void selectedMarkerEdited(const MarkerManager::MarkerItem& item);
   void curveListChanged();
   void curvesDropped();
@@ -212,6 +215,7 @@ private:
   std::vector<QwtPlotZoneItem*> _region_overlays;
   QVector<MarkerManager::MarkerLayer> _marker_layers;
   std::optional<MarkerManager::MarkerItem> _selected_marker;
+  std::optional<MarkerManager::MarkerItem> _selected_marker_preview_source;
   bool _selected_marker_editable = false;
   bool _selected_marker_handles_visible = false;
 

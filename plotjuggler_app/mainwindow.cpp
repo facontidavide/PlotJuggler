@@ -18,7 +18,6 @@
 #include <QDomDocument>
 #include <QDoubleSpinBox>
 #include <QElapsedTimer>
-#include <QFile>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMenu>
@@ -35,7 +34,6 @@
 #include <QStringListModel>
 #include <QStringRef>
 #include <QThread>
-#include <QTextStream>
 #include <QWindow>
 #include <QHeaderView>
 #include <QStandardPaths>
@@ -114,17 +112,6 @@ QString axisIdFromPluginConfig(const PJ::FileLoadInfo& info)
   return {};
 }
 
-void logMarkerPreview(const QString& message)
-{
-  static const QString log_path =
-      QDir::temp().filePath(QStringLiteral("plotjuggler_marker_preview.log"));
-  QFile file(log_path);
-  if (file.open(QIODevice::Append | QIODevice::Text))
-  {
-    QTextStream stream(&file);
-    stream << message << '\n';
-  }
-}
 }
 
 MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* parent)
@@ -942,19 +929,8 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
               return;
             }
 
-            logMarkerPreview(
-                QStringLiteral("[mainwindow][preview] source_plot_signal original=[%1,%2] preview=[%3,%4]")
-                    .arg(original_item.start_time, 0, 'g', 15)
-                    .arg(original_item.end_time, 0, 'g', 15)
-                    .arg(preview_item.start_time, 0, 'g', 15)
-                    .arg(preview_item.end_time, 0, 'g', 15));
             const auto& layers = _marker_manager->layers();
             forEachWidget([&](PlotWidget* candidate) {
-              logMarkerPreview(
-                  QStringLiteral("[mainwindow][preview][apply] plot=%1 xy=%2 editable=%3")
-                      .arg(reinterpret_cast<quintptr>(candidate), 0, 16)
-                      .arg(candidate->isXYPlot())
-                      .arg(_markers_panel && _markers_panel->isActiveLayerEditable()));
               candidate->setSelectedMarkerEditable(_markers_panel &&
                                                    _markers_panel->isActiveLayerEditable());
               candidate->setSelectedMarkerHandlesVisible(!candidate->isXYPlot());
@@ -2569,11 +2545,6 @@ void MainWindow::refreshMarkerOverlays()
     }
   }
   forEachWidget([&](PlotWidget* plot) {
-    logMarkerPreview(
-        QStringLiteral("[mainwindow][refreshMarkerOverlays] plot=%1 xy=%2 selected=%3")
-            .arg(reinterpret_cast<quintptr>(plot), 0, 16)
-            .arg(plot->isXYPlot())
-            .arg(_markers_panel && _markers_panel->hasSelectedMarker()));
     plot->setSelectedMarkerEditable(_markers_panel && _markers_panel->isActiveLayerEditable());
     plot->setSelectedMarkerHandlesVisible(!plot->isXYPlot());
     plot->setSelectedMarkerPreviewSource(std::nullopt);
@@ -2607,11 +2578,6 @@ void MainWindow::refreshSelectedMarkerOverlay()
   }
 
   forEachWidget([&](PlotWidget* plot) {
-    logMarkerPreview(
-        QStringLiteral("[mainwindow][refreshSelectedMarkerOverlay] plot=%1 xy=%2 selected=%3")
-            .arg(reinterpret_cast<quintptr>(plot), 0, 16)
-            .arg(plot->isXYPlot())
-            .arg(selected.has_value()));
     plot->setSelectedMarkerEditable(_markers_panel && _markers_panel->isActiveLayerEditable());
     plot->setSelectedMarkerHandlesVisible(!plot->isXYPlot());
     plot->setSelectedMarkerPreviewSource(std::nullopt);

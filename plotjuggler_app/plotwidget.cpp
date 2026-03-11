@@ -1310,7 +1310,10 @@ bool PlotWidget::isSelectedMarker(const MarkerManager::MarkerItem& item) const
     return false;
   }
 
-  const auto& selected = _selected_marker.value();
+  const auto& selected = _selected_marker_preview_source.has_value() ?
+                             _selected_marker_preview_source.value() :
+                             ((_marker_drag.mode != MarkerDragState::None) ? _marker_drag.original_item :
+                                                                              _selected_marker.value());
   return selected.type == item.type && selected.start_time == item.start_time &&
          selected.end_time == item.end_time && selected.label == item.label &&
          selected.tags == item.tags && selected.notes == item.notes;
@@ -1319,6 +1322,15 @@ bool PlotWidget::isSelectedMarker(const MarkerManager::MarkerItem& item) const
 void PlotWidget::setSelectedMarker(const std::optional<MarkerManager::MarkerItem>& item)
 {
   _selected_marker = item;
+  if (!_selected_marker.has_value())
+  {
+    _selected_marker_preview_source.reset();
+  }
+}
+
+void PlotWidget::setSelectedMarkerPreviewSource(const std::optional<MarkerManager::MarkerItem>& item)
+{
+  _selected_marker_preview_source = item;
 }
 
 void PlotWidget::setSelectedMarkerEditable(bool editable)
@@ -1419,21 +1431,30 @@ void PlotWidget::setMarkerLayers(const QVector<MarkerManager::MarkerLayer>& laye
         continue;
       }
 
-      const QColor overlay_color = item.color.isValid() ? item.color : layer.color;
       const bool is_selected = isSelectedMarker(item);
+      const auto& display_item =
+          (is_selected &&
+           (_marker_drag.mode != MarkerDragState::None || _selected_marker_preview_source.has_value()) &&
+           _selected_marker.has_value()) ?
+              _selected_marker.value() :
+              item;
+      const QColor overlay_color =
+          display_item.color.isValid() ? display_item.color : layer.color;
       const QColor handle_fill = QColor("#10b3a3");
       const QColor handle_outline = QColor("#0f1720");
+      const QColor selected_outline = QColor("#f97316");
+      const QColor display_color = is_selected ? selected_outline : overlay_color;
 
-      if (item.type == MarkerManager::MarkerType::Point)
+      if (display_item.type == MarkerManager::MarkerType::Point)
       {
         auto* marker = new QwtPlotMarker;
         marker->setLineStyle(QwtPlotMarker::VLine);
         marker->setLinePen(
-            QPen(overlay_color, is_selected ? 2.0 : 1.0, is_selected ? Qt::SolidLine : Qt::DashLine));
-        marker->setXValue(item.start_time);
-        if (!item.label.isEmpty())
+            QPen(display_color, is_selected ? 2.5 : 1.0, is_selected ? Qt::SolidLine : Qt::DashLine));
+        marker->setXValue(display_item.start_time);
+        if (!display_item.label.isEmpty())
         {
-          marker->setLabel(QwtText(item.label));
+          marker->setLabel(QwtText(display_item.label));
           marker->setLabelAlignment(Qt::AlignTop | Qt::AlignRight);
         }
         marker->attach(qwtPlot());
@@ -1443,7 +1464,7 @@ void PlotWidget::setMarkerLayers(const QVector<MarkerManager::MarkerLayer>& laye
         {
           auto* handle = new QwtPlotMarker;
           handle->setLineStyle(QwtPlotMarker::NoLine);
-          handle->setValue(markerHandleXValue(item.start_time), markerHandleYValue(false));
+          handle->setValue(markerHandleXValue(display_item.start_time), markerHandleYValue(false));
           handle->setSymbol(
               createMarkerHandleSymbol(Qt::NoArrow, true, handle_fill, handle_outline));
           handle->attach(qwtPlot());
@@ -1453,19 +1474,19 @@ void PlotWidget::setMarkerLayers(const QVector<MarkerManager::MarkerLayer>& laye
       else
       {
         auto* zone = new QwtPlotZoneItem;
-        QColor brush_color = overlay_color;
-        brush_color.setAlpha(is_selected ? 92 : 48);
+        QColor brush_color = is_selected ? selected_outline : overlay_color;
+        brush_color.setAlpha(is_selected ? 110 : 48);
         zone->setBrush(QBrush(brush_color));
         zone->setPen(
-            QPen(overlay_color, is_selected ? 2.0 : 1.0, is_selected ? Qt::SolidLine : Qt::DashLine));
+            QPen(display_color, is_selected ? 2.5 : 1.0, is_selected ? Qt::SolidLine : Qt::DashLine));
         zone->setOrientation(Qt::Vertical);
-        zone->setInterval(item.start_time, item.end_time);
+        zone->setInterval(display_item.start_time, display_item.end_time);
         zone->attach(qwtPlot());
         _region_overlays.push_back(zone);
 
         if (is_selected && _selected_marker_handles_visible)
         {
-          const double center_x = 0.5 * (item.start_time + item.end_time);
+          const double center_x = 0.5 * (display_item.start_time + display_item.end_time);
           struct HandleSpec
           {
             double x;
@@ -1473,9 +1494,9 @@ void PlotWidget::setMarkerLayers(const QVector<MarkerManager::MarkerLayer>& laye
             QwtSymbol::Style style;
           };
           const std::array<HandleSpec, 3> handles = { {
-              { item.start_time, false, QwtSymbol::Rect },
+              { display_item.start_time, false, QwtSymbol::Rect },
               { center_x, true, QwtSymbol::Diamond },
-              { item.end_time, false, QwtSymbol::Rect },
+              { display_item.end_time, false, QwtSymbol::Rect },
           } };
 
           for (const auto& handle_spec : handles)
@@ -1488,7 +1509,7 @@ void PlotWidget::setMarkerLayers(const QVector<MarkerManager::MarkerLayer>& laye
               handle->setSymbol(
                   createMarkerHandleSymbol(Qt::NoArrow, true, handle_fill, handle_outline));
             }
-            else if (handle_spec.x == item.start_time)
+            else if (handle_spec.x == display_item.start_time)
             {
               handle->setSymbol(
                   createMarkerHandleSymbol(Qt::LeftArrow, false, Qt::white, handle_outline));
@@ -1503,13 +1524,13 @@ void PlotWidget::setMarkerLayers(const QVector<MarkerManager::MarkerLayer>& laye
           }
         }
 
-        if (!item.label.isEmpty())
+        if (!display_item.label.isEmpty())
         {
           auto* marker = new QwtPlotMarker;
           marker->setLineStyle(QwtPlotMarker::NoLine);
-          marker->setXValue((item.start_time + item.end_time) * 0.5);
+          marker->setXValue((display_item.start_time + display_item.end_time) * 0.5);
           marker->setYValue(qwtPlot()->axisScaleDiv(QwtPlot::yLeft).upperBound());
-          marker->setLabel(QwtText(item.label));
+          marker->setLabel(QwtText(display_item.label));
           marker->setLabelAlignment(Qt::AlignTop | Qt::AlignHCenter);
           marker->attach(qwtPlot());
           _marker_overlays.push_back(marker);
@@ -2107,7 +2128,9 @@ bool PlotWidget::canvasEventFilter(QEvent* event)
           std::swap(item.start_time, item.end_time);
         }
         _selected_marker = item;
+        _selected_marker_preview_source = _marker_drag.original_item;
         setMarkerLayers(_marker_layers);
+        emit selectedMarkerPreviewChanged(_marker_drag.original_item, _selected_marker.value());
         return true;
       }
 
@@ -2159,6 +2182,7 @@ bool PlotWidget::canvasEventFilter(QEvent* event)
           emit selectedMarkerEdited(_selected_marker.value());
         }
         _marker_drag.mode = MarkerDragState::None;
+        _selected_marker_preview_source.reset();
         if (_marker_hover == MarkerDragState::Move)
         {
           qwtPlot()->canvas()->setCursor(Qt::OpenHandCursor);
