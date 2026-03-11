@@ -38,9 +38,12 @@
 #include <QHeaderView>
 #include <QStandardPaths>
 #include <QXmlStreamReader>
+#include <QDockWidget>
 
 #include "mainwindow.h"
 #include "curvelist_panel.h"
+#include "markers/marker_manager.h"
+#include "markers/markers_panel.h"
 #include "tabbedplotwidget.h"
 #include "PlotJuggler/plotdata.h"
 #include "transforms/function_editor.h"
@@ -111,8 +114,15 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   }
 
   _curvelist_widget = new CurveListPanel(_mapped_plot_data, _transform_functions, this);
+  _marker_manager = new MarkerManager(this);
+  _markers_panel = new MarkersPanel(_marker_manager, this);
 
   ui->setupUi(this);
+
+  _markers_dock = new QDockWidget(tr("Markers"), this);
+  _markers_dock->setObjectName("MarkersDock");
+  _markers_dock->setWidget(_markers_panel);
+  addDockWidget(Qt::RightDockWidgetArea, _markers_dock);
 
   // setupUi() sets the windowTitle so the skin-based setting must be done after
   _skin_path = "://resources/skin";
@@ -208,6 +218,18 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
 
   connect(this, &MainWindow::stylesheetChanged, _main_tabbed_widget,
           &TabbedPlotWidget::on_stylesheetChanged);
+
+  connect(_marker_manager, &MarkerManager::layersChanged, this, [this]() {
+    refreshMarkerOverlays();
+  });
+  connect(_marker_manager, &MarkerManager::itemsChanged, this, [this]() {
+    refreshMarkerOverlays();
+  });
+  connect(_markers_panel, &MarkersPanel::selectedMarkerChanged, this, [this](bool) {
+    refreshSelectedMarkerOverlay();
+  });
+  connect(_markers_panel, &MarkersPanel::jumpToSelectedMarkerRequested, this,
+          [this]() { jumpToSelectedMarker(); });
 
   ui->tabsFrame->layout()->addWidget(_main_tabbed_widget);
   ui->leftLayout->addWidget(_curvelist_widget, 1);
@@ -479,6 +501,12 @@ void MainWindow::onTimeSlider_valueChanged(double abs_time)
 
 void MainWindow::onTrackerTimeUpdated(double absolute_time, bool do_replot)
 {
+  _tracker_time = absolute_time;
+  if (_markers_panel)
+  {
+    _markers_panel->setCurrentTime(absolute_time);
+  }
+
   _tracker_delay.triggerSignal(100);
 
   for (auto& it : _plugin_manager.statePublishers())
@@ -813,9 +841,28 @@ void MainWindow::resizeEvent(QResizeEvent*)
 
 void MainWindow::onPlotAdded(PlotWidget* plot)
 {
+  if (_marker_manager)
+  {
+    plot->setMarkerLayers(_marker_manager->layers());
+    plot->setSelectedMarkerEditable(_markers_panel && _markers_panel->isActiveLayerEditable());
+    plot->setSelectedMarkerHandlesVisible(false);
+    if (_markers_panel && _markers_panel->hasSelectedMarker())
+    {
+      plot->setSelectedMarker(_markers_panel->selectedMarker());
+    }
+  }
+
+  updateMarkerViewRange();
+
   connect(plot, &PlotWidget::undoableChange, this, &MainWindow::onUndoableChange);
 
   connect(plot, &PlotWidget::trackerMoved, this, &MainWindow::onTrackerMovedFromWidget);
+  connect(plot, &PlotWidget::selectedMarkerEdited, this, [this](const MarkerManager::MarkerItem& item) {
+    if (_markers_panel)
+    {
+      _markers_panel->updateSelectedMarker(item);
+    }
+  });
 
   connect(this, &MainWindow::dataSourceRemoved, plot, &PlotWidget::onDataSourceRemoved);
 
@@ -881,6 +928,11 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
 
 void MainWindow::onPlotZoomChanged(PlotWidget* modified_plot, QRectF new_range)
 {
+  if (_markers_panel)
+  {
+    _markers_panel->setCurrentViewRange(new_range.left(), new_range.right());
+  }
+
   if (ui->buttonLink->isChecked())
   {
     auto visitor = [=](PlotWidget* plot) {
@@ -896,6 +948,11 @@ void MainWindow::onPlotZoomChanged(PlotWidget* modified_plot, QRectF new_range)
       }
     };
     this->forEachWidget(visitor);
+  }
+
+  if (_markers_panel && _markers_panel->hasSelectedMarker())
+  {
+    QTimer::singleShot(0, this, [this]() { refreshSelectedMarkerOverlay(); });
   }
 
   onUndoableChange();
@@ -2373,6 +2430,128 @@ void MainWindow::alignAxesAcrossDockers(const QString& reason, bool replot_after
 void MainWindow::replotAllPlots(const QString& reason)
 {
   alignAxesAcrossDockers(reason, true);
+}
+
+void MainWindow::refreshMarkerOverlays()
+{
+  if (!_marker_manager)
+  {
+    return;
+  }
+
+  PlotWidget* handle_plot = nullptr;
+  forEachWidget([&](PlotWidget* plot) {
+    if (!plot->isXYPlot() && !plot->isEmpty())
+    {
+      handle_plot = plot;
+    }
+  });
+
+  const auto& layers = _marker_manager->layers();
+  forEachWidget([&](PlotWidget* plot) {
+    plot->setSelectedMarkerEditable(_markers_panel && _markers_panel->isActiveLayerEditable());
+    plot->setSelectedMarkerHandlesVisible(plot == handle_plot);
+    plot->setSelectedMarker((_markers_panel && _markers_panel->hasSelectedMarker())
+                                ? std::optional<MarkerManager::MarkerItem>(_markers_panel->selectedMarker())
+                                : std::nullopt);
+    plot->setMarkerLayers(layers);
+  });
+}
+
+void MainWindow::refreshSelectedMarkerOverlay()
+{
+  if (!_marker_manager)
+  {
+    return;
+  }
+
+  PlotWidget* handle_plot = nullptr;
+  forEachWidget([&](PlotWidget* plot) {
+    if (!plot->isXYPlot() && !plot->isEmpty())
+    {
+      handle_plot = plot;
+    }
+  });
+
+  const auto selected =
+      (_markers_panel && _markers_panel->hasSelectedMarker())
+          ? std::optional<MarkerManager::MarkerItem>(_markers_panel->selectedMarker())
+          : std::nullopt;
+  const auto& layers = _marker_manager->layers();
+
+  forEachWidget([&](PlotWidget* plot) {
+    plot->setSelectedMarkerEditable(_markers_panel && _markers_panel->isActiveLayerEditable());
+    plot->setSelectedMarkerHandlesVisible(plot == handle_plot);
+    plot->setSelectedMarker(selected);
+    plot->setMarkerLayers(layers);
+  });
+}
+
+void MainWindow::jumpToSelectedMarker()
+{
+  if (!_markers_panel || !_markers_panel->hasSelectedMarker())
+  {
+    return;
+  }
+
+  const auto marker = _markers_panel->selectedMarker();
+  const bool is_region = (marker.type == MarkerManager::MarkerType::Region);
+
+  forEachWidget([&](PlotWidget* plot) {
+    if (plot->isXYPlot())
+    {
+      return;
+    }
+
+    QRectF rect = plot->currentBoundingRect();
+    const double width = std::abs(rect.width());
+    const double center = is_region ? (marker.start_time + marker.end_time) * 0.5 : marker.start_time;
+    double half_width = width * 0.5;
+
+    if (is_region)
+    {
+      const double region_width = std::abs(marker.end_time - marker.start_time);
+      half_width = std::max(half_width, std::max(region_width * 0.75, 0.5));
+    }
+    else
+    {
+      half_width = std::max(half_width, 0.5);
+    }
+
+    rect.setLeft(center - half_width);
+    rect.setRight(center + half_width);
+    plot->setZoomRectangle(rect, false);
+  });
+
+  replotAllPlots("jumpToSelectedMarker");
+  updateMarkerViewRange();
+}
+
+void MainWindow::updateMarkerViewRange()
+{
+  if (!_markers_panel)
+  {
+    return;
+  }
+
+  std::optional<std::pair<double, double>> range;
+  forEachWidget([&](PlotWidget* plot) {
+    if (range.has_value() || plot->isXYPlot() || plot->isEmpty())
+    {
+      return;
+    }
+
+    const QRectF rect = plot->currentBoundingRect();
+    range = std::make_pair(std::min(rect.left(), rect.right()), std::max(rect.left(), rect.right()));
+  });
+
+  if (!range.has_value())
+  {
+    const auto full_range = calculateVisibleRangeX();
+    range = std::make_pair(std::get<0>(full_range), std::get<1>(full_range));
+  }
+
+  _markers_panel->setCurrentViewRange(range->first, range->second);
 }
 
 void MainWindow::updateTimeSlider()

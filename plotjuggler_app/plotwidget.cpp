@@ -8,6 +8,8 @@
 #include <QActionGroup>
 #include <QApplication>
 #include <QDebug>
+#include <QLineF>
+#include <QPixmap>
 #include <QDrag>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
@@ -23,6 +25,9 @@
 #include <QSvgGenerator>
 #include <QClipboard>
 #include <iostream>
+#include <array>
+#include <algorithm>
+#include <cmath>
 #include <limits>
 #include <set>
 #include <memory>
@@ -35,6 +40,7 @@
 #include "qwt_plot_layout.h"
 #include "qwt_scale_draw.h"
 #include "qwt_text.h"
+#include "qwt_plot_zoneitem.h"
 #include "plotwidget.h"
 #include "qwt_plot_renderer.h"
 #include "qwt_series_data.h"
@@ -71,6 +77,55 @@ class TimeScaleDraw : public QwtScaleDraw
 const double MAX_DOUBLE = std::numeric_limits<double>::max() / 2;
 
 static bool if_xy_plot_failed_show_dialog = true;
+
+namespace
+{
+QwtSymbol* createMarkerHandleSymbol(Qt::ArrowType arrow, bool filled_center, const QColor& fill,
+                                    const QColor& outline)
+{
+  constexpr int w = 18;
+  constexpr int h = 18;
+  QPixmap pixmap(w, h);
+  pixmap.fill(Qt::transparent);
+
+  QPainter painter(&pixmap);
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  painter.setPen(QPen(outline, 2.0));
+  painter.setBrush(fill);
+
+  if (arrow == Qt::NoArrow)
+  {
+    QPolygon diamond;
+    diamond << QPoint(w / 2, 1) << QPoint(w - 2, h / 2) << QPoint(w / 2, h - 2) << QPoint(1, h / 2);
+    painter.drawPolygon(diamond);
+    if (filled_center)
+    {
+      painter.setBrush(outline);
+      painter.drawEllipse(QPoint(w / 2, h / 2), 2, 2);
+    }
+  }
+  else
+  {
+    QRect body_rect(5, 4, 8, h - 8);
+    painter.drawRoundedRect(body_rect, 2, 2);
+
+    QPolygon arrow_head;
+    if (arrow == Qt::LeftArrow)
+    {
+      arrow_head << QPoint(2, h / 2) << QPoint(8, 3) << QPoint(8, h - 3);
+    }
+    else
+    {
+      arrow_head << QPoint(w - 2, h / 2) << QPoint(w - 8, 3) << QPoint(w - 8, h - 3);
+    }
+    painter.drawPolygon(arrow_head);
+  }
+
+  auto* symbol = new QwtSymbol(QwtSymbol::Pixmap);
+  symbol->setPixmap(pixmap);
+  return symbol;
+}
+}  // namespace
 
 PlotWidget::PlotWidget(PlotDataMapRef& datamap, QWidget* parent)
   : PlotWidgetBase(parent)
@@ -127,6 +182,7 @@ PlotWidget::PlotWidget(PlotDataMapRef& datamap, QWidget* parent)
 
 PlotWidget::~PlotWidget()
 {
+  clearMarkerOverlays();
   delete _action_split_horizontal;
   delete _action_split_vertical;
   delete _action_removeAllCurves;
@@ -1230,6 +1286,241 @@ void PlotWidget::changeDots(bool force_dots)
   updateCurvesStyle();
 }
 
+void PlotWidget::clearMarkerOverlays()
+{
+  for (auto* marker : _marker_overlays)
+  {
+    marker->detach();
+    delete marker;
+  }
+  _marker_overlays.clear();
+
+  for (auto* zone : _region_overlays)
+  {
+    zone->detach();
+    delete zone;
+  }
+  _region_overlays.clear();
+}
+
+bool PlotWidget::isSelectedMarker(const MarkerManager::MarkerItem& item) const
+{
+  if (!_selected_marker.has_value())
+  {
+    return false;
+  }
+
+  const auto& selected = _selected_marker.value();
+  return selected.type == item.type && selected.start_time == item.start_time &&
+         selected.end_time == item.end_time && selected.label == item.label &&
+         selected.tags == item.tags && selected.notes == item.notes;
+}
+
+void PlotWidget::setSelectedMarker(const std::optional<MarkerManager::MarkerItem>& item)
+{
+  _selected_marker = item;
+}
+
+void PlotWidget::setSelectedMarkerEditable(bool editable)
+{
+  _selected_marker_editable = editable;
+}
+
+void PlotWidget::setSelectedMarkerHandlesVisible(bool visible)
+{
+  _selected_marker_handles_visible = visible;
+}
+
+double PlotWidget::markerHandleYValue(bool center_handle) const
+{
+  const QRect canvas_rect = qwtPlot()->canvas()->contentsRect();
+  const int canvas_y = center_handle ? canvas_rect.center().y() : (canvas_rect.top() + 14);
+  return qwtPlot()->invTransform(QwtPlot::yLeft, canvas_y);
+}
+
+double PlotWidget::markerHandleXValue(double time_value) const
+{
+  const QRect canvas_rect = qwtPlot()->canvas()->contentsRect();
+  const int canvas_x = std::clamp<int>(std::lround(qwtPlot()->transform(QwtPlot::xBottom, time_value)),
+                                       canvas_rect.left() + 10, canvas_rect.right() - 10);
+  return qwtPlot()->invTransform(QwtPlot::xBottom, canvas_x);
+}
+
+PlotWidget::MarkerDragState::Mode PlotWidget::hitTestSelectedMarkerHandle(const QPoint& pos) const
+{
+  if (!_selected_marker.has_value() || !_selected_marker_editable || !_selected_marker_handles_visible ||
+      isXYPlot())
+  {
+    return MarkerDragState::None;
+  }
+
+  const auto& item = _selected_marker.value();
+  const QPointF left_handle(qwtPlot()->transform(QwtPlot::xBottom, markerHandleXValue(item.start_time)),
+                            qwtPlot()->transform(QwtPlot::yLeft, markerHandleYValue(false)));
+  const QPointF right_handle(qwtPlot()->transform(QwtPlot::xBottom, markerHandleXValue(item.end_time)),
+                             qwtPlot()->transform(QwtPlot::yLeft, markerHandleYValue(false)));
+  const QPointF center_handle(qwtPlot()->transform(
+                                  QwtPlot::xBottom,
+                                  markerHandleXValue(0.5 * (item.start_time + item.end_time))),
+                              qwtPlot()->transform(QwtPlot::yLeft, markerHandleYValue(true)));
+  const QPointF cursor = pos;
+  constexpr double tolerance = 12.0;
+
+  auto close_enough = [&](const QPointF& handle_pos) {
+    return QLineF(cursor, handle_pos).length() <= tolerance;
+  };
+
+  if (close_enough(left_handle))
+  {
+    return MarkerDragState::ResizeStart;
+  }
+  if (close_enough(right_handle))
+  {
+    return MarkerDragState::ResizeEnd;
+  }
+  if (close_enough(center_handle))
+  {
+    return MarkerDragState::Move;
+  }
+
+  const double x = qwtPlot()->transform(QwtPlot::xBottom, item.start_time);
+  const double right = qwtPlot()->transform(QwtPlot::xBottom, item.end_time);
+  const double min_x = std::min(x, right);
+  const double max_x = std::max(x, right);
+  if (pos.x() >= min_x && pos.x() <= max_x)
+  {
+    return MarkerDragState::Move;
+  }
+
+  return MarkerDragState::None;
+}
+
+void PlotWidget::setMarkerLayers(const QVector<MarkerManager::MarkerLayer>& layers)
+{
+  _marker_layers = layers;
+  clearMarkerOverlays();
+
+  if (isXYPlot())
+  {
+    return;
+  }
+
+  for (const auto& layer : layers)
+  {
+    if (!layer.visible)
+    {
+      continue;
+    }
+
+    for (const auto& item : layer.items)
+    {
+      if (!item.enabled)
+      {
+        continue;
+      }
+
+      const QColor overlay_color = item.color.isValid() ? item.color : layer.color;
+      const bool is_selected = isSelectedMarker(item);
+      const QColor handle_fill = QColor("#10b3a3");
+      const QColor handle_outline = QColor("#0f1720");
+
+      if (item.type == MarkerManager::MarkerType::Point)
+      {
+        auto* marker = new QwtPlotMarker;
+        marker->setLineStyle(QwtPlotMarker::VLine);
+        marker->setLinePen(
+            QPen(overlay_color, is_selected ? 2.0 : 1.0, is_selected ? Qt::SolidLine : Qt::DashLine));
+        marker->setXValue(item.start_time);
+        if (!item.label.isEmpty())
+        {
+          marker->setLabel(QwtText(item.label));
+          marker->setLabelAlignment(Qt::AlignTop | Qt::AlignRight);
+        }
+        marker->attach(qwtPlot());
+        _marker_overlays.push_back(marker);
+
+        if (is_selected && _selected_marker_handles_visible)
+        {
+          auto* handle = new QwtPlotMarker;
+          handle->setLineStyle(QwtPlotMarker::NoLine);
+          handle->setValue(markerHandleXValue(item.start_time), markerHandleYValue(false));
+          handle->setSymbol(
+              createMarkerHandleSymbol(Qt::NoArrow, true, handle_fill, handle_outline));
+          handle->attach(qwtPlot());
+          _marker_overlays.push_back(handle);
+        }
+      }
+      else
+      {
+        auto* zone = new QwtPlotZoneItem;
+        QColor brush_color = overlay_color;
+        brush_color.setAlpha(is_selected ? 92 : 48);
+        zone->setBrush(QBrush(brush_color));
+        zone->setPen(
+            QPen(overlay_color, is_selected ? 2.0 : 1.0, is_selected ? Qt::SolidLine : Qt::DashLine));
+        zone->setOrientation(Qt::Vertical);
+        zone->setInterval(item.start_time, item.end_time);
+        zone->attach(qwtPlot());
+        _region_overlays.push_back(zone);
+
+        if (is_selected && _selected_marker_handles_visible)
+        {
+          const double center_x = 0.5 * (item.start_time + item.end_time);
+          struct HandleSpec
+          {
+            double x;
+            bool center;
+            QwtSymbol::Style style;
+          };
+          const std::array<HandleSpec, 3> handles = { {
+              { item.start_time, false, QwtSymbol::Rect },
+              { center_x, true, QwtSymbol::Diamond },
+              { item.end_time, false, QwtSymbol::Rect },
+          } };
+
+          for (const auto& handle_spec : handles)
+          {
+            auto* handle = new QwtPlotMarker;
+            handle->setLineStyle(QwtPlotMarker::NoLine);
+            handle->setValue(markerHandleXValue(handle_spec.x), markerHandleYValue(handle_spec.center));
+            if (handle_spec.center)
+            {
+              handle->setSymbol(
+                  createMarkerHandleSymbol(Qt::NoArrow, true, handle_fill, handle_outline));
+            }
+            else if (handle_spec.x == item.start_time)
+            {
+              handle->setSymbol(
+                  createMarkerHandleSymbol(Qt::LeftArrow, false, Qt::white, handle_outline));
+            }
+            else
+            {
+              handle->setSymbol(
+                  createMarkerHandleSymbol(Qt::RightArrow, false, Qt::white, handle_outline));
+            }
+            handle->attach(qwtPlot());
+            _marker_overlays.push_back(handle);
+          }
+        }
+
+        if (!item.label.isEmpty())
+        {
+          auto* marker = new QwtPlotMarker;
+          marker->setLineStyle(QwtPlotMarker::NoLine);
+          marker->setXValue((item.start_time + item.end_time) * 0.5);
+          marker->setYValue(qwtPlot()->axisScaleDiv(QwtPlot::yLeft).upperBound());
+          marker->setLabel(QwtText(item.label));
+          marker->setLabelAlignment(Qt::AlignTop | Qt::AlignHCenter);
+          marker->attach(qwtPlot());
+          _marker_overlays.push_back(marker);
+        }
+      }
+    }
+  }
+
+  qwtPlot()->replot();
+}
+
 void PlotWidget::on_changeCurveColor(const QString& curve_name, QColor new_color)
 {
   for (auto& it : curveList())
@@ -1737,6 +2028,16 @@ bool PlotWidget::canvasEventFilter(QEvent* event)
       if (mouse_event->button() == Qt::LeftButton)
       {
         const QPoint press_point = mouse_event->pos();
+        const auto marker_mode = hitTestSelectedMarkerHandle(press_point);
+        if (marker_mode != MarkerDragState::None)
+        {
+          _marker_drag.mode = marker_mode;
+          _marker_drag.original_item = _selected_marker.value();
+          _marker_drag.press_time = qwtPlot()->invTransform(QwtPlot::xBottom, press_point.x());
+          qwtPlot()->canvas()->setCursor(
+              marker_mode == MarkerDragState::Move ? Qt::ClosedHandCursor : Qt::SizeHorCursor);
+          return true;
+        }
         if (mouse_event->modifiers() == Qt::ShiftModifier)  // time tracker
         {
           QPointF pointF(qwtPlot()->invTransform(QwtPlot::xBottom, press_point.x()),
@@ -1768,7 +2069,67 @@ bool PlotWidget::canvasEventFilter(QEvent* event)
         return true;  // don't pass to canvas().
       }
 
+      if (_marker_drag.mode != MarkerDragState::None && _selected_marker.has_value())
+      {
+        QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
+        const double current_time =
+            qwtPlot()->invTransform(QwtPlot::xBottom, mouse_event->pos().x());
+        auto item = _marker_drag.original_item;
+
+        switch (_marker_drag.mode)
+        {
+          case MarkerDragState::ResizeStart:
+            item.start_time = current_time;
+            if (item.type == MarkerManager::MarkerType::Point)
+            {
+              item.end_time = current_time;
+            }
+            break;
+          case MarkerDragState::ResizeEnd:
+            item.end_time = current_time;
+            if (item.type == MarkerManager::MarkerType::Point)
+            {
+              item.start_time = current_time;
+            }
+            break;
+          case MarkerDragState::Move: {
+            const double delta = current_time - _marker_drag.press_time;
+            item.start_time += delta;
+            item.end_time += delta;
+            break;
+          }
+          case MarkerDragState::None:
+            break;
+        }
+
+        if (item.start_time > item.end_time)
+        {
+          std::swap(item.start_time, item.end_time);
+        }
+        _selected_marker = item;
+        setMarkerLayers(_marker_layers);
+        return true;
+      }
+
       QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
+      const auto hover_mode = hitTestSelectedMarkerHandle(mouse_event->pos());
+      if (hover_mode != _marker_hover)
+      {
+        _marker_hover = hover_mode;
+        switch (_marker_hover)
+        {
+          case MarkerDragState::ResizeStart:
+          case MarkerDragState::ResizeEnd:
+            qwtPlot()->canvas()->setCursor(Qt::SizeHorCursor);
+            break;
+          case MarkerDragState::Move:
+            qwtPlot()->canvas()->setCursor(Qt::OpenHandCursor);
+            break;
+          case MarkerDragState::None:
+            qwtPlot()->canvas()->unsetCursor();
+            break;
+        }
+      }
       const QPoint point = mouse_event->pos();
       QPointF pointF(qwtPlot()->invTransform(QwtPlot::xBottom, point.x()),
                      qwtPlot()->invTransform(QwtPlot::yLeft, point.y()));
@@ -1785,9 +2146,25 @@ bool PlotWidget::canvasEventFilter(QEvent* event)
     case QEvent::Leave: {
       _dragging.mode = DragInfo::NONE;
       _dragging.curves.clear();
+      _marker_drag.mode = MarkerDragState::None;
+      _marker_hover = MarkerDragState::None;
+      qwtPlot()->canvas()->unsetCursor();
     }
     break;
     case QEvent::MouseButtonRelease: {
+      if (_marker_drag.mode != MarkerDragState::None)
+      {
+        if (_selected_marker.has_value())
+        {
+          emit selectedMarkerEdited(_selected_marker.value());
+        }
+        _marker_drag.mode = MarkerDragState::None;
+        if (_marker_hover == MarkerDragState::Move)
+        {
+          qwtPlot()->canvas()->setCursor(Qt::OpenHandCursor);
+        }
+        return true;
+      }
       if (_dragging.mode == DragInfo::NONE)
       {
         return false;

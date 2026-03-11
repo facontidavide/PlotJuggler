@@ -37,6 +37,9 @@
 #include "ui_mainwindow.h"
 
 class QVBoxLayout;
+class QDockWidget;
+class MarkerManager;
+class MarkersPanel;
 
 class MainWindow : public QMainWindow
 {
@@ -126,6 +129,9 @@ private:
   bool _minimized;
 
   CurveListPanel* _curvelist_widget;
+  MarkerManager* _marker_manager = nullptr;
+  MarkersPanel* _markers_panel = nullptr;
+  QDockWidget* _markers_dock = nullptr;
 
   PlotDataMapRef _mapped_plot_data;
 
@@ -238,6 +244,10 @@ private:
   void updateRecentLayoutMenu(QStringList new_filenames);
   void alignAxesAcrossDockers(const QString& reason, bool replot_after_alignment);
   void replotAllPlots(const QString& reason);
+  void refreshMarkerOverlays();
+  void refreshSelectedMarkerOverlay();
+  void jumpToSelectedMarker();
+  void updateMarkerViewRange();
 
   void updatedDisplayTime();
 

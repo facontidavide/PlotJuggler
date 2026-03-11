@@ -28,6 +28,8 @@
 #include "PlotJuggler/save_plot.h"
 #include "curve_tracker.h"
 #include "colormap_editor.h"
+#include "markers/marker_manager.h"
+#include <optional>
 
 #include "transforms/transform_selector.h"
 #include "transforms/custom_function.h"
@@ -35,6 +37,7 @@
 #include "plot_background.h"
 
 class StatisticsDialog;
+class QwtPlotZoneItem;
 
 class PlotWidget : public PlotWidgetBase
 {
@@ -85,6 +88,11 @@ public:
 
   void changeDots(bool force_dots);
 
+  void setMarkerLayers(const QVector<MarkerManager::MarkerLayer>& layers);
+  void setSelectedMarker(const std::optional<MarkerManager::MarkerItem>& item);
+  void setSelectedMarkerEditable(bool editable);
+  void setSelectedMarkerHandlesVisible(bool visible);
+
 protected:
   PlotDataMapRef& _mapped_data;
 
@@ -100,6 +108,7 @@ signals:
   void rectChanged(PlotWidget* self, QRectF rect);
   void undoableChange();
   void trackerMoved(QPointF pos);
+  void selectedMarkerEdited(const MarkerManager::MarkerItem& item);
   void curveListChanged();
   void curvesDropped();
   void splitHorizontal();
@@ -199,6 +208,12 @@ private:
   bool _show_point_enabled = false;
   QwtPlotMarker* _show_point_marker;
   QwtPlotMarker* _show_point_text;
+  std::vector<QwtPlotMarker*> _marker_overlays;
+  std::vector<QwtPlotZoneItem*> _region_overlays;
+  QVector<MarkerManager::MarkerLayer> _marker_layers;
+  std::optional<MarkerManager::MarkerItem> _selected_marker;
+  bool _selected_marker_editable = false;
+  bool _selected_marker_handles_visible = false;
 
   QString _statistics_window_title = "";
 
@@ -221,6 +236,21 @@ private:
   };
 
   DragInfo _dragging;
+
+  struct MarkerDragState
+  {
+    enum Mode
+    {
+      None,
+      ResizeStart,
+      Move,
+      ResizeEnd
+    } mode = None;
+
+    MarkerManager::MarkerItem original_item;
+    double press_time = 0.0;
+  } _marker_drag;
+  MarkerDragState::Mode _marker_hover = MarkerDragState::None;
 
   void buildActions();
 
@@ -249,6 +279,12 @@ private:
   void rescaleEqualAxisScaling();
 
   void setAxisScale(QwtAxisId axisId, double min, double max);
+
+  void clearMarkerOverlays();
+  bool isSelectedMarker(const MarkerManager::MarkerItem& item) const;
+  MarkerDragState::Mode hitTestSelectedMarkerHandle(const QPoint& pos) const;
+  double markerHandleYValue(bool center_handle) const;
+  double markerHandleXValue(double time_value) const;
 };
 
 #endif
