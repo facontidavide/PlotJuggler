@@ -32,7 +32,10 @@ public:
   {
     QString name;
     QString file_path;
-    QString time_domain = "plot_time";
+    QString axis_id;
+    QString axis_kind = "unknown";
+    QString axis_label;
+    bool axis_explicit = false;
     bool visible = true;
     bool editable = true;
     bool dirty = false;
@@ -58,6 +61,7 @@ public:
   void setLayerVisible(int index, bool visible);
   void setLayerEditable(int index, bool editable);
   void setLayerName(int index, const QString& name);
+  void setLayerAxisId(int index, const QString& axis_id, bool explicit_axis = true);
 
   bool addItemToActiveLayer(const MarkerItem& item);
   void updateActiveLayerItem(int row, const MarkerItem& item);

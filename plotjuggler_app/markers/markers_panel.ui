@@ -15,11 +15,11 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="groupLayers">
+    <widget class="QGroupBox" name="groupMarkup">
      <property name="title">
-      <string>Layers</string>
+      <string>Markup</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayoutLayers">
+     <layout class="QVBoxLayout" name="verticalLayoutMarkup">
       <item>
        <layout class="QHBoxLayout" name="horizontalLayoutLayerButtons">
         <item>
@@ -78,55 +78,18 @@
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayoutActiveLayer">
-        <item>
-         <widget class="QLabel" name="labelActiveLayer">
-          <property name="text">
-           <string>Active layer:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="lineEditLayerName">
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="checkBoxLayerEditable">
-          <property name="text">
-           <string>Editable</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
+       <widget class="QCheckBox" name="checkBoxAutoloadCompanionMarkup">
+        <property name="text">
+         <string>Autoload companion markup files</string>
+        </property>
+       </widget>
       </item>
-      <item>
-       <widget class="QListWidget" name="listWidgetLayers"/>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="groupItems">
-     <property name="title">
-      <string>Items</string>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayoutItems">
       <item>
        <layout class="QHBoxLayout" name="horizontalLayoutItemButtons">
         <item>
-         <widget class="QPushButton" name="buttonMarkNow">
-          <property name="text">
-           <string>Mark Now</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QPushButton" name="buttonMarkRange">
           <property name="text">
-           <string>Mark Range</string>
+           <string>Add Range</string>
           </property>
          </widget>
         </item>
@@ -147,7 +110,53 @@
        </layout>
       </item>
       <item>
-       <widget class="QTableWidget" name="tableWidgetItems"/>
+       <widget class="QTreeWidget" name="treeWidgetMarkup">
+        <column>
+         <property name="text">
+          <string>On</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Markup</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Type</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Start</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>End</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Label</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Tags</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Notes</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>State</string>
+         </property>
+        </column>
+       </widget>
       </item>
      </layout>
     </widget>

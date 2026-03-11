@@ -37,7 +37,6 @@
 #include "ui_mainwindow.h"
 
 class QVBoxLayout;
-class QDockWidget;
 class MarkerManager;
 class MarkersPanel;
 
@@ -131,7 +130,6 @@ private:
   CurveListPanel* _curvelist_widget;
   MarkerManager* _marker_manager = nullptr;
   MarkersPanel* _markers_panel = nullptr;
-  QDockWidget* _markers_dock = nullptr;
 
   PlotDataMapRef _mapped_plot_data;
 
@@ -248,6 +246,10 @@ private:
   void refreshSelectedMarkerOverlay();
   void jumpToSelectedMarker();
   void updateMarkerViewRange();
+  QStringList currentSessionDataFiles() const;
+  QString currentSessionAxisId() const;
+  void refreshMarkerSessionContext();
+  void autoloadCompanionMarkupFiles();
 
   void updatedDisplayTime();
 
@@ -316,6 +318,8 @@ private slots:
   void on_buttonHideFileFrame_clicked();
   void on_buttonHideStreamingFrame_clicked();
   void on_buttonHidePublishersFrame_clicked();
+  void on_buttonHideTimeseriesFrame_clicked();
+  void on_buttonHideMarkersFrame_clicked();
 
   void on_buttonRecentData_clicked();
   void on_buttonRecentLayout_clicked();

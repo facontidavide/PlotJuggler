@@ -5,11 +5,21 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QTextStream>
+#include <array>
 #include <algorithm>
 
 namespace
 {
 using json = nlohmann::json;
+
+QColor defaultLayerColor(int index)
+{
+  static const std::array<QColor, 6> palette = {
+    QColor("#0ea5a4"), QColor("#f59e0b"), QColor("#ef4444"),
+    QColor("#3b82f6"), QColor("#8b5cf6"), QColor("#84cc16")
+  };
+  return palette[static_cast<size_t>(index) % palette.size()];
+}
 
 QString markerTypeToString(MarkerManager::MarkerType type)
 {
@@ -20,6 +30,23 @@ MarkerManager::MarkerType markerTypeFromString(const QString& type)
 {
   return (type.compare("region", Qt::CaseInsensitive) == 0) ? MarkerManager::MarkerType::Region :
                                                                MarkerManager::MarkerType::Point;
+}
+
+QString axisKindFromId(const QString& axis_id)
+{
+  if (axis_id == "row_number")
+  {
+    return "row_number";
+  }
+  if (axis_id == "sample_number")
+  {
+    return "sample_number";
+  }
+  if (axis_id.isEmpty())
+  {
+    return "unknown";
+  }
+  return "column";
 }
 
 json colorToJson(const QColor& color)
@@ -74,6 +101,7 @@ int MarkerManager::createLayer(const QString& name)
 {
   MarkerLayer layer;
   layer.name = name;
+  layer.color = defaultLayerColor(_layers.size());
   _layers.push_back(layer);
   _active_layer_index = _layers.size() - 1;
   emit layersChanged();
@@ -222,6 +250,23 @@ void MarkerManager::setLayerName(int index, const QString& name)
   markLayerDirty(index);
 }
 
+void MarkerManager::setLayerAxisId(int index, const QString& axis_id, bool explicit_axis)
+{
+  if (index < 0 || index >= _layers.size())
+  {
+    return;
+  }
+  if (_layers[index].axis_id == axis_id && _layers[index].axis_explicit == explicit_axis)
+  {
+    return;
+  }
+  _layers[index].axis_id = axis_id;
+  _layers[index].axis_kind = axisKindFromId(axis_id);
+  _layers[index].axis_label = axis_id;
+  _layers[index].axis_explicit = explicit_axis;
+  markLayerDirty(index);
+}
+
 bool MarkerManager::addItemToActiveLayer(const MarkerItem& item)
 {
   auto* layer = activeLayer();
@@ -229,7 +274,12 @@ bool MarkerManager::addItemToActiveLayer(const MarkerItem& item)
   {
     return false;
   }
-  layer->items.push_back(item);
+  MarkerItem new_item = item;
+  if (!new_item.color.isValid())
+  {
+    new_item.color = layer->color;
+  }
+  layer->items.push_back(new_item);
   markLayerDirty(_active_layer_index);
   emit itemsChanged();
   return true;
@@ -277,7 +327,41 @@ bool MarkerManager::loadLayerFromFile(const QString& file_path, MarkerLayer& lay
   layer.name =
       QString::fromStdString(doc.value("name", QFileInfo(file_path).completeBaseName().toStdString()));
   layer.file_path = file_path;
-  layer.time_domain = QString::fromStdString(doc.value("time_domain", std::string("plot_time")));
+  if (doc.contains("axis") && doc["axis"].is_object())
+  {
+    const auto& axis = doc["axis"];
+    layer.axis_id = QString::fromStdString(axis.value("id", std::string()));
+    layer.axis_kind = QString::fromStdString(axis.value("kind", axisKindFromId(layer.axis_id).toStdString()));
+    layer.axis_label =
+        QString::fromStdString(axis.value("label", layer.axis_id.toStdString()));
+    layer.axis_explicit = !layer.axis_id.isEmpty();
+  }
+  else if (doc.contains("axis_id"))
+  {
+    layer.axis_id = QString::fromStdString(doc.value("axis_id", std::string()));
+    layer.axis_kind = axisKindFromId(layer.axis_id);
+    layer.axis_label = layer.axis_id;
+    layer.axis_explicit = !layer.axis_id.isEmpty();
+  }
+  else if (doc.contains("time_domain"))
+  {
+    const QString legacy_time_domain =
+        QString::fromStdString(doc.value("time_domain", std::string("plot_time")));
+    if (!legacy_time_domain.isEmpty() && legacy_time_domain != "plot_time")
+    {
+      layer.axis_id = legacy_time_domain;
+      layer.axis_kind = axisKindFromId(layer.axis_id);
+      layer.axis_label = layer.axis_id;
+      layer.axis_explicit = true;
+    }
+  }
+  else
+  {
+    layer.axis_id.clear();
+    layer.axis_kind = "unknown";
+    layer.axis_label.clear();
+    layer.axis_explicit = false;
+  }
   layer.visible = doc.value("visible", true);
   layer.editable = doc.value("editable", true);
   layer.dirty = false;
@@ -298,8 +382,8 @@ bool MarkerManager::loadLayerFromFile(const QString& file_path, MarkerLayer& lay
       item.enabled = item_json.value("enabled", true);
       item.type =
           markerTypeFromString(QString::fromStdString(item_json.value("type", std::string("point"))));
-      item.start_time = item_json.value("start_time", 0.0);
-      item.end_time = item_json.value("end_time", item.start_time);
+      item.start_time = item_json.value("start", item_json.value("start_time", 0.0));
+      item.end_time = item_json.value("end", item_json.value("end_time", item.start_time));
       item.label = QString::fromStdString(item_json.value("label", std::string()));
       item.tags = QString::fromStdString(item_json.value("tags", std::string()));
       item.notes = QString::fromStdString(item_json.value("notes", std::string()));
@@ -320,9 +404,17 @@ bool MarkerManager::loadLayerFromFile(const QString& file_path, MarkerLayer& lay
 bool MarkerManager::saveLayerToFile(const MarkerLayer& layer, const QString& file_path) const
 {
   json doc;
-  doc["version"] = 1;
+  doc["schema"] = "plotjuggler.markup";
+  doc["version"] = 2;
   doc["name"] = layer.name.toStdString();
-  doc["time_domain"] = layer.time_domain.toStdString();
+  if (!layer.axis_id.isEmpty())
+  {
+    json axis;
+    axis["id"] = layer.axis_id.toStdString();
+    axis["kind"] = layer.axis_kind.toStdString();
+    axis["label"] = (layer.axis_label.isEmpty() ? layer.axis_id : layer.axis_label).toStdString();
+    doc["axis"] = axis;
+  }
   doc["visible"] = layer.visible;
   doc["editable"] = layer.editable;
   doc["color"] = colorToJson(layer.color);
@@ -333,8 +425,8 @@ bool MarkerManager::saveLayerToFile(const MarkerLayer& layer, const QString& fil
     json item_json;
     item_json["enabled"] = item.enabled;
     item_json["type"] = markerTypeToString(item.type).toStdString();
-    item_json["start_time"] = item.start_time;
-    item_json["end_time"] = item.end_time;
+    item_json["start"] = item.start_time;
+    item_json["end"] = item.end_time;
     item_json["label"] = item.label.toStdString();
     item_json["tags"] = item.tags.toStdString();
     item_json["notes"] = item.notes.toStdString();

@@ -14,9 +14,11 @@
 #include <QCommandLineParser>
 #include <QDebug>
 #include <QDesktopServices>
+#include <QDir>
 #include <QDomDocument>
 #include <QDoubleSpinBox>
 #include <QElapsedTimer>
+#include <QFile>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMenu>
@@ -38,7 +40,6 @@
 #include <QHeaderView>
 #include <QStandardPaths>
 #include <QXmlStreamReader>
-#include <QDockWidget>
 
 #include "mainwindow.h"
 #include "curvelist_panel.h"
@@ -69,6 +70,62 @@
 #include <ament_index_cpp/get_package_prefix.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #endif
+
+namespace
+{
+QString normalizedAxisId(QString axis_id)
+{
+  axis_id = axis_id.trimmed();
+  if (axis_id.isEmpty())
+  {
+    return {};
+  }
+  if (axis_id == "__TIME_INDEX_GENERATED__")
+  {
+    return "row_number";
+  }
+  return axis_id;
+}
+
+QString axisIdFromPluginConfig(const PJ::FileLoadInfo& info)
+{
+  if (!info.plugin_config.hasChildNodes())
+  {
+    return {};
+  }
+
+  const QDomElement elem = info.plugin_config.firstChildElement().firstChildElement();
+  if (elem.isNull())
+  {
+    return {};
+  }
+  if (elem.hasAttribute("time_axis"))
+  {
+    return normalizedAxisId(elem.attribute("time_axis"));
+  }
+  if (elem.hasAttribute("radioIndexChecked") && elem.attribute("radioIndexChecked").toInt())
+  {
+    return "row_number";
+  }
+  if (elem.hasAttribute("prevTimestamp"))
+  {
+    return normalizedAxisId(elem.attribute("prevTimestamp"));
+  }
+  return {};
+}
+
+void logMarkerPreview(const QString& message)
+{
+  static const QString log_path =
+      QDir::temp().filePath(QStringLiteral("plotjuggler_marker_preview.log"));
+  QFile file(log_path);
+  if (file.open(QIODevice::Append | QIODevice::Text))
+  {
+    QTextStream stream(&file);
+    stream << message << '\n';
+  }
+}
+}
 
 MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* parent)
   : QMainWindow(parent)
@@ -118,11 +175,6 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   _markers_panel = new MarkersPanel(_marker_manager, this);
 
   ui->setupUi(this);
-
-  _markers_dock = new QDockWidget(tr("Markers"), this);
-  _markers_dock->setObjectName("MarkersDock");
-  _markers_dock->setWidget(_markers_panel);
-  addDockWidget(Qt::RightDockWidgetArea, _markers_dock);
 
   // setupUi() sets the windowTitle so the skin-based setting must be done after
   _skin_path = "://resources/skin";
@@ -230,9 +282,24 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   });
   connect(_markers_panel, &MarkersPanel::jumpToSelectedMarkerRequested, this,
           [this]() { jumpToSelectedMarker(); });
+  connect(_markers_panel, &MarkersPanel::autoloadCompanionMarkupChanged, this,
+          [this](bool enabled) {
+            QSettings settings;
+            settings.setValue("Markers.autoloadCompanionMarkup", enabled);
+            if (enabled)
+            {
+              autoloadCompanionMarkupFiles();
+            }
+          });
+
+  refreshMarkerSessionContext();
+  _markers_panel->setAutoloadCompanionMarkup(
+      settings.value("Markers.autoloadCompanionMarkup", false).toBool());
+  _markers_panel->setStreamingActive(false);
 
   ui->tabsFrame->layout()->addWidget(_main_tabbed_widget);
-  ui->leftLayout->addWidget(_curvelist_widget, 1);
+  ui->frameTimeseries->layout()->addWidget(_curvelist_widget);
+  ui->frameMarkers->layout()->addWidget(_markers_panel);
 
   ui->mainSplitter->setCollapsible(0, true);
   ui->mainSplitter->setStretchFactor(0, 2);
@@ -327,6 +394,16 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   {
     ui->buttonHidePublishersFrame->setText("+");
     ui->framePublishers->setHidden(true);
+  }
+  if (settings.value("MainWindow.hiddenTimeseriesFrame", false).toBool())
+  {
+    ui->buttonHideTimeseriesFrame->setText("+");
+    ui->frameTimeseries->setHidden(true);
+  }
+  if (settings.value("MainWindow.hiddenMarkersFrame", false).toBool())
+  {
+    ui->buttonHideMarkersFrame->setText("+");
+    ui->frameMarkers->setHidden(true);
   }
 
   //----------------------------------------------------------
@@ -845,7 +922,7 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
   {
     plot->setMarkerLayers(_marker_manager->layers());
     plot->setSelectedMarkerEditable(_markers_panel && _markers_panel->isActiveLayerEditable());
-    plot->setSelectedMarkerHandlesVisible(false);
+    plot->setSelectedMarkerHandlesVisible(!plot->isXYPlot());
     if (_markers_panel && _markers_panel->hasSelectedMarker())
     {
       plot->setSelectedMarker(_markers_panel->selectedMarker());
@@ -857,6 +934,35 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
   connect(plot, &PlotWidget::undoableChange, this, &MainWindow::onUndoableChange);
 
   connect(plot, &PlotWidget::trackerMoved, this, &MainWindow::onTrackerMovedFromWidget);
+  connect(plot, &PlotWidget::selectedMarkerPreviewChanged, this,
+          [this](const MarkerManager::MarkerItem& original_item,
+                 const MarkerManager::MarkerItem& preview_item) {
+            if (!_marker_manager)
+            {
+              return;
+            }
+
+            logMarkerPreview(
+                QStringLiteral("[mainwindow][preview] source_plot_signal original=[%1,%2] preview=[%3,%4]")
+                    .arg(original_item.start_time, 0, 'g', 15)
+                    .arg(original_item.end_time, 0, 'g', 15)
+                    .arg(preview_item.start_time, 0, 'g', 15)
+                    .arg(preview_item.end_time, 0, 'g', 15));
+            const auto& layers = _marker_manager->layers();
+            forEachWidget([&](PlotWidget* candidate) {
+              logMarkerPreview(
+                  QStringLiteral("[mainwindow][preview][apply] plot=%1 xy=%2 editable=%3")
+                      .arg(reinterpret_cast<quintptr>(candidate), 0, 16)
+                      .arg(candidate->isXYPlot())
+                      .arg(_markers_panel && _markers_panel->isActiveLayerEditable()));
+              candidate->setSelectedMarkerEditable(_markers_panel &&
+                                                   _markers_panel->isActiveLayerEditable());
+              candidate->setSelectedMarkerHandlesVisible(!candidate->isXYPlot());
+              candidate->setSelectedMarkerPreviewSource(original_item);
+              candidate->setSelectedMarker(preview_item);
+              candidate->setMarkerLayers(layers);
+            });
+          });
   connect(plot, &PlotWidget::selectedMarkerEdited, this, [this](const MarkerManager::MarkerItem& item) {
     if (_markers_panel)
     {
@@ -1402,9 +1508,11 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
   if (loaded_filenames.size() > 0)
   {
     updateRecentDataMenu(loaded_filenames);
+    refreshMarkerSessionContext();
     linkedZoomOut();
     return true;
   }
+  refreshMarkerSessionContext();
   return false;
 }
 
@@ -1595,6 +1703,11 @@ void MainWindow::on_buttonStreamingPause_toggled(bool paused)
     plot->setZoomEnabled(paused);
   });
 
+  if (_markers_panel)
+  {
+    _markers_panel->setStreamingActive(_active_streamer_plugin && !paused);
+  }
+
   if (!paused)
   {
     updateTimeOffset();
@@ -1638,6 +1751,11 @@ void MainWindow::stopStreamingPlugin()
   {
     _active_streamer_plugin->shutdown();
     _active_streamer_plugin = nullptr;
+  }
+
+  if (_markers_panel)
+  {
+    _markers_panel->setStreamingActive(false);
   }
 
   if (!_mapped_plot_data.numeric.empty())
@@ -2304,6 +2422,7 @@ bool MainWindow::loadLayoutFromFile(QString filename)
 
   xmlLoadState(domDocument);
 
+  refreshMarkerSessionContext();
   linkedZoomOut();
 
   _undo_states.clear();
@@ -2439,18 +2558,25 @@ void MainWindow::refreshMarkerOverlays()
     return;
   }
 
-  PlotWidget* handle_plot = nullptr;
-  forEachWidget([&](PlotWidget* plot) {
-    if (!plot->isXYPlot() && !plot->isEmpty())
+  QVector<MarkerManager::MarkerLayer> layers = _marker_manager->layers();
+  const QString axis_id = currentSessionAxisId();
+  for (auto& layer : layers)
+  {
+    if (layer.axis_explicit && !layer.axis_id.isEmpty() && !axis_id.isEmpty() &&
+        layer.axis_id != axis_id)
     {
-      handle_plot = plot;
+      layer.visible = false;
     }
-  });
-
-  const auto& layers = _marker_manager->layers();
+  }
   forEachWidget([&](PlotWidget* plot) {
+    logMarkerPreview(
+        QStringLiteral("[mainwindow][refreshMarkerOverlays] plot=%1 xy=%2 selected=%3")
+            .arg(reinterpret_cast<quintptr>(plot), 0, 16)
+            .arg(plot->isXYPlot())
+            .arg(_markers_panel && _markers_panel->hasSelectedMarker()));
     plot->setSelectedMarkerEditable(_markers_panel && _markers_panel->isActiveLayerEditable());
-    plot->setSelectedMarkerHandlesVisible(plot == handle_plot);
+    plot->setSelectedMarkerHandlesVisible(!plot->isXYPlot());
+    plot->setSelectedMarkerPreviewSource(std::nullopt);
     plot->setSelectedMarker((_markers_panel && _markers_panel->hasSelectedMarker())
                                 ? std::optional<MarkerManager::MarkerItem>(_markers_panel->selectedMarker())
                                 : std::nullopt);
@@ -2465,23 +2591,30 @@ void MainWindow::refreshSelectedMarkerOverlay()
     return;
   }
 
-  PlotWidget* handle_plot = nullptr;
-  forEachWidget([&](PlotWidget* plot) {
-    if (!plot->isXYPlot() && !plot->isEmpty())
-    {
-      handle_plot = plot;
-    }
-  });
-
   const auto selected =
       (_markers_panel && _markers_panel->hasSelectedMarker())
           ? std::optional<MarkerManager::MarkerItem>(_markers_panel->selectedMarker())
           : std::nullopt;
-  const auto& layers = _marker_manager->layers();
+  QVector<MarkerManager::MarkerLayer> layers = _marker_manager->layers();
+  const QString axis_id = currentSessionAxisId();
+  for (auto& layer : layers)
+  {
+    if (layer.axis_explicit && !layer.axis_id.isEmpty() && !axis_id.isEmpty() &&
+        layer.axis_id != axis_id)
+    {
+      layer.visible = false;
+    }
+  }
 
   forEachWidget([&](PlotWidget* plot) {
+    logMarkerPreview(
+        QStringLiteral("[mainwindow][refreshSelectedMarkerOverlay] plot=%1 xy=%2 selected=%3")
+            .arg(reinterpret_cast<quintptr>(plot), 0, 16)
+            .arg(plot->isXYPlot())
+            .arg(selected.has_value()));
     plot->setSelectedMarkerEditable(_markers_panel && _markers_panel->isActiveLayerEditable());
-    plot->setSelectedMarkerHandlesVisible(plot == handle_plot);
+    plot->setSelectedMarkerHandlesVisible(!plot->isXYPlot());
+    plot->setSelectedMarkerPreviewSource(std::nullopt);
     plot->setSelectedMarker(selected);
     plot->setMarkerLayers(layers);
   });
@@ -2552,6 +2685,95 @@ void MainWindow::updateMarkerViewRange()
   }
 
   _markers_panel->setCurrentViewRange(range->first, range->second);
+}
+
+QStringList MainWindow::currentSessionDataFiles() const
+{
+  QStringList file_paths;
+  for (const auto& info : _loaded_datafiles_previous)
+  {
+    if (!info.filename.isEmpty() && !file_paths.contains(info.filename))
+    {
+      file_paths.push_back(info.filename);
+    }
+  }
+  return file_paths;
+}
+
+QString MainWindow::currentSessionAxisId() const
+{
+  QString axis_id;
+  for (const auto& info : _loaded_datafiles_previous)
+  {
+    const QString candidate = axisIdFromPluginConfig(info);
+    if (candidate.isEmpty())
+    {
+      continue;
+    }
+    if (axis_id.isEmpty())
+    {
+      axis_id = candidate;
+      continue;
+    }
+    if (axis_id != candidate)
+    {
+      return {};
+    }
+  }
+  return axis_id;
+}
+
+void MainWindow::refreshMarkerSessionContext()
+{
+  if (_markers_panel)
+  {
+    _markers_panel->setSessionDataFiles(currentSessionDataFiles());
+    _markers_panel->setCurrentAxisId(currentSessionAxisId());
+    if (_markers_panel->autoloadCompanionMarkup())
+    {
+      autoloadCompanionMarkupFiles();
+    }
+  }
+}
+
+void MainWindow::autoloadCompanionMarkupFiles()
+{
+  if (!_marker_manager || !_markers_panel)
+  {
+    return;
+  }
+
+  QSet<QString> loaded_paths;
+  for (const auto& layer : _marker_manager->layers())
+  {
+    if (!layer.file_path.isEmpty())
+    {
+      loaded_paths.insert(QFileInfo(layer.file_path).absoluteFilePath());
+    }
+  }
+
+  for (const auto& data_file : currentSessionDataFiles())
+  {
+    const QFileInfo data_info(data_file);
+    const QDir dir = data_info.absoluteDir();
+    const QString stem = data_info.completeBaseName();
+    const QStringList candidates =
+        dir.entryList({ QString("%1.markup.json").arg(stem), QString("%1.markup.*.json").arg(stem) },
+                      QDir::Files, QDir::Name);
+
+    for (const auto& candidate : candidates)
+    {
+      const QString abs_path = QFileInfo(dir.filePath(candidate)).absoluteFilePath();
+      if (loaded_paths.contains(abs_path))
+      {
+        continue;
+      }
+      if (_marker_manager->loadLayer(abs_path))
+      {
+        loaded_paths.insert(abs_path);
+      }
+    }
+  }
 }
 
 void MainWindow::updateTimeSlider()
@@ -3631,7 +3853,7 @@ void MainWindow::on_buttonStreamingOptions_clicked()
 void MainWindow::on_buttonHideFileFrame_clicked()
 {
   bool hidden = !ui->frameFile->isHidden();
-  ui->buttonHideFileFrame->setText(hidden ? "+" : " -");
+  ui->buttonHideFileFrame->setText(hidden ? "+" : "-");
   ui->frameFile->setHidden(hidden);
 
   QSettings settings;
@@ -3641,7 +3863,7 @@ void MainWindow::on_buttonHideFileFrame_clicked()
 void MainWindow::on_buttonHideStreamingFrame_clicked()
 {
   bool hidden = !ui->frameStreaming->isHidden();
-  ui->buttonHideStreamingFrame->setText(hidden ? "+" : " -");
+  ui->buttonHideStreamingFrame->setText(hidden ? "+" : "-");
   ui->frameStreaming->setHidden(hidden);
 
   QSettings settings;
@@ -3651,11 +3873,31 @@ void MainWindow::on_buttonHideStreamingFrame_clicked()
 void MainWindow::on_buttonHidePublishersFrame_clicked()
 {
   bool hidden = !ui->framePublishers->isHidden();
-  ui->buttonHidePublishersFrame->setText(hidden ? "+" : " -");
+  ui->buttonHidePublishersFrame->setText(hidden ? "+" : "-");
   ui->framePublishers->setHidden(hidden);
 
   QSettings settings;
   settings.setValue("MainWindow.hiddenPublishersFrame", hidden);
+}
+
+void MainWindow::on_buttonHideTimeseriesFrame_clicked()
+{
+  bool hidden = !ui->frameTimeseries->isHidden();
+  ui->buttonHideTimeseriesFrame->setText(hidden ? "+" : "-");
+  ui->frameTimeseries->setHidden(hidden);
+
+  QSettings settings;
+  settings.setValue("MainWindow.hiddenTimeseriesFrame", hidden);
+}
+
+void MainWindow::on_buttonHideMarkersFrame_clicked()
+{
+  bool hidden = !ui->frameMarkers->isHidden();
+  ui->buttonHideMarkersFrame->setText(hidden ? "+" : "-");
+  ui->frameMarkers->setHidden(hidden);
+
+  QSettings settings;
+  settings.setValue("MainWindow.hiddenMarkersFrame", hidden);
 }
 
 void MainWindow::on_buttonRecentLayout_clicked()
@@ -3713,6 +3955,7 @@ void MainWindow::on_buttonReloadData_clicked()
   {
     loadDataFromFile(info, false);
   }
+  refreshMarkerSessionContext();
   ui->buttonReloadData->setEnabled(!_loaded_datafiles_previous.empty());
 }
 
