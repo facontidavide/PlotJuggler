@@ -36,7 +36,7 @@ void WebsocketClientConfig::xmlLoadState(const QDomElement& parent_element)
   }
 
   address = cfg.attribute("address", "127.0.0.1");
-  port = cfg.attribute("port", "8080").toInt();
+  port = cfg.attribute("port", "9090").toInt();
   max_array_size = cfg.attribute("max_array_size", "500").toUInt();
   clamp_large_arrays = bool(cfg.attribute("clamp_large_arrays", "0").toInt());
   use_timestamp = bool(cfg.attribute("use_timestamp", "0").toInt());
@@ -71,7 +71,7 @@ void WebsocketClientConfig::saveToSettings(QSettings& settings, const QString& g
 void WebsocketClientConfig::loadFromSettings(const QSettings& settings, const QString& group)
 {
   address = settings.value(group + "/address", "127.0.0.1").toString();
-  port = settings.value(group + "/port", 8080).toInt();
+  port = settings.value(group + "/port", 9090).toInt();
   topics = settings.value(group + "/topics").toStringList();
   max_array_size = settings.value(group + "/max_array_size", 500).toUInt();
   clamp_large_arrays = settings.value(group + "/clamp_large_arrays", false).toBool();

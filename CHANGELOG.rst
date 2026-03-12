@@ -2,6 +2,41 @@
 Changelog for package plotjuggler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.16.0 (2026-03-10)
+-----------
+* add plotjuggler and foxglove bridge plugins
+* fix Windows MSVC wasmer linking
+* fix: timestamp detection with array fields (`#1310 <https://github.com/facontidavide/PlotJuggler/issues/1310>`_)
+* Add PlotGroup support to parsing plugins (topic/channel as group)
+* WebSocket dialog: dedicated Connect button, sorting, and UI polish
+* move to wasmer
+* Fix: No buttons appears / Can't select any topics (`#1306 <https://github.com/facontidavide/PlotJuggler/issues/1306>`_)
+* much faster MCAP pre-loading and update to 2.1.2
+* Replace StringRef with dictionary index in StringSeries. Fixes `#1031 <https://github.com/facontidavide/PlotJuggler/issues/1031>`_
+* Fix dangling StringRef pointers in StringSeries::clonePoints (`#1279 <https://github.com/facontidavide/PlotJuggler/issues/1279>`_)
+* Fix WebSocket plugin: use project's zstd target instead of find_path
+* Fix Reset to Default Curve Style in PlotWidget (`#1277 <https://github.com/facontidavide/PlotJuggler/issues/1277>`_)
+* Fix multiple bugs in rosx_introspection (ported from upstream)
+* WebSocket DataStreamer plugin integration (`#1295 <https://github.com/facontidavide/PlotJuggler/issues/1295>`_)
+* Fix: Save colorMaps section to layout XML (`#1278 <https://github.com/facontidavide/PlotJuggler/issues/1278>`_)
+* Add automatic detection and merging of separate date/time CSV columns (`#1259 <https://github.com/facontidavide/PlotJuggler/issues/1259>`_)
+* Support batched array messages in JSON/CBOR/BSON/MessagePack parsers (`#1285 <https://github.com/facontidavide/PlotJuggler/issues/1285>`_)
+* fix: quaternion-to-RPY toolbox streaming data loss (`#1289 <https://github.com/facontidavide/PlotJuggler/issues/1289>`_)
+* Topological sorting for nested dependencies in custom equations (`#1300 <https://github.com/facontidavide/PlotJuggler/issues/1300>`_)
+* Fix Parsing of DiagnosticArrays (`#1297 <https://github.com/facontidavide/PlotJuggler/issues/1297>`_)
+* fix: use first available parser instead of hardcoded fallback (`#1015 <https://github.com/facontidavide/PlotJuggler/issues/1015>`_)
+* fix DJS_PLUGINS_DIRECTORY in Docker build (`#1281 <https://github.com/facontidavide/PlotJuggler/issues/1281>`_)
+* fix: guard undo/redo from firing during active popups (`#1287 <https://github.com/facontidavide/PlotJuggler/issues/1287>`_)
+* fix merging of string series (`#1298 <https://github.com/facontidavide/PlotJuggler/issues/1298>`_)
+* fix: parsing of nested topics in ulogs (`#1301 <https://github.com/facontidavide/PlotJuggler/issues/1301>`_)
+* fix: Arrow 23.0.0 compatibility (`#1282 <https://github.com/facontidavide/PlotJuggler/issues/1282>`_)
+* fix placeholder text color (workaround to Qt5 bug)
+* improve clarity of nlohmann parsers dialog
+* Adjust dialog size based on protocol selection
+* fix: inherit legend settings when splitting plot views (`#1260 <https://github.com/facontidavide/PlotJuggler/issues/1260>`_)
+* Fix Conan 2.x build instructions in COMPILE.md (`#1256 <https://github.com/facontidavide/PlotJuggler/issues/1256>`_)
+* Contributors: Alvvalencia, Copilot, Davide Faconti, Jeremy Elson, KIRAN, Luca Bonamini, Panav, Sachin Kumar, Simon Sagmeister, Timo Stienstra, Tobias Büchli, dependabot[bot], Øyvind Taksdal Stubhaug
+
 3.15.0 (2025-12-27)
 -------------------
 

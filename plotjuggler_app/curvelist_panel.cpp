@@ -27,6 +27,15 @@
 
 #include "PlotJuggler/svg_util.h"
 
+namespace
+{
+bool isCurveTreeItem(const QTreeWidgetItem* item)
+{
+  return item && !item->data(0, CustomRoles::Name).toString().isEmpty() &&
+         item->flags().testFlag(Qt::ItemIsSelectable);
+}
+}  // namespace
+
 //-------------------------------------------------
 
 CurveListPanel::CurveListPanel(PlotDataMapRef& mapped_plot_data,
@@ -188,7 +197,7 @@ void CurveListPanel::updateAppearance()
     //------------- Change leaves ---------------------
 
     auto ChangeLeavesVisitor = [&](QTreeWidgetItem* cell) {
-      if (cell->childCount() == 0)
+      if (isCurveTreeItem(cell))
       {
         const std::string& curve_name = cell->data(0, CustomRoles::Name).toString().toStdString();
 
@@ -346,6 +355,11 @@ void CurveListPanel::refreshValues()
     const int vertical_height = tree_view->visibleRegion().boundingRect().height();
 
     auto DisplayValue = [&](QTreeWidgetItem* cell) {
+      if (!isCurveTreeItem(cell))
+      {
+        return;
+      }
+
       QString curve_name = cell->data(0, CustomRoles::Name).toString();
 
       if (!curve_name.isEmpty())
@@ -546,6 +560,11 @@ void CurveListPanel::on_stylesheetChanged(QString theme)
   ui->pushButtonTrash->setIcon(LoadSvg(":/resources/svg/trash.svg", theme));
 
   auto ChangeIconVisitor = [&](QTreeWidgetItem* cell) {
+    if (!isCurveTreeItem(cell))
+    {
+      return;
+    }
+
     const auto& curve_name = cell->data(0, CustomRoles::Name).toString().toStdString();
 
     auto it = _plot_data.scatter_xy.find(curve_name);

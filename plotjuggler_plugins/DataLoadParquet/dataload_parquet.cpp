@@ -9,8 +9,59 @@
 #include <QDateTime>
 #include <QInputDialog>
 #include <QListWidget>
+#include <QSet>
 #include <QTimeZone>
 #include <cmath>
+#include <algorithm>
+
+namespace
+{
+QStringList prioritizedColumns(const std::vector<QString>& column_names, const QStringList& history)
+{
+  QStringList ordered;
+  QSet<QString> added;
+
+  for (const auto& name : history)
+  {
+    if (std::find(column_names.begin(), column_names.end(), name) != column_names.end() &&
+        !added.contains(name))
+    {
+      ordered.push_back(name);
+      added.insert(name);
+    }
+  }
+
+  for (const auto& name : column_names)
+  {
+    if (!added.contains(name))
+    {
+      ordered.push_back(name);
+      added.insert(name);
+    }
+  }
+
+  return ordered;
+}
+
+QStringList updateColumnHistory(QStringList history, const QString& selected)
+{
+  if (selected.isEmpty())
+  {
+    return history;
+  }
+
+  history.removeAll(selected);
+  history.push_front(selected);
+
+  constexpr int kMaxHistorySize = 50;
+  while (history.size() > kMaxHistorySize)
+  {
+    history.removeLast();
+  }
+
+  return history;
+}
+}  // namespace
 
 DataLoadParquet::DataLoadParquet()
 {
@@ -142,6 +193,8 @@ double get_arrow_value(const std::shared_ptr<arrow::Array>& array, int64_t index
 
 bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data)
 {
+  ui->listWidgetSeries->clear();
+
   // Open the file using Arrow IO
   std::shared_ptr<arrow::io::ReadableFile> infile;
   auto result = arrow::io::ReadableFile::Open(info->filename.toStdString());
@@ -183,6 +236,7 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
   }
 
   std::vector<ColumnInfo> columns_info;
+  std::vector<QString> selectable_columns;
 
   for (size_t col = 0; col < file_metadata->num_columns(); col++)
   {
@@ -205,9 +259,18 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
     {
       info.plot_data = &plot_data.getOrCreateNumeric(info.name, nullptr);
       columns_info.push_back(info);
+      selectable_columns.push_back(QString::fromStdString(info.name));
     }
+  }
 
-    ui->listWidgetSeries->addItem(QString::fromStdString(info.name));
+  {
+    QSettings settings;
+    const auto ordered_columns = prioritizedColumns(
+        selectable_columns, settings.value("DataLoadParquet::timeHistory").toStringList());
+    for (const auto& name : ordered_columns)
+    {
+      ui->listWidgetSeries->addItem(name);
+    }
   }
 
   {
@@ -246,6 +309,10 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
 
   QSettings settings;
   settings.setValue("DataLoadParquet::prevTimestamp", selected_stamp);
+  settings.setValue(
+      "DataLoadParquet::timeHistory",
+      updateColumnHistory(settings.value("DataLoadParquet::timeHistory").toStringList(),
+                          selected_stamp));
   settings.setValue("DataLoadParquet::radioIndexChecked", ui->radioButtonIndex->isChecked());
   settings.setValue("DataLoadParquet::parseDateTime", ui->checkBoxDateFormat->isChecked());
   settings.setValue("DataLoadParquet::dateFromat", ui->lineEditDateFormat->text());

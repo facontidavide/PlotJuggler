@@ -97,6 +97,13 @@ public:
     PlotDataBase<double, StringDictIndex>::clonePoints(other);
   }
 
+  void swapData(StringSeries& other)
+  {
+    TimeseriesBase<StringDictIndex>::swapData(other);
+    std::swap(_index_to_string, other._index_to_string);
+    std::swap(_string_to_index, other._string_to_index);
+  }
+
 private:
   StringDictIndex internString(std::string_view str)
   {

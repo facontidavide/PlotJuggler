@@ -2388,6 +2388,31 @@ void MainWindow::updateDataAndReplot(bool replot_hidden_tabs)
       _curvelist_widget->addCurve(str);
     }
 
+    // Periodic resync: if a curve was missed by addCurve on first detection
+    // (e.g. due to a transient issue), MoveData won't report it again.
+    // Re-attempt all known curves every ~2 seconds to recover.
+    if (++_curvelist_resync_counter >= 50)
+    {
+      _curvelist_resync_counter = 0;
+      bool any_added = false;
+      auto syncCurves = [this, &any_added](auto& series_map) {
+        for (const auto& [name, _] : series_map)
+        {
+          if (_curvelist_widget->addCurve(name))
+          {
+            any_added = true;
+          }
+        }
+      };
+      syncCurves(_mapped_plot_data.numeric);
+      syncCurves(_mapped_plot_data.scatter_xy);
+      syncCurves(_mapped_plot_data.strings);
+      if (any_added)
+      {
+        move_ret.curves_updated = true;
+      }
+    }
+
     if (move_ret.curves_updated)
     {
       _curvelist_widget->refreshColumns();

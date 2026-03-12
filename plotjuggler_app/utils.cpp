@@ -22,7 +22,7 @@ void MergeData(TimeseriesBase<Value>& src_plot, TimeseriesBase<Value>& dst_plot)
   }
   if (dst_plot.size() == 0)
   {
-    std::swap(dst_plot, src_plot);
+    dst_plot.swapData(src_plot);
     return;
   }
 
@@ -67,8 +67,8 @@ void MergeData(TimeseriesBase<Value>& src_plot, TimeseriesBase<Value>& dst_plot)
   // prepend
   if (src_plot.back().x < dst_plot.front().x)
   {
-    // swap and append
-    std::swap(dst_plot, src_plot);
+    // swap data only (preserves name/group/attributes) and append
+    dst_plot.swapData(src_plot);
     for (size_t i = 0; i < src_plot.size(); i++)
     {
       dst_plot.pushBack(std::move(src_plot.at(i)));
@@ -89,7 +89,7 @@ void MergeData(PlotDataXY& src_plot, PlotDataXY& dst_plot)
 {
   if (dst_plot.size() == 0)
   {
-    std::swap(dst_plot, src_plot);
+    dst_plot.swapData(src_plot);
     return;
   }
   for (const auto& p : src_plot)
@@ -107,7 +107,7 @@ void MergeData(StringSeries& src_plot, StringSeries& dst_plot)
   }
   if (dst_plot.size() == 0)
   {
-    std::swap(dst_plot, src_plot);
+    dst_plot.swapData(src_plot);
     return;
   }
   for (size_t i = 0; i < src_plot.size(); i++)

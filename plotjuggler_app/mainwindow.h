@@ -158,6 +158,7 @@ private:
   MonitoredValue _time_offset;
 
   QTimer* _replot_timer;
+  int _curvelist_resync_counter = 0;
   QTimer* _publish_timer;
   PJ::DelayedCallback _tracker_delay;
 

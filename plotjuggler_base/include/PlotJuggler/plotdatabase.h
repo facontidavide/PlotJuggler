@@ -172,6 +172,17 @@ public:
     _range_y_dirty = other._range_y_dirty;
   }
 
+  /// Swap only the data (points and cached ranges), leaving name, group,
+  /// and attributes untouched on both sides.
+  void swapData(PlotDataBase& other)
+  {
+    std::swap(_points, other._points);
+    std::swap(_range_x, other._range_x);
+    std::swap(_range_y, other._range_y);
+    std::swap(_range_x_dirty, other._range_x_dirty);
+    std::swap(_range_y_dirty, other._range_y_dirty);
+  }
+
   virtual ~PlotDataBase() = default;
 
   const std::string& plotName() const

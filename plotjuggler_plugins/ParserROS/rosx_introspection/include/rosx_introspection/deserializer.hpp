@@ -4,14 +4,11 @@
 // API adapted to FastCDR
 
 #include <exception>
+#include <optional>
 
 #include "rosx_introspection/builtin_types.hpp"
+#include "rosx_introspection/contrib/nanocdr.hpp"
 #include "rosx_introspection/variant.hpp"
-
-namespace nanocdr
-{
-class Decoder;
-}  // namespace nanocdr
 
 namespace RosMsgParser
 {
@@ -127,7 +124,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<nanocdr::Decoder> _cdr_decoder;
+  std::optional<nanocdr::Decoder> _cdr_decoder;
 };
 
 using ROS2_Deserializer = NanoCDR_Deserializer;

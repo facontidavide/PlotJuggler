@@ -128,7 +128,7 @@ Streaming → WebSocket Client
 
 3. Configure:
    - Server IP (e.g., 192.168.1.50)
-   - Port (e.g., 8080)
+   - Port (e.g., 9090)
 
 4. Connect.
 
@@ -141,7 +141,7 @@ Streaming → WebSocket Client
 If the server listens on:
 
 ```
-ws://0.0.0.0:8080
+ws://0.0.0.0:9090
 ```
 
 It accepts connections from any network interface.
@@ -149,13 +149,13 @@ It accepts connections from any network interface.
 From another machine, connect using:
 
 ```
-ws://SERVER_IP:8080
+ws://SERVER_IP:9090
 ```
 
 Example:
 
 ```
-ws://192.168.1.42:8080
+ws://192.168.1.42:9090
 ```
 
 ---
@@ -170,13 +170,13 @@ ros2 run pj_ros_bridge pj_ros_bridge_node
 
 Default configuration:
 
-- Port: 8080
+- Port: 9090
 - Publish rate: 50 Hz
 
 Then connect the plugin to:
 
 ```
-ws://localhost:8080
+ws://localhost:9090
 ```
 
 or to the robot’s IP address.

@@ -6,8 +6,10 @@
 #include <QDebug>
 #include <QDialog>
 #include <QIntValidator>
+#include <QMetaObject>
 #include <QMessageBox>
 #include <QSettings>
+#include <QThread>
 #include <chrono>
 #include <iostream>
 
@@ -299,19 +301,49 @@ bool DataStreamZMQ::parseMessage(const PJ::MessageRef& msg, double& timestamp)
   }
 }
 
+PJ::MessageParserPtr DataStreamZMQ::ensureTopicParser(const std::string& topic)
+{
+  {
+    std::lock_guard<std::mutex> lock(mutex());
+    auto it = _parsers.find(topic);
+    if (it != _parsers.end())
+    {
+      return it->second;
+    }
+  }
+
+  PJ::MessageParserPtr parser;
+
+  auto create_parser = [this, &parser, topic]() {
+    std::lock_guard<std::mutex> lock(mutex());
+    auto it = _parsers.find(topic);
+    if (it == _parsers.end())
+    {
+      it = _parsers.emplace(topic, _parser_creator->createParser(topic, {}, {}, dataMap())).first;
+    }
+    parser = it->second;
+  };
+
+  if (QThread::currentThread() == thread())
+  {
+    create_parser();
+  }
+  else
+  {
+    QMetaObject::invokeMethod(this, create_parser, Qt::BlockingQueuedConnection);
+  }
+
+  return parser;
+}
+
 bool DataStreamZMQ::parseMessage(const std::string& topic, const PJ::MessageRef& msg,
                                  double& timestamp)
 {
   try
   {
+    auto parser = ensureTopicParser(topic);
     std::lock_guard<std::mutex> lock(mutex());
-    // If the topic is not in the map keys, create a new parser
-    if (_parsers.find(topic) == _parsers.end())
-    {
-      _parsers[topic] = _parser_creator->createParser(topic, {}, {}, dataMap());
-    }
-
-    _parsers[topic]->parseMessage(msg, timestamp);
+    parser->parseMessage(msg, timestamp);
     return true;
   }
   catch (...)

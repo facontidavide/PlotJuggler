@@ -11,11 +11,14 @@
 #include <QDateTime>
 #include <QInputDialog>
 #include <QPushButton>
+#include <QSet>
 #include <QSyntaxStyle>
 #include <QRadioButton>
+#include <QListWidgetItem>
 
 #include <array>
 #include <set>
+#include <algorithm>
 
 #include <QStandardItemModel>
 
@@ -23,6 +26,60 @@ static constexpr int TIME_INDEX_COMBINED = -3;
 static constexpr int TIME_INDEX_NOT_DEFINED = -2;
 static constexpr int TIME_INDEX_GENERATED = -1;
 static constexpr const char* INDEX_AS_TIME = "__TIME_INDEX_GENERATED__";
+
+namespace
+{
+QStringList prioritizedColumns(const std::vector<std::string>& column_names,
+                               const QStringList& history)
+{
+  QStringList ordered;
+  QSet<QString> added;
+
+  for (const auto& name : history)
+  {
+    const bool exists =
+        std::any_of(column_names.begin(), column_names.end(), [&name](const std::string& column) {
+          return QString::fromStdString(column) == name;
+        });
+    if (exists && !added.contains(name))
+    {
+      ordered.push_back(name);
+      added.insert(name);
+    }
+  }
+
+  for (const auto& name : column_names)
+  {
+    auto qname = QString::fromStdString(name);
+    if (!added.contains(qname))
+    {
+      ordered.push_back(qname);
+      added.insert(qname);
+    }
+  }
+
+  return ordered;
+}
+
+QStringList updateColumnHistory(QStringList history, const QString& selected)
+{
+  if (selected.isEmpty())
+  {
+    return history;
+  }
+
+  history.removeAll(selected);
+  history.push_front(selected);
+
+  constexpr int kMaxHistorySize = 50;
+  while (history.size() > kMaxHistorySize)
+  {
+    history.removeLast();
+  }
+
+  return history;
+}
+}  // namespace
 
 // Delegate to the pure C++ version in csv_parser
 char DetectDelimiter(const QString& first_line)
@@ -149,8 +206,21 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
   for (const auto& name : column_names)
   {
     auto qname = QString::fromStdString(name);
-    _ui->listWidgetSeries->addItem(qname);
     column_labels.push_back(qname);
+  }
+
+  QSettings settings;
+  const auto ordered_columns =
+      prioritizedColumns(column_names, settings.value("DataLoadCSV.timeHistory").toStringList());
+  for (const auto& name : ordered_columns)
+  {
+    auto* item = new QListWidgetItem(name);
+    auto it = std::find(column_names.begin(), column_names.end(), name.toStdString());
+    if (it != column_names.end())
+    {
+      item->setData(Qt::UserRole, static_cast<int>(std::distance(column_names.begin(), it)));
+    }
+    _ui->listWidgetSeries->addItem(item);
   }
   _model->setColumnCount(column_labels.size());
   _model->setHorizontalHeaderLabels(column_labels);
@@ -329,7 +399,7 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
     int row = indexes.front().row();
     auto item = _ui->listWidgetSeries->item(row);
     settings.setValue("DataLoadCSV.timeIndex", item->text());
-    return row;
+    return item->data(Qt::UserRole).toInt();
   }
 
   return TIME_INDEX_NOT_DEFINED;
@@ -532,6 +602,14 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   else if (time_index == TIME_INDEX_GENERATED)
   {
     _default_time_axis = INDEX_AS_TIME;
+  }
+
+  if (time_index >= 0 && time_index < static_cast<int>(result.column_names.size()))
+  {
+    QSettings settings;
+    settings.setValue("DataLoadCSV.timeHistory",
+                      updateColumnHistory(settings.value("DataLoadCSV.timeHistory").toStringList(),
+                                          QString::fromStdString(result.column_names[time_index])));
   }
 
   //--- Show skipped-lines warnings ---
