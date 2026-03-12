@@ -30,6 +30,8 @@
 *.snap
 
 /build*
+/.git-split/
+/install/
 /*.user
 
 site/images/
