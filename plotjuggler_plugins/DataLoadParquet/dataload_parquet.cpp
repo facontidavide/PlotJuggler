@@ -335,7 +335,7 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
   progress_dialog.setWindowTitle("Loading the Parquet file");
   progress_dialog.setLabelText("Loading... please wait");
   progress_dialog.setWindowModality(Qt::ApplicationModal);
-  progress_dialog.setRange(0, columns_info.size());
+  progress_dialog.setRange(0, 1000);
   progress_dialog.setAutoClose(true);
   progress_dialog.setAutoReset(true);
   progress_dialog.show();
@@ -349,6 +349,9 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
   }
 
   int64_t rows_processed = 0;
+  const int64_t total_work =
+      std::max<int64_t>(1, total_rows * static_cast<int64_t>(columns_info.size()));
+  bool canceled = false;
 
   // Process data in batches
   std::shared_ptr<arrow::RecordBatch> batch;
@@ -371,10 +374,9 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
     std::sort(timestamp_to_row_index.begin(), timestamp_to_row_index.end(),
               [](const auto& a, const auto& b) { return a.first < b.first; });
 
-    int column = 0;
-
-    for (const auto& info : columns_info)
+    for (int column = 0; column < columns_info.size(); column++)
     {
+      const auto& info = columns_info[column];
       const auto values_array = batch->column(info.column_index);
 
       for (int64_t row = 0; row < batch_rows; row++)
@@ -393,20 +395,37 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
         }
       }
 
-      if (column++ % 10 == 0)
+      const int64_t completed_work =
+          rows_processed * static_cast<int64_t>(columns_info.size()) +
+          (static_cast<int64_t>(column) + 1) * batch_rows;
+      const int progress_value =
+          static_cast<int>(std::clamp<int64_t>((completed_work * 1000) / total_work, 0, 1000));
+
+      if ((column % 4) == 0 || progress_value >= progress_dialog.value() + 10 ||
+          progress_value == 1000)
       {
-        progress_dialog.setValue(column);
+        progress_dialog.setValue(progress_value);
         QApplication::processEvents();
         if (progress_dialog.wasCanceled())
         {
+          canceled = true;
           break;
         }
       }
     }
+    if (canceled)
+    {
+      break;
+    }
     rows_processed += batch_rows;
   }
 
-  return true;
+  if (!canceled)
+  {
+    progress_dialog.setValue(1000);
+  }
+
+  return !canceled;
 }
 
 bool DataLoadParquet::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const
