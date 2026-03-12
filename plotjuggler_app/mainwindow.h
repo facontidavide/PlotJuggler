@@ -249,7 +249,7 @@ private:
   QStringList currentSessionDataFiles() const;
   QString currentSessionAxisId() const;
   void refreshMarkerSessionContext();
-  void autoloadCompanionMarkupFiles();
+  void autoloadCompanionAnnotationFiles();
 
   void updatedDisplayTime();
 

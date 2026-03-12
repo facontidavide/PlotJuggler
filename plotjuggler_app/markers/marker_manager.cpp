@@ -2,6 +2,7 @@
 
 #include "nlohmann/json.hpp"
 
+#include <QDateTime>
 #include <QFile>
 #include <QFileInfo>
 #include <QTextStream>
@@ -165,10 +166,15 @@ int MarkerManager::duplicateLayer(int index, const QString& new_name)
     return -1;
   }
 
-  MarkerLayer layer = _layers[index];
+  const MarkerLayer& source_layer = _layers[index];
+  MarkerLayer layer = source_layer;
   layer.file_path.clear();
   layer.dirty = true;
   layer.name = new_name.trimmed().isEmpty() ? (layer.name + " copy") : new_name.trimmed();
+  layer.origin.kind = "duplicate";
+  layer.origin.source_name = source_layer.name;
+  layer.origin.source_file = source_layer.file_path;
+  layer.origin.copied_at = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
 
   _layers.push_back(layer);
   _active_layer_index = _layers.size() - 1;
@@ -327,6 +333,17 @@ bool MarkerManager::loadLayerFromFile(const QString& file_path, MarkerLayer& lay
   layer.name =
       QString::fromStdString(doc.value("name", QFileInfo(file_path).completeBaseName().toStdString()));
   layer.file_path = file_path;
+  if (doc.contains("origin") && doc["origin"].is_object())
+  {
+    const auto& origin = doc["origin"];
+    layer.origin.kind = QString::fromStdString(origin.value("kind", std::string()));
+    layer.origin.source_name =
+        QString::fromStdString(origin.value("source_name", std::string()));
+    layer.origin.source_file =
+        QString::fromStdString(origin.value("source_file", std::string()));
+    layer.origin.copied_at =
+        QString::fromStdString(origin.value("copied_at", std::string()));
+  }
   if (doc.contains("axis") && doc["axis"].is_object())
   {
     const auto& axis = doc["axis"];
@@ -404,9 +421,31 @@ bool MarkerManager::loadLayerFromFile(const QString& file_path, MarkerLayer& lay
 bool MarkerManager::saveLayerToFile(const MarkerLayer& layer, const QString& file_path) const
 {
   json doc;
-  doc["schema"] = "plotjuggler.markup";
-  doc["version"] = 2;
+  doc["schema"] = "plotjuggler.annotations";
+  doc["version"] = 3;
   doc["name"] = layer.name.toStdString();
+  if (!layer.origin.kind.isEmpty() || !layer.origin.source_name.isEmpty() ||
+      !layer.origin.source_file.isEmpty() || !layer.origin.copied_at.isEmpty())
+  {
+    json origin;
+    if (!layer.origin.kind.isEmpty())
+    {
+      origin["kind"] = layer.origin.kind.toStdString();
+    }
+    if (!layer.origin.source_name.isEmpty())
+    {
+      origin["source_name"] = layer.origin.source_name.toStdString();
+    }
+    if (!layer.origin.source_file.isEmpty())
+    {
+      origin["source_file"] = layer.origin.source_file.toStdString();
+    }
+    if (!layer.origin.copied_at.isEmpty())
+    {
+      origin["copied_at"] = layer.origin.copied_at.toStdString();
+    }
+    doc["origin"] = origin;
+  }
   if (!layer.axis_id.isEmpty())
   {
     json axis;

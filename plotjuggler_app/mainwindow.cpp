@@ -269,19 +269,19 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   });
   connect(_markers_panel, &MarkersPanel::jumpToSelectedMarkerRequested, this,
           [this]() { jumpToSelectedMarker(); });
-  connect(_markers_panel, &MarkersPanel::autoloadCompanionMarkupChanged, this,
+  connect(_markers_panel, &MarkersPanel::autoloadCompanionAnnotationsChanged, this,
           [this](bool enabled) {
             QSettings settings;
-            settings.setValue("Markers.autoloadCompanionMarkup", enabled);
+            settings.setValue("Markers.autoloadCompanionAnnotations", enabled);
             if (enabled)
             {
-              autoloadCompanionMarkupFiles();
+              autoloadCompanionAnnotationFiles();
             }
           });
 
   refreshMarkerSessionContext();
-  _markers_panel->setAutoloadCompanionMarkup(
-      settings.value("Markers.autoloadCompanionMarkup", false).toBool());
+  _markers_panel->setAutoloadCompanionAnnotations(
+      settings.value("Markers.autoloadCompanionAnnotations", false).toBool());
   _markers_panel->setStreamingActive(false);
 
   ui->tabsFrame->layout()->addWidget(_main_tabbed_widget);
@@ -2695,14 +2695,14 @@ void MainWindow::refreshMarkerSessionContext()
   {
     _markers_panel->setSessionDataFiles(currentSessionDataFiles());
     _markers_panel->setCurrentAxisId(currentSessionAxisId());
-    if (_markers_panel->autoloadCompanionMarkup())
+    if (_markers_panel->autoloadCompanionAnnotations())
     {
-      autoloadCompanionMarkupFiles();
+      autoloadCompanionAnnotationFiles();
     }
   }
 }
 
-void MainWindow::autoloadCompanionMarkupFiles()
+void MainWindow::autoloadCompanionAnnotationFiles()
 {
   if (!_marker_manager || !_markers_panel)
   {
@@ -2724,8 +2724,10 @@ void MainWindow::autoloadCompanionMarkupFiles()
     const QDir dir = data_info.absoluteDir();
     const QString stem = data_info.completeBaseName();
     const QStringList candidates =
-        dir.entryList({ QString("%1.markup.json").arg(stem), QString("%1.markup.*.json").arg(stem) },
-                      QDir::Files, QDir::Name);
+        dir.entryList(
+            { QString("%1.annotations.json").arg(stem),
+              QString("%1.annotations.*.json").arg(stem) },
+            QDir::Files, QDir::Name);
 
     for (const auto& candidate : candidates)
     {

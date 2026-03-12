@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QDir>
+#include <QSet>
 #include <QStringList>
 #include <QWidget>
 
@@ -30,8 +32,8 @@ public:
   void updateSelectedMarker(const MarkerManager::MarkerItem& item);
   void setSessionDataFiles(const QStringList& file_paths);
   void setCurrentAxisId(const QString& axis_id);
-  void setAutoloadCompanionMarkup(bool enabled);
-  bool autoloadCompanionMarkup() const;
+  void setAutoloadCompanionAnnotations(bool enabled);
+  bool autoloadCompanionAnnotations() const;
 
 private slots:
   void refreshLayers();
@@ -53,7 +55,7 @@ private slots:
 signals:
   void selectedMarkerChanged(bool has_selection);
   void jumpToSelectedMarkerRequested();
-  void autoloadCompanionMarkupChanged(bool enabled);
+  void autoloadCompanionAnnotationsChanged(bool enabled);
 
 private:
   void scheduleTreeRefresh();
@@ -66,13 +68,15 @@ private:
   QTreeWidgetItem* currentTreeItem() const;
   int layerIndexFromItem(const QTreeWidgetItem* item) const;
   int markerRowFromItem(const QTreeWidgetItem* item) const;
-  QString defaultMarkupDirectory() const;
-  QString defaultMarkupStem() const;
+  QString defaultAnnotationDirectory() const;
+  QString defaultAnnotationStem() const;
   QString suggestDuplicateLayerName(const QString& source_name) const;
-  QString sanitizeMarkupVariant(QString text) const;
-  QString autoloadSafeMarkupBaseName(const QString& layer_name) const;
+  QString sanitizeAnnotationVariant(QString text) const;
+  QString autoloadSafeAnnotationBaseName(const QString& layer_name) const;
   QString suggestUniqueLayerName() const;
-  QString suggestUniqueMarkupFilePath() const;
+  QString nextCopyLayerName(const QString& base_name, const QSet<QString>& used_names) const;
+  QString nextCopyFileBaseName(const QString& base_name, const QDir& dir) const;
+  QString suggestUniqueAnnotationFilePath() const;
 
   Ui::MarkersPanel* ui = nullptr;
   MarkerManager* _manager = nullptr;

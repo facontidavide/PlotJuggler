@@ -55,6 +55,13 @@ QIcon editPenIcon()
   const QString theme = settings.value("StyleSheet::theme", "light").toString();
   return QIcon(LoadSvg(":/resources/svg/pencil-edit.svg", theme));
 }
+
+QString stripTrailingCopySuffix(QString text)
+{
+  text = text.trimmed();
+  text.remove(QRegularExpression("\\s+copy(?:\\s+\\d+)?$", QRegularExpression::CaseInsensitiveOption));
+  return text.trimmed();
+}
 }  // namespace
 
 MarkersPanel::MarkersPanel(MarkerManager* manager, QWidget* parent)
@@ -80,7 +87,7 @@ MarkersPanel::MarkersPanel(MarkerManager* manager, QWidget* parent)
   connect(ui->buttonRenameLayer, &QPushButton::clicked, this, &MarkersPanel::onRenameLayer);
   connect(ui->buttonRemoveLayer, &QPushButton::clicked, this, &MarkersPanel::onRemoveLayer);
   connect(ui->checkBoxAutoloadCompanionMarkup, &QCheckBox::toggled, this,
-          &MarkersPanel::autoloadCompanionMarkupChanged);
+          &MarkersPanel::autoloadCompanionAnnotationsChanged);
   connect(ui->buttonMarkRange, &QPushButton::clicked, this, &MarkersPanel::onAddRegion);
   connect(ui->buttonDeleteItem, &QPushButton::clicked, this, &MarkersPanel::onRemoveItem);
   connect(ui->buttonJumpTo, &QPushButton::clicked, this, &MarkersPanel::onJumpToItem);
@@ -156,12 +163,12 @@ void MarkersPanel::setCurrentAxisId(const QString& axis_id)
   scheduleTreeRefresh();
 }
 
-void MarkersPanel::setAutoloadCompanionMarkup(bool enabled)
+void MarkersPanel::setAutoloadCompanionAnnotations(bool enabled)
 {
   ui->checkBoxAutoloadCompanionMarkup->setChecked(enabled);
 }
 
-bool MarkersPanel::autoloadCompanionMarkup() const
+bool MarkersPanel::autoloadCompanionAnnotations() const
 {
   return ui->checkBoxAutoloadCompanionMarkup->isChecked();
 }
@@ -307,8 +314,8 @@ void MarkersPanel::onNewLayer()
 void MarkersPanel::onLoadLayer()
 {
   const QString file_path = QFileDialog::getOpenFileName(
-      this, tr("Load Marker Layer"), defaultMarkupDirectory(),
-      tr("Marker Files (*.markup*.json *.json);;All Files (*)"));
+      this, tr("Load Marker Layer"), defaultAnnotationDirectory(),
+      tr("Annotation Files (*.annotations*.json *.json);;All Files (*)"));
   if (!file_path.isEmpty() && !_manager->loadLayer(file_path))
   {
     QMessageBox::warning(this, tr("Load failed"), tr("Failed to load marker layer."));
@@ -353,8 +360,8 @@ void MarkersPanel::onSaveLayerAs()
     _manager->setLayerAxisId(index, _current_axis_id, true);
   }
   const QString file_path = QFileDialog::getSaveFileName(
-      this, tr("Save Marker Layer As"), suggestUniqueMarkupFilePath(),
-      tr("Marker Files (*.markup*.json);;JSON Files (*.json);;All Files (*)"));
+      this, tr("Save Marker Layer As"), suggestUniqueAnnotationFilePath(),
+      tr("Annotation Files (*.annotations*.json);;JSON Files (*.json);;All Files (*)"));
   if (!file_path.isEmpty() && !_manager->saveLayerAs(index, file_path))
   {
     QMessageBox::warning(this, tr("Save failed"), tr("Failed to save marker layer."));
@@ -614,11 +621,11 @@ void MarkersPanel::addLayerItem(int layer_index, const MarkerManager::MarkerLaye
   }
   layer_item->setToolTip(COLUMN_NAME, layer.file_path.isEmpty() ? layer.name : layer.file_path);
   layer_item->setToolTip(COLUMN_STATE,
-                         !compatible ? QString("Markup axis '%1' does not match current axis '%2'")
+                         !compatible ? QString("Annotation axis '%1' does not match current axis '%2'")
                                            .arg(layer.axis_id, _current_axis_id) :
-                         is_active_edit_layer ? "Active editable markup set" :
-                         (!layer.editable)    ? "Read-only markup set" :
-                                                "Double-click to make this the editable markup set");
+                         is_active_edit_layer ? "Active editable annotation set" :
+                         (!layer.editable)    ? "Read-only annotation set" :
+                                                "Double-click to make this the editable annotation set");
   layer_item->setExpanded(true);
 
   auto layer_font = layer_item->font(COLUMN_NAME);
@@ -682,7 +689,7 @@ int MarkersPanel::markerRowFromItem(const QTreeWidgetItem* item) const
   return item->data(COLUMN_NAME, ROLE_MARKER_ROW).toInt();
 }
 
-QString MarkersPanel::defaultMarkupDirectory() const
+QString MarkersPanel::defaultAnnotationDirectory() const
 {
   if (!_session_data_files.isEmpty())
   {
@@ -696,11 +703,11 @@ QString MarkersPanel::defaultMarkupDirectory() const
   return QString();
 }
 
-QString MarkersPanel::defaultMarkupStem() const
+QString MarkersPanel::defaultAnnotationStem() const
 {
   if (!_session_data_files.isEmpty())
   {
-    return QFileInfo(_session_data_files.front()).completeBaseName() + ".markup";
+    return QFileInfo(_session_data_files.front()).completeBaseName() + ".annotations";
   }
   const auto* layer = _manager->activeLayer();
   if (layer && !layer->name.trimmed().isEmpty())
@@ -712,7 +719,7 @@ QString MarkersPanel::defaultMarkupStem() const
 
 QString MarkersPanel::suggestUniqueLayerName() const
 {
-  const QString base = defaultMarkupStem();
+  const QString base = defaultAnnotationStem();
   QSet<QString> used_names;
   for (const auto& layer : _manager->layers())
   {
@@ -730,10 +737,10 @@ QString MarkersPanel::suggestUniqueLayerName() const
 
 QString MarkersPanel::suggestDuplicateLayerName(const QString& source_name) const
 {
-  QString base = source_name.trimmed();
+  QString base = stripTrailingCopySuffix(source_name);
   if (base.isEmpty())
   {
-    base = defaultMarkupStem();
+    base = defaultAnnotationStem();
   }
 
   QSet<QString> used_names;
@@ -741,17 +748,10 @@ QString MarkersPanel::suggestDuplicateLayerName(const QString& source_name) cons
   {
     used_names.insert(layer.name);
   }
-
-  QString candidate = base + " copy";
-  int suffix = 2;
-  while (used_names.contains(candidate))
-  {
-    candidate = QString("%1.%2").arg(base).arg(suffix++);
-  }
-  return candidate;
+  return nextCopyLayerName(base, used_names);
 }
 
-QString MarkersPanel::sanitizeMarkupVariant(QString text) const
+QString MarkersPanel::sanitizeAnnotationVariant(QString text) const
 {
   text = text.trimmed();
   text.replace(QRegularExpression("\\s+"), "_");
@@ -763,55 +763,91 @@ QString MarkersPanel::sanitizeMarkupVariant(QString text) const
   return text;
 }
 
-QString MarkersPanel::autoloadSafeMarkupBaseName(const QString& layer_name) const
+QString MarkersPanel::autoloadSafeAnnotationBaseName(const QString& layer_name) const
 {
   const QString session_stem =
       !_session_data_files.isEmpty() ? QFileInfo(_session_data_files.front()).completeBaseName() :
                                        QString();
   if (session_stem.isEmpty())
   {
-    return sanitizeMarkupVariant(layer_name);
+    return sanitizeAnnotationVariant(layer_name);
   }
 
-  const QString markup_prefix = session_stem + ".markup";
+  const QString annotation_prefix = session_stem + ".annotations";
   QString variant = layer_name.trimmed();
 
-  if (variant.compare(markup_prefix, Qt::CaseInsensitive) == 0)
+  if (variant.compare(annotation_prefix, Qt::CaseInsensitive) == 0)
   {
-    return markup_prefix;
+    return annotation_prefix;
   }
 
-  if (variant.startsWith(markup_prefix, Qt::CaseInsensitive))
+  if (variant.startsWith(annotation_prefix, Qt::CaseInsensitive))
   {
-    variant = variant.mid(markup_prefix.size());
+    variant = variant.mid(annotation_prefix.size());
   }
 
   variant.replace(QRegularExpression("^[\\s._()-]+"), "");
-  variant = sanitizeMarkupVariant(variant);
+  variant = sanitizeAnnotationVariant(variant);
 
   if (variant.isEmpty())
   {
-    return markup_prefix;
+    return annotation_prefix;
   }
-  return markup_prefix + "." + variant;
+  return annotation_prefix + "." + variant;
 }
 
-QString MarkersPanel::suggestUniqueMarkupFilePath() const
+QString MarkersPanel::suggestUniqueAnnotationFilePath() const
 {
-  const QDir dir(defaultMarkupDirectory());
+  const QDir dir(defaultAnnotationDirectory());
   const QString layer_name =
       _manager->activeLayer() && !_manager->activeLayer()->name.trimmed().isEmpty() ?
           _manager->activeLayer()->name.trimmed() :
           suggestUniqueLayerName();
-  const QString base = !_session_data_files.isEmpty() ? autoloadSafeMarkupBaseName(layer_name) :
-                                                        sanitizeMarkupVariant(layer_name);
+  const QString base = !_session_data_files.isEmpty() ? autoloadSafeAnnotationBaseName(layer_name) :
+                                                        sanitizeAnnotationVariant(layer_name);
 
   QString candidate = base;
-  int suffix = 2;
-  while (dir.exists(candidate + ".json"))
+  if (dir.exists(candidate + ".json"))
   {
-    candidate = QString("%1.%2").arg(base).arg(suffix++);
+    candidate = nextCopyFileBaseName(base, dir);
   }
 
   return dir.filePath(candidate + ".json");
+}
+
+QString MarkersPanel::nextCopyLayerName(const QString& base_name,
+                                        const QSet<QString>& used_names) const
+{
+  QString root = stripTrailingCopySuffix(base_name);
+  if (root.isEmpty())
+  {
+    root = "annotations";
+  }
+
+  QString candidate = root + " copy";
+  int suffix = 2;
+  while (used_names.contains(candidate))
+  {
+    candidate = QString("%1 copy %2").arg(root).arg(suffix++);
+  }
+  return candidate;
+}
+
+QString MarkersPanel::nextCopyFileBaseName(const QString& base_name, const QDir& dir) const
+{
+  QString root = base_name;
+  root.remove(QRegularExpression("\\.copy(?:-\\d+)?$", QRegularExpression::CaseInsensitiveOption));
+  root = root.trimmed();
+  if (root.isEmpty())
+  {
+    root = "annotations";
+  }
+
+  QString candidate = root + ".copy";
+  int suffix = 2;
+  while (dir.exists(candidate + ".json"))
+  {
+    candidate = QString("%1.copy-%2").arg(root).arg(suffix++);
+  }
+  return candidate;
 }

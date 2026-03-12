@@ -17,7 +17,7 @@
    <item>
     <widget class="QGroupBox" name="groupMarkup">
      <property name="title">
-      <string>Markup</string>
+      <string>Annotations</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayoutMarkup">
       <item>
@@ -80,7 +80,7 @@
       <item>
        <widget class="QCheckBox" name="checkBoxAutoloadCompanionMarkup">
         <property name="text">
-         <string>Autoload companion markup files</string>
+         <string>Autoload companion annotation files</string>
         </property>
        </widget>
       </item>
@@ -118,7 +118,7 @@
         </column>
         <column>
          <property name="text">
-          <string>Markup</string>
+          <string>Annotation</string>
          </property>
         </column>
         <column>

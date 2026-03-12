@@ -30,6 +30,14 @@ public:
 
   struct MarkerLayer
   {
+    struct OriginInfo
+    {
+      QString kind;
+      QString source_name;
+      QString source_file;
+      QString copied_at;
+    };
+
     QString name;
     QString file_path;
     QString axis_id;
@@ -40,6 +48,7 @@ public:
     bool editable = true;
     bool dirty = false;
     QColor color = Qt::yellow;
+    OriginInfo origin;
     QVector<MarkerItem> items;
   };
 
