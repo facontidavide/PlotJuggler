@@ -51,6 +51,8 @@ private slots:
   void onMessageReceived(const mosquitto_message* message);
 
 private:
+  PJ::MessageParserPtr ensureTopicParser(const std::string& topic);
+
   bool _running;
 
   std::unordered_map<std::string, PJ::MessageParserPtr> _parsers;

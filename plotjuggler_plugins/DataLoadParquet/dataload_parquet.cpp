@@ -309,9 +309,10 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
 
   QSettings settings;
   settings.setValue("DataLoadParquet::prevTimestamp", selected_stamp);
-  settings.setValue("DataLoadParquet::timeHistory",
-                    updateColumnHistory(settings.value("DataLoadParquet::timeHistory").toStringList(),
-                                        selected_stamp));
+  settings.setValue(
+      "DataLoadParquet::timeHistory",
+      updateColumnHistory(settings.value("DataLoadParquet::timeHistory").toStringList(),
+                          selected_stamp));
   settings.setValue("DataLoadParquet::radioIndexChecked", ui->radioButtonIndex->isChecked());
   settings.setValue("DataLoadParquet::parseDateTime", ui->checkBoxDateFormat->isChecked());
   settings.setValue("DataLoadParquet::dateFromat", ui->lineEditDateFormat->text());

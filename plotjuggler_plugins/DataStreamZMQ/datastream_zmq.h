@@ -63,6 +63,7 @@ private:
   PJ::ParserFactoryPlugin::Ptr _parser_creator;
   bool _is_connect = false;
   void receiveLoop();
+  PJ::MessageParserPtr ensureTopicParser(const std::string& topic);
   bool parseMessage(const PJ::MessageRef& msg, double& timestamp);
   bool parseMessage(const std::string& topic, const PJ::MessageRef& msg, double& timestamp);
   void parseTopicFilters(const QString& filters);

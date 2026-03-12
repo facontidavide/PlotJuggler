@@ -14,6 +14,15 @@
 #include <QKeySequence>
 #include <QClipboard>
 
+namespace
+{
+bool isCurveItem(const QTreeWidgetItem* item)
+{
+  return item && !item->data(0, CustomRoles::Name).toString().isEmpty() &&
+         item->flags().testFlag(Qt::ItemIsSelectable);
+}
+}  // namespace
+
 class TreeWidgetItem : public QTreeWidgetItem
 {
 public:
@@ -161,6 +170,12 @@ void CurveTreeView::addItem(const QString& group_name, const QString& tree_name,
 
     if (matching_child)
     {
+      if (is_leaf)
+      {
+        matching_child->setText(1, "-");
+        matching_child->setFlags(matching_child->flags() | Qt::ItemIsSelectable);
+        matching_child->setData(0, Name, plot_ID);
+      }
       tree_parent = matching_child;
     }
     else
@@ -218,7 +233,10 @@ std::vector<std::string> CurveTreeView::getSelectedNames()
 
   for (const auto& item : selectedItems())
   {
-    non_hidden_list.push_back(item->data(0, Qt::UserRole).toString().toStdString());
+    if (isCurveItem(item))
+    {
+      non_hidden_list.push_back(item->data(0, Qt::UserRole).toString().toStdString());
+    }
   }
   return non_hidden_list;
 }
@@ -249,11 +267,12 @@ bool CurveTreeView::applyVisibilityFilter(const QString& search_string)
   QStringList spaced_items = search_string.split(' ', PJ::SkipEmptyParts);
 
   auto hideFunc = [&](QTreeWidgetItem* item) {
-    QString name = item->data(0, Qt::UserRole).toString();
-    if (name.isEmpty())
+    if (!isCurveItem(item))
     {
-      return;  // not a leaf
+      return;
     }
+
+    QString name = item->data(0, Qt::UserRole).toString();
     bool toHide = false;
 
     if (search_string.isEmpty() == false)
@@ -347,6 +366,15 @@ void CurveTreeView::removeCurve(const QString& to_be_deleted)
     if (curve_name == to_be_deleted)
     {
       _leaf_count--;
+
+      if (item->childCount() > 0)
+      {
+        item->setFlags(item->flags() & (~Qt::ItemIsSelectable));
+        item->setData(0, Qt::UserRole, {});
+        item->setText(1, "");
+        return;
+      }
+
       auto parent_item = item->parent();
       if (!parent_item)
       {

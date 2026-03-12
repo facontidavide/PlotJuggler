@@ -38,8 +38,9 @@ QStringList prioritizedColumns(const std::vector<std::string>& column_names,
   for (const auto& name : history)
   {
     const bool exists =
-        std::any_of(column_names.begin(), column_names.end(),
-                    [&name](const std::string& column) { return QString::fromStdString(column) == name; });
+        std::any_of(column_names.begin(), column_names.end(), [&name](const std::string& column) {
+          return QString::fromStdString(column) == name;
+        });
     if (exists && !added.contains(name))
     {
       ordered.push_back(name);
