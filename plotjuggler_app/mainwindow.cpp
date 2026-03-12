@@ -1032,11 +1032,6 @@ void MainWindow::onPlotZoomChanged(PlotWidget* modified_plot, QRectF new_range)
     this->forEachWidget(visitor);
   }
 
-  if (_annotations_panel && _annotations_panel->hasSelectedAnnotation())
-  {
-    QTimer::singleShot(0, this, [this]() { refreshSelectedAnnotationOverlay(); });
-  }
-
   onUndoableChange();
 }
 

@@ -175,6 +175,7 @@ protected:
   const QwtPlot* qwtPlot() const;
 
   PlotLegend* legend();
+  const PlotLegend* legend() const;
   PlotZoomer* zoomer();
   PlotMagnifier* magnifier();
   PlotPanner* panner1();

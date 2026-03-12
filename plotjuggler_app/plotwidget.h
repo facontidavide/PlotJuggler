@@ -37,6 +37,7 @@
 #include "plot_background.h"
 
 class StatisticsDialog;
+class QwtPlotItem;
 class QwtPlotZoneItem;
 
 class PlotWidget : public PlotWidgetBase
@@ -211,13 +212,14 @@ private:
   bool _show_point_enabled = false;
   QwtPlotMarker* _show_point_marker;
   QwtPlotMarker* _show_point_text;
-  std::vector<QwtPlotMarker*> _annotation_overlays;
+  std::vector<QwtPlotItem*> _annotation_overlays;
   std::vector<QwtPlotZoneItem*> _region_overlays;
   QVector<AnnotationManager::AnnotationLayer> _annotation_layers;
   std::optional<AnnotationManager::AnnotationItem> _selected_annotation;
   std::optional<AnnotationManager::AnnotationItem> _selected_annotation_preview_source;
   bool _selected_annotation_editable = false;
   bool _selected_annotation_handles_visible = false;
+  bool _interaction_tools_were_enabled = false;
 
   QString _statistics_window_title = "";
 
@@ -241,6 +243,14 @@ private:
 
   DragInfo _dragging;
 
+  enum class InteractionMode
+  {
+    None,
+    AnnotationDrag,
+    TrackerDrag,
+    DelegatedToQwt
+  };
+
   struct AnnotationDragState
   {
     enum Mode
@@ -255,6 +265,7 @@ private:
     double press_time = 0.0;
   } _annotation_drag;
   AnnotationDragState::Mode _annotation_hover = AnnotationDragState::None;
+  InteractionMode _interaction_mode = InteractionMode::None;
 
   void buildActions();
 
@@ -287,8 +298,13 @@ private:
   void clearAnnotationOverlays();
   bool isSelectedAnnotation(const AnnotationManager::AnnotationItem& item) const;
   AnnotationDragState::Mode hitTestSelectedAnnotationHandle(const QPoint& pos) const;
-  double annotationHandleYValue(bool center_handle) const;
-  double annotationHandleXValue(double time_value) const;
+  QPointF annotationHandleCanvasPos(double time_value, bool center_handle) const;
+  void beginAnnotationDrag(AnnotationDragState::Mode mode, const QPoint& press_point);
+  void updateAnnotationDrag(QMouseEvent* mouse_event);
+  void finishAnnotationDrag(bool commit);
+  void updateAnnotationHover(const QPoint& pos);
+  void clearInteractionState();
+  bool handleLegendClick(QMouseEvent* mouse_event);
 };
 
 #endif

@@ -24,6 +24,16 @@ PlotZoomer::PlotZoomer(QWidget* canvas)
   this->setTrackerMode(AlwaysOff);
 }
 
+void PlotZoomer::resetInteractionState()
+{
+  _mouse_pressed = false;
+  _zoom_enabled = false;
+  reset();
+  setRubberBand(NoRubberBand);
+  setTrackerMode(AlwaysOff);
+  QApplication::restoreOverrideCursor();
+}
+
 void PlotZoomer::widgetMousePressEvent(QMouseEvent* me)
 {
   _mouse_pressed = false;

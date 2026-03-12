@@ -26,6 +26,8 @@ public:
     _keep_aspect_ratio = doKeep;
   }
 
+  void resetInteractionState();
+
 protected:
   virtual void widgetMousePressEvent(QMouseEvent* event) override;
   virtual void widgetMouseReleaseEvent(QMouseEvent* event) override;

@@ -650,35 +650,6 @@ bool PlotWidgetBase::eventFilter(QObject* obj, QEvent* event)
         }
         return false;
       }
-      //-------------------
-      case QEvent::MouseButtonPress: {
-        QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
-        if (mouse_event->button() == Qt::LeftButton && mouse_event->modifiers() == Qt::NoModifier)
-        {
-          auto clicked_item = legend()->processMousePressEvent(mouse_event);
-          if (clicked_item)
-          {
-            for (auto& it : curveList())
-            {
-              QSettings settings;
-              bool autozoom_visibility =
-                  settings.value("Preferences::autozoom_visibility", true).toBool();
-              if (clicked_item == it.curve)
-              {
-                it.curve->setVisible(!it.curve->isVisible());
-                //_tracker->redraw();
-
-                if (autozoom_visibility)
-                {
-                  resetZoom();
-                }
-                replot();
-                return true;
-              }
-            }
-          }
-        }
-      }
     }
   }
   return false;
@@ -889,6 +860,11 @@ void PlotWidgetBase::removeAllCurves()
 }
 
 PlotLegend* PlotWidgetBase::legend()
+{
+  return p->legend;
+}
+
+const PlotLegend* PlotWidgetBase::legend() const
 {
   return p->legend;
 }
