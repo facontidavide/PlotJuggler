@@ -65,6 +65,7 @@ public:
   bool saveLayerAs(int index, const QString& file_path);
   int duplicateLayer(int index, const QString& new_name = QString());
   void removeLayer(int index);
+  void clear();
 
   void setActiveLayerIndex(int index);
   void setLayerVisible(int index, bool visible);

@@ -34,6 +34,7 @@ public:
   void setCurrentAxisId(const QString& axis_id);
   void setAutoloadCompanionAnnotations(bool enabled);
   bool autoloadCompanionAnnotations() const;
+  void clearForSessionChange();
 
 private slots:
   void refreshAnnotationLayers();

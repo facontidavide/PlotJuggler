@@ -208,6 +208,19 @@ void AnnotationManager::removeLayer(int index)
   emit activeLayerChanged(_active_layer_index);
 }
 
+void AnnotationManager::clear()
+{
+  if (_layers.isEmpty() && _active_layer_index == -1)
+  {
+    return;
+  }
+
+  _layers.clear();
+  _active_layer_index = -1;
+  emit layersChanged();
+  emit activeLayerChanged(_active_layer_index);
+}
+
 void AnnotationManager::setActiveLayerIndex(int index)
 {
   if (index < -1 || index >= _layers.size() || _active_layer_index == index)

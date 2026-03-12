@@ -173,6 +173,19 @@ bool AnnotationsPanel::autoloadCompanionAnnotations() const
   return ui->checkBoxAutoloadCompanionAnnotations->isChecked();
 }
 
+void AnnotationsPanel::clearForSessionChange()
+{
+  _tree_refresh_pending = false;
+  _updating_ui = true;
+  {
+    QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
+    ui->treeWidgetAnnotations->clear();
+  }
+  _updating_ui = false;
+  updateButtons();
+  emit selectedAnnotationChanged(false);
+}
+
 bool AnnotationsPanel::hasSelectedAnnotation() const
 {
   return selectedAnnotationRow() >= 0 && isCurrentSelectionCompatible();

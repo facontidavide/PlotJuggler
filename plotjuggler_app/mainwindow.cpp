@@ -1326,6 +1326,15 @@ void MainWindow::deleteAllData()
 {
   forEachWidget([](PlotWidget* plot) { plot->removeAllCurves(); });
 
+  if (_annotations_panel)
+  {
+    _annotations_panel->clearForSessionChange();
+  }
+  if (_annotation_manager)
+  {
+    _annotation_manager->clear();
+  }
+
   _mapped_plot_data.clear();
   _transform_functions.clear();
   _curvelist_widget->clear();
@@ -1478,6 +1487,14 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
 
   if (loaded_filenames.size() > 0)
   {
+    if (data_replaced_entirely && _annotation_manager)
+    {
+      if (_annotations_panel)
+      {
+        _annotations_panel->clearForSessionChange();
+      }
+      _annotation_manager->clear();
+    }
     updateRecentDataMenu(loaded_filenames);
     refreshAnnotationSessionContext();
     linkedZoomOut();
@@ -2530,6 +2547,7 @@ void MainWindow::refreshAnnotationOverlays()
   }
 
   QVector<AnnotationManager::AnnotationLayer> layers = _annotation_manager->layers();
+  const bool has_layers = !layers.isEmpty();
   const QString axis_id = currentSessionAxisId();
   for (auto& layer : layers)
   {
@@ -2543,7 +2561,7 @@ void MainWindow::refreshAnnotationOverlays()
     plot->setSelectedAnnotationEditable(_annotations_panel && _annotations_panel->isActiveLayerEditable());
     plot->setSelectedAnnotationHandlesVisible(!plot->isXYPlot());
     plot->setSelectedAnnotationPreviewSource(std::nullopt);
-    plot->setSelectedAnnotation((_annotations_panel && _annotations_panel->hasSelectedAnnotation())
+    plot->setSelectedAnnotation((has_layers && _annotations_panel && _annotations_panel->hasSelectedAnnotation())
                                 ? std::optional<AnnotationManager::AnnotationItem>(_annotations_panel->selectedAnnotation())
                                 : std::nullopt);
     plot->setAnnotationLayers(layers);
@@ -2558,7 +2576,7 @@ void MainWindow::refreshSelectedAnnotationOverlay()
   }
 
   const auto selected =
-      (_annotations_panel && _annotations_panel->hasSelectedAnnotation())
+      (!_annotation_manager->layers().isEmpty() && _annotations_panel && _annotations_panel->hasSelectedAnnotation())
           ? std::optional<AnnotationManager::AnnotationItem>(_annotations_panel->selectedAnnotation())
           : std::nullopt;
   QVector<AnnotationManager::AnnotationLayer> layers = _annotation_manager->layers();
