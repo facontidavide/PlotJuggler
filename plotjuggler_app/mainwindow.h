@@ -37,8 +37,8 @@
 #include "ui_mainwindow.h"
 
 class QVBoxLayout;
-class MarkerManager;
-class MarkersPanel;
+class AnnotationManager;
+class AnnotationsPanel;
 
 class MainWindow : public QMainWindow
 {
@@ -128,8 +128,8 @@ private:
   bool _minimized;
 
   CurveListPanel* _curvelist_widget;
-  MarkerManager* _marker_manager = nullptr;
-  MarkersPanel* _markers_panel = nullptr;
+  AnnotationManager* _annotation_manager = nullptr;
+  AnnotationsPanel* _annotations_panel = nullptr;
 
   PlotDataMapRef _mapped_plot_data;
 
@@ -242,13 +242,13 @@ private:
   void updateRecentLayoutMenu(QStringList new_filenames);
   void alignAxesAcrossDockers(const QString& reason, bool replot_after_alignment);
   void replotAllPlots(const QString& reason);
-  void refreshMarkerOverlays();
-  void refreshSelectedMarkerOverlay();
-  void jumpToSelectedMarker();
-  void updateMarkerViewRange();
+  void refreshAnnotationOverlays();
+  void refreshSelectedAnnotationOverlay();
+  void jumpToSelectedAnnotation();
+  void updateAnnotationViewRange();
   QStringList currentSessionDataFiles() const;
   QString currentSessionAxisId() const;
-  void refreshMarkerSessionContext();
+  void refreshAnnotationSessionContext();
   void autoloadCompanionAnnotationFiles();
 
   void updatedDisplayTime();
@@ -319,7 +319,7 @@ private slots:
   void on_buttonHideStreamingFrame_clicked();
   void on_buttonHidePublishersFrame_clicked();
   void on_buttonHideTimeseriesFrame_clicked();
-  void on_buttonHideMarkersFrame_clicked();
+  void on_buttonHideAnnotationsFrame_clicked();
 
   void on_buttonRecentData_clicked();
   void on_buttonRecentLayout_clicked();

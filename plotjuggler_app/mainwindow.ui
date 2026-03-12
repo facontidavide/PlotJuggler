@@ -1175,7 +1175,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QWidget" name="widgetLabelMarkers" native="true">
+         <widget class="QWidget" name="widgetLabelAnnotations" native="true">
           <property name="minimumSize">
            <size>
             <width>0</width>
@@ -1188,7 +1188,7 @@
             <height>22</height>
            </size>
           </property>
-          <layout class="QHBoxLayout" name="horizontalLayoutMarkersHeader">
+          <layout class="QHBoxLayout" name="horizontalLayoutAnnotationsHeader">
            <property name="spacing">
             <number>0</number>
            </property>
@@ -1205,7 +1205,7 @@
             <number>0</number>
            </property>
            <item>
-            <widget class="QLabel" name="labelMarkers">
+            <widget class="QLabel" name="labelAnnotations">
              <property name="maximumSize">
               <size>
                <width>16777215</width>
@@ -1217,13 +1217,13 @@
                <pointsize>10</pointsize>
               </font>
              </property>
-             <property name="text">
-              <string>Markers</string>
-             </property>
+              <property name="text">
+               <string>Annotations</string>
+              </property>
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="buttonHideMarkersFrame">
+            <widget class="QPushButton" name="buttonHideAnnotationsFrame">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                <horstretch>0</horstretch>
@@ -1267,8 +1267,8 @@
          </widget>
         </item>
         <item>
-         <widget class="QFrame" name="frameMarkers">
-          <layout class="QVBoxLayout" name="verticalLayoutMarkersFrame">
+         <widget class="QFrame" name="frameAnnotations">
+          <layout class="QVBoxLayout" name="verticalLayoutAnnotationsFrame">
            <property name="spacing">
             <number>2</number>
            </property>

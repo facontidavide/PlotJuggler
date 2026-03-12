@@ -1,5 +1,5 @@
-#include "markers_panel.h"
-#include "ui_markers_panel.h"
+#include "annotations_panel.h"
+#include "ui_annotations_panel.h"
 
 #include "PlotJuggler/svg_util.h"
 
@@ -34,7 +34,7 @@ constexpr int COLUMN_NOTES = 7;
 constexpr int COLUMN_STATE = 8;
 
 constexpr int ROLE_LAYER_INDEX = Qt::UserRole;
-constexpr int ROLE_MARKER_ROW = Qt::UserRole + 1;
+constexpr int ROLE_ANNOTATION_ROW = Qt::UserRole + 1;
 
 QIcon colorSwatchIcon(const QColor& color)
 {
@@ -64,59 +64,59 @@ QString stripTrailingCopySuffix(QString text)
 }
 }  // namespace
 
-MarkersPanel::MarkersPanel(MarkerManager* manager, QWidget* parent)
+AnnotationsPanel::AnnotationsPanel(AnnotationManager* manager, QWidget* parent)
   : QWidget(parent), _manager(manager)
-  , ui(new Ui::MarkersPanel)
+  , ui(new Ui::AnnotationsPanel)
 {
   ui->setupUi(this);
 
-  ui->treeWidgetMarkup->setRootIsDecorated(true);
-  ui->treeWidgetMarkup->setSelectionBehavior(QAbstractItemView::SelectRows);
-  ui->treeWidgetMarkup->setUniformRowHeights(true);
-  ui->treeWidgetMarkup->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-  ui->treeWidgetMarkup->header()->setStretchLastSection(false);
-  ui->treeWidgetMarkup->header()->setSectionResizeMode(COLUMN_NOTES, QHeaderView::Stretch);
-  ui->treeWidgetMarkup->header()->setSectionResizeMode(COLUMN_LABEL, QHeaderView::Stretch);
+  ui->treeWidgetAnnotations->setRootIsDecorated(true);
+  ui->treeWidgetAnnotations->setSelectionBehavior(QAbstractItemView::SelectRows);
+  ui->treeWidgetAnnotations->setUniformRowHeights(true);
+  ui->treeWidgetAnnotations->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  ui->treeWidgetAnnotations->header()->setStretchLastSection(false);
+  ui->treeWidgetAnnotations->header()->setSectionResizeMode(COLUMN_NOTES, QHeaderView::Stretch);
+  ui->treeWidgetAnnotations->header()->setSectionResizeMode(COLUMN_LABEL, QHeaderView::Stretch);
 
-  connect(ui->buttonNewLayer, &QPushButton::clicked, this, &MarkersPanel::onNewLayer);
-  connect(ui->buttonLoadLayer, &QPushButton::clicked, this, &MarkersPanel::onLoadLayer);
-  connect(ui->buttonSaveLayer, &QPushButton::clicked, this, &MarkersPanel::onSaveLayer);
-  connect(ui->buttonSaveLayerAs, &QPushButton::clicked, this, &MarkersPanel::onSaveLayerAs);
+  connect(ui->buttonNewLayer, &QPushButton::clicked, this, &AnnotationsPanel::onNewLayer);
+  connect(ui->buttonLoadLayer, &QPushButton::clicked, this, &AnnotationsPanel::onLoadLayer);
+  connect(ui->buttonSaveLayer, &QPushButton::clicked, this, &AnnotationsPanel::onSaveLayer);
+  connect(ui->buttonSaveLayerAs, &QPushButton::clicked, this, &AnnotationsPanel::onSaveLayerAs);
   connect(ui->buttonDuplicateLayer, &QPushButton::clicked, this,
-          &MarkersPanel::onDuplicateLayer);
-  connect(ui->buttonRenameLayer, &QPushButton::clicked, this, &MarkersPanel::onRenameLayer);
-  connect(ui->buttonRemoveLayer, &QPushButton::clicked, this, &MarkersPanel::onRemoveLayer);
-  connect(ui->checkBoxAutoloadCompanionMarkup, &QCheckBox::toggled, this,
-          &MarkersPanel::autoloadCompanionAnnotationsChanged);
-  connect(ui->buttonMarkRange, &QPushButton::clicked, this, &MarkersPanel::onAddRegion);
-  connect(ui->buttonDeleteItem, &QPushButton::clicked, this, &MarkersPanel::onRemoveItem);
-  connect(ui->buttonJumpTo, &QPushButton::clicked, this, &MarkersPanel::onJumpToItem);
+          &AnnotationsPanel::onDuplicateLayer);
+  connect(ui->buttonRenameLayer, &QPushButton::clicked, this, &AnnotationsPanel::onRenameLayer);
+  connect(ui->buttonRemoveLayer, &QPushButton::clicked, this, &AnnotationsPanel::onRemoveLayer);
+  connect(ui->checkBoxAutoloadCompanionAnnotations, &QCheckBox::toggled, this,
+          &AnnotationsPanel::autoloadCompanionAnnotationsChanged);
+  connect(ui->buttonMarkRange, &QPushButton::clicked, this, &AnnotationsPanel::onAddRegion);
+  connect(ui->buttonDeleteItem, &QPushButton::clicked, this, &AnnotationsPanel::onRemoveItem);
+  connect(ui->buttonJumpTo, &QPushButton::clicked, this, &AnnotationsPanel::onJumpToItem);
 
-  connect(ui->treeWidgetMarkup, &QTreeWidget::currentItemChanged, this,
-          &MarkersPanel::onTreeCurrentItemChanged);
-  connect(ui->treeWidgetMarkup, &QTreeWidget::itemChanged, this, &MarkersPanel::onTreeItemChanged);
-  connect(ui->treeWidgetMarkup, &QTreeWidget::itemDoubleClicked, this,
+  connect(ui->treeWidgetAnnotations, &QTreeWidget::currentItemChanged, this,
+          &AnnotationsPanel::onTreeCurrentItemChanged);
+  connect(ui->treeWidgetAnnotations, &QTreeWidget::itemChanged, this, &AnnotationsPanel::onTreeItemChanged);
+  connect(ui->treeWidgetAnnotations, &QTreeWidget::itemDoubleClicked, this,
           [this](QTreeWidgetItem* item, int column) {
             if (!item)
             {
               return;
             }
-            if (layerIndexFromItem(item) >= 0 && markerRowFromItem(item) < 0)
+            if (layerIndexFromItem(item) >= 0 && annotationRowFromItem(item) < 0)
             {
               if (const auto* layer = _manager->activeLayer())
               {
                 onEditableToggled(!layer->editable);
               }
             }
-            else if (markerRowFromItem(item) >= 0 && column != COLUMN_ON)
+            else if (annotationRowFromItem(item) >= 0 && column != COLUMN_ON)
             {
-              ui->treeWidgetMarkup->editItem(item, column);
+              ui->treeWidgetAnnotations->editItem(item, column);
             }
           });
 
-  connect(_manager, &MarkerManager::layersChanged, this, [this]() { scheduleTreeRefresh(); });
-  connect(_manager, &MarkerManager::itemsChanged, this, [this]() { scheduleTreeRefresh(); });
-  connect(_manager, &MarkerManager::activeLayerChanged, this, [this](int index) {
+  connect(_manager, &AnnotationManager::layersChanged, this, [this]() { scheduleTreeRefresh(); });
+  connect(_manager, &AnnotationManager::itemsChanged, this, [this]() { scheduleTreeRefresh(); });
+  connect(_manager, &AnnotationManager::activeLayerChanged, this, [this](int index) {
     Q_UNUSED(index);
     scheduleTreeRefresh();
   });
@@ -125,35 +125,35 @@ MarkersPanel::MarkersPanel(MarkerManager* manager, QWidget* parent)
   updateButtons();
 }
 
-MarkersPanel::~MarkersPanel()
+AnnotationsPanel::~AnnotationsPanel()
 {
   delete ui;
 }
 
-void MarkersPanel::setCurrentTime(double time)
+void AnnotationsPanel::setCurrentTime(double time)
 {
   _current_time = time;
 }
 
-void MarkersPanel::setCurrentViewRange(double start_time, double end_time)
+void AnnotationsPanel::setCurrentViewRange(double start_time, double end_time)
 {
   _view_start_time = std::min(start_time, end_time);
   _view_end_time = std::max(start_time, end_time);
 }
 
-void MarkersPanel::setStreamingActive(bool active)
+void AnnotationsPanel::setStreamingActive(bool active)
 {
   _streaming_active = active;
   updateButtons();
 }
 
-void MarkersPanel::setSessionDataFiles(const QStringList& file_paths)
+void AnnotationsPanel::setSessionDataFiles(const QStringList& file_paths)
 {
   _session_data_files = file_paths;
   updateButtons();
 }
 
-void MarkersPanel::setCurrentAxisId(const QString& axis_id)
+void AnnotationsPanel::setCurrentAxisId(const QString& axis_id)
 {
   if (_current_axis_id == axis_id)
   {
@@ -163,25 +163,25 @@ void MarkersPanel::setCurrentAxisId(const QString& axis_id)
   scheduleTreeRefresh();
 }
 
-void MarkersPanel::setAutoloadCompanionAnnotations(bool enabled)
+void AnnotationsPanel::setAutoloadCompanionAnnotations(bool enabled)
 {
-  ui->checkBoxAutoloadCompanionMarkup->setChecked(enabled);
+  ui->checkBoxAutoloadCompanionAnnotations->setChecked(enabled);
 }
 
-bool MarkersPanel::autoloadCompanionAnnotations() const
+bool AnnotationsPanel::autoloadCompanionAnnotations() const
 {
-  return ui->checkBoxAutoloadCompanionMarkup->isChecked();
+  return ui->checkBoxAutoloadCompanionAnnotations->isChecked();
 }
 
-bool MarkersPanel::hasSelectedMarker() const
+bool AnnotationsPanel::hasSelectedAnnotation() const
 {
-  return selectedMarkerRow() >= 0 && isCurrentSelectionCompatible();
+  return selectedAnnotationRow() >= 0 && isCurrentSelectionCompatible();
 }
 
-MarkerManager::MarkerItem MarkersPanel::selectedMarker() const
+AnnotationManager::AnnotationItem AnnotationsPanel::selectedAnnotation() const
 {
   auto* item = currentTreeItem();
-  const int row = markerRowFromItem(item);
+  const int row = annotationRowFromItem(item);
   const int layer_index = layerIndexFromItem(item);
   if (row < 0 || layer_index < 0)
   {
@@ -200,20 +200,20 @@ MarkerManager::MarkerItem MarkersPanel::selectedMarker() const
   return layer->items[row];
 }
 
-int MarkersPanel::selectedMarkerRow() const
+int AnnotationsPanel::selectedAnnotationRow() const
 {
-  return markerRowFromItem(currentTreeItem());
+  return annotationRowFromItem(currentTreeItem());
 }
 
-bool MarkersPanel::isActiveLayerEditable() const
+bool AnnotationsPanel::isActiveLayerEditable() const
 {
   const auto* layer = _manager->activeLayer();
   return layer && layer->editable && isLayerCompatible(*layer);
 }
 
-void MarkersPanel::updateSelectedMarker(const MarkerManager::MarkerItem& item)
+void AnnotationsPanel::updateSelectedAnnotation(const AnnotationManager::AnnotationItem& item)
 {
-  const int row = selectedMarkerRow();
+  const int row = selectedAnnotationRow();
   if (row < 0)
   {
     return;
@@ -222,17 +222,17 @@ void MarkersPanel::updateSelectedMarker(const MarkerManager::MarkerItem& item)
   _manager->updateActiveLayerItem(row, item);
 }
 
-void MarkersPanel::refreshLayers()
+void AnnotationsPanel::refreshAnnotationLayers()
 {
   scheduleTreeRefresh();
 }
 
-void MarkersPanel::refreshItems()
+void AnnotationsPanel::refreshAnnotationItems()
 {
   scheduleTreeRefresh();
 }
 
-void MarkersPanel::onTreeCurrentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous)
+void AnnotationsPanel::onTreeCurrentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous)
 {
   Q_UNUSED(previous);
   if (_updating_ui)
@@ -242,7 +242,7 @@ void MarkersPanel::onTreeCurrentItemChanged(QTreeWidgetItem* current, QTreeWidge
   if (!current)
   {
     updateButtons();
-    emit selectedMarkerChanged(false);
+    emit selectedAnnotationChanged(false);
     return;
   }
   const int layer_index = layerIndexFromItem(current);
@@ -251,10 +251,10 @@ void MarkersPanel::onTreeCurrentItemChanged(QTreeWidgetItem* current, QTreeWidge
     _manager->setActiveLayerIndex(layer_index);
   }
   updateButtons();
-  emit selectedMarkerChanged(hasSelectedMarker());
+  emit selectedAnnotationChanged(hasSelectedAnnotation());
 }
 
-void MarkersPanel::onTreeItemChanged(QTreeWidgetItem* item, int column)
+void AnnotationsPanel::onTreeItemChanged(QTreeWidgetItem* item, int column)
 {
   if (_updating_ui || !item)
   {
@@ -262,21 +262,21 @@ void MarkersPanel::onTreeItemChanged(QTreeWidgetItem* item, int column)
   }
 
   const int layer_index = layerIndexFromItem(item);
-  const int marker_row = markerRowFromItem(item);
+  const int annotation_row = annotationRowFromItem(item);
 
   if (layer_index < 0)
   {
     return;
   }
 
-  if (marker_row < 0)
+  if (annotation_row < 0)
   {
     if (column == COLUMN_ON)
     {
       const auto& layers = _manager->layers();
       if (layer_index < layers.size() && !isLayerCompatible(layers[layer_index]))
       {
-        const QSignalBlocker tree_blocker(ui->treeWidgetMarkup);
+        const QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
         item->setCheckState(COLUMN_ON, Qt::Unchecked);
         return;
       }
@@ -291,18 +291,20 @@ void MarkersPanel::onTreeItemChanged(QTreeWidgetItem* item, int column)
   }
   if (column == COLUMN_LABEL)
   {
-    const QSignalBlocker tree_blocker(ui->treeWidgetMarkup);
-    item->setText(COLUMN_NAME, item->text(COLUMN_LABEL).isEmpty() ? "<marker>" : item->text(COLUMN_LABEL));
+    const QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
+    item->setText(COLUMN_NAME,
+                  item->text(COLUMN_LABEL).isEmpty() ? "<annotation>" : item->text(COLUMN_LABEL));
   }
   else if (column == COLUMN_NAME)
   {
-    const QSignalBlocker tree_blocker(ui->treeWidgetMarkup);
-    item->setText(COLUMN_LABEL, item->text(COLUMN_NAME) == "<marker>" ? QString() : item->text(COLUMN_NAME));
+    const QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
+    item->setText(COLUMN_LABEL,
+                  item->text(COLUMN_NAME) == "<annotation>" ? QString() : item->text(COLUMN_NAME));
   }
-  _manager->updateActiveLayerItem(marker_row, markerItemFromTree(item));
+  _manager->updateActiveLayerItem(annotation_row, annotationItemFromTree(item));
 }
 
-void MarkersPanel::onNewLayer()
+void AnnotationsPanel::onNewLayer()
 {
   const int index = _manager->createLayer(suggestUniqueLayerName());
   if (index >= 0 && !_current_axis_id.isEmpty())
@@ -311,7 +313,7 @@ void MarkersPanel::onNewLayer()
   }
 }
 
-void MarkersPanel::onLoadLayer()
+void AnnotationsPanel::onLoadLayer()
 {
   const QString file_path = QFileDialog::getOpenFileName(
       this, tr("Load Marker Layer"), defaultAnnotationDirectory(),
@@ -322,7 +324,7 @@ void MarkersPanel::onLoadLayer()
   }
 }
 
-void MarkersPanel::onSaveLayer()
+void AnnotationsPanel::onSaveLayer()
 {
   const int index = _manager->activeLayerIndex();
   const auto* layer = _manager->activeLayer();
@@ -347,7 +349,7 @@ void MarkersPanel::onSaveLayer()
   }
 }
 
-void MarkersPanel::onSaveLayerAs()
+void AnnotationsPanel::onSaveLayerAs()
 {
   const int index = _manager->activeLayerIndex();
   if (index < 0)
@@ -368,12 +370,12 @@ void MarkersPanel::onSaveLayerAs()
   }
 }
 
-void MarkersPanel::onRemoveLayer()
+void AnnotationsPanel::onRemoveLayer()
 {
   _manager->removeLayer(_manager->activeLayerIndex());
 }
 
-void MarkersPanel::onDuplicateLayer()
+void AnnotationsPanel::onDuplicateLayer()
 {
   const int index = _manager->activeLayerIndex();
   const auto* layer = _manager->activeLayer();
@@ -393,7 +395,7 @@ void MarkersPanel::onDuplicateLayer()
   }
 }
 
-void MarkersPanel::onRenameLayer()
+void AnnotationsPanel::onRenameLayer()
 {
   const int index = _manager->activeLayerIndex();
   const auto* layer = _manager->activeLayer();
@@ -411,7 +413,7 @@ void MarkersPanel::onRenameLayer()
   }
 }
 
-void MarkersPanel::onEditableToggled(bool checked)
+void AnnotationsPanel::onEditableToggled(bool checked)
 {
   if (_updating_ui)
   {
@@ -420,10 +422,10 @@ void MarkersPanel::onEditableToggled(bool checked)
   _manager->setLayerEditable(_manager->activeLayerIndex(), checked);
 }
 
-void MarkersPanel::onAddRegion()
+void AnnotationsPanel::onAddRegion()
 {
-  MarkerManager::MarkerItem item;
-  item.type = MarkerManager::MarkerType::Region;
+  AnnotationManager::AnnotationItem item;
+  item.type = AnnotationManager::AnnotationType::Region;
   const double view_width = std::abs(_view_end_time - _view_start_time);
   const double width =
       (view_width > std::numeric_limits<double>::epsilon()) ? std::max(view_width * 0.1, 1e-9) :
@@ -452,9 +454,9 @@ void MarkersPanel::onAddRegion()
   _manager->addItemToActiveLayer(item);
 }
 
-void MarkersPanel::onRemoveItem()
+void AnnotationsPanel::onRemoveItem()
 {
-  const int row = selectedMarkerRow();
+  const int row = selectedAnnotationRow();
   if (row < 0)
   {
     return;
@@ -462,15 +464,15 @@ void MarkersPanel::onRemoveItem()
   _manager->removeActiveLayerItem(row);
 }
 
-void MarkersPanel::onJumpToItem()
+void AnnotationsPanel::onJumpToItem()
 {
-  if (hasSelectedMarker())
+  if (hasSelectedAnnotation())
   {
-    emit jumpToSelectedMarkerRequested();
+    emit jumpToSelectedAnnotationRequested();
   }
 }
 
-void MarkersPanel::scheduleTreeRefresh()
+void AnnotationsPanel::scheduleTreeRefresh()
 {
   if (_tree_refresh_pending)
   {
@@ -484,7 +486,7 @@ void MarkersPanel::scheduleTreeRefresh()
   });
 }
 
-void MarkersPanel::updateButtons()
+void AnnotationsPanel::updateButtons()
 {
   _updating_ui = true;
 
@@ -502,15 +504,15 @@ void MarkersPanel::updateButtons()
   ui->buttonRemoveLayer->setEnabled(has_layer);
   ui->buttonRenameLayer->setEnabled(has_layer);
   ui->buttonMarkRange->setEnabled(editable);
-  ui->buttonDeleteItem->setEnabled(editable && hasSelectedMarker());
-  ui->buttonJumpTo->setEnabled(hasSelectedMarker());
-  ui->checkBoxAutoloadCompanionMarkup->setEnabled(has_dataset);
-  ui->treeWidgetMarkup->setEnabled(has_layer || has_dataset);
+  ui->buttonDeleteItem->setEnabled(editable && hasSelectedAnnotation());
+  ui->buttonJumpTo->setEnabled(hasSelectedAnnotation());
+  ui->checkBoxAutoloadCompanionAnnotations->setEnabled(has_dataset);
+  ui->treeWidgetAnnotations->setEnabled(has_layer || has_dataset);
 
   _updating_ui = false;
 }
 
-bool MarkersPanel::isLayerCompatible(const MarkerManager::MarkerLayer& layer) const
+bool AnnotationsPanel::isLayerCompatible(const AnnotationManager::AnnotationLayer& layer) const
 {
   if (!layer.axis_explicit || layer.axis_id.isEmpty() || _current_axis_id.isEmpty())
   {
@@ -519,7 +521,7 @@ bool MarkersPanel::isLayerCompatible(const MarkerManager::MarkerLayer& layer) co
   return layer.axis_id == _current_axis_id;
 }
 
-bool MarkersPanel::isCurrentSelectionCompatible() const
+bool AnnotationsPanel::isCurrentSelectionCompatible() const
 {
   const int layer_index = layerIndexFromItem(currentTreeItem());
   const auto& layers = _manager->layers();
@@ -530,15 +532,15 @@ bool MarkersPanel::isCurrentSelectionCompatible() const
   return isLayerCompatible(layers[layer_index]);
 }
 
-void MarkersPanel::populateTree()
+void AnnotationsPanel::populateTree()
 {
   _updating_ui = true;
   auto* current = currentTreeItem();
   const int current_layer = layerIndexFromItem(current);
-  const int current_marker = markerRowFromItem(current);
+  const int current_annotation = annotationRowFromItem(current);
 
-  QSignalBlocker tree_blocker(ui->treeWidgetMarkup);
-  ui->treeWidgetMarkup->clear();
+  QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
+  ui->treeWidgetAnnotations->clear();
 
   const auto& layers = _manager->layers();
   for (int i = 0; i < layers.size(); ++i)
@@ -547,55 +549,55 @@ void MarkersPanel::populateTree()
   }
 
   QTreeWidgetItem* restore_item = nullptr;
-  if (current_layer >= 0 && current_layer < ui->treeWidgetMarkup->topLevelItemCount())
+  if (current_layer >= 0 && current_layer < ui->treeWidgetAnnotations->topLevelItemCount())
   {
-    restore_item = ui->treeWidgetMarkup->topLevelItem(current_layer);
-    if (restore_item && current_marker >= 0 && current_marker < restore_item->childCount())
+    restore_item = ui->treeWidgetAnnotations->topLevelItem(current_layer);
+    if (restore_item && current_annotation >= 0 && current_annotation < restore_item->childCount())
     {
-      restore_item = restore_item->child(current_marker);
+      restore_item = restore_item->child(current_annotation);
     }
   }
   if (!restore_item && _manager->activeLayerIndex() >= 0 &&
-      _manager->activeLayerIndex() < ui->treeWidgetMarkup->topLevelItemCount())
+      _manager->activeLayerIndex() < ui->treeWidgetAnnotations->topLevelItemCount())
   {
-    restore_item = ui->treeWidgetMarkup->topLevelItem(_manager->activeLayerIndex());
+    restore_item = ui->treeWidgetAnnotations->topLevelItem(_manager->activeLayerIndex());
   }
   if (restore_item)
   {
-    ui->treeWidgetMarkup->setCurrentItem(restore_item);
+    ui->treeWidgetAnnotations->setCurrentItem(restore_item);
   }
 
   _updating_ui = false;
-  emit selectedMarkerChanged(hasSelectedMarker());
+  emit selectedAnnotationChanged(hasSelectedAnnotation());
 }
 
-MarkerManager::MarkerItem MarkersPanel::markerItemFromTree(QTreeWidgetItem* item) const
+AnnotationManager::AnnotationItem AnnotationsPanel::annotationItemFromTree(QTreeWidgetItem* item) const
 {
-  MarkerManager::MarkerItem marker;
+  AnnotationManager::AnnotationItem annotation;
   const int layer_index = layerIndexFromItem(item);
-  const int marker_row = markerRowFromItem(item);
+  const int annotation_row = annotationRowFromItem(item);
   const auto& layers = _manager->layers();
-  if (layer_index >= 0 && layer_index < layers.size() && marker_row >= 0 &&
-      marker_row < layers[layer_index].items.size())
+  if (layer_index >= 0 && layer_index < layers.size() && annotation_row >= 0 &&
+      annotation_row < layers[layer_index].items.size())
   {
-    marker = layers[layer_index].items[marker_row];
+    annotation = layers[layer_index].items[annotation_row];
   }
 
-  marker.enabled = (item->checkState(COLUMN_ON) == Qt::Checked);
-  marker.type = (item->text(COLUMN_TYPE).compare("Region", Qt::CaseInsensitive) == 0) ?
-                    MarkerManager::MarkerType::Region :
-                    MarkerManager::MarkerType::Point;
-  marker.start_time = item->text(COLUMN_START).toDouble();
-  marker.end_time = item->text(COLUMN_END).toDouble();
-  marker.label = item->text(COLUMN_LABEL);
-  marker.tags = item->text(COLUMN_TAGS);
-  marker.notes = item->text(COLUMN_NOTES);
-  return marker;
+  annotation.enabled = (item->checkState(COLUMN_ON) == Qt::Checked);
+  annotation.type = (item->text(COLUMN_TYPE).compare("Region", Qt::CaseInsensitive) == 0) ?
+                    AnnotationManager::AnnotationType::Region :
+                    AnnotationManager::AnnotationType::Point;
+  annotation.start_time = item->text(COLUMN_START).toDouble();
+  annotation.end_time = item->text(COLUMN_END).toDouble();
+  annotation.label = item->text(COLUMN_LABEL);
+  annotation.tags = item->text(COLUMN_TAGS);
+  annotation.notes = item->text(COLUMN_NOTES);
+  return annotation;
 }
 
-void MarkersPanel::addLayerItem(int layer_index, const MarkerManager::MarkerLayer& layer)
+void AnnotationsPanel::addLayerItem(int layer_index, const AnnotationManager::AnnotationLayer& layer)
 {
-  auto* layer_item = new QTreeWidgetItem(ui->treeWidgetMarkup);
+  auto* layer_item = new QTreeWidgetItem(ui->treeWidgetAnnotations);
   layer_item->setData(COLUMN_NAME, ROLE_LAYER_INDEX, layer_index);
   layer_item->setFlags(layer_item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable |
                        Qt::ItemIsEnabled);
@@ -643,31 +645,31 @@ void MarkersPanel::addLayerItem(int layer_index, const MarkerManager::MarkerLaye
 
   for (int row = 0; row < layer.items.size(); ++row)
   {
-    const auto& marker = layer.items[row];
-    auto* marker_item = new QTreeWidgetItem(layer_item);
-    marker_item->setData(COLUMN_NAME, ROLE_LAYER_INDEX, layer_index);
-    marker_item->setData(COLUMN_NAME, ROLE_MARKER_ROW, row);
-    marker_item->setFlags(marker_item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsEditable |
+    const auto& annotation = layer.items[row];
+    auto* annotation_item = new QTreeWidgetItem(layer_item);
+    annotation_item->setData(COLUMN_NAME, ROLE_LAYER_INDEX, layer_index);
+    annotation_item->setData(COLUMN_NAME, ROLE_ANNOTATION_ROW, row);
+    annotation_item->setFlags(annotation_item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsEditable |
                           Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-    marker_item->setCheckState(COLUMN_ON, marker.enabled ? Qt::Checked : Qt::Unchecked);
-    marker_item->setText(COLUMN_NAME, marker.label.isEmpty() ? "<marker>" : marker.label);
-    marker_item->setText(COLUMN_TYPE,
-                         marker.type == MarkerManager::MarkerType::Point ? "Point" : "Region");
-    marker_item->setText(COLUMN_START, QString::number(marker.start_time, 'f', 6));
-    marker_item->setText(COLUMN_END, QString::number(marker.end_time, 'f', 6));
-    marker_item->setText(COLUMN_LABEL, marker.label);
-    marker_item->setText(COLUMN_TAGS, marker.tags);
-    marker_item->setText(COLUMN_NOTES, marker.notes);
-    marker_item->setToolTip(COLUMN_NAME, marker.notes);
+    annotation_item->setCheckState(COLUMN_ON, annotation.enabled ? Qt::Checked : Qt::Unchecked);
+    annotation_item->setText(COLUMN_NAME, annotation.label.isEmpty() ? "<annotation>" : annotation.label);
+    annotation_item->setText(COLUMN_TYPE,
+                         annotation.type == AnnotationManager::AnnotationType::Point ? "Point" : "Region");
+    annotation_item->setText(COLUMN_START, QString::number(annotation.start_time, 'f', 6));
+    annotation_item->setText(COLUMN_END, QString::number(annotation.end_time, 'f', 6));
+    annotation_item->setText(COLUMN_LABEL, annotation.label);
+    annotation_item->setText(COLUMN_TAGS, annotation.tags);
+    annotation_item->setText(COLUMN_NOTES, annotation.notes);
+    annotation_item->setToolTip(COLUMN_NAME, annotation.notes);
   }
 }
 
-QTreeWidgetItem* MarkersPanel::currentTreeItem() const
+QTreeWidgetItem* AnnotationsPanel::currentTreeItem() const
 {
-  return ui->treeWidgetMarkup->currentItem();
+  return ui->treeWidgetAnnotations->currentItem();
 }
 
-int MarkersPanel::layerIndexFromItem(const QTreeWidgetItem* item) const
+int AnnotationsPanel::layerIndexFromItem(const QTreeWidgetItem* item) const
 {
   if (!item)
   {
@@ -676,7 +678,7 @@ int MarkersPanel::layerIndexFromItem(const QTreeWidgetItem* item) const
   return item->data(COLUMN_NAME, ROLE_LAYER_INDEX).toInt();
 }
 
-int MarkersPanel::markerRowFromItem(const QTreeWidgetItem* item) const
+int AnnotationsPanel::annotationRowFromItem(const QTreeWidgetItem* item) const
 {
   if (!item)
   {
@@ -686,10 +688,10 @@ int MarkersPanel::markerRowFromItem(const QTreeWidgetItem* item) const
   {
     return -1;
   }
-  return item->data(COLUMN_NAME, ROLE_MARKER_ROW).toInt();
+  return item->data(COLUMN_NAME, ROLE_ANNOTATION_ROW).toInt();
 }
 
-QString MarkersPanel::defaultAnnotationDirectory() const
+QString AnnotationsPanel::defaultAnnotationDirectory() const
 {
   if (!_session_data_files.isEmpty())
   {
@@ -703,7 +705,7 @@ QString MarkersPanel::defaultAnnotationDirectory() const
   return QString();
 }
 
-QString MarkersPanel::defaultAnnotationStem() const
+QString AnnotationsPanel::defaultAnnotationStem() const
 {
   if (!_session_data_files.isEmpty())
   {
@@ -717,7 +719,7 @@ QString MarkersPanel::defaultAnnotationStem() const
   return "markers";
 }
 
-QString MarkersPanel::suggestUniqueLayerName() const
+QString AnnotationsPanel::suggestUniqueLayerName() const
 {
   const QString base = defaultAnnotationStem();
   QSet<QString> used_names;
@@ -735,7 +737,7 @@ QString MarkersPanel::suggestUniqueLayerName() const
   return candidate;
 }
 
-QString MarkersPanel::suggestDuplicateLayerName(const QString& source_name) const
+QString AnnotationsPanel::suggestDuplicateLayerName(const QString& source_name) const
 {
   QString base = stripTrailingCopySuffix(source_name);
   if (base.isEmpty())
@@ -751,7 +753,7 @@ QString MarkersPanel::suggestDuplicateLayerName(const QString& source_name) cons
   return nextCopyLayerName(base, used_names);
 }
 
-QString MarkersPanel::sanitizeAnnotationVariant(QString text) const
+QString AnnotationsPanel::sanitizeAnnotationVariant(QString text) const
 {
   text = text.trimmed();
   text.replace(QRegularExpression("\\s+"), "_");
@@ -763,7 +765,7 @@ QString MarkersPanel::sanitizeAnnotationVariant(QString text) const
   return text;
 }
 
-QString MarkersPanel::autoloadSafeAnnotationBaseName(const QString& layer_name) const
+QString AnnotationsPanel::autoloadSafeAnnotationBaseName(const QString& layer_name) const
 {
   const QString session_stem =
       !_session_data_files.isEmpty() ? QFileInfo(_session_data_files.front()).completeBaseName() :
@@ -796,7 +798,7 @@ QString MarkersPanel::autoloadSafeAnnotationBaseName(const QString& layer_name) 
   return annotation_prefix + "." + variant;
 }
 
-QString MarkersPanel::suggestUniqueAnnotationFilePath() const
+QString AnnotationsPanel::suggestUniqueAnnotationFilePath() const
 {
   const QDir dir(defaultAnnotationDirectory());
   const QString layer_name =
@@ -815,7 +817,7 @@ QString MarkersPanel::suggestUniqueAnnotationFilePath() const
   return dir.filePath(candidate + ".json");
 }
 
-QString MarkersPanel::nextCopyLayerName(const QString& base_name,
+QString AnnotationsPanel::nextCopyLayerName(const QString& base_name,
                                         const QSet<QString>& used_names) const
 {
   QString root = stripTrailingCopySuffix(base_name);
@@ -833,7 +835,7 @@ QString MarkersPanel::nextCopyLayerName(const QString& base_name,
   return candidate;
 }
 
-QString MarkersPanel::nextCopyFileBaseName(const QString& base_name, const QDir& dir) const
+QString AnnotationsPanel::nextCopyFileBaseName(const QString& base_name, const QDir& dir) const
 {
   QString root = base_name;
   root.remove(QRegularExpression("\\.copy(?:-\\d+)?$", QRegularExpression::CaseInsensitiveOption));

@@ -5,39 +5,39 @@
 #include <QStringList>
 #include <QWidget>
 
-#include "marker_manager.h"
+#include "annotation_manager.h"
 
 namespace Ui
 {
-class MarkersPanel;
+class AnnotationsPanel;
 }
 
 class QTreeWidgetItem;
 
-class MarkersPanel : public QWidget
+class AnnotationsPanel : public QWidget
 {
   Q_OBJECT
 
 public:
-  explicit MarkersPanel(MarkerManager* manager, QWidget* parent = nullptr);
-  ~MarkersPanel() override;
+  explicit AnnotationsPanel(AnnotationManager* manager, QWidget* parent = nullptr);
+  ~AnnotationsPanel() override;
 
   void setCurrentTime(double time);
   void setCurrentViewRange(double start_time, double end_time);
   void setStreamingActive(bool active);
-  bool hasSelectedMarker() const;
-  MarkerManager::MarkerItem selectedMarker() const;
-  int selectedMarkerRow() const;
+  bool hasSelectedAnnotation() const;
+  AnnotationManager::AnnotationItem selectedAnnotation() const;
+  int selectedAnnotationRow() const;
   bool isActiveLayerEditable() const;
-  void updateSelectedMarker(const MarkerManager::MarkerItem& item);
+  void updateSelectedAnnotation(const AnnotationManager::AnnotationItem& item);
   void setSessionDataFiles(const QStringList& file_paths);
   void setCurrentAxisId(const QString& axis_id);
   void setAutoloadCompanionAnnotations(bool enabled);
   bool autoloadCompanionAnnotations() const;
 
 private slots:
-  void refreshLayers();
-  void refreshItems();
+  void refreshAnnotationLayers();
+  void refreshAnnotationItems();
   void onTreeCurrentItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous);
   void onTreeItemChanged(QTreeWidgetItem* item, int column);
   void onNewLayer();
@@ -53,21 +53,21 @@ private slots:
   void onJumpToItem();
 
 signals:
-  void selectedMarkerChanged(bool has_selection);
-  void jumpToSelectedMarkerRequested();
+  void selectedAnnotationChanged(bool has_selection);
+  void jumpToSelectedAnnotationRequested();
   void autoloadCompanionAnnotationsChanged(bool enabled);
 
 private:
   void scheduleTreeRefresh();
   void updateButtons();
   void populateTree();
-  bool isLayerCompatible(const MarkerManager::MarkerLayer& layer) const;
+  bool isLayerCompatible(const AnnotationManager::AnnotationLayer& layer) const;
   bool isCurrentSelectionCompatible() const;
-  MarkerManager::MarkerItem markerItemFromTree(QTreeWidgetItem* item) const;
-  void addLayerItem(int layer_index, const MarkerManager::MarkerLayer& layer);
+  AnnotationManager::AnnotationItem annotationItemFromTree(QTreeWidgetItem* item) const;
+  void addLayerItem(int layer_index, const AnnotationManager::AnnotationLayer& layer);
   QTreeWidgetItem* currentTreeItem() const;
   int layerIndexFromItem(const QTreeWidgetItem* item) const;
-  int markerRowFromItem(const QTreeWidgetItem* item) const;
+  int annotationRowFromItem(const QTreeWidgetItem* item) const;
   QString defaultAnnotationDirectory() const;
   QString defaultAnnotationStem() const;
   QString suggestDuplicateLayerName(const QString& source_name) const;
@@ -78,8 +78,8 @@ private:
   QString nextCopyFileBaseName(const QString& base_name, const QDir& dir) const;
   QString suggestUniqueAnnotationFilePath() const;
 
-  Ui::MarkersPanel* ui = nullptr;
-  MarkerManager* _manager = nullptr;
+  Ui::AnnotationsPanel* ui = nullptr;
+  AnnotationManager* _manager = nullptr;
   QStringList _session_data_files;
   QString _current_axis_id;
   double _current_time = 0.0;

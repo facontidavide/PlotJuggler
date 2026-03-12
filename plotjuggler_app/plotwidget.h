@@ -28,7 +28,7 @@
 #include "PlotJuggler/save_plot.h"
 #include "curve_tracker.h"
 #include "colormap_editor.h"
-#include "markers/marker_manager.h"
+#include "annotations/annotation_manager.h"
 #include <optional>
 
 #include "transforms/transform_selector.h"
@@ -88,11 +88,11 @@ public:
 
   void changeDots(bool force_dots);
 
-  void setMarkerLayers(const QVector<MarkerManager::MarkerLayer>& layers);
-  void setSelectedMarker(const std::optional<MarkerManager::MarkerItem>& item);
-  void setSelectedMarkerPreviewSource(const std::optional<MarkerManager::MarkerItem>& item);
-  void setSelectedMarkerEditable(bool editable);
-  void setSelectedMarkerHandlesVisible(bool visible);
+  void setAnnotationLayers(const QVector<AnnotationManager::AnnotationLayer>& layers);
+  void setSelectedAnnotation(const std::optional<AnnotationManager::AnnotationItem>& item);
+  void setSelectedAnnotationPreviewSource(const std::optional<AnnotationManager::AnnotationItem>& item);
+  void setSelectedAnnotationEditable(bool editable);
+  void setSelectedAnnotationHandlesVisible(bool visible);
 
 protected:
   PlotDataMapRef& _mapped_data;
@@ -109,9 +109,9 @@ signals:
   void rectChanged(PlotWidget* self, QRectF rect);
   void undoableChange();
   void trackerMoved(QPointF pos);
-  void selectedMarkerPreviewChanged(const MarkerManager::MarkerItem& original_item,
-                                    const MarkerManager::MarkerItem& preview_item);
-  void selectedMarkerEdited(const MarkerManager::MarkerItem& item);
+  void selectedAnnotationPreviewChanged(const AnnotationManager::AnnotationItem& original_item,
+                                    const AnnotationManager::AnnotationItem& preview_item);
+  void selectedAnnotationEdited(const AnnotationManager::AnnotationItem& item);
   void curveListChanged();
   void curvesDropped();
   void splitHorizontal();
@@ -211,13 +211,13 @@ private:
   bool _show_point_enabled = false;
   QwtPlotMarker* _show_point_marker;
   QwtPlotMarker* _show_point_text;
-  std::vector<QwtPlotMarker*> _marker_overlays;
+  std::vector<QwtPlotMarker*> _annotation_overlays;
   std::vector<QwtPlotZoneItem*> _region_overlays;
-  QVector<MarkerManager::MarkerLayer> _marker_layers;
-  std::optional<MarkerManager::MarkerItem> _selected_marker;
-  std::optional<MarkerManager::MarkerItem> _selected_marker_preview_source;
-  bool _selected_marker_editable = false;
-  bool _selected_marker_handles_visible = false;
+  QVector<AnnotationManager::AnnotationLayer> _annotation_layers;
+  std::optional<AnnotationManager::AnnotationItem> _selected_annotation;
+  std::optional<AnnotationManager::AnnotationItem> _selected_annotation_preview_source;
+  bool _selected_annotation_editable = false;
+  bool _selected_annotation_handles_visible = false;
 
   QString _statistics_window_title = "";
 
@@ -241,7 +241,7 @@ private:
 
   DragInfo _dragging;
 
-  struct MarkerDragState
+  struct AnnotationDragState
   {
     enum Mode
     {
@@ -251,10 +251,10 @@ private:
       ResizeEnd
     } mode = None;
 
-    MarkerManager::MarkerItem original_item;
+    AnnotationManager::AnnotationItem original_item;
     double press_time = 0.0;
-  } _marker_drag;
-  MarkerDragState::Mode _marker_hover = MarkerDragState::None;
+  } _annotation_drag;
+  AnnotationDragState::Mode _annotation_hover = AnnotationDragState::None;
 
   void buildActions();
 
@@ -284,11 +284,11 @@ private:
 
   void setAxisScale(QwtAxisId axisId, double min, double max);
 
-  void clearMarkerOverlays();
-  bool isSelectedMarker(const MarkerManager::MarkerItem& item) const;
-  MarkerDragState::Mode hitTestSelectedMarkerHandle(const QPoint& pos) const;
-  double markerHandleYValue(bool center_handle) const;
-  double markerHandleXValue(double time_value) const;
+  void clearAnnotationOverlays();
+  bool isSelectedAnnotation(const AnnotationManager::AnnotationItem& item) const;
+  AnnotationDragState::Mode hitTestSelectedAnnotationHandle(const QPoint& pos) const;
+  double annotationHandleYValue(bool center_handle) const;
+  double annotationHandleXValue(double time_value) const;
 };
 
 #endif

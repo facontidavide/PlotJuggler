@@ -41,8 +41,8 @@
 
 #include "mainwindow.h"
 #include "curvelist_panel.h"
-#include "markers/marker_manager.h"
-#include "markers/markers_panel.h"
+#include "annotations/annotation_manager.h"
+#include "annotations/annotations_panel.h"
 #include "tabbedplotwidget.h"
 #include "PlotJuggler/plotdata.h"
 #include "transforms/function_editor.h"
@@ -158,8 +158,8 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   }
 
   _curvelist_widget = new CurveListPanel(_mapped_plot_data, _transform_functions, this);
-  _marker_manager = new MarkerManager(this);
-  _markers_panel = new MarkersPanel(_marker_manager, this);
+  _annotation_manager = new AnnotationManager(this);
+  _annotations_panel = new AnnotationsPanel(_annotation_manager, this);
 
   ui->setupUi(this);
 
@@ -258,35 +258,35 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   connect(this, &MainWindow::stylesheetChanged, _main_tabbed_widget,
           &TabbedPlotWidget::on_stylesheetChanged);
 
-  connect(_marker_manager, &MarkerManager::layersChanged, this, [this]() {
-    refreshMarkerOverlays();
+  connect(_annotation_manager, &AnnotationManager::layersChanged, this, [this]() {
+    refreshAnnotationOverlays();
   });
-  connect(_marker_manager, &MarkerManager::itemsChanged, this, [this]() {
-    refreshMarkerOverlays();
+  connect(_annotation_manager, &AnnotationManager::itemsChanged, this, [this]() {
+    refreshAnnotationOverlays();
   });
-  connect(_markers_panel, &MarkersPanel::selectedMarkerChanged, this, [this](bool) {
-    refreshSelectedMarkerOverlay();
+  connect(_annotations_panel, &AnnotationsPanel::selectedAnnotationChanged, this, [this](bool) {
+    refreshSelectedAnnotationOverlay();
   });
-  connect(_markers_panel, &MarkersPanel::jumpToSelectedMarkerRequested, this,
-          [this]() { jumpToSelectedMarker(); });
-  connect(_markers_panel, &MarkersPanel::autoloadCompanionAnnotationsChanged, this,
+  connect(_annotations_panel, &AnnotationsPanel::jumpToSelectedAnnotationRequested, this,
+          [this]() { jumpToSelectedAnnotation(); });
+  connect(_annotations_panel, &AnnotationsPanel::autoloadCompanionAnnotationsChanged, this,
           [this](bool enabled) {
             QSettings settings;
-            settings.setValue("Markers.autoloadCompanionAnnotations", enabled);
+            settings.setValue("Annotations.autoloadCompanionAnnotations", enabled);
             if (enabled)
             {
               autoloadCompanionAnnotationFiles();
             }
           });
 
-  refreshMarkerSessionContext();
-  _markers_panel->setAutoloadCompanionAnnotations(
-      settings.value("Markers.autoloadCompanionAnnotations", false).toBool());
-  _markers_panel->setStreamingActive(false);
+  refreshAnnotationSessionContext();
+  _annotations_panel->setAutoloadCompanionAnnotations(
+      settings.value("Annotations.autoloadCompanionAnnotations", false).toBool());
+  _annotations_panel->setStreamingActive(false);
 
   ui->tabsFrame->layout()->addWidget(_main_tabbed_widget);
   ui->frameTimeseries->layout()->addWidget(_curvelist_widget);
-  ui->frameMarkers->layout()->addWidget(_markers_panel);
+  ui->frameAnnotations->layout()->addWidget(_annotations_panel);
 
   ui->mainSplitter->setCollapsible(0, true);
   ui->mainSplitter->setStretchFactor(0, 2);
@@ -387,10 +387,10 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
     ui->buttonHideTimeseriesFrame->setText("+");
     ui->frameTimeseries->setHidden(true);
   }
-  if (settings.value("MainWindow.hiddenMarkersFrame", false).toBool())
+  if (settings.value("MainWindow.hiddenAnnotationsFrame", false).toBool())
   {
-    ui->buttonHideMarkersFrame->setText("+");
-    ui->frameMarkers->setHidden(true);
+    ui->buttonHideAnnotationsFrame->setText("+");
+    ui->frameAnnotations->setHidden(true);
   }
 
   //----------------------------------------------------------
@@ -566,9 +566,9 @@ void MainWindow::onTimeSlider_valueChanged(double abs_time)
 void MainWindow::onTrackerTimeUpdated(double absolute_time, bool do_replot)
 {
   _tracker_time = absolute_time;
-  if (_markers_panel)
+  if (_annotations_panel)
   {
-    _markers_panel->setCurrentTime(absolute_time);
+    _annotations_panel->setCurrentTime(absolute_time);
   }
 
   _tracker_delay.triggerSignal(100);
@@ -905,44 +905,44 @@ void MainWindow::resizeEvent(QResizeEvent*)
 
 void MainWindow::onPlotAdded(PlotWidget* plot)
 {
-  if (_marker_manager)
+  if (_annotation_manager)
   {
-    plot->setMarkerLayers(_marker_manager->layers());
-    plot->setSelectedMarkerEditable(_markers_panel && _markers_panel->isActiveLayerEditable());
-    plot->setSelectedMarkerHandlesVisible(!plot->isXYPlot());
-    if (_markers_panel && _markers_panel->hasSelectedMarker())
+    plot->setAnnotationLayers(_annotation_manager->layers());
+    plot->setSelectedAnnotationEditable(_annotations_panel && _annotations_panel->isActiveLayerEditable());
+    plot->setSelectedAnnotationHandlesVisible(!plot->isXYPlot());
+    if (_annotations_panel && _annotations_panel->hasSelectedAnnotation())
     {
-      plot->setSelectedMarker(_markers_panel->selectedMarker());
+      plot->setSelectedAnnotation(_annotations_panel->selectedAnnotation());
     }
   }
 
-  updateMarkerViewRange();
+  updateAnnotationViewRange();
 
   connect(plot, &PlotWidget::undoableChange, this, &MainWindow::onUndoableChange);
 
   connect(plot, &PlotWidget::trackerMoved, this, &MainWindow::onTrackerMovedFromWidget);
-  connect(plot, &PlotWidget::selectedMarkerPreviewChanged, this,
-          [this](const MarkerManager::MarkerItem& original_item,
-                 const MarkerManager::MarkerItem& preview_item) {
-            if (!_marker_manager)
+  connect(plot, &PlotWidget::selectedAnnotationPreviewChanged, this,
+          [this](const AnnotationManager::AnnotationItem& original_item,
+                 const AnnotationManager::AnnotationItem& preview_item) {
+            if (!_annotation_manager)
             {
               return;
             }
 
-            const auto& layers = _marker_manager->layers();
+            const auto& layers = _annotation_manager->layers();
             forEachWidget([&](PlotWidget* candidate) {
-              candidate->setSelectedMarkerEditable(_markers_panel &&
-                                                   _markers_panel->isActiveLayerEditable());
-              candidate->setSelectedMarkerHandlesVisible(!candidate->isXYPlot());
-              candidate->setSelectedMarkerPreviewSource(original_item);
-              candidate->setSelectedMarker(preview_item);
-              candidate->setMarkerLayers(layers);
+              candidate->setSelectedAnnotationEditable(_annotations_panel &&
+                                                   _annotations_panel->isActiveLayerEditable());
+              candidate->setSelectedAnnotationHandlesVisible(!candidate->isXYPlot());
+              candidate->setSelectedAnnotationPreviewSource(original_item);
+              candidate->setSelectedAnnotation(preview_item);
+              candidate->setAnnotationLayers(layers);
             });
           });
-  connect(plot, &PlotWidget::selectedMarkerEdited, this, [this](const MarkerManager::MarkerItem& item) {
-    if (_markers_panel)
+  connect(plot, &PlotWidget::selectedAnnotationEdited, this, [this](const AnnotationManager::AnnotationItem& item) {
+    if (_annotations_panel)
     {
-      _markers_panel->updateSelectedMarker(item);
+      _annotations_panel->updateSelectedAnnotation(item);
     }
   });
 
@@ -1010,9 +1010,9 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
 
 void MainWindow::onPlotZoomChanged(PlotWidget* modified_plot, QRectF new_range)
 {
-  if (_markers_panel)
+  if (_annotations_panel)
   {
-    _markers_panel->setCurrentViewRange(new_range.left(), new_range.right());
+    _annotations_panel->setCurrentViewRange(new_range.left(), new_range.right());
   }
 
   if (ui->buttonLink->isChecked())
@@ -1032,9 +1032,9 @@ void MainWindow::onPlotZoomChanged(PlotWidget* modified_plot, QRectF new_range)
     this->forEachWidget(visitor);
   }
 
-  if (_markers_panel && _markers_panel->hasSelectedMarker())
+  if (_annotations_panel && _annotations_panel->hasSelectedAnnotation())
   {
-    QTimer::singleShot(0, this, [this]() { refreshSelectedMarkerOverlay(); });
+    QTimer::singleShot(0, this, [this]() { refreshSelectedAnnotationOverlay(); });
   }
 
   onUndoableChange();
@@ -1484,11 +1484,11 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
   if (loaded_filenames.size() > 0)
   {
     updateRecentDataMenu(loaded_filenames);
-    refreshMarkerSessionContext();
+    refreshAnnotationSessionContext();
     linkedZoomOut();
     return true;
   }
-  refreshMarkerSessionContext();
+  refreshAnnotationSessionContext();
   return false;
 }
 
@@ -1679,9 +1679,9 @@ void MainWindow::on_buttonStreamingPause_toggled(bool paused)
     plot->setZoomEnabled(paused);
   });
 
-  if (_markers_panel)
+  if (_annotations_panel)
   {
-    _markers_panel->setStreamingActive(_active_streamer_plugin && !paused);
+    _annotations_panel->setStreamingActive(_active_streamer_plugin && !paused);
   }
 
   if (!paused)
@@ -1729,9 +1729,9 @@ void MainWindow::stopStreamingPlugin()
     _active_streamer_plugin = nullptr;
   }
 
-  if (_markers_panel)
+  if (_annotations_panel)
   {
-    _markers_panel->setStreamingActive(false);
+    _annotations_panel->setStreamingActive(false);
   }
 
   if (!_mapped_plot_data.numeric.empty())
@@ -2398,7 +2398,7 @@ bool MainWindow::loadLayoutFromFile(QString filename)
 
   xmlLoadState(domDocument);
 
-  refreshMarkerSessionContext();
+  refreshAnnotationSessionContext();
   linkedZoomOut();
 
   _undo_states.clear();
@@ -2527,14 +2527,14 @@ void MainWindow::replotAllPlots(const QString& reason)
   alignAxesAcrossDockers(reason, true);
 }
 
-void MainWindow::refreshMarkerOverlays()
+void MainWindow::refreshAnnotationOverlays()
 {
-  if (!_marker_manager)
+  if (!_annotation_manager)
   {
     return;
   }
 
-  QVector<MarkerManager::MarkerLayer> layers = _marker_manager->layers();
+  QVector<AnnotationManager::AnnotationLayer> layers = _annotation_manager->layers();
   const QString axis_id = currentSessionAxisId();
   for (auto& layer : layers)
   {
@@ -2545,28 +2545,28 @@ void MainWindow::refreshMarkerOverlays()
     }
   }
   forEachWidget([&](PlotWidget* plot) {
-    plot->setSelectedMarkerEditable(_markers_panel && _markers_panel->isActiveLayerEditable());
-    plot->setSelectedMarkerHandlesVisible(!plot->isXYPlot());
-    plot->setSelectedMarkerPreviewSource(std::nullopt);
-    plot->setSelectedMarker((_markers_panel && _markers_panel->hasSelectedMarker())
-                                ? std::optional<MarkerManager::MarkerItem>(_markers_panel->selectedMarker())
+    plot->setSelectedAnnotationEditable(_annotations_panel && _annotations_panel->isActiveLayerEditable());
+    plot->setSelectedAnnotationHandlesVisible(!plot->isXYPlot());
+    plot->setSelectedAnnotationPreviewSource(std::nullopt);
+    plot->setSelectedAnnotation((_annotations_panel && _annotations_panel->hasSelectedAnnotation())
+                                ? std::optional<AnnotationManager::AnnotationItem>(_annotations_panel->selectedAnnotation())
                                 : std::nullopt);
-    plot->setMarkerLayers(layers);
+    plot->setAnnotationLayers(layers);
   });
 }
 
-void MainWindow::refreshSelectedMarkerOverlay()
+void MainWindow::refreshSelectedAnnotationOverlay()
 {
-  if (!_marker_manager)
+  if (!_annotation_manager)
   {
     return;
   }
 
   const auto selected =
-      (_markers_panel && _markers_panel->hasSelectedMarker())
-          ? std::optional<MarkerManager::MarkerItem>(_markers_panel->selectedMarker())
+      (_annotations_panel && _annotations_panel->hasSelectedAnnotation())
+          ? std::optional<AnnotationManager::AnnotationItem>(_annotations_panel->selectedAnnotation())
           : std::nullopt;
-  QVector<MarkerManager::MarkerLayer> layers = _marker_manager->layers();
+  QVector<AnnotationManager::AnnotationLayer> layers = _annotation_manager->layers();
   const QString axis_id = currentSessionAxisId();
   for (auto& layer : layers)
   {
@@ -2578,23 +2578,23 @@ void MainWindow::refreshSelectedMarkerOverlay()
   }
 
   forEachWidget([&](PlotWidget* plot) {
-    plot->setSelectedMarkerEditable(_markers_panel && _markers_panel->isActiveLayerEditable());
-    plot->setSelectedMarkerHandlesVisible(!plot->isXYPlot());
-    plot->setSelectedMarkerPreviewSource(std::nullopt);
-    plot->setSelectedMarker(selected);
-    plot->setMarkerLayers(layers);
+    plot->setSelectedAnnotationEditable(_annotations_panel && _annotations_panel->isActiveLayerEditable());
+    plot->setSelectedAnnotationHandlesVisible(!plot->isXYPlot());
+    plot->setSelectedAnnotationPreviewSource(std::nullopt);
+    plot->setSelectedAnnotation(selected);
+    plot->setAnnotationLayers(layers);
   });
 }
 
-void MainWindow::jumpToSelectedMarker()
+void MainWindow::jumpToSelectedAnnotation()
 {
-  if (!_markers_panel || !_markers_panel->hasSelectedMarker())
+  if (!_annotations_panel || !_annotations_panel->hasSelectedAnnotation())
   {
     return;
   }
 
-  const auto marker = _markers_panel->selectedMarker();
-  const bool is_region = (marker.type == MarkerManager::MarkerType::Region);
+  const auto annotation = _annotations_panel->selectedAnnotation();
+  const bool is_region = (annotation.type == AnnotationManager::AnnotationType::Region);
 
   forEachWidget([&](PlotWidget* plot) {
     if (plot->isXYPlot())
@@ -2604,12 +2604,12 @@ void MainWindow::jumpToSelectedMarker()
 
     QRectF rect = plot->currentBoundingRect();
     const double width = std::abs(rect.width());
-    const double center = is_region ? (marker.start_time + marker.end_time) * 0.5 : marker.start_time;
+    const double center = is_region ? (annotation.start_time + annotation.end_time) * 0.5 : annotation.start_time;
     double half_width = width * 0.5;
 
     if (is_region)
     {
-      const double region_width = std::abs(marker.end_time - marker.start_time);
+      const double region_width = std::abs(annotation.end_time - annotation.start_time);
       half_width = std::max(half_width, std::max(region_width * 0.75, 0.5));
     }
     else
@@ -2622,13 +2622,13 @@ void MainWindow::jumpToSelectedMarker()
     plot->setZoomRectangle(rect, false);
   });
 
-  replotAllPlots("jumpToSelectedMarker");
-  updateMarkerViewRange();
+  replotAllPlots("jumpToSelectedAnnotation");
+  updateAnnotationViewRange();
 }
 
-void MainWindow::updateMarkerViewRange()
+void MainWindow::updateAnnotationViewRange()
 {
-  if (!_markers_panel)
+  if (!_annotations_panel)
   {
     return;
   }
@@ -2650,7 +2650,7 @@ void MainWindow::updateMarkerViewRange()
     range = std::make_pair(std::get<0>(full_range), std::get<1>(full_range));
   }
 
-  _markers_panel->setCurrentViewRange(range->first, range->second);
+  _annotations_panel->setCurrentViewRange(range->first, range->second);
 }
 
 QStringList MainWindow::currentSessionDataFiles() const
@@ -2689,13 +2689,13 @@ QString MainWindow::currentSessionAxisId() const
   return axis_id;
 }
 
-void MainWindow::refreshMarkerSessionContext()
+void MainWindow::refreshAnnotationSessionContext()
 {
-  if (_markers_panel)
+  if (_annotations_panel)
   {
-    _markers_panel->setSessionDataFiles(currentSessionDataFiles());
-    _markers_panel->setCurrentAxisId(currentSessionAxisId());
-    if (_markers_panel->autoloadCompanionAnnotations())
+    _annotations_panel->setSessionDataFiles(currentSessionDataFiles());
+    _annotations_panel->setCurrentAxisId(currentSessionAxisId());
+    if (_annotations_panel->autoloadCompanionAnnotations())
     {
       autoloadCompanionAnnotationFiles();
     }
@@ -2704,13 +2704,13 @@ void MainWindow::refreshMarkerSessionContext()
 
 void MainWindow::autoloadCompanionAnnotationFiles()
 {
-  if (!_marker_manager || !_markers_panel)
+  if (!_annotation_manager || !_annotations_panel)
   {
     return;
   }
 
   QSet<QString> loaded_paths;
-  for (const auto& layer : _marker_manager->layers())
+  for (const auto& layer : _annotation_manager->layers())
   {
     if (!layer.file_path.isEmpty())
     {
@@ -2736,7 +2736,7 @@ void MainWindow::autoloadCompanionAnnotationFiles()
       {
         continue;
       }
-      if (_marker_manager->loadLayer(abs_path))
+      if (_annotation_manager->loadLayer(abs_path))
       {
         loaded_paths.insert(abs_path);
       }
@@ -3858,14 +3858,14 @@ void MainWindow::on_buttonHideTimeseriesFrame_clicked()
   settings.setValue("MainWindow.hiddenTimeseriesFrame", hidden);
 }
 
-void MainWindow::on_buttonHideMarkersFrame_clicked()
+void MainWindow::on_buttonHideAnnotationsFrame_clicked()
 {
-  bool hidden = !ui->frameMarkers->isHidden();
-  ui->buttonHideMarkersFrame->setText(hidden ? "+" : "-");
-  ui->frameMarkers->setHidden(hidden);
+  bool hidden = !ui->frameAnnotations->isHidden();
+  ui->buttonHideAnnotationsFrame->setText(hidden ? "+" : "-");
+  ui->frameAnnotations->setHidden(hidden);
 
   QSettings settings;
-  settings.setValue("MainWindow.hiddenMarkersFrame", hidden);
+  settings.setValue("MainWindow.hiddenAnnotationsFrame", hidden);
 }
 
 void MainWindow::on_buttonRecentLayout_clicked()
@@ -3923,7 +3923,7 @@ void MainWindow::on_buttonReloadData_clicked()
   {
     loadDataFromFile(info, false);
   }
-  refreshMarkerSessionContext();
+  refreshAnnotationSessionContext();
   ui->buttonReloadData->setEnabled(!_loaded_datafiles_previous.empty());
 }
 

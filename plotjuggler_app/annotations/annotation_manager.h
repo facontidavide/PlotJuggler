@@ -5,21 +5,21 @@
 #include <QString>
 #include <QVector>
 
-class MarkerManager : public QObject
+class AnnotationManager : public QObject
 {
   Q_OBJECT
 
 public:
-  enum class MarkerType
+  enum class AnnotationType
   {
     Point,
     Region
   };
 
-  struct MarkerItem
+  struct AnnotationItem
   {
     bool enabled = true;
-    MarkerType type = MarkerType::Point;
+    AnnotationType type = AnnotationType::Point;
     double start_time = 0.0;
     double end_time = 0.0;
     QString label;
@@ -28,7 +28,7 @@ public:
     QColor color = Qt::yellow;
   };
 
-  struct MarkerLayer
+  struct AnnotationLayer
   {
     struct OriginInfo
     {
@@ -49,15 +49,15 @@ public:
     bool dirty = false;
     QColor color = Qt::yellow;
     OriginInfo origin;
-    QVector<MarkerItem> items;
+    QVector<AnnotationItem> items;
   };
 
-  explicit MarkerManager(QObject* parent = nullptr);
+  explicit AnnotationManager(QObject* parent = nullptr);
 
-  const QVector<MarkerLayer>& layers() const;
+  const QVector<AnnotationLayer>& layers() const;
   int activeLayerIndex() const;
-  MarkerLayer* activeLayer();
-  const MarkerLayer* activeLayer() const;
+  AnnotationLayer* activeLayer();
+  const AnnotationLayer* activeLayer() const;
 
   int createLayer(const QString& name);
   bool loadLayer(const QString& file_path);
@@ -72,8 +72,8 @@ public:
   void setLayerName(int index, const QString& name);
   void setLayerAxisId(int index, const QString& axis_id, bool explicit_axis = true);
 
-  bool addItemToActiveLayer(const MarkerItem& item);
-  void updateActiveLayerItem(int row, const MarkerItem& item);
+  bool addItemToActiveLayer(const AnnotationItem& item);
+  void updateActiveLayerItem(int row, const AnnotationItem& item);
   void removeActiveLayerItem(int row);
 
 signals:
@@ -82,10 +82,10 @@ signals:
   void itemsChanged();
 
 private:
-  bool loadLayerFromFile(const QString& file_path, MarkerLayer& layer) const;
-  bool saveLayerToFile(const MarkerLayer& layer, const QString& file_path) const;
+  bool loadLayerFromFile(const QString& file_path, AnnotationLayer& layer) const;
+  bool saveLayerToFile(const AnnotationLayer& layer, const QString& file_path) const;
   void markLayerDirty(int index, bool dirty = true);
 
-  QVector<MarkerLayer> _layers;
+  QVector<AnnotationLayer> _layers;
   int _active_layer_index = -1;
 };

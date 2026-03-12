@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MarkersPanel</class>
- <widget class="QWidget" name="MarkersPanel">
+ <class>AnnotationsPanel</class>
+ <widget class="QWidget" name="AnnotationsPanel">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,15 +11,15 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Markers</string>
+   <string>Annotations</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="groupMarkup">
+    <widget class="QGroupBox" name="groupAnnotations">
      <property name="title">
       <string>Annotations</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayoutMarkup">
+     <layout class="QVBoxLayout" name="verticalLayoutAnnotations">
       <item>
        <layout class="QHBoxLayout" name="horizontalLayoutLayerButtons">
         <item>
@@ -78,7 +78,7 @@
        </layout>
       </item>
       <item>
-       <widget class="QCheckBox" name="checkBoxAutoloadCompanionMarkup">
+       <widget class="QCheckBox" name="checkBoxAutoloadCompanionAnnotations">
         <property name="text">
          <string>Autoload companion annotation files</string>
         </property>
@@ -110,7 +110,7 @@
        </layout>
       </item>
       <item>
-       <widget class="QTreeWidget" name="treeWidgetMarkup">
+       <widget class="QTreeWidget" name="treeWidgetAnnotations">
         <column>
          <property name="text">
           <string>On</string>

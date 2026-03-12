@@ -1,4 +1,4 @@
-#include "marker_manager.h"
+#include "annotation_manager.h"
 
 #include "nlohmann/json.hpp"
 
@@ -22,15 +22,15 @@ QColor defaultLayerColor(int index)
   return palette[static_cast<size_t>(index) % palette.size()];
 }
 
-QString markerTypeToString(MarkerManager::MarkerType type)
+QString annotationTypeToString(AnnotationManager::AnnotationType type)
 {
-  return (type == MarkerManager::MarkerType::Point) ? "point" : "region";
+  return (type == AnnotationManager::AnnotationType::Point) ? "point" : "region";
 }
 
-MarkerManager::MarkerType markerTypeFromString(const QString& type)
+AnnotationManager::AnnotationType annotationTypeFromString(const QString& type)
 {
-  return (type.compare("region", Qt::CaseInsensitive) == 0) ? MarkerManager::MarkerType::Region :
-                                                               MarkerManager::MarkerType::Point;
+  return (type.compare("region", Qt::CaseInsensitive) == 0) ? AnnotationManager::AnnotationType::Region :
+                                                               AnnotationManager::AnnotationType::Point;
 }
 
 QString axisKindFromId(const QString& axis_id)
@@ -66,21 +66,21 @@ QColor colorFromJson(const json& value, const QColor& fallback)
 }
 }  // namespace
 
-MarkerManager::MarkerManager(QObject* parent) : QObject(parent)
+AnnotationManager::AnnotationManager(QObject* parent) : QObject(parent)
 {
 }
 
-const QVector<MarkerManager::MarkerLayer>& MarkerManager::layers() const
+const QVector<AnnotationManager::AnnotationLayer>& AnnotationManager::layers() const
 {
   return _layers;
 }
 
-int MarkerManager::activeLayerIndex() const
+int AnnotationManager::activeLayerIndex() const
 {
   return _active_layer_index;
 }
 
-MarkerManager::MarkerLayer* MarkerManager::activeLayer()
+AnnotationManager::AnnotationLayer* AnnotationManager::activeLayer()
 {
   if (_active_layer_index < 0 || _active_layer_index >= _layers.size())
   {
@@ -89,7 +89,7 @@ MarkerManager::MarkerLayer* MarkerManager::activeLayer()
   return &_layers[_active_layer_index];
 }
 
-const MarkerManager::MarkerLayer* MarkerManager::activeLayer() const
+const AnnotationManager::AnnotationLayer* AnnotationManager::activeLayer() const
 {
   if (_active_layer_index < 0 || _active_layer_index >= _layers.size())
   {
@@ -98,9 +98,9 @@ const MarkerManager::MarkerLayer* MarkerManager::activeLayer() const
   return &_layers[_active_layer_index];
 }
 
-int MarkerManager::createLayer(const QString& name)
+int AnnotationManager::createLayer(const QString& name)
 {
-  MarkerLayer layer;
+  AnnotationLayer layer;
   layer.name = name;
   layer.color = defaultLayerColor(_layers.size());
   _layers.push_back(layer);
@@ -110,9 +110,9 @@ int MarkerManager::createLayer(const QString& name)
   return _active_layer_index;
 }
 
-bool MarkerManager::loadLayer(const QString& file_path)
+bool AnnotationManager::loadLayer(const QString& file_path)
 {
-  MarkerLayer layer;
+  AnnotationLayer layer;
   if (!loadLayerFromFile(file_path, layer))
   {
     return false;
@@ -125,7 +125,7 @@ bool MarkerManager::loadLayer(const QString& file_path)
   return true;
 }
 
-bool MarkerManager::saveLayer(int index)
+bool AnnotationManager::saveLayer(int index)
 {
   if (index < 0 || index >= _layers.size() || _layers[index].file_path.isEmpty())
   {
@@ -139,7 +139,7 @@ bool MarkerManager::saveLayer(int index)
   return true;
 }
 
-bool MarkerManager::saveLayerAs(int index, const QString& file_path)
+bool AnnotationManager::saveLayerAs(int index, const QString& file_path)
 {
   if (index < 0 || index >= _layers.size())
   {
@@ -159,15 +159,15 @@ bool MarkerManager::saveLayerAs(int index, const QString& file_path)
   return true;
 }
 
-int MarkerManager::duplicateLayer(int index, const QString& new_name)
+int AnnotationManager::duplicateLayer(int index, const QString& new_name)
 {
   if (index < 0 || index >= _layers.size())
   {
     return -1;
   }
 
-  const MarkerLayer& source_layer = _layers[index];
-  MarkerLayer layer = source_layer;
+  const AnnotationLayer& source_layer = _layers[index];
+  AnnotationLayer layer = source_layer;
   layer.file_path.clear();
   layer.dirty = true;
   layer.name = new_name.trimmed().isEmpty() ? (layer.name + " copy") : new_name.trimmed();
@@ -183,7 +183,7 @@ int MarkerManager::duplicateLayer(int index, const QString& new_name)
   return _active_layer_index;
 }
 
-void MarkerManager::removeLayer(int index)
+void AnnotationManager::removeLayer(int index)
 {
   if (index < 0 || index >= _layers.size())
   {
@@ -208,7 +208,7 @@ void MarkerManager::removeLayer(int index)
   emit activeLayerChanged(_active_layer_index);
 }
 
-void MarkerManager::setActiveLayerIndex(int index)
+void AnnotationManager::setActiveLayerIndex(int index)
 {
   if (index < -1 || index >= _layers.size() || _active_layer_index == index)
   {
@@ -218,7 +218,7 @@ void MarkerManager::setActiveLayerIndex(int index)
   emit activeLayerChanged(_active_layer_index);
 }
 
-void MarkerManager::setLayerVisible(int index, bool visible)
+void AnnotationManager::setLayerVisible(int index, bool visible)
 {
   if (index < 0 || index >= _layers.size())
   {
@@ -232,7 +232,7 @@ void MarkerManager::setLayerVisible(int index, bool visible)
   emit layersChanged();
 }
 
-void MarkerManager::setLayerEditable(int index, bool editable)
+void AnnotationManager::setLayerEditable(int index, bool editable)
 {
   if (index < 0 || index >= _layers.size())
   {
@@ -246,7 +246,7 @@ void MarkerManager::setLayerEditable(int index, bool editable)
   emit layersChanged();
 }
 
-void MarkerManager::setLayerName(int index, const QString& name)
+void AnnotationManager::setLayerName(int index, const QString& name)
 {
   if (index < 0 || index >= _layers.size())
   {
@@ -256,7 +256,7 @@ void MarkerManager::setLayerName(int index, const QString& name)
   markLayerDirty(index);
 }
 
-void MarkerManager::setLayerAxisId(int index, const QString& axis_id, bool explicit_axis)
+void AnnotationManager::setLayerAxisId(int index, const QString& axis_id, bool explicit_axis)
 {
   if (index < 0 || index >= _layers.size())
   {
@@ -273,14 +273,14 @@ void MarkerManager::setLayerAxisId(int index, const QString& axis_id, bool expli
   markLayerDirty(index);
 }
 
-bool MarkerManager::addItemToActiveLayer(const MarkerItem& item)
+bool AnnotationManager::addItemToActiveLayer(const AnnotationItem& item)
 {
   auto* layer = activeLayer();
   if (!layer || !layer->editable)
   {
     return false;
   }
-  MarkerItem new_item = item;
+  AnnotationItem new_item = item;
   if (!new_item.color.isValid())
   {
     new_item.color = layer->color;
@@ -291,7 +291,7 @@ bool MarkerManager::addItemToActiveLayer(const MarkerItem& item)
   return true;
 }
 
-void MarkerManager::updateActiveLayerItem(int row, const MarkerItem& item)
+void AnnotationManager::updateActiveLayerItem(int row, const AnnotationItem& item)
 {
   auto* layer = activeLayer();
   if (!layer || !layer->editable || row < 0 || row >= layer->items.size())
@@ -303,7 +303,7 @@ void MarkerManager::updateActiveLayerItem(int row, const MarkerItem& item)
   emit itemsChanged();
 }
 
-void MarkerManager::removeActiveLayerItem(int row)
+void AnnotationManager::removeActiveLayerItem(int row)
 {
   auto* layer = activeLayer();
   if (!layer || !layer->editable || row < 0 || row >= layer->items.size())
@@ -315,7 +315,7 @@ void MarkerManager::removeActiveLayerItem(int row)
   emit itemsChanged();
 }
 
-bool MarkerManager::loadLayerFromFile(const QString& file_path, MarkerLayer& layer) const
+bool AnnotationManager::loadLayerFromFile(const QString& file_path, AnnotationLayer& layer) const
 {
   QFile file(file_path);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -395,10 +395,11 @@ bool MarkerManager::loadLayerFromFile(const QString& file_path, MarkerLayer& lay
       {
         continue;
       }
-      MarkerItem item;
+      AnnotationItem item;
       item.enabled = item_json.value("enabled", true);
       item.type =
-          markerTypeFromString(QString::fromStdString(item_json.value("type", std::string("point"))));
+          annotationTypeFromString(
+              QString::fromStdString(item_json.value("type", std::string("point"))));
       item.start_time = item_json.value("start", item_json.value("start_time", 0.0));
       item.end_time = item_json.value("end", item_json.value("end_time", item.start_time));
       item.label = QString::fromStdString(item_json.value("label", std::string()));
@@ -418,7 +419,7 @@ bool MarkerManager::loadLayerFromFile(const QString& file_path, MarkerLayer& lay
   return true;
 }
 
-bool MarkerManager::saveLayerToFile(const MarkerLayer& layer, const QString& file_path) const
+bool AnnotationManager::saveLayerToFile(const AnnotationLayer& layer, const QString& file_path) const
 {
   json doc;
   doc["schema"] = "plotjuggler.annotations";
@@ -463,7 +464,7 @@ bool MarkerManager::saveLayerToFile(const MarkerLayer& layer, const QString& fil
   {
     json item_json;
     item_json["enabled"] = item.enabled;
-    item_json["type"] = markerTypeToString(item.type).toStdString();
+    item_json["type"] = annotationTypeToString(item.type).toStdString();
     item_json["start"] = item.start_time;
     item_json["end"] = item.end_time;
     item_json["label"] = item.label.toStdString();
@@ -485,7 +486,7 @@ bool MarkerManager::saveLayerToFile(const MarkerLayer& layer, const QString& fil
   return stream.status() == QTextStream::Ok;
 }
 
-void MarkerManager::markLayerDirty(int index, bool dirty)
+void AnnotationManager::markLayerDirty(int index, bool dirty)
 {
   if (index < 0 || index >= _layers.size())
   {

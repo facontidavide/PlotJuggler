@@ -22,7 +22,7 @@ qt5_wrap_ui(
   statistics_dialog.ui
   plot_docker_toolbar.ui
   plotwidget_editor.ui
-  markers/markers_panel.ui
+  annotations/annotations_panel.ui
   transforms/binary_filter.ui
   transforms/function_editor.ui
   transforms/function_editor_help.ui
@@ -53,8 +53,8 @@ set(PLOTJUGGLER_SRC
     messageparser_base.cpp
     toast_notification.cpp
     toast_manager.cpp
-    markers/marker_manager.cpp
-    markers/markers_panel.cpp
+    annotations/annotation_manager.cpp
+    annotations/annotations_panel.cpp
     menubar.cpp
     plugin_manager.cpp
     plotwidget.cpp
