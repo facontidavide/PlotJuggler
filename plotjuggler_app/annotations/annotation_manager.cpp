@@ -8,10 +8,13 @@
 #include <QTextStream>
 #include <array>
 #include <algorithm>
+#include <functional>
 
 namespace
 {
 using json = nlohmann::json;
+using AnnotationNode = AnnotationManager::AnnotationLayer::AnnotationNode;
+using NodeType = AnnotationManager::AnnotationLayer::NodeType;
 
 QColor defaultLayerColor(int index)
 {
@@ -63,6 +66,261 @@ QColor colorFromJson(const json& value, const QColor& fallback)
   }
   const auto color = QColor(QString::fromStdString(value.get<std::string>()));
   return color.isValid() ? color : fallback;
+}
+
+json annotationItemToJson(const AnnotationManager::AnnotationItem& item, const QColor& fallback_color)
+{
+  json item_json;
+  item_json["enabled"] = item.enabled;
+  item_json["type"] = annotationTypeToString(item.type).toStdString();
+  item_json["start"] = item.start_time;
+  item_json["end"] = item.end_time;
+  item_json["label"] = item.label.toStdString();
+  item_json["tags"] = item.tags.toStdString();
+  item_json["notes"] = item.notes.toStdString();
+  item_json["color"] = colorToJson(item.color.isValid() ? item.color : fallback_color);
+  return item_json;
+}
+
+AnnotationManager::AnnotationItem annotationItemFromJson(const json& item_json, const QColor& fallback_color)
+{
+  AnnotationManager::AnnotationItem item;
+  item.enabled = item_json.value("enabled", true);
+  item.type = annotationTypeFromString(
+      QString::fromStdString(item_json.value("type", std::string("point"))));
+  item.start_time = item_json.value("start", item_json.value("start_time", 0.0));
+  item.end_time = item_json.value("end", item_json.value("end_time", item.start_time));
+  item.label = QString::fromStdString(item_json.value("label", std::string()));
+  item.tags = QString::fromStdString(item_json.value("tags", std::string()));
+  item.notes = QString::fromStdString(item_json.value("notes", std::string()));
+  item.color = item_json.contains("color") ? colorFromJson(item_json["color"], fallback_color) :
+                                             fallback_color;
+  return item;
+}
+
+AnnotationNode annotationNodeFromItem(const AnnotationManager::AnnotationItem& item)
+{
+  AnnotationNode node;
+  node.type = NodeType::Annotation;
+  node.visible = true;
+  node.color = item.color;
+  node.annotation = item;
+  node.name = item.label;
+  return node;
+}
+
+AnnotationNode annotationNodeFromJson(const json& node_json, const QColor& fallback_color)
+{
+  AnnotationNode node;
+  const QString type = QString::fromStdString(node_json.value("type", std::string("annotation")));
+  node.type = (type.compare("group", Qt::CaseInsensitive) == 0) ? NodeType::Group :
+                                                                  NodeType::Annotation;
+  node.name = QString::fromStdString(node_json.value("name", std::string()));
+  node.visible = node_json.value("visible", true);
+  node.color = node_json.contains("color") ? colorFromJson(node_json["color"], fallback_color) :
+                                             fallback_color;
+
+  if (node.type == NodeType::Group)
+  {
+    if (node_json.contains("children") && node_json["children"].is_array())
+    {
+      for (const auto& child_json : node_json["children"])
+      {
+        if (child_json.is_object())
+        {
+          node.children.push_back(annotationNodeFromJson(child_json, node.color.isValid() ? node.color :
+                                                                                           fallback_color));
+        }
+      }
+    }
+    return node;
+  }
+
+  node.annotation = annotationItemFromJson(node_json, node.color.isValid() ? node.color : fallback_color);
+  if (node.name.isEmpty())
+  {
+    node.name = node.annotation.label;
+  }
+  return node;
+}
+
+json annotationNodeToJson(const AnnotationNode& node, const QColor& fallback_color)
+{
+  json node_json;
+  node_json["type"] = (node.type == NodeType::Group) ? "group" : "annotation";
+  if (!node.name.isEmpty())
+  {
+    node_json["name"] = node.name.toStdString();
+  }
+  node_json["visible"] = node.visible;
+  if (node.color.isValid())
+  {
+    node_json["color"] = colorToJson(node.color);
+  }
+
+  if (node.type == NodeType::Group)
+  {
+    json children = json::array();
+    for (const auto& child : node.children)
+    {
+      children.push_back(annotationNodeToJson(child, node.color.isValid() ? node.color : fallback_color));
+    }
+    node_json["children"] = children;
+    return node_json;
+  }
+
+  const auto item_json = annotationItemToJson(node.annotation, fallback_color);
+  for (auto it = item_json.begin(); it != item_json.end(); ++it)
+  {
+    node_json[it.key()] = it.value();
+  }
+  return node_json;
+}
+
+bool nodeUsesTreeStructure(const AnnotationNode& node)
+{
+  if (node.type == NodeType::Group)
+  {
+    return true;
+  }
+  if (!node.children.isEmpty())
+  {
+    return true;
+  }
+  return false;
+}
+
+void appendFlattenedItems(const QVector<AnnotationNode>& nodes,
+                          QVector<AnnotationManager::AnnotationItem>& flat_items,
+                          bool ancestors_visible, const QColor& inherited_color)
+{
+  for (const auto& node : nodes)
+  {
+    const QColor node_color = node.color.isValid() ? node.color : inherited_color;
+    const bool effective_visible = ancestors_visible && node.visible;
+    if (node.type == NodeType::Group)
+    {
+      appendFlattenedItems(node.children, flat_items, effective_visible, node_color);
+      continue;
+    }
+
+    auto item = node.annotation;
+    if (node_color.isValid())
+    {
+      item.color = node_color;
+    }
+    item.enabled = item.enabled && effective_visible;
+    flat_items.push_back(item);
+  }
+}
+
+void setNodeSubtreeEnabled(QVector<AnnotationNode>& nodes, bool enabled)
+{
+  for (auto& node : nodes)
+  {
+    node.visible = enabled;
+    if (node.type == NodeType::Group)
+    {
+      setNodeSubtreeEnabled(node.children, enabled);
+    }
+    else
+    {
+      node.annotation.enabled = enabled;
+    }
+  }
+}
+
+AnnotationNode* nodeAtPath(QVector<AnnotationNode>& nodes, const QVector<int>& path)
+{
+  AnnotationNode* current = nullptr;
+  QVector<AnnotationNode>* current_nodes = &nodes;
+  for (const int index : path)
+  {
+    if (index < 0 || index >= current_nodes->size())
+    {
+      return nullptr;
+    }
+    current = &(*current_nodes)[index];
+    current_nodes = &current->children;
+  }
+  return current;
+}
+
+const AnnotationNode* nodeAtPath(const QVector<AnnotationNode>& nodes, const QVector<int>& path)
+{
+  const AnnotationNode* current = nullptr;
+  const QVector<AnnotationNode>* current_nodes = &nodes;
+  for (const int index : path)
+  {
+    if (index < 0 || index >= current_nodes->size())
+    {
+      return nullptr;
+    }
+    current = &(*current_nodes)[index];
+    current_nodes = &current->children;
+  }
+  return current;
+}
+
+bool removeNodeAtPath(QVector<AnnotationNode>& nodes, const QVector<int>& path)
+{
+  if (path.isEmpty())
+  {
+    return false;
+  }
+
+  if (path.size() == 1)
+  {
+    const int index = path.front();
+    if (index < 0 || index >= nodes.size())
+    {
+      return false;
+    }
+    nodes.removeAt(index);
+    return true;
+  }
+
+  QVector<int> parent_path = path;
+  const int index = parent_path.takeLast();
+  auto* parent = nodeAtPath(nodes, parent_path);
+  if (!parent || index < 0 || index >= parent->children.size())
+  {
+    return false;
+  }
+  parent->children.removeAt(index);
+  return true;
+}
+
+int flatIndexForPath(const QVector<AnnotationNode>& nodes, const QVector<int>& target_path)
+{
+  int flat_index = 0;
+  bool found = false;
+  QVector<int> path;
+  std::function<void(const QVector<AnnotationNode>&)> visit = [&](const QVector<AnnotationNode>& current_nodes) {
+    for (int i = 0; i < current_nodes.size() && !found; ++i)
+    {
+      path.push_back(i);
+      const auto& node = current_nodes[i];
+      if (node.type == NodeType::Group)
+      {
+        visit(node.children);
+      }
+      else
+      {
+        if (path == target_path)
+        {
+          found = true;
+        }
+        else
+        {
+          ++flat_index;
+        }
+      }
+      path.pop_back();
+    }
+  };
+  visit(nodes);
+  return found ? flat_index : -1;
 }
 }  // namespace
 
@@ -308,38 +566,15 @@ void AnnotationManager::setLayerItemsEnabled(int index, bool enabled)
     return;
   }
 
-  bool changed = false;
-  for (auto& item : _layers[index].items)
-  {
-    if (item.enabled != enabled)
-    {
-      item.enabled = enabled;
-      changed = true;
-    }
-  }
-  if (changed)
-  {
-    markLayerDirty(index);
-    emit itemsChanged();
-  }
+  setNodeSubtreeEnabled(_layers[index].nodes, enabled);
+  rebuildLayerItems(index);
+  markLayerDirty(index);
+  emit itemsChanged();
 }
 
 bool AnnotationManager::addItemToActiveLayer(const AnnotationItem& item)
 {
-  auto* layer = activeLayer();
-  if (!layer || !layer->editable)
-  {
-    return false;
-  }
-  AnnotationItem new_item = item;
-  if (!new_item.color.isValid())
-  {
-    new_item.color = layer->color;
-  }
-  layer->items.push_back(new_item);
-  markLayerDirty(_active_layer_index);
-  emit itemsChanged();
-  return true;
+  return addItemToLayer(_active_layer_index, item);
 }
 
 void AnnotationManager::updateActiveLayerItem(int row, const AnnotationItem& item)
@@ -349,9 +584,35 @@ void AnnotationManager::updateActiveLayerItem(int row, const AnnotationItem& ite
   {
     return;
   }
-  layer->items[row] = item;
-  markLayerDirty(_active_layer_index);
-  emit itemsChanged();
+  int target_index = 0;
+  std::function<bool(QVector<AnnotationNode>&)> visit = [&](QVector<AnnotationNode>& nodes) {
+    for (auto& node : nodes)
+    {
+      if (node.type == NodeType::Group)
+      {
+        if (visit(node.children))
+        {
+          return true;
+        }
+        continue;
+      }
+      if (target_index == row)
+      {
+        node.annotation = item;
+        node.name = item.label;
+        return true;
+      }
+      ++target_index;
+    }
+    return false;
+  };
+
+  if (visit(layer->nodes))
+  {
+    rebuildLayerItems(_active_layer_index);
+    markLayerDirty(_active_layer_index);
+    emit itemsChanged();
+  }
 }
 
 void AnnotationManager::removeActiveLayerItem(int row)
@@ -361,9 +622,337 @@ void AnnotationManager::removeActiveLayerItem(int row)
   {
     return;
   }
-  layer->items.removeAt(row);
-  markLayerDirty(_active_layer_index);
+  int target_index = 0;
+  QVector<int> target_path;
+  QVector<int> path;
+  std::function<bool(const QVector<AnnotationNode>&)> find = [&](const QVector<AnnotationNode>& nodes) {
+    for (int i = 0; i < nodes.size(); ++i)
+    {
+      path.push_back(i);
+      const auto& node = nodes[i];
+      if (node.type == NodeType::Group)
+      {
+        if (find(node.children))
+        {
+          return true;
+        }
+      }
+      else
+      {
+        if (target_index == row)
+        {
+          target_path = path;
+          return true;
+        }
+        ++target_index;
+      }
+      path.pop_back();
+    }
+    return false;
+  };
+  if (find(layer->nodes) && removeNodeAtPath(layer->nodes, target_path))
+  {
+    rebuildLayerItems(_active_layer_index);
+    markLayerDirty(_active_layer_index);
+    emit itemsChanged();
+  }
+}
+
+bool AnnotationManager::addItemToLayer(int layer_index, const AnnotationItem& item,
+                                       const QString& parent_node_path)
+{
+  if (layer_index < 0 || layer_index >= _layers.size())
+  {
+    return false;
+  }
+  auto& layer = _layers[layer_index];
+  if (!layer.editable)
+  {
+    return false;
+  }
+
+  AnnotationItem new_item = item;
+  if (!new_item.color.isValid())
+  {
+    new_item.color = layer.color;
+  }
+  auto node = annotationNodeFromItem(new_item);
+
+  if (parent_node_path.isEmpty())
+  {
+    layer.nodes.push_back(node);
+  }
+  else if (auto* parent = ::nodeAtPath(layer.nodes, pathFromString(parent_node_path));
+           parent && parent->type == NodeType::Group)
+  {
+    parent->children.push_back(node);
+  }
+  else
+  {
+    return false;
+  }
+
+  rebuildLayerItems(layer_index);
+  markLayerDirty(layer_index);
   emit itemsChanged();
+  return true;
+}
+
+bool AnnotationManager::addGroupToLayer(int layer_index, const QString& name,
+                                        const QString& parent_node_path)
+{
+  if (layer_index < 0 || layer_index >= _layers.size())
+  {
+    return false;
+  }
+  auto& layer = _layers[layer_index];
+  if (!layer.editable)
+  {
+    return false;
+  }
+
+  AnnotationNode node;
+  node.type = NodeType::Group;
+  node.name = name.trimmed().isEmpty() ? QString("Group") : name.trimmed();
+  node.visible = true;
+  node.color = layer.color;
+
+  if (parent_node_path.isEmpty())
+  {
+    layer.nodes.push_back(node);
+  }
+  else if (auto* parent = ::nodeAtPath(layer.nodes, pathFromString(parent_node_path));
+           parent && parent->type == NodeType::Group)
+  {
+    parent->children.push_back(node);
+  }
+  else
+  {
+    return false;
+  }
+
+  rebuildLayerItems(layer_index);
+  markLayerDirty(layer_index);
+  emit itemsChanged();
+  return true;
+}
+
+bool AnnotationManager::updateLayerNodeAnnotation(int layer_index, const QString& node_path,
+                                                  const AnnotationItem& item)
+{
+  auto* node = nodeAtPath(layer_index, node_path);
+  if (!node || node->type != NodeType::Annotation)
+  {
+    return false;
+  }
+  node->annotation = item;
+  node->name = item.label;
+  rebuildLayerItems(layer_index);
+  markLayerDirty(layer_index);
+  emit itemsChanged();
+  return true;
+}
+
+bool AnnotationManager::setLayerNodeName(int layer_index, const QString& node_path, const QString& name)
+{
+  auto* node = nodeAtPath(layer_index, node_path);
+  if (!node)
+  {
+    return false;
+  }
+  node->name = name.trimmed();
+  if (node->type == NodeType::Annotation)
+  {
+    node->annotation.label = node->name;
+  }
+  rebuildLayerItems(layer_index);
+  markLayerDirty(layer_index);
+  emit itemsChanged();
+  return true;
+}
+
+bool AnnotationManager::setLayerNodeColor(int layer_index, const QString& node_path, const QColor& color)
+{
+  if (!color.isValid())
+  {
+    return false;
+  }
+  auto* node = nodeAtPath(layer_index, node_path);
+  if (!node)
+  {
+    return false;
+  }
+  node->color = color;
+  if (node->type == NodeType::Annotation)
+  {
+    node->annotation.color = color;
+  }
+  rebuildLayerItems(layer_index);
+  markLayerDirty(layer_index);
+  emit itemsChanged();
+  return true;
+}
+
+bool AnnotationManager::removeLayerNode(int layer_index, const QString& node_path)
+{
+  if (layer_index < 0 || layer_index >= _layers.size())
+  {
+    return false;
+  }
+  if (!removeNodeAtPath(_layers[layer_index].nodes, pathFromString(node_path)))
+  {
+    return false;
+  }
+  rebuildLayerItems(layer_index);
+  markLayerDirty(layer_index);
+  emit itemsChanged();
+  return true;
+}
+
+std::optional<AnnotationNode> AnnotationManager::copyLayerNode(int layer_index,
+                                                               const QString& node_path) const
+{
+  const auto* node = this->nodeAtPath(layer_index, node_path);
+  if (!node)
+  {
+    return std::nullopt;
+  }
+  return *node;
+}
+
+bool AnnotationManager::insertLayerNode(int layer_index, const QString& parent_node_path,
+                                        const AnnotationLayer::AnnotationNode& node, int child_index)
+{
+  if (layer_index < 0 || layer_index >= _layers.size())
+  {
+    return false;
+  }
+  auto& layer = _layers[layer_index];
+  if (!layer.editable)
+  {
+    return false;
+  }
+
+  auto insert_at = [&](QVector<AnnotationNode>& nodes) {
+    if (child_index < 0 || child_index > nodes.size())
+    {
+      nodes.push_back(node);
+    }
+    else
+    {
+      nodes.insert(child_index, node);
+    }
+  };
+
+  if (parent_node_path.isEmpty())
+  {
+    insert_at(layer.nodes);
+  }
+  else if (auto* parent = ::nodeAtPath(layer.nodes, pathFromString(parent_node_path));
+           parent && parent->type == NodeType::Group)
+  {
+    insert_at(parent->children);
+  }
+  else
+  {
+    return false;
+  }
+
+  rebuildLayerItems(layer_index);
+  markLayerDirty(layer_index);
+  emit itemsChanged();
+  return true;
+}
+
+void AnnotationManager::setLayerNodes(int layer_index, const QVector<AnnotationLayer::AnnotationNode>& nodes)
+{
+  if (layer_index < 0 || layer_index >= _layers.size())
+  {
+    return;
+  }
+  _layers[layer_index].nodes = nodes;
+  rebuildLayerItems(layer_index);
+  markLayerDirty(layer_index);
+  emit itemsChanged();
+}
+
+int AnnotationManager::flatItemIndexForNodePath(int layer_index, const QString& node_path) const
+{
+  if (layer_index < 0 || layer_index >= _layers.size())
+  {
+    return -1;
+  }
+  return flatIndexForPath(_layers[layer_index].nodes, pathFromString(node_path));
+}
+
+QString AnnotationManager::parentGroupPath(const QString& node_path) const
+{
+  auto path = pathFromString(node_path);
+  if (path.isEmpty())
+  {
+    return {};
+  }
+  path.removeLast();
+  return pathToString(path);
+}
+
+const AnnotationNode* AnnotationManager::nodeAtPath(int layer_index, const QString& node_path) const
+{
+  if (layer_index < 0 || layer_index >= _layers.size())
+  {
+    return nullptr;
+  }
+  return ::nodeAtPath(_layers[layer_index].nodes, pathFromString(node_path));
+}
+
+AnnotationNode* AnnotationManager::nodeAtPath(int layer_index, const QString& node_path)
+{
+  if (layer_index < 0 || layer_index >= _layers.size())
+  {
+    return nullptr;
+  }
+  return ::nodeAtPath(_layers[layer_index].nodes, pathFromString(node_path));
+}
+
+void AnnotationManager::rebuildLayerItems(int index)
+{
+  if (index < 0 || index >= _layers.size())
+  {
+    return;
+  }
+  rebuildLayerItems(_layers[index]);
+  emit itemsChanged();
+}
+
+QString AnnotationManager::pathToString(const QVector<int>& path)
+{
+  QStringList parts;
+  for (const int index : path)
+  {
+    parts.push_back(QString::number(index));
+  }
+  return parts.join('/');
+}
+
+QVector<int> AnnotationManager::pathFromString(const QString& path)
+{
+  QVector<int> indices;
+  if (path.isEmpty())
+  {
+    return indices;
+  }
+  const auto parts = path.split('/', Qt::SkipEmptyParts);
+  for (const auto& part : parts)
+  {
+    bool ok = false;
+    const int index = part.toInt(&ok);
+    if (!ok)
+    {
+      return {};
+    }
+    indices.push_back(index);
+  }
+  return indices;
 }
 
 bool AnnotationManager::loadLayerFromFile(const QString& file_path, AnnotationLayer& layer) const
@@ -438,7 +1027,17 @@ bool AnnotationManager::loadLayerFromFile(const QString& file_path, AnnotationLa
     layer.color = colorFromJson(doc["color"], Qt::yellow);
   }
 
-  if (doc.contains("items") && doc["items"].is_array())
+  if (doc.contains("nodes") && doc["nodes"].is_array())
+  {
+    for (const auto& node_json : doc["nodes"])
+    {
+      if (node_json.is_object())
+      {
+        layer.nodes.push_back(annotationNodeFromJson(node_json, layer.color));
+      }
+    }
+  }
+  else if (doc.contains("items") && doc["items"].is_array())
   {
     for (const auto& item_json : doc["items"])
     {
@@ -446,27 +1045,10 @@ bool AnnotationManager::loadLayerFromFile(const QString& file_path, AnnotationLa
       {
         continue;
       }
-      AnnotationItem item;
-      item.enabled = item_json.value("enabled", true);
-      item.type =
-          annotationTypeFromString(
-              QString::fromStdString(item_json.value("type", std::string("point"))));
-      item.start_time = item_json.value("start", item_json.value("start_time", 0.0));
-      item.end_time = item_json.value("end", item_json.value("end_time", item.start_time));
-      item.label = QString::fromStdString(item_json.value("label", std::string()));
-      item.tags = QString::fromStdString(item_json.value("tags", std::string()));
-      item.notes = QString::fromStdString(item_json.value("notes", std::string()));
-      if (item_json.contains("color"))
-      {
-        item.color = colorFromJson(item_json["color"], layer.color);
-      }
-      else
-      {
-        item.color = layer.color;
-      }
-      layer.items.push_back(item);
+      layer.nodes.push_back(annotationNodeFromItem(annotationItemFromJson(item_json, layer.color)));
     }
   }
+  rebuildLayerItems(layer);
   return true;
 }
 
@@ -510,21 +1092,38 @@ bool AnnotationManager::saveLayerToFile(const AnnotationLayer& layer, const QStr
   doc["editable"] = layer.editable;
   doc["color"] = colorToJson(layer.color);
 
-  json items = json::array();
-  for (const auto& item : layer.items)
+  bool use_tree_structure = false;
+  for (const auto& node : layer.nodes)
   {
-    json item_json;
-    item_json["enabled"] = item.enabled;
-    item_json["type"] = annotationTypeToString(item.type).toStdString();
-    item_json["start"] = item.start_time;
-    item_json["end"] = item.end_time;
-    item_json["label"] = item.label.toStdString();
-    item_json["tags"] = item.tags.toStdString();
-    item_json["notes"] = item.notes.toStdString();
-    item_json["color"] = colorToJson(item.color);
-    items.push_back(item_json);
+    if (nodeUsesTreeStructure(node))
+    {
+      use_tree_structure = true;
+      break;
+    }
   }
-  doc["items"] = items;
+
+  if (use_tree_structure)
+  {
+    json nodes = json::array();
+    for (const auto& node : layer.nodes)
+    {
+      nodes.push_back(annotationNodeToJson(node, layer.color));
+    }
+    doc["nodes"] = nodes;
+  }
+  else
+  {
+    json items = json::array();
+    for (const auto& node : layer.nodes)
+    {
+      if (node.type != NodeType::Annotation)
+      {
+        continue;
+      }
+      items.push_back(annotationItemToJson(node.annotation, layer.color));
+    }
+    doc["items"] = items;
+  }
 
   QFile file(file_path);
   if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
@@ -549,4 +1148,10 @@ void AnnotationManager::markLayerDirty(int index, bool dirty)
   }
   _layers[index].dirty = dirty;
   emit layersChanged();
+}
+
+void AnnotationManager::rebuildLayerItems(AnnotationLayer& layer) const
+{
+  layer.items.clear();
+  appendFlattenedItems(layer.nodes, layer.items, true, layer.color);
 }
