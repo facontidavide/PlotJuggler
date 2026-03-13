@@ -269,6 +269,21 @@ void AnnotationManager::setLayerName(int index, const QString& name)
   markLayerDirty(index);
 }
 
+void AnnotationManager::setLayerColor(int index, const QColor& color)
+{
+  if (index < 0 || index >= _layers.size() || !color.isValid())
+  {
+    return;
+  }
+  if (_layers[index].color == color)
+  {
+    return;
+  }
+  _layers[index].color = color;
+  markLayerDirty(index);
+  emit layersChanged();
+}
+
 void AnnotationManager::setLayerAxisId(int index, const QString& axis_id, bool explicit_axis)
 {
   if (index < 0 || index >= _layers.size())

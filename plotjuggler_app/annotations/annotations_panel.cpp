@@ -1,37 +1,41 @@
 #include "annotations_panel.h"
 #include "ui_annotations_panel.h"
 
-#include "PlotJuggler/svg_util.h"
-
+#include <QCheckBox>
+#include <QColorDialog>
 #include <QDir>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFormLayout>
+#include <QHBoxLayout>
 #include <QHeaderView>
 #include <QInputDialog>
+#include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
 #include <QMessageBox>
 #include <QPainter>
 #include <QRegularExpression>
-#include <QSettings>
 #include <QSet>
 #include <QSignalBlocker>
+#include <QShortcut>
+#include <QStyle>
 #include <QTimer>
+#include <QToolButton>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
+#include <QVBoxLayout>
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 namespace
 {
 constexpr int COLUMN_ON = 0;
 constexpr int COLUMN_NAME = 1;
-constexpr int COLUMN_TYPE = 2;
-constexpr int COLUMN_START = 3;
-constexpr int COLUMN_END = 4;
-constexpr int COLUMN_LABEL = 5;
-constexpr int COLUMN_TAGS = 6;
-constexpr int COLUMN_NOTES = 7;
-constexpr int COLUMN_STATE = 8;
+constexpr int COLUMN_ACTIONS = 2;
 
 constexpr int ROLE_LAYER_INDEX = Qt::UserRole;
 constexpr int ROLE_ANNOTATION_ROW = Qt::UserRole + 1;
@@ -49,13 +53,6 @@ QIcon colorSwatchIcon(const QColor& color)
   return QIcon(pixmap);
 }
 
-QIcon editPenIcon()
-{
-  QSettings settings;
-  const QString theme = settings.value("StyleSheet::theme", "light").toString();
-  return QIcon(LoadSvg(":/resources/svg/pencil-edit.svg", theme));
-}
-
 QString stripTrailingCopySuffix(QString text)
 {
   text = text.trimmed();
@@ -69,32 +66,44 @@ AnnotationsPanel::AnnotationsPanel(AnnotationManager* manager, QWidget* parent)
   , ui(new Ui::AnnotationsPanel)
 {
   ui->setupUi(this);
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
   ui->treeWidgetAnnotations->setRootIsDecorated(true);
   ui->treeWidgetAnnotations->setSelectionBehavior(QAbstractItemView::SelectRows);
   ui->treeWidgetAnnotations->setUniformRowHeights(true);
   ui->treeWidgetAnnotations->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
   ui->treeWidgetAnnotations->header()->setStretchLastSection(false);
-  ui->treeWidgetAnnotations->header()->setSectionResizeMode(COLUMN_NOTES, QHeaderView::Stretch);
-  ui->treeWidgetAnnotations->header()->setSectionResizeMode(COLUMN_LABEL, QHeaderView::Stretch);
+  ui->treeWidgetAnnotations->header()->setSectionResizeMode(COLUMN_NAME, QHeaderView::Stretch);
+  ui->treeWidgetAnnotations->header()->setSectionResizeMode(COLUMN_ACTIONS,
+                                                            QHeaderView::ResizeToContents);
+  ui->treeWidgetAnnotations->setContextMenuPolicy(Qt::CustomContextMenu);
+  ui->groupDetails->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+  ui->buttonNewLayer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  ui->buttonLoadLayer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  _annotation_text_edit_timer = new QTimer(this);
+  _annotation_text_edit_timer->setSingleShot(true);
+  _annotation_text_edit_timer->setInterval(250);
 
   connect(ui->buttonNewLayer, &QPushButton::clicked, this, &AnnotationsPanel::onNewLayer);
   connect(ui->buttonLoadLayer, &QPushButton::clicked, this, &AnnotationsPanel::onLoadLayer);
-  connect(ui->buttonSaveLayer, &QPushButton::clicked, this, &AnnotationsPanel::onSaveLayer);
-  connect(ui->buttonSaveLayerAs, &QPushButton::clicked, this, &AnnotationsPanel::onSaveLayerAs);
-  connect(ui->buttonDuplicateLayer, &QPushButton::clicked, this,
-          &AnnotationsPanel::onDuplicateLayer);
-  connect(ui->buttonRenameLayer, &QPushButton::clicked, this, &AnnotationsPanel::onRenameLayer);
-  connect(ui->buttonRemoveLayer, &QPushButton::clicked, this, &AnnotationsPanel::onRemoveLayer);
   connect(ui->checkBoxAutoloadCompanionAnnotations, &QCheckBox::toggled, this,
           &AnnotationsPanel::autoloadCompanionAnnotationsChanged);
-  connect(ui->buttonMarkRange, &QPushButton::clicked, this, &AnnotationsPanel::onAddRegion);
-  connect(ui->buttonDeleteItem, &QPushButton::clicked, this, &AnnotationsPanel::onRemoveItem);
-  connect(ui->buttonJumpTo, &QPushButton::clicked, this, &AnnotationsPanel::onJumpToItem);
+  connect(ui->checkBoxAnnotationEnabled, &QCheckBox::toggled, this,
+          &AnnotationsPanel::onAnnotationEnabledEdited);
+  connect(ui->lineEditAnnotationLabel, &QLineEdit::editingFinished, this,
+          &AnnotationsPanel::onAnnotationLabelEdited);
+  connect(ui->lineEditAnnotationTags, &QLineEdit::editingFinished, this,
+          &AnnotationsPanel::onAnnotationTagsEdited);
+  connect(ui->plainTextEditAnnotationNotes, &QPlainTextEdit::textChanged, this,
+          &AnnotationsPanel::onAnnotationNotesEdited);
+  connect(_annotation_text_edit_timer, &QTimer::timeout, this,
+          &AnnotationsPanel::flushPendingAnnotationTextEdits);
 
   connect(ui->treeWidgetAnnotations, &QTreeWidget::currentItemChanged, this,
           &AnnotationsPanel::onTreeCurrentItemChanged);
   connect(ui->treeWidgetAnnotations, &QTreeWidget::itemChanged, this, &AnnotationsPanel::onTreeItemChanged);
+  connect(ui->treeWidgetAnnotations, &QWidget::customContextMenuRequested, this,
+          &AnnotationsPanel::onTreeContextMenu);
   connect(ui->treeWidgetAnnotations, &QTreeWidget::itemDoubleClicked, this,
           [this](QTreeWidgetItem* item, int column) {
             if (!item)
@@ -103,14 +112,12 @@ AnnotationsPanel::AnnotationsPanel(AnnotationManager* manager, QWidget* parent)
             }
             if (layerIndexFromItem(item) >= 0 && annotationRowFromItem(item) < 0)
             {
-              if (const auto* layer = _manager->activeLayer())
-              {
-                onEditableToggled(!layer->editable);
-              }
+              onEditLayerProperties();
             }
             else if (annotationRowFromItem(item) >= 0 && column != COLUMN_ON)
             {
-              ui->treeWidgetAnnotations->editItem(item, column);
+              ui->lineEditAnnotationLabel->setFocus();
+              ui->lineEditAnnotationLabel->selectAll();
             }
           });
 
@@ -123,6 +130,8 @@ AnnotationsPanel::AnnotationsPanel(AnnotationManager* manager, QWidget* parent)
 
   populateTree();
   updateButtons();
+  updateDetailsPanel();
+  installTreeShortcuts();
 }
 
 AnnotationsPanel::~AnnotationsPanel()
@@ -163,6 +172,15 @@ void AnnotationsPanel::setCurrentAxisId(const QString& axis_id)
   scheduleTreeRefresh();
 }
 
+void AnnotationsPanel::setSessionTimeRange(double start_time, double end_time)
+{
+  _session_start_time = std::min(start_time, end_time);
+  _session_end_time = std::max(start_time, end_time);
+  _session_time_range_valid = std::isfinite(_session_start_time) && std::isfinite(_session_end_time) &&
+                              _session_start_time <= _session_end_time;
+  scheduleTreeRefresh();
+}
+
 void AnnotationsPanel::setAutoloadCompanionAnnotations(bool enabled)
 {
   ui->checkBoxAutoloadCompanionAnnotations->setChecked(enabled);
@@ -176,6 +194,9 @@ bool AnnotationsPanel::autoloadCompanionAnnotations() const
 void AnnotationsPanel::clearForSessionChange()
 {
   _tree_refresh_pending = false;
+  _annotation_text_edit_timer->stop();
+  _detail_layer_index = -1;
+  _detail_annotation_row = -1;
   _updating_ui = true;
   {
     QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
@@ -183,6 +204,7 @@ void AnnotationsPanel::clearForSessionChange()
   }
   _updating_ui = false;
   updateButtons();
+  updateDetailsPanel();
   emit selectedAnnotationChanged(false);
 }
 
@@ -252,18 +274,25 @@ void AnnotationsPanel::onTreeCurrentItemChanged(QTreeWidgetItem* current, QTreeW
   {
     return;
   }
+  _annotation_text_edit_timer->stop();
   if (!current)
   {
+    _detail_layer_index = -1;
+    _detail_annotation_row = -1;
     updateButtons();
+    updateDetailsPanel();
     emit selectedAnnotationChanged(false);
     return;
   }
   const int layer_index = layerIndexFromItem(current);
+  _detail_layer_index = layer_index;
+  _detail_annotation_row = annotationRowFromItem(current);
   if (layer_index >= 0)
   {
     _manager->setActiveLayerIndex(layer_index);
   }
   updateButtons();
+  updateDetailsPanel();
   emit selectedAnnotationChanged(hasSelectedAnnotation());
 }
 
@@ -302,19 +331,18 @@ void AnnotationsPanel::onTreeItemChanged(QTreeWidgetItem* item, int column)
   {
     _manager->setActiveLayerIndex(layer_index);
   }
-  if (column == COLUMN_LABEL)
+  if (column == COLUMN_ON)
   {
-    const QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
-    item->setText(COLUMN_NAME,
-                  item->text(COLUMN_LABEL).isEmpty() ? "<annotation>" : item->text(COLUMN_LABEL));
+    auto annotation = selectedAnnotation();
+    annotation.enabled = (item->checkState(COLUMN_ON) == Qt::Checked);
+    _manager->updateActiveLayerItem(annotation_row, annotation);
   }
   else if (column == COLUMN_NAME)
   {
-    const QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
-    item->setText(COLUMN_LABEL,
-                  item->text(COLUMN_NAME) == "<annotation>" ? QString() : item->text(COLUMN_NAME));
+    auto annotation = selectedAnnotation();
+    annotation.label = item->text(COLUMN_NAME) == "<annotation>" ? QString() : item->text(COLUMN_NAME);
+    _manager->updateActiveLayerItem(annotation_row, annotation);
   }
-  _manager->updateActiveLayerItem(annotation_row, annotationItemFromTree(item));
 }
 
 void AnnotationsPanel::onNewLayer()
@@ -329,11 +357,11 @@ void AnnotationsPanel::onNewLayer()
 void AnnotationsPanel::onLoadLayer()
 {
   const QString file_path = QFileDialog::getOpenFileName(
-      this, tr("Load Marker Layer"), defaultAnnotationDirectory(),
+      this, tr("Load Annotation File"), defaultAnnotationDirectory(),
       tr("Annotation Files (*.annotations*.json *.json);;All Files (*)"));
   if (!file_path.isEmpty() && !_manager->loadLayer(file_path))
   {
-    QMessageBox::warning(this, tr("Load failed"), tr("Failed to load marker layer."));
+    QMessageBox::warning(this, tr("Load failed"), tr("Failed to load annotation file."));
   }
 }
 
@@ -358,7 +386,7 @@ void AnnotationsPanel::onSaveLayer()
 
   if (!_manager->saveLayer(index))
   {
-    QMessageBox::warning(this, tr("Save failed"), tr("Failed to save marker layer."));
+    QMessageBox::warning(this, tr("Save failed"), tr("Failed to save annotation file."));
   }
 }
 
@@ -375,11 +403,11 @@ void AnnotationsPanel::onSaveLayerAs()
     _manager->setLayerAxisId(index, _current_axis_id, true);
   }
   const QString file_path = QFileDialog::getSaveFileName(
-      this, tr("Save Marker Layer As"), suggestUniqueAnnotationFilePath(),
+      this, tr("Save Annotation File As"), suggestUniqueAnnotationFilePath(),
       tr("Annotation Files (*.annotations*.json);;JSON Files (*.json);;All Files (*)"));
   if (!file_path.isEmpty() && !_manager->saveLayerAs(index, file_path))
   {
-    QMessageBox::warning(this, tr("Save failed"), tr("Failed to save marker layer."));
+    QMessageBox::warning(this, tr("Save failed"), tr("Failed to save annotation file."));
   }
 }
 
@@ -399,7 +427,7 @@ void AnnotationsPanel::onDuplicateLayer()
 
   bool ok = false;
   const QString suggested_name = suggestDuplicateLayerName(layer->name);
-  const QString name = QInputDialog::getText(this, tr("Duplicate Marker Layer"),
+  const QString name = QInputDialog::getText(this, tr("Duplicate Annotation File"),
                                              tr("New layer name:"), QLineEdit::Normal,
                                              suggested_name, &ok);
   if (ok && !name.trimmed().isEmpty())
@@ -418,7 +446,7 @@ void AnnotationsPanel::onRenameLayer()
   }
 
   bool ok = false;
-  const QString name = QInputDialog::getText(this, tr("Rename Marker Layer"), tr("Layer name:"),
+  const QString name = QInputDialog::getText(this, tr("Rename Annotation File"), tr("Layer name:"),
                                              QLineEdit::Normal, layer->name, &ok);
   if (ok && !name.trimmed().isEmpty())
   {
@@ -433,6 +461,21 @@ void AnnotationsPanel::onEditableToggled(bool checked)
     return;
   }
   _manager->setLayerEditable(_manager->activeLayerIndex(), checked);
+}
+
+void AnnotationsPanel::onAddPoint()
+{
+  AnnotationManager::AnnotationItem item;
+  item.type = AnnotationManager::AnnotationType::Point;
+  item.start_time = _streaming_active ? _current_time : 0.5 * (_view_start_time + _view_end_time);
+  item.end_time = item.start_time;
+  item.label = QString("Point @ %1").arg(item.start_time, 0, 'f', 3);
+
+  if (const auto* layer = _manager->activeLayer())
+  {
+    item.color = layer->color;
+  }
+  _manager->addItemToActiveLayer(item);
 }
 
 void AnnotationsPanel::onAddRegion()
@@ -485,6 +528,102 @@ void AnnotationsPanel::onJumpToItem()
   }
 }
 
+void AnnotationsPanel::onTreeContextMenu(const QPoint& pos)
+{
+  auto* item = ui->treeWidgetAnnotations->itemAt(pos);
+  if (!item)
+  {
+    return;
+  }
+  {
+    const QSignalBlocker blocker(ui->treeWidgetAnnotations);
+    ui->treeWidgetAnnotations->setCurrentItem(item);
+  }
+  _detail_layer_index = layerIndexFromItem(item);
+  _detail_annotation_row = annotationRowFromItem(item);
+
+  const int layer_index = layerIndexFromItem(item);
+  const int annotation_row = annotationRowFromItem(item);
+  const QPoint global_pos = ui->treeWidgetAnnotations->viewport()->mapToGlobal(pos);
+  if (annotation_row >= 0)
+  {
+    openAnnotationMenu(layer_index, annotation_row, global_pos);
+  }
+  else if (layer_index >= 0)
+  {
+    openLayerMenu(layer_index, global_pos);
+  }
+}
+
+void AnnotationsPanel::onEditLayerProperties()
+{
+  const int layer_index = _manager->activeLayerIndex();
+  if (layer_index >= 0)
+  {
+    editLayerPropertiesDialog(layer_index);
+  }
+}
+
+void AnnotationsPanel::onAnnotationEnabledEdited(bool checked)
+{
+  if (_updating_ui || _detail_layer_index < 0 || _detail_annotation_row < 0)
+  {
+    return;
+  }
+  auto item = selectedAnnotation();
+  item.enabled = checked;
+  updateSelectedAnnotation(item);
+  if (auto* tree_item = currentTreeItem())
+  {
+    const QSignalBlocker blocker(ui->treeWidgetAnnotations);
+    tree_item->setCheckState(COLUMN_ON, checked ? Qt::Checked : Qt::Unchecked);
+  }
+}
+
+void AnnotationsPanel::onAnnotationLabelEdited()
+{
+  if (_updating_ui || _detail_layer_index < 0 || _detail_annotation_row < 0)
+  {
+    return;
+  }
+  auto item = selectedAnnotation();
+  item.label = ui->lineEditAnnotationLabel->text();
+  updateSelectedAnnotation(item);
+}
+
+void AnnotationsPanel::onAnnotationTagsEdited()
+{
+  if (_updating_ui || _detail_layer_index < 0 || _detail_annotation_row < 0)
+  {
+    return;
+  }
+  auto item = selectedAnnotation();
+  item.tags = ui->lineEditAnnotationTags->text();
+  updateSelectedAnnotation(item);
+}
+
+void AnnotationsPanel::onAnnotationNotesEdited()
+{
+  if (_updating_ui || _detail_layer_index < 0 || _detail_annotation_row < 0)
+  {
+    return;
+  }
+  _annotation_text_edit_timer->start();
+}
+
+void AnnotationsPanel::flushPendingAnnotationTextEdits()
+{
+  if (_updating_ui || _detail_layer_index < 0 || _detail_annotation_row < 0)
+  {
+    return;
+  }
+  auto item = selectedAnnotation();
+  item.label = ui->lineEditAnnotationLabel->text();
+  item.tags = ui->lineEditAnnotationTags->text();
+  item.notes = ui->plainTextEditAnnotationNotes->toPlainText();
+  updateSelectedAnnotation(item);
+}
+
 void AnnotationsPanel::scheduleTreeRefresh()
 {
   if (_tree_refresh_pending)
@@ -506,23 +645,56 @@ void AnnotationsPanel::updateButtons()
   const auto* layer = _manager->activeLayer();
   const bool has_layer = (layer != nullptr);
   const bool has_dataset = !_session_data_files.isEmpty();
-  const bool compatible = has_layer && isLayerCompatible(*layer);
-  const bool editable = has_layer && layer->editable && compatible;
 
   ui->buttonNewLayer->setEnabled(has_dataset);
   ui->buttonLoadLayer->setEnabled(has_dataset);
-  ui->buttonSaveLayer->setEnabled(has_layer);
-  ui->buttonSaveLayerAs->setEnabled(has_layer);
-  ui->buttonDuplicateLayer->setEnabled(has_layer);
-  ui->buttonRemoveLayer->setEnabled(has_layer);
-  ui->buttonRenameLayer->setEnabled(has_layer);
-  ui->buttonMarkRange->setEnabled(editable);
-  ui->buttonDeleteItem->setEnabled(editable && hasSelectedAnnotation());
-  ui->buttonJumpTo->setEnabled(hasSelectedAnnotation());
   ui->checkBoxAutoloadCompanionAnnotations->setEnabled(has_dataset);
   ui->treeWidgetAnnotations->setEnabled(has_layer || has_dataset);
 
   _updating_ui = false;
+}
+
+void AnnotationsPanel::updateDetailsPanel()
+{
+  _updating_ui = true;
+
+  const auto& layers = _manager->layers();
+  const bool has_layer = (_detail_layer_index >= 0 && _detail_layer_index < layers.size());
+  const auto* layer = has_layer ? &layers[_detail_layer_index] : nullptr;
+  const bool has_annotation =
+      has_layer && _detail_annotation_row >= 0 && _detail_annotation_row < layer->items.size();
+
+  ui->groupAnnotationDetails->setEnabled(has_annotation);
+  if (has_annotation)
+  {
+    const auto& annotation = layer->items[_detail_annotation_row];
+    if (!ui->lineEditAnnotationLabel->hasFocus() &&
+        ui->lineEditAnnotationLabel->text() != annotation.label)
+    {
+      ui->lineEditAnnotationLabel->setText(annotation.label);
+    }
+    if (!ui->lineEditAnnotationTags->hasFocus() &&
+        ui->lineEditAnnotationTags->text() != annotation.tags)
+    {
+      ui->lineEditAnnotationTags->setText(annotation.tags);
+    }
+    if (!ui->plainTextEditAnnotationNotes->hasFocus() &&
+        ui->plainTextEditAnnotationNotes->toPlainText() != annotation.notes)
+    {
+      ui->plainTextEditAnnotationNotes->setPlainText(annotation.notes);
+    }
+    ui->checkBoxAnnotationEnabled->setChecked(annotation.enabled);
+  }
+  else
+  {
+    ui->lineEditAnnotationLabel->clear();
+    ui->lineEditAnnotationTags->clear();
+    ui->plainTextEditAnnotationNotes->clear();
+    ui->checkBoxAnnotationEnabled->setChecked(false);
+  }
+
+  _updating_ui = false;
+  ui->groupDetails->setMaximumHeight(ui->groupDetails->sizeHint().height());
 }
 
 bool AnnotationsPanel::isLayerCompatible(const AnnotationManager::AnnotationLayer& layer) const
@@ -545,12 +717,30 @@ bool AnnotationsPanel::isCurrentSelectionCompatible() const
   return isLayerCompatible(layers[layer_index]);
 }
 
+bool AnnotationsPanel::isAnnotationInSessionRange(const AnnotationManager::AnnotationItem& item) const
+{
+  if (!_session_time_range_valid)
+  {
+    return true;
+  }
+  return item.end_time >= _session_start_time && item.start_time <= _session_end_time;
+}
+
 void AnnotationsPanel::populateTree()
 {
   _updating_ui = true;
   auto* current = currentTreeItem();
   const int current_layer = layerIndexFromItem(current);
   const int current_annotation = annotationRowFromItem(current);
+  QSet<int> expanded_layers;
+  for (int i = 0; i < ui->treeWidgetAnnotations->topLevelItemCount(); ++i)
+  {
+    if (auto* top_item = ui->treeWidgetAnnotations->topLevelItem(i);
+        top_item && top_item->isExpanded())
+    {
+      expanded_layers.insert(layerIndexFromItem(top_item));
+    }
+  }
 
   QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
   ui->treeWidgetAnnotations->clear();
@@ -559,6 +749,10 @@ void AnnotationsPanel::populateTree()
   for (int i = 0; i < layers.size(); ++i)
   {
     addLayerItem(i, layers[i]);
+    if (auto* top_item = ui->treeWidgetAnnotations->topLevelItem(i))
+    {
+      top_item->setExpanded(expanded_layers.contains(i));
+    }
   }
 
   QTreeWidgetItem* restore_item = nullptr;
@@ -580,32 +774,203 @@ void AnnotationsPanel::populateTree()
     ui->treeWidgetAnnotations->setCurrentItem(restore_item);
   }
 
+  auto* selected_item = ui->treeWidgetAnnotations->currentItem();
+  _detail_layer_index = layerIndexFromItem(selected_item);
+  _detail_annotation_row = annotationRowFromItem(selected_item);
+
   _updating_ui = false;
+  updateDetailsPanel();
+  updateButtons();
   emit selectedAnnotationChanged(hasSelectedAnnotation());
 }
 
-AnnotationManager::AnnotationItem AnnotationsPanel::annotationItemFromTree(QTreeWidgetItem* item) const
+void AnnotationsPanel::openLayerMenu(int layer_index, const QPoint& global_pos)
 {
-  AnnotationManager::AnnotationItem annotation;
-  const int layer_index = layerIndexFromItem(item);
-  const int annotation_row = annotationRowFromItem(item);
-  const auto& layers = _manager->layers();
-  if (layer_index >= 0 && layer_index < layers.size() && annotation_row >= 0 &&
-      annotation_row < layers[layer_index].items.size())
+  if (layer_index < 0 || layer_index >= _manager->layers().size())
   {
-    annotation = layers[layer_index].items[annotation_row];
+    return;
   }
 
-  annotation.enabled = (item->checkState(COLUMN_ON) == Qt::Checked);
-  annotation.type = (item->text(COLUMN_TYPE).compare("Region", Qt::CaseInsensitive) == 0) ?
-                    AnnotationManager::AnnotationType::Region :
-                    AnnotationManager::AnnotationType::Point;
-  annotation.start_time = item->text(COLUMN_START).toDouble();
-  annotation.end_time = item->text(COLUMN_END).toDouble();
-  annotation.label = item->text(COLUMN_LABEL);
-  annotation.tags = item->text(COLUMN_TAGS);
-  annotation.notes = item->text(COLUMN_NOTES);
-  return annotation;
+  const auto& layer = _manager->layers()[layer_index];
+  const bool editable = isLayerCompatible(layer) && layer.editable;
+
+  QMenu menu(this);
+  auto* add_point = menu.addAction(tr("Add Point Annotation"));
+  auto* add_range = menu.addAction(tr("Add Range Annotation"));
+  menu.addSeparator();
+  auto* properties = menu.addAction(tr("File Properties..."));
+  auto* save = menu.addAction(tr("Save Annotation File"));
+  auto* save_as = menu.addAction(tr("Save Annotation File As..."));
+  menu.addSeparator();
+  auto* duplicate = menu.addAction(tr("Duplicate Layer"));
+  auto* rename = menu.addAction(tr("Rename Layer"));
+  auto* toggle_editable =
+      menu.addAction(layer.editable ? tr("Set Read Only") : tr("Set Editable"));
+  auto* remove = menu.addAction(tr("Delete Layer"));
+  add_point->setShortcut(QKeySequence(Qt::Key_Insert));
+  add_range->setShortcut(QKeySequence(Qt::SHIFT | Qt::Key_Insert));
+  properties->setShortcut(QKeySequence(Qt::Key_F2));
+  save->setShortcut(QKeySequence::Save);
+  save_as->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_S));
+  remove->setShortcut(QKeySequence::Delete);
+
+  add_point->setEnabled(editable);
+  add_range->setEnabled(editable);
+
+  QAction* selected = menu.exec(global_pos);
+  if (selected == add_point)
+  {
+    _manager->setActiveLayerIndex(layer_index);
+    onAddPoint();
+  }
+  else if (selected == add_range)
+  {
+    _manager->setActiveLayerIndex(layer_index);
+    onAddRegion();
+  }
+  else if (selected == properties)
+  {
+    editLayerPropertiesDialog(layer_index);
+  }
+  else if (selected == save)
+  {
+    _manager->setActiveLayerIndex(layer_index);
+    onSaveLayer();
+  }
+  else if (selected == save_as)
+  {
+    _manager->setActiveLayerIndex(layer_index);
+    onSaveLayerAs();
+  }
+  else if (selected == duplicate)
+  {
+    _manager->setActiveLayerIndex(layer_index);
+    onDuplicateLayer();
+  }
+  else if (selected == rename)
+  {
+    _manager->setActiveLayerIndex(layer_index);
+    onRenameLayer();
+  }
+  else if (selected == toggle_editable)
+  {
+    _manager->setLayerEditable(layer_index, !layer.editable);
+  }
+  else if (selected == remove)
+  {
+    _manager->setActiveLayerIndex(layer_index);
+    onRemoveLayer();
+  }
+}
+
+void AnnotationsPanel::openAnnotationMenu(int layer_index, int annotation_row,
+                                          const QPoint& global_pos)
+{
+  if (layer_index < 0 || layer_index >= _manager->layers().size() || annotation_row < 0 ||
+      annotation_row >= _manager->layers()[layer_index].items.size())
+  {
+    return;
+  }
+
+  QMenu menu(this);
+  auto* jump = menu.addAction(tr("Jump To Annotation"));
+  auto* duplicate = menu.addAction(tr("Duplicate Annotation"));
+  auto* remove = menu.addAction(tr("Delete Annotation"));
+  jump->setShortcut(QKeySequence(Qt::Key_Return));
+  duplicate->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_D));
+  remove->setShortcut(QKeySequence::Delete);
+
+  QAction* selected = menu.exec(global_pos);
+  if (selected == jump)
+  {
+    _manager->setActiveLayerIndex(layer_index);
+    emit jumpToSelectedAnnotationRequested();
+  }
+  else if (selected == duplicate && isActiveLayerEditable())
+  {
+    _manager->setActiveLayerIndex(layer_index);
+    auto item = _manager->layers()[layer_index].items[annotation_row];
+    if (!item.label.isEmpty())
+    {
+      item.label += " copy";
+    }
+    _manager->addItemToActiveLayer(item);
+  }
+  else if (selected == remove)
+  {
+    _manager->setActiveLayerIndex(layer_index);
+    _manager->removeActiveLayerItem(annotation_row);
+  }
+}
+
+void AnnotationsPanel::installTreeShortcuts()
+{
+  auto* delete_shortcut = new QShortcut(QKeySequence::Delete, ui->treeWidgetAnnotations);
+  connect(delete_shortcut, &QShortcut::activated, this, [this]() {
+    if (selectedAnnotationRow() >= 0)
+    {
+      onRemoveItem();
+    }
+    else if (_manager->activeLayerIndex() >= 0)
+    {
+      onRemoveLayer();
+    }
+  });
+
+  auto* rename_shortcut = new QShortcut(QKeySequence(Qt::Key_F2), ui->treeWidgetAnnotations);
+  connect(rename_shortcut, &QShortcut::activated, this, [this]() {
+    if (selectedAnnotationRow() >= 0)
+    {
+      ui->lineEditAnnotationLabel->setFocus();
+      ui->lineEditAnnotationLabel->selectAll();
+    }
+    else
+    {
+      onEditLayerProperties();
+    }
+  });
+
+  auto* jump_shortcut = new QShortcut(QKeySequence(Qt::Key_Return), ui->treeWidgetAnnotations);
+  connect(jump_shortcut, &QShortcut::activated, this, &AnnotationsPanel::onJumpToItem);
+
+  auto* insert_shortcut = new QShortcut(QKeySequence(Qt::Key_Insert), ui->treeWidgetAnnotations);
+  connect(insert_shortcut, &QShortcut::activated, this, &AnnotationsPanel::onAddPoint);
+
+  auto* range_shortcut =
+      new QShortcut(QKeySequence(Qt::SHIFT | Qt::Key_Insert), ui->treeWidgetAnnotations);
+  connect(range_shortcut, &QShortcut::activated, this, &AnnotationsPanel::onAddRegion);
+
+  auto* duplicate_shortcut =
+      new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_D), ui->treeWidgetAnnotations);
+  connect(duplicate_shortcut, &QShortcut::activated, this, [this]() {
+    if (selectedAnnotationRow() >= 0 && isActiveLayerEditable())
+    {
+      const int layer_index = _manager->activeLayerIndex();
+      const int annotation_row = selectedAnnotationRow();
+      if (layer_index >= 0 && annotation_row >= 0 &&
+          layer_index < _manager->layers().size() &&
+          annotation_row < _manager->layers()[layer_index].items.size())
+      {
+        auto item = _manager->layers()[layer_index].items[annotation_row];
+        if (!item.label.isEmpty())
+        {
+          item.label += " copy";
+        }
+        _manager->addItemToActiveLayer(item);
+      }
+    }
+    else if (_manager->activeLayerIndex() >= 0)
+    {
+      onDuplicateLayer();
+    }
+  });
+
+  auto* save_shortcut = new QShortcut(QKeySequence::Save, ui->treeWidgetAnnotations);
+  connect(save_shortcut, &QShortcut::activated, this, &AnnotationsPanel::onSaveLayer);
+
+  auto* save_as_shortcut =
+      new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_S), ui->treeWidgetAnnotations);
+  connect(save_as_shortcut, &QShortcut::activated, this, &AnnotationsPanel::onSaveLayerAs);
 }
 
 void AnnotationsPanel::addLayerItem(int layer_index, const AnnotationManager::AnnotationLayer& layer)
@@ -623,57 +988,103 @@ void AnnotationsPanel::addLayerItem(int layer_index, const AnnotationManager::An
     layer_name += " *";
   }
   layer_item->setText(COLUMN_NAME, layer_name);
-  layer_item->setText(COLUMN_TYPE, "Layer");
-  const bool is_active_edit_layer = (layer_index == _manager->activeLayerIndex() && layer.editable);
-  layer_item->setText(COLUMN_STATE, !compatible           ? "Axis mismatch" :
-                                    is_active_edit_layer ? "Editing" :
-                                    (!layer.editable)    ? "Read only" :
-                                                           QString());
   layer_item->setIcon(COLUMN_NAME, colorSwatchIcon(layer.color));
-  if (is_active_edit_layer && compatible)
-  {
-    layer_item->setIcon(COLUMN_STATE, editPenIcon());
-  }
   layer_item->setToolTip(COLUMN_NAME, layer.file_path.isEmpty() ? layer.name : layer.file_path);
-  layer_item->setToolTip(COLUMN_STATE,
-                         !compatible ? QString("Annotation axis '%1' does not match current axis '%2'")
-                                           .arg(layer.axis_id, _current_axis_id) :
-                         is_active_edit_layer ? "Active editable annotation set" :
-                         (!layer.editable)    ? "Read-only annotation set" :
-                                                "Double-click to make this the editable annotation set");
   layer_item->setExpanded(true);
 
   auto layer_font = layer_item->font(COLUMN_NAME);
   layer_font.setBold(true);
   layer_item->setFont(COLUMN_NAME, layer_font);
 
-  if (!compatible)
-  {
-    layer_item->setForeground(COLUMN_STATE, QBrush(QColor("#c2410c")));
-  }
-  else if (is_active_edit_layer)
-  {
-    layer_item->setForeground(COLUMN_STATE, QBrush(palette().highlight()));
-  }
+  auto* layer_actions = new QWidget(ui->treeWidgetAnnotations);
+  auto* layer_layout = new QHBoxLayout(layer_actions);
+  layer_layout->setContentsMargins(0, 0, 0, 0);
+  layer_layout->setSpacing(2);
+  auto* save_button = new QToolButton(layer_actions);
+  save_button->setAutoRaise(true);
+  save_button->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
+  save_button->setToolTip(tr("Save annotation file"));
+  save_button->setEnabled(compatible);
+  connect(save_button, &QToolButton::clicked, this, [this, layer_item, layer_index]() {
+    ui->treeWidgetAnnotations->setCurrentItem(layer_item);
+    _manager->setActiveLayerIndex(layer_index);
+    onSaveLayer();
+  });
+  layer_layout->addWidget(save_button);
+  ui->treeWidgetAnnotations->setItemWidget(layer_item, COLUMN_ACTIONS, layer_actions);
 
   for (int row = 0; row < layer.items.size(); ++row)
   {
     const auto& annotation = layer.items[row];
+    const bool in_range = isAnnotationInSessionRange(annotation);
+    const QString kind = (annotation.type == AnnotationManager::AnnotationType::Point) ? "Point" : "Range";
+    const QString timing =
+        (annotation.type == AnnotationManager::AnnotationType::Point) ?
+            QString::number(annotation.start_time, 'f', 3) :
+            QString("%1..%2")
+                .arg(annotation.start_time, 0, 'f', 3)
+                .arg(annotation.end_time, 0, 'f', 3);
     auto* annotation_item = new QTreeWidgetItem(layer_item);
     annotation_item->setData(COLUMN_NAME, ROLE_LAYER_INDEX, layer_index);
     annotation_item->setData(COLUMN_NAME, ROLE_ANNOTATION_ROW, row);
-    annotation_item->setFlags(annotation_item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsEditable |
-                          Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+    annotation_item->setFlags(annotation_item->flags() | Qt::ItemIsUserCheckable |
+                              Qt::ItemIsSelectable | Qt::ItemIsEnabled);
     annotation_item->setCheckState(COLUMN_ON, annotation.enabled ? Qt::Checked : Qt::Unchecked);
-    annotation_item->setText(COLUMN_NAME, annotation.label.isEmpty() ? "<annotation>" : annotation.label);
-    annotation_item->setText(COLUMN_TYPE,
-                         annotation.type == AnnotationManager::AnnotationType::Point ? "Point" : "Region");
-    annotation_item->setText(COLUMN_START, QString::number(annotation.start_time, 'f', 6));
-    annotation_item->setText(COLUMN_END, QString::number(annotation.end_time, 'f', 6));
-    annotation_item->setText(COLUMN_LABEL, annotation.label);
-    annotation_item->setText(COLUMN_TAGS, annotation.tags);
-    annotation_item->setText(COLUMN_NOTES, annotation.notes);
-    annotation_item->setToolTip(COLUMN_NAME, annotation.notes);
+    QString summary =
+        annotation.label.isEmpty() ? QString("%1 %2").arg(kind, timing) :
+                                     QString("%1  %2").arg(annotation.label, timing);
+    if (!in_range)
+    {
+      summary += tr(" [out of range]");
+    }
+    annotation_item->setText(COLUMN_NAME, summary);
+    if (!in_range)
+    {
+      annotation_item->setForeground(COLUMN_NAME, QBrush(QColor("#c2410c")));
+    }
+    annotation_item->setToolTip(
+        COLUMN_NAME,
+        QString("%1\nStart: %2\nEnd: %3\nTags: %4\nNotes: %5%6")
+            .arg(annotation.label.isEmpty() ? kind : annotation.label)
+            .arg(annotation.start_time, 0, 'f', 6)
+            .arg(annotation.end_time, 0, 'f', 6)
+            .arg(annotation.tags)
+            .arg(annotation.notes)
+            .arg(in_range ? QString() :
+                            QString("\nWarning: annotation is outside the current session time range")));
+
+    auto* annotation_actions = new QWidget(ui->treeWidgetAnnotations);
+    auto* annotation_layout = new QHBoxLayout(annotation_actions);
+    annotation_layout->setContentsMargins(0, 0, 0, 0);
+    annotation_layout->setSpacing(2);
+
+    auto* range_button = new QToolButton(annotation_actions);
+    range_button->setAutoRaise(true);
+    range_button->setText("+R");
+    range_button->setToolTip(tr("Add range annotation to this file"));
+    range_button->setEnabled(layer.editable && compatible);
+    connect(range_button, &QToolButton::clicked, this,
+            [this, annotation_item, layer_index]() {
+              _manager->setActiveLayerIndex(layer_index);
+              ui->treeWidgetAnnotations->setCurrentItem(annotation_item);
+              onAddRegion();
+            });
+    annotation_layout->addWidget(range_button);
+
+    auto* jump_button = new QToolButton(annotation_actions);
+    jump_button->setAutoRaise(true);
+    jump_button->setText("Go");
+    jump_button->setToolTip(tr("Jump to annotation"));
+    jump_button->setEnabled(in_range);
+    connect(jump_button, &QToolButton::clicked, this,
+            [this, layer_index, annotation_item]() {
+              _manager->setActiveLayerIndex(layer_index);
+              ui->treeWidgetAnnotations->setCurrentItem(annotation_item);
+              onJumpToItem();
+            });
+    annotation_layout->addWidget(jump_button);
+
+    ui->treeWidgetAnnotations->setItemWidget(annotation_item, COLUMN_ACTIONS, annotation_actions);
   }
 }
 
@@ -729,7 +1140,7 @@ QString AnnotationsPanel::defaultAnnotationStem() const
   {
     return layer->name.trimmed();
   }
-  return "markers";
+  return "annotations";
 }
 
 QString AnnotationsPanel::suggestUniqueLayerName() const
@@ -865,4 +1276,75 @@ QString AnnotationsPanel::nextCopyFileBaseName(const QString& base_name, const Q
     candidate = QString("%1.copy-%2").arg(root).arg(suffix++);
   }
   return candidate;
+}
+
+bool AnnotationsPanel::editLayerPropertiesDialog(int layer_index)
+{
+  const auto& layers = _manager->layers();
+  if (layer_index < 0 || layer_index >= layers.size())
+  {
+    return false;
+  }
+
+  const auto& layer = layers[layer_index];
+  QDialog dialog(this);
+  dialog.setWindowTitle(tr("Annotation File Properties"));
+
+  auto* layout = new QVBoxLayout(&dialog);
+  auto* form = new QFormLayout();
+  auto* name_edit = new QLineEdit(layer.name, &dialog);
+  auto* file_label = new QLabel(layer.file_path, &dialog);
+  auto* axis_label =
+      new QLabel(layer.axis_id.isEmpty() ? layer.axis_kind : layer.axis_id, &dialog);
+  auto* status_label = new QLabel(layer.editable ? tr("Editable") : tr("Read only"), &dialog);
+  auto* visibility_label = new QLabel(layer.visible ? tr("Visible") : tr("Hidden"), &dialog);
+  auto* color_button = new QPushButton(tr("Choose Color"), &dialog);
+  QColor selected_color = layer.color;
+
+  file_label->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  axis_label->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  file_label->setStyleSheet("color: palette(mid);");
+  axis_label->setStyleSheet("color: palette(mid);");
+  status_label->setStyleSheet("color: palette(mid);");
+  visibility_label->setStyleSheet("color: palette(mid);");
+  color_button->setIcon(colorSwatchIcon(selected_color));
+
+  form->addRow(tr("Name"), name_edit);
+  form->addRow(tr("File"), file_label);
+  form->addRow(tr("Axis"), axis_label);
+  form->addRow(tr("Status"), status_label);
+  form->addRow(tr("Visibility"), visibility_label);
+  form->addRow(tr("Color"), color_button);
+  layout->addLayout(form);
+
+  connect(color_button, &QPushButton::clicked, &dialog, [&]() {
+    const QColor chosen = QColorDialog::getColor(selected_color, &dialog,
+                                                 tr("Select Annotation Color"));
+    if (chosen.isValid())
+    {
+      selected_color = chosen;
+      color_button->setIcon(colorSwatchIcon(selected_color));
+    }
+  });
+
+  auto apply_properties = [this, layer_index, name_edit, &selected_color]() {
+    const QString trimmed_name = name_edit->text().trimmed();
+    if (!trimmed_name.isEmpty())
+    {
+      _manager->setLayerName(layer_index, trimmed_name);
+    }
+    _manager->setLayerColor(layer_index, selected_color);
+  };
+
+  auto* close_buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+                                             Qt::Horizontal, &dialog);
+  layout->addWidget(close_buttons);
+
+  connect(close_buttons, &QDialogButtonBox::accepted, &dialog, [&]() {
+    apply_properties();
+    dialog.accept();
+  });
+  connect(close_buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+  return dialog.exec() == QDialog::Accepted;
 }

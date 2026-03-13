@@ -71,6 +71,7 @@ public:
   void setLayerVisible(int index, bool visible);
   void setLayerEditable(int index, bool editable);
   void setLayerName(int index, const QString& name);
+  void setLayerColor(int index, const QColor& color);
   void setLayerAxisId(int index, const QString& axis_id, bool explicit_axis = true);
 
   bool addItemToActiveLayer(const AnnotationItem& item);

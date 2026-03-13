@@ -6,156 +6,167 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>520</width>
-    <height>700</height>
+    <width>420</width>
+    <height>640</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Annotations</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>2</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item>
-    <widget class="QGroupBox" name="groupAnnotations">
-     <property name="title">
-      <string>Annotations</string>
+    <layout class="QHBoxLayout" name="horizontalLayoutLayerButtons">
+     <property name="spacing">
+      <number>4</number>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayoutAnnotations">
+     <item>
+      <widget class="QPushButton" name="buttonNewLayer">
+       <property name="text">
+        <string>New</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="buttonLoadLayer">
+       <property name="text">
+        <string>Load</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="checkBoxAutoloadCompanionAnnotations">
+     <property name="text">
+      <string>Autoload companion annotation files</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTreeWidget" name="treeWidgetAnnotations">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>1</verstretch>
+      </sizepolicy>
+     </property>
+     <column>
+      <property name="text">
+       <string>On</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Annotation</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Actions</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="groupDetails">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayoutDetails">
+      <property name="spacing">
+       <number>2</number>
+      </property>
+      <property name="leftMargin">
+       <number>4</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>4</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayoutLayerButtons">
-        <item>
-         <widget class="QPushButton" name="buttonNewLayer">
-          <property name="text">
-           <string>New</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="buttonLoadLayer">
-          <property name="text">
-           <string>Load</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="buttonSaveLayer">
-          <property name="text">
-           <string>Save</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="buttonSaveLayerAs">
-          <property name="text">
-           <string>Save As</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayoutLayerButtons2">
-        <item>
-         <widget class="QPushButton" name="buttonDuplicateLayer">
-          <property name="text">
-           <string>Duplicate</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="buttonRenameLayer">
-          <property name="text">
-           <string>Rename</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="buttonRemoveLayer">
-          <property name="text">
-           <string>Remove</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="checkBoxAutoloadCompanionAnnotations">
-        <property name="text">
-         <string>Autoload companion annotation files</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayoutItemButtons">
-        <item>
-         <widget class="QPushButton" name="buttonMarkRange">
-          <property name="text">
-           <string>Add Range</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="buttonDeleteItem">
-          <property name="text">
-           <string>Delete</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="buttonJumpTo">
-          <property name="text">
-           <string>Jump To</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <widget class="QTreeWidget" name="treeWidgetAnnotations">
-        <column>
-         <property name="text">
-          <string>On</string>
+       <widget class="QWidget" name="groupAnnotationDetails">
+        <layout class="QFormLayout" name="formLayoutAnnotationDetails">
+         <property name="verticalSpacing">
+          <number>4</number>
          </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Annotation</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Type</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Start</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>End</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Label</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Tags</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Notes</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>State</string>
-         </property>
-        </column>
+         <item row="0" column="0">
+          <widget class="QLabel" name="labelAnnotationLabel">
+           <property name="text">
+            <string>Label</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="lineEditAnnotationLabel"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="labelAnnotationTags">
+           <property name="text">
+            <string>Tags</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="lineEditAnnotationTags"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelAnnotationNotes">
+           <property name="text">
+            <string>Notes</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QPlainTextEdit" name="plainTextEditAnnotationNotes">
+           <property name="maximumHeight">
+            <number>72</number>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QCheckBox" name="checkBoxAnnotationEnabled">
+           <property name="text">
+            <string>Enabled</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>

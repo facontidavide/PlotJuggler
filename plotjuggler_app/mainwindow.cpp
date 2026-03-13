@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#include <algorithm>
 #include <functional>
 #include <queue>
 #include <stdio.h>
@@ -84,6 +85,9 @@ QString normalizedAxisId(QString axis_id)
   }
   return axis_id;
 }
+
+bool annotationInSessionRange(const AnnotationManager::AnnotationItem& item, double start_time,
+                              double end_time);
 
 QString axisIdFromPluginConfig(const PJ::FileLoadInfo& info)
 {
@@ -292,6 +296,21 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   ui->mainSplitter->setStretchFactor(0, 2);
   ui->mainSplitter->setStretchFactor(1, 6);
 
+  for (QWidget* header : { ui->widgetLabelLoad, ui->widgetLabelStreaming,
+                           ui->widgetLabelPublishers, ui->widgetLabelTimeseries,
+                           ui->widgetLabelAnnotations })
+  {
+    header->installEventFilter(this);
+    const auto header_children = header->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+    for (QWidget* child : header_children)
+    {
+      if (!qobject_cast<QPushButton*>(child))
+      {
+        child->installEventFilter(this);
+      }
+    }
+  }
+
   connect(ui->mainSplitter, &QSplitter::splitterMoved, this, &MainWindow::on_splitterMoved);
 
   // Initialize toast notification manager
@@ -463,6 +482,39 @@ MainWindow::~MainWindow()
   _mapped_plot_data.user_defined.clear();
 
   delete ui;
+}
+
+bool MainWindow::eventFilter(QObject* obj, QEvent* event)
+{
+  if (event->type() == QEvent::MouseButtonRelease)
+  {
+    auto* mouse_event = static_cast<QMouseEvent*>(event);
+    if (mouse_event->button() == Qt::LeftButton)
+    {
+      const auto toggle_header = [this, obj](QWidget* header, auto slot) {
+        auto* widget = qobject_cast<QWidget*>(obj);
+        if (obj == header || (header && widget && header->isAncestorOf(widget)))
+        {
+          (this->*slot)();
+          return true;
+        }
+        return false;
+      };
+
+      if (toggle_header(ui->widgetLabelLoad, &MainWindow::on_buttonHideFileFrame_clicked) ||
+          toggle_header(ui->widgetLabelStreaming, &MainWindow::on_buttonHideStreamingFrame_clicked) ||
+          toggle_header(ui->widgetLabelPublishers,
+                        &MainWindow::on_buttonHidePublishersFrame_clicked) ||
+          toggle_header(ui->widgetLabelTimeseries,
+                        &MainWindow::on_buttonHideTimeseriesFrame_clicked) ||
+          toggle_header(ui->widgetLabelAnnotations,
+                        &MainWindow::on_buttonHideAnnotationsFrame_clicked))
+      {
+        return true;
+      }
+    }
+  }
+  return QMainWindow::eventFilter(obj, event);
 }
 
 void MainWindow::onUndoableChange()
@@ -2549,6 +2601,9 @@ void MainWindow::refreshAnnotationOverlays()
   QVector<AnnotationManager::AnnotationLayer> layers = _annotation_manager->layers();
   const bool has_layers = !layers.isEmpty();
   const QString axis_id = currentSessionAxisId();
+  const auto session_range = calculateVisibleRangeX();
+  const double session_start = std::get<0>(session_range);
+  const double session_end = std::get<1>(session_range);
   for (auto& layer : layers)
   {
     if (layer.axis_explicit && !layer.axis_id.isEmpty() && !axis_id.isEmpty() &&
@@ -2556,14 +2611,24 @@ void MainWindow::refreshAnnotationOverlays()
     {
       layer.visible = false;
     }
+    layer.items.erase(std::remove_if(layer.items.begin(), layer.items.end(),
+                                     [session_start, session_end](const auto& item) {
+                                       return !annotationInSessionRange(item, session_start, session_end);
+                                     }),
+                      layer.items.end());
   }
+
+  const auto selected_annotation =
+      (has_layers && _annotations_panel && _annotations_panel->hasSelectedAnnotation() &&
+       annotationInSessionRange(_annotations_panel->selectedAnnotation(), session_start, session_end))
+          ? std::optional<AnnotationManager::AnnotationItem>(_annotations_panel->selectedAnnotation())
+          : std::nullopt;
+
   forEachWidget([&](PlotWidget* plot) {
     plot->setSelectedAnnotationEditable(_annotations_panel && _annotations_panel->isActiveLayerEditable());
     plot->setSelectedAnnotationHandlesVisible(!plot->isXYPlot());
     plot->setSelectedAnnotationPreviewSource(std::nullopt);
-    plot->setSelectedAnnotation((has_layers && _annotations_panel && _annotations_panel->hasSelectedAnnotation())
-                                ? std::optional<AnnotationManager::AnnotationItem>(_annotations_panel->selectedAnnotation())
-                                : std::nullopt);
+    plot->setSelectedAnnotation(selected_annotation);
     plot->setAnnotationLayers(layers);
   });
 }
@@ -2581,6 +2646,9 @@ void MainWindow::refreshSelectedAnnotationOverlay()
           : std::nullopt;
   QVector<AnnotationManager::AnnotationLayer> layers = _annotation_manager->layers();
   const QString axis_id = currentSessionAxisId();
+  const auto session_range = calculateVisibleRangeX();
+  const double session_start = std::get<0>(session_range);
+  const double session_end = std::get<1>(session_range);
   for (auto& layer : layers)
   {
     if (layer.axis_explicit && !layer.axis_id.isEmpty() && !axis_id.isEmpty() &&
@@ -2588,13 +2656,23 @@ void MainWindow::refreshSelectedAnnotationOverlay()
     {
       layer.visible = false;
     }
+    layer.items.erase(std::remove_if(layer.items.begin(), layer.items.end(),
+                                     [session_start, session_end](const auto& item) {
+                                       return !annotationInSessionRange(item, session_start, session_end);
+                                     }),
+                      layer.items.end());
   }
+
+  const auto selected_in_range =
+      (selected.has_value() && annotationInSessionRange(selected.value(), session_start, session_end))
+          ? selected
+          : std::nullopt;
 
   forEachWidget([&](PlotWidget* plot) {
     plot->setSelectedAnnotationEditable(_annotations_panel && _annotations_panel->isActiveLayerEditable());
     plot->setSelectedAnnotationHandlesVisible(!plot->isXYPlot());
     plot->setSelectedAnnotationPreviewSource(std::nullopt);
-    plot->setSelectedAnnotation(selected);
+    plot->setSelectedAnnotation(selected_in_range);
     plot->setAnnotationLayers(layers);
   });
 }
@@ -2607,6 +2685,11 @@ void MainWindow::jumpToSelectedAnnotation()
   }
 
   const auto annotation = _annotations_panel->selectedAnnotation();
+  const auto session_range = calculateVisibleRangeX();
+  if (!annotationInSessionRange(annotation, std::get<0>(session_range), std::get<1>(session_range)))
+  {
+    return;
+  }
   const bool is_region = (annotation.type == AnnotationManager::AnnotationType::Region);
 
   forEachWidget([&](PlotWidget* plot) {
@@ -2617,21 +2700,58 @@ void MainWindow::jumpToSelectedAnnotation()
 
     QRectF rect = plot->currentBoundingRect();
     const double width = std::abs(rect.width());
-    const double center = is_region ? (annotation.start_time + annotation.end_time) * 0.5 : annotation.start_time;
-    double half_width = width * 0.5;
+    const double min_x = std::min(rect.left(), rect.right());
+    const double max_x = std::max(rect.left(), rect.right());
+    double new_left = min_x;
+    double new_right = max_x;
 
     if (is_region)
     {
-      const double region_width = std::abs(annotation.end_time - annotation.start_time);
-      half_width = std::max(half_width, std::max(region_width * 0.75, 0.5));
+      const double start = std::min(annotation.start_time, annotation.end_time);
+      const double end = std::max(annotation.start_time, annotation.end_time);
+      const double region_width = end - start;
+      if (region_width >= width)
+      {
+        const double center = 0.5 * (start + end);
+        new_left = center - 0.5 * width;
+        new_right = center + 0.5 * width;
+      }
+      else if (start < min_x)
+      {
+        new_left = start;
+        new_right = start + width;
+      }
+      else if (end > max_x)
+      {
+        new_right = end;
+        new_left = end - width;
+      }
+      else
+      {
+        return;
+      }
     }
     else
     {
-      half_width = std::max(half_width, 0.5);
+      const double pos = annotation.start_time;
+      if (pos < min_x)
+      {
+        new_left = pos;
+        new_right = pos + width;
+      }
+      else if (pos > max_x)
+      {
+        new_right = pos;
+        new_left = pos - width;
+      }
+      else
+      {
+        return;
+      }
     }
 
-    rect.setLeft(center - half_width);
-    rect.setRight(center + half_width);
+    rect.setLeft(new_left);
+    rect.setRight(new_right);
     plot->setZoomRectangle(rect, false);
   });
 
@@ -2706,8 +2826,10 @@ void MainWindow::refreshAnnotationSessionContext()
 {
   if (_annotations_panel)
   {
+    const auto range = calculateVisibleRangeX();
     _annotations_panel->setSessionDataFiles(currentSessionDataFiles());
     _annotations_panel->setCurrentAxisId(currentSessionAxisId());
+    _annotations_panel->setSessionTimeRange(std::get<0>(range), std::get<1>(range));
     if (_annotations_panel->autoloadCompanionAnnotations())
     {
       autoloadCompanionAnnotationFiles();
@@ -2735,27 +2857,56 @@ void MainWindow::autoloadCompanionAnnotationFiles()
   {
     const QFileInfo data_info(data_file);
     const QDir dir = data_info.absoluteDir();
-    const QString stem = data_info.completeBaseName();
-    const QStringList candidates =
-        dir.entryList(
-            { QString("%1.annotations.json").arg(stem),
-              QString("%1.annotations.*.json").arg(stem) },
-            QDir::Files, QDir::Name);
-
-    for (const auto& candidate : candidates)
+    QStringList stem_candidates;
+    QString current_name = data_info.fileName();
+    while (true)
     {
-      const QString abs_path = QFileInfo(dir.filePath(candidate)).absoluteFilePath();
-      if (loaded_paths.contains(abs_path))
+      const QFileInfo stem_info(current_name);
+      const QString stem = stem_info.completeBaseName();
+      if (stem.isEmpty() || stem_candidates.contains(stem))
       {
-        continue;
+        break;
       }
-      if (_annotation_manager->loadLayer(abs_path))
+      stem_candidates.push_back(stem);
+      if (!stem.contains('.'))
       {
-        loaded_paths.insert(abs_path);
+        break;
+      }
+      current_name = stem;
+    }
+
+    for (const auto& stem : stem_candidates)
+    {
+      const QStringList candidates =
+          dir.entryList(
+              { QString("%1.annotations.json").arg(stem),
+                QString("%1.annotations.*.json").arg(stem) },
+              QDir::Files, QDir::Name);
+
+      for (const auto& candidate : candidates)
+      {
+        const QString abs_path = QFileInfo(dir.filePath(candidate)).absoluteFilePath();
+        if (loaded_paths.contains(abs_path))
+        {
+          continue;
+        }
+        if (_annotation_manager->loadLayer(abs_path))
+        {
+          loaded_paths.insert(abs_path);
+        }
       }
     }
   }
 }
+
+namespace
+{
+bool annotationInSessionRange(const AnnotationManager::AnnotationItem& item, double start_time,
+                              double end_time)
+{
+  return item.end_time >= start_time && item.start_time <= end_time;
+}
+}  // namespace
 
 void MainWindow::updateTimeSlider()
 {

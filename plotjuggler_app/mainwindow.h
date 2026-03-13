@@ -66,6 +66,8 @@ public:
 
 public slots:
 
+  bool eventFilter(QObject* obj, QEvent* event) override;
+
   void resizeEvent(QResizeEvent*);
   // Undo - Redo
   void onUndoableChange();
