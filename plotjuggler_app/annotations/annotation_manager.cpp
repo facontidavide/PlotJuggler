@@ -301,6 +301,29 @@ void AnnotationManager::setLayerAxisId(int index, const QString& axis_id, bool e
   markLayerDirty(index);
 }
 
+void AnnotationManager::setLayerItemsEnabled(int index, bool enabled)
+{
+  if (index < 0 || index >= _layers.size())
+  {
+    return;
+  }
+
+  bool changed = false;
+  for (auto& item : _layers[index].items)
+  {
+    if (item.enabled != enabled)
+    {
+      item.enabled = enabled;
+      changed = true;
+    }
+  }
+  if (changed)
+  {
+    markLayerDirty(index);
+    emit itemsChanged();
+  }
+}
+
 bool AnnotationManager::addItemToActiveLayer(const AnnotationItem& item)
 {
   auto* layer = activeLayer();

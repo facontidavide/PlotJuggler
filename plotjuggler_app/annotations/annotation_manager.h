@@ -73,6 +73,7 @@ public:
   void setLayerName(int index, const QString& name);
   void setLayerColor(int index, const QColor& color);
   void setLayerAxisId(int index, const QString& axis_id, bool explicit_axis = true);
+  void setLayerItemsEnabled(int index, bool enabled);
 
   bool addItemToActiveLayer(const AnnotationItem& item);
   void updateActiveLayerItem(int row, const AnnotationItem& item);

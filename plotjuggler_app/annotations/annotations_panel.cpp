@@ -21,6 +21,7 @@
 #include <QSet>
 #include <QSignalBlocker>
 #include <QShortcut>
+#include <QScrollBar>
 #include <QStyle>
 #include <QTimer>
 #include <QToolButton>
@@ -215,9 +216,8 @@ bool AnnotationsPanel::hasSelectedAnnotation() const
 
 AnnotationManager::AnnotationItem AnnotationsPanel::selectedAnnotation() const
 {
-  auto* item = currentTreeItem();
-  const int row = annotationRowFromItem(item);
-  const int layer_index = layerIndexFromItem(item);
+  const int row = _detail_annotation_row;
+  const int layer_index = _detail_layer_index;
   if (row < 0 || layer_index < 0)
   {
     return {};
@@ -237,7 +237,7 @@ AnnotationManager::AnnotationItem AnnotationsPanel::selectedAnnotation() const
 
 int AnnotationsPanel::selectedAnnotationRow() const
 {
-  return annotationRowFromItem(currentTreeItem());
+  return (_detail_layer_index >= 0 && _detail_annotation_row >= 0) ? _detail_annotation_row : -1;
 }
 
 bool AnnotationsPanel::isActiveLayerEditable() const
@@ -248,13 +248,16 @@ bool AnnotationsPanel::isActiveLayerEditable() const
 
 void AnnotationsPanel::updateSelectedAnnotation(const AnnotationManager::AnnotationItem& item)
 {
-  const int row = selectedAnnotationRow();
-  if (row < 0)
+  if (_detail_layer_index < 0 || _detail_annotation_row < 0)
   {
     return;
   }
 
-  _manager->updateActiveLayerItem(row, item);
+  if (_manager->activeLayerIndex() != _detail_layer_index)
+  {
+    _manager->setActiveLayerIndex(_detail_layer_index);
+  }
+  _manager->updateActiveLayerItem(_detail_annotation_row, item);
 }
 
 void AnnotationsPanel::refreshAnnotationLayers()
@@ -322,7 +325,21 @@ void AnnotationsPanel::onTreeItemChanged(QTreeWidgetItem* item, int column)
         item->setCheckState(COLUMN_ON, Qt::Unchecked);
         return;
       }
-      _manager->setLayerVisible(layer_index, item->checkState(COLUMN_ON) == Qt::Checked);
+      const Qt::CheckState state = item->checkState(COLUMN_ON);
+      if (state == Qt::PartiallyChecked)
+      {
+        _manager->setLayerVisible(layer_index, true);
+        return;
+      }
+      const bool enabled = (state == Qt::Checked);
+      _manager->setLayerVisible(layer_index, enabled);
+      _manager->setLayerItemsEnabled(layer_index, enabled);
+
+      const QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
+      for (int child = 0; child < item->childCount(); ++child)
+      {
+        item->child(child)->setCheckState(COLUMN_ON, enabled ? Qt::Checked : Qt::Unchecked);
+      }
     }
     return;
   }
@@ -331,15 +348,54 @@ void AnnotationsPanel::onTreeItemChanged(QTreeWidgetItem* item, int column)
   {
     _manager->setActiveLayerIndex(layer_index);
   }
+  const auto& layers = _manager->layers();
+  if (layer_index < 0 || layer_index >= layers.size() ||
+      annotation_row < 0 || annotation_row >= layers[layer_index].items.size())
+  {
+    return;
+  }
+
   if (column == COLUMN_ON)
   {
-    auto annotation = selectedAnnotation();
+    auto annotation = layers[layer_index].items[annotation_row];
     annotation.enabled = (item->checkState(COLUMN_ON) == Qt::Checked);
     _manager->updateActiveLayerItem(annotation_row, annotation);
+
+    if (auto* parent = item->parent())
+    {
+      int checked_count = 0;
+      int unchecked_count = 0;
+      for (int child = 0; child < parent->childCount(); ++child)
+      {
+        const auto state = parent->child(child)->checkState(COLUMN_ON);
+        if (state == Qt::Checked)
+        {
+          checked_count++;
+        }
+        else
+        {
+          unchecked_count++;
+        }
+      }
+
+      Qt::CheckState parent_state = Qt::PartiallyChecked;
+      if (checked_count == parent->childCount())
+      {
+        parent_state = Qt::Checked;
+      }
+      else if (unchecked_count == parent->childCount())
+      {
+        parent_state = Qt::Unchecked;
+      }
+
+      const QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
+      parent->setCheckState(COLUMN_ON, parent_state);
+      _manager->setLayerVisible(layer_index, parent_state != Qt::Unchecked);
+    }
   }
   else if (column == COLUMN_NAME)
   {
-    auto annotation = selectedAnnotation();
+    auto annotation = layers[layer_index].items[annotation_row];
     annotation.label = item->text(COLUMN_NAME) == "<annotation>" ? QString() : item->text(COLUMN_NAME);
     _manager->updateActiveLayerItem(annotation_row, annotation);
   }
@@ -708,7 +764,7 @@ bool AnnotationsPanel::isLayerCompatible(const AnnotationManager::AnnotationLaye
 
 bool AnnotationsPanel::isCurrentSelectionCompatible() const
 {
-  const int layer_index = layerIndexFromItem(currentTreeItem());
+  const int layer_index = _detail_layer_index;
   const auto& layers = _manager->layers();
   if (layer_index < 0 || layer_index >= layers.size())
   {
@@ -732,6 +788,8 @@ void AnnotationsPanel::populateTree()
   auto* current = currentTreeItem();
   const int current_layer = layerIndexFromItem(current);
   const int current_annotation = annotationRowFromItem(current);
+  const int scroll_x = ui->treeWidgetAnnotations->horizontalScrollBar()->value();
+  const int scroll_y = ui->treeWidgetAnnotations->verticalScrollBar()->value();
   QSet<int> expanded_layers;
   for (int i = 0; i < ui->treeWidgetAnnotations->topLevelItemCount(); ++i)
   {
@@ -773,6 +831,8 @@ void AnnotationsPanel::populateTree()
   {
     ui->treeWidgetAnnotations->setCurrentItem(restore_item);
   }
+  ui->treeWidgetAnnotations->horizontalScrollBar()->setValue(scroll_x);
+  ui->treeWidgetAnnotations->verticalScrollBar()->setValue(scroll_y);
 
   auto* selected_item = ui->treeWidgetAnnotations->currentItem();
   _detail_layer_index = layerIndexFromItem(selected_item);
@@ -977,10 +1037,9 @@ void AnnotationsPanel::addLayerItem(int layer_index, const AnnotationManager::An
 {
   auto* layer_item = new QTreeWidgetItem(ui->treeWidgetAnnotations);
   layer_item->setData(COLUMN_NAME, ROLE_LAYER_INDEX, layer_index);
-  layer_item->setFlags(layer_item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable |
-                       Qt::ItemIsEnabled);
+  layer_item->setFlags(layer_item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsAutoTristate |
+                       Qt::ItemIsSelectable | Qt::ItemIsEnabled);
   const bool compatible = isLayerCompatible(layer);
-  layer_item->setCheckState(COLUMN_ON, (layer.visible && compatible) ? Qt::Checked : Qt::Unchecked);
 
   QString layer_name = layer.name;
   if (layer.dirty)
@@ -995,6 +1054,8 @@ void AnnotationsPanel::addLayerItem(int layer_index, const AnnotationManager::An
   auto layer_font = layer_item->font(COLUMN_NAME);
   layer_font.setBold(true);
   layer_item->setFont(COLUMN_NAME, layer_font);
+
+  int enabled_children = 0;
 
   auto* layer_actions = new QWidget(ui->treeWidgetAnnotations);
   auto* layer_layout = new QHBoxLayout(layer_actions);
@@ -1030,6 +1091,10 @@ void AnnotationsPanel::addLayerItem(int layer_index, const AnnotationManager::An
     annotation_item->setFlags(annotation_item->flags() | Qt::ItemIsUserCheckable |
                               Qt::ItemIsSelectable | Qt::ItemIsEnabled);
     annotation_item->setCheckState(COLUMN_ON, annotation.enabled ? Qt::Checked : Qt::Unchecked);
+    if (annotation.enabled)
+    {
+      enabled_children++;
+    }
     QString summary =
         annotation.label.isEmpty() ? QString("%1 %2").arg(kind, timing) :
                                      QString("%1  %2").arg(annotation.label, timing);
@@ -1085,6 +1150,23 @@ void AnnotationsPanel::addLayerItem(int layer_index, const AnnotationManager::An
     annotation_layout->addWidget(jump_button);
 
     ui->treeWidgetAnnotations->setItemWidget(annotation_item, COLUMN_ACTIONS, annotation_actions);
+  }
+
+  if (!compatible || layer.items.isEmpty())
+  {
+    layer_item->setCheckState(COLUMN_ON, (layer.visible && compatible) ? Qt::Checked : Qt::Unchecked);
+  }
+  else if (enabled_children == layer.items.size())
+  {
+    layer_item->setCheckState(COLUMN_ON, Qt::Checked);
+  }
+  else if (enabled_children == 0)
+  {
+    layer_item->setCheckState(COLUMN_ON, Qt::Unchecked);
+  }
+  else
+  {
+    layer_item->setCheckState(COLUMN_ON, Qt::PartiallyChecked);
   }
 }
 
