@@ -69,6 +69,7 @@ signals:
   void selectedAnnotationChanged(bool has_selection);
   void jumpToSelectedAnnotationRequested();
   void autoloadCompanionAnnotationsChanged(bool enabled);
+  void generateAnnotationsRequested(int layer_index, const QString& node_path);
 
 private:
   void scheduleTreeRefresh();

@@ -49,6 +49,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="buttonGenerateLayer">
+       <property name="text">
+        <string>Generate</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>

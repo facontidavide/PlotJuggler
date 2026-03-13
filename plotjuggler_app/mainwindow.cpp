@@ -16,14 +16,19 @@
 #include <QDebug>
 #include <QDesktopServices>
 #include <QDir>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QDomDocument>
 #include <QDoubleSpinBox>
 #include <QElapsedTimer>
 #include <QFileDialog>
+#include <QFormLayout>
 #include <QInputDialog>
 #include <QMenu>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QComboBox>
+#include <QLabel>
 #include <QMessageBox>
 #include <QMimeData>
 #include <QMouseEvent>
@@ -32,6 +37,7 @@
 #include <QKeySequence>
 #include <QScrollBar>
 #include <QSettings>
+#include <QSpinBox>
 #include <QStringListModel>
 #include <QStringRef>
 #include <QThread>
@@ -72,6 +78,35 @@
 
 namespace
 {
+enum class AnnotationGeneratorKind
+{
+  ThresholdRegions,
+  MaskedIntegerRegions
+};
+
+enum class ThresholdComparator
+{
+  GreaterEqual,
+  Greater,
+  LessEqual,
+  Less
+};
+
+struct ThresholdRegionGeneratorParams
+{
+  AnnotationGeneratorKind generator = AnnotationGeneratorKind::ThresholdRegions;
+  QString signal_name;
+  ThresholdComparator comparator = ThresholdComparator::GreaterEqual;
+  double threshold = 0.5;
+  QString mask_text = "0x1";
+  QString match_text = "0x1";
+  double min_duration = 0.0;
+  int max_regions = 1000;
+  bool create_new_layer = true;
+  QString layer_name;
+  QString group_name;
+};
+
 QString normalizedAxisId(QString axis_id)
 {
   axis_id = axis_id.trimmed();
@@ -88,6 +123,248 @@ QString normalizedAxisId(QString axis_id)
 
 bool annotationInSessionRange(const AnnotationManager::AnnotationItem& item, double start_time,
                               double end_time);
+
+bool thresholdComparatorMatches(ThresholdComparator comparator, double value, double threshold)
+{
+  switch (comparator)
+  {
+    case ThresholdComparator::GreaterEqual:
+      return value >= threshold;
+    case ThresholdComparator::Greater:
+      return value > threshold;
+    case ThresholdComparator::LessEqual:
+      return value <= threshold;
+    case ThresholdComparator::Less:
+      return value < threshold;
+  }
+  return false;
+}
+
+QString thresholdComparatorLabel(ThresholdComparator comparator)
+{
+  switch (comparator)
+  {
+    case ThresholdComparator::GreaterEqual:
+      return QObject::tr("value >= threshold");
+    case ThresholdComparator::Greater:
+      return QObject::tr("value > threshold");
+    case ThresholdComparator::LessEqual:
+      return QObject::tr("value <= threshold");
+    case ThresholdComparator::Less:
+      return QObject::tr("value < threshold");
+  }
+  return {};
+}
+
+QString annotationGeneratorLabel(AnnotationGeneratorKind generator)
+{
+  switch (generator)
+  {
+    case AnnotationGeneratorKind::ThresholdRegions:
+      return QObject::tr("Regions from threshold");
+    case AnnotationGeneratorKind::MaskedIntegerRegions:
+      return QObject::tr("Regions from integer mask match");
+  }
+  return {};
+}
+
+QString suggestedGeneratedLayerName(const QString& signal_name)
+{
+  return signal_name.trimmed().isEmpty() ? QObject::tr("generated regions") :
+                                           QObject::tr("%1 regions").arg(signal_name.trimmed());
+}
+
+QString suggestedGeneratedGroupName()
+{
+  return QObject::tr("active intervals");
+}
+
+bool parseIntegerLiteral(QString text, qulonglong* value)
+{
+  if (!value)
+  {
+    return false;
+  }
+  text = text.trimmed();
+  if (text.isEmpty())
+  {
+    return false;
+  }
+  text.remove('_');
+  bool ok = false;
+  const auto parsed = text.toULongLong(&ok, 0);
+  if (ok)
+  {
+    *value = parsed;
+  }
+  return ok;
+}
+
+QVector<AnnotationManager::AnnotationItem> generateThresholdRegions(
+    const PJ::PlotData& signal, const ThresholdRegionGeneratorParams& params, bool* hit_limit = nullptr)
+{
+  QVector<AnnotationManager::AnnotationItem> items;
+  if (hit_limit)
+  {
+    *hit_limit = false;
+  }
+  if (signal.size() == 0)
+  {
+    return items;
+  }
+
+  const int max_regions = std::max(1, params.max_regions);
+  bool active = false;
+  double region_start = 0.0;
+
+  for (size_t i = 0; i < signal.size(); ++i)
+  {
+    const auto& point = signal.at(i);
+    const bool current_active =
+        thresholdComparatorMatches(params.comparator, point.y, params.threshold);
+
+    if (!active && current_active)
+    {
+      active = true;
+      region_start = point.x;
+    }
+
+    const bool closes_region = active && (!current_active);
+    const bool closes_at_end = active && (i + 1 == signal.size());
+    if (!closes_region && !closes_at_end)
+    {
+      continue;
+    }
+
+    const double region_end = closes_region ? point.x : signal.back().x;
+    const double duration = std::max(0.0, region_end - region_start);
+    if (duration >= std::max(0.0, params.min_duration))
+    {
+      AnnotationManager::AnnotationItem item;
+      item.type = AnnotationManager::AnnotationType::Region;
+      item.start_time = region_start;
+      item.end_time = region_end;
+      item.label = QObject::tr("%1 active").arg(params.signal_name.trimmed().isEmpty() ?
+                                                    QObject::tr("signal") :
+                                                    params.signal_name.trimmed());
+      item.tags = params.signal_name.trimmed();
+      items.push_back(item);
+
+      if (items.size() >= max_regions)
+      {
+        if (hit_limit)
+        {
+          *hit_limit = true;
+        }
+        break;
+      }
+    }
+
+    active = current_active;
+    if (!current_active)
+    {
+      region_start = 0.0;
+    }
+  }
+
+  return items;
+}
+
+QVector<AnnotationManager::AnnotationItem> generateMaskedIntegerRegions(
+    const PJ::PlotData& signal, const ThresholdRegionGeneratorParams& params, bool* hit_limit = nullptr,
+    QString* error_message = nullptr)
+{
+  QVector<AnnotationManager::AnnotationItem> items;
+  if (hit_limit)
+  {
+    *hit_limit = false;
+  }
+  if (error_message)
+  {
+    error_message->clear();
+  }
+  if (signal.size() == 0)
+  {
+    return items;
+  }
+
+  qulonglong mask = 0;
+  qulonglong match = 0;
+  if (!parseIntegerLiteral(params.mask_text, &mask))
+  {
+    if (error_message)
+    {
+      *error_message = QObject::tr("Invalid mask value.");
+    }
+    return items;
+  }
+  if (!parseIntegerLiteral(params.match_text, &match))
+  {
+    if (error_message)
+    {
+      *error_message = QObject::tr("Invalid match value.");
+    }
+    return items;
+  }
+
+  const int max_regions = std::max(1, params.max_regions);
+  bool active = false;
+  double region_start = 0.0;
+
+  for (size_t i = 0; i < signal.size(); ++i)
+  {
+    const auto& point = signal.at(i);
+    const qulonglong int_value = static_cast<qulonglong>(std::llround(point.y));
+    const bool current_active = ((int_value & mask) == match);
+
+    if (!active && current_active)
+    {
+      active = true;
+      region_start = point.x;
+    }
+
+    const bool closes_region = active && (!current_active);
+    const bool closes_at_end = active && (i + 1 == signal.size());
+    if (!closes_region && !closes_at_end)
+    {
+      continue;
+    }
+
+    const double region_end = closes_region ? point.x : signal.back().x;
+    const double duration = std::max(0.0, region_end - region_start);
+    if (duration >= std::max(0.0, params.min_duration))
+    {
+      AnnotationManager::AnnotationItem item;
+      item.type = AnnotationManager::AnnotationType::Region;
+      item.start_time = region_start;
+      item.end_time = region_end;
+      item.label = QObject::tr("%1 match %2").arg(
+          params.signal_name.trimmed().isEmpty() ? QObject::tr("signal") : params.signal_name.trimmed(),
+          params.match_text.trimmed());
+      item.tags = QObject::tr("%1 mask=%2 match=%3")
+                      .arg(params.signal_name.trimmed(), params.mask_text.trimmed(),
+                           params.match_text.trimmed());
+      items.push_back(item);
+
+      if (items.size() >= max_regions)
+      {
+        if (hit_limit)
+        {
+          *hit_limit = true;
+        }
+        break;
+      }
+    }
+
+    active = current_active;
+    if (!current_active)
+    {
+      region_start = 0.0;
+    }
+  }
+
+  return items;
+}
 
 QString axisIdFromPluginConfig(const PJ::FileLoadInfo& info)
 {
@@ -273,6 +550,10 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   });
   connect(_annotations_panel, &AnnotationsPanel::jumpToSelectedAnnotationRequested, this,
           [this]() { jumpToSelectedAnnotation(); });
+  connect(_annotations_panel, &AnnotationsPanel::generateAnnotationsRequested, this,
+          [this](int layer_index, const QString& node_path) {
+            openAnnotationGeneratorDialog(layer_index, node_path);
+          });
   connect(_annotations_panel, &AnnotationsPanel::autoloadCompanionAnnotationsChanged, this,
           [this](bool enabled) {
             QSettings settings;
@@ -2757,6 +3038,377 @@ void MainWindow::jumpToSelectedAnnotation()
 
   replotAllPlots("jumpToSelectedAnnotation");
   updateAnnotationViewRange();
+}
+
+void MainWindow::openAnnotationGeneratorDialog(int target_layer_index, const QString& target_node_path)
+{
+  QStringList signal_names;
+  signal_names.reserve(static_cast<int>(_mapped_plot_data.numeric.size()));
+  for (const auto& [name, _] : _mapped_plot_data.numeric)
+  {
+    Q_UNUSED(_);
+    signal_names.push_back(QString::fromStdString(name));
+  }
+  signal_names.sort(Qt::CaseInsensitive);
+
+  if (signal_names.isEmpty())
+  {
+    QMessageBox::information(this, tr("Generate Annotations"),
+                             tr("No numeric signals are available for annotation generation."));
+    return;
+  }
+
+  QDialog dialog(this);
+  dialog.setWindowTitle(tr("Generate Annotations"));
+  dialog.setModal(true);
+
+  auto* layout = new QVBoxLayout(&dialog);
+  auto* form = new QFormLayout();
+
+  auto* signal_combo = new QComboBox(&dialog);
+  signal_combo->addItems(signal_names);
+
+  auto* generator_combo = new QComboBox(&dialog);
+  generator_combo->addItem(annotationGeneratorLabel(AnnotationGeneratorKind::ThresholdRegions),
+                           static_cast<int>(AnnotationGeneratorKind::ThresholdRegions));
+  generator_combo->addItem(annotationGeneratorLabel(AnnotationGeneratorKind::MaskedIntegerRegions),
+                           static_cast<int>(AnnotationGeneratorKind::MaskedIntegerRegions));
+
+  auto* comparator_label = new QLabel(tr("Active when"), &dialog);
+  auto* comparator_combo = new QComboBox(&dialog);
+  comparator_combo->addItem(thresholdComparatorLabel(ThresholdComparator::GreaterEqual),
+                            static_cast<int>(ThresholdComparator::GreaterEqual));
+  comparator_combo->addItem(thresholdComparatorLabel(ThresholdComparator::Greater),
+                            static_cast<int>(ThresholdComparator::Greater));
+  comparator_combo->addItem(thresholdComparatorLabel(ThresholdComparator::LessEqual),
+                            static_cast<int>(ThresholdComparator::LessEqual));
+  comparator_combo->addItem(thresholdComparatorLabel(ThresholdComparator::Less),
+                            static_cast<int>(ThresholdComparator::Less));
+
+  auto* threshold_spin = new QDoubleSpinBox(&dialog);
+  threshold_spin->setDecimals(6);
+  threshold_spin->setRange(-1e12, 1e12);
+  threshold_spin->setValue(0.5);
+
+  auto* mask_edit = new QLineEdit(&dialog);
+  mask_edit->setText("0x1");
+
+  auto* match_edit = new QLineEdit(&dialog);
+  match_edit->setText("0x1");
+
+  auto* min_duration_spin = new QDoubleSpinBox(&dialog);
+  min_duration_spin->setDecimals(6);
+  min_duration_spin->setRange(0.0, 1e12);
+  min_duration_spin->setValue(0.0);
+
+  auto* max_regions_spin = new QSpinBox(&dialog);
+  max_regions_spin->setRange(1, 1000000);
+  max_regions_spin->setValue(1000);
+
+  auto* target_combo = new QComboBox(&dialog);
+  target_combo->addItem(tr("New annotation file"), true);
+  target_combo->addItem(tr("Current tree target"), false);
+  if (target_layer_index < 0)
+  {
+    target_combo->setCurrentIndex(0);
+    target_combo->setEnabled(false);
+  }
+
+  auto* layer_name_edit = new QLineEdit(&dialog);
+  layer_name_edit->setText(suggestedGeneratedLayerName(signal_combo->currentText()));
+
+  auto* group_name_edit = new QLineEdit(&dialog);
+  group_name_edit->setText(target_combo->currentData().toBool() ? suggestedGeneratedGroupName() :
+                                                             QString());
+
+  auto* preview_label = new QLabel(&dialog);
+  preview_label->setWordWrap(true);
+
+  form->addRow(tr("Source signal"), signal_combo);
+  form->addRow(tr("Generator"), generator_combo);
+  form->addRow(comparator_label, comparator_combo);
+  form->addRow(tr("Threshold"), threshold_spin);
+  form->addRow(tr("Mask"), mask_edit);
+  form->addRow(tr("Match value"), match_edit);
+  form->addRow(tr("Minimum duration"), min_duration_spin);
+  form->addRow(tr("Maximum regions"), max_regions_spin);
+  form->addRow(tr("Target"), target_combo);
+  form->addRow(tr("Layer name"), layer_name_edit);
+  form->addRow(tr("Group name"), group_name_edit);
+
+  layout->addLayout(form);
+  layout->addWidget(preview_label);
+
+  auto* buttons =
+      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+  layout->addWidget(buttons);
+
+  bool layer_name_custom = false;
+  bool group_name_custom = false;
+  connect(layer_name_edit, &QLineEdit::textEdited, &dialog, [&]() { layer_name_custom = true; });
+  connect(group_name_edit, &QLineEdit::textEdited, &dialog, [&]() { group_name_custom = true; });
+
+  const auto preview_params = [&]() {
+    ThresholdRegionGeneratorParams params;
+    params.signal_name = signal_combo->currentText();
+    params.generator =
+        static_cast<AnnotationGeneratorKind>(generator_combo->currentData().toInt());
+    params.comparator = static_cast<ThresholdComparator>(comparator_combo->currentData().toInt());
+    params.threshold = threshold_spin->value();
+    params.mask_text = mask_edit->text().trimmed();
+    params.match_text = match_edit->text().trimmed();
+    params.min_duration = min_duration_spin->value();
+    params.max_regions = max_regions_spin->value();
+    params.create_new_layer = target_combo->currentData().toBool();
+    params.layer_name = layer_name_edit->text().trimmed();
+    params.group_name = group_name_edit->text().trimmed();
+    return params;
+  };
+
+  const auto find_signal = [&](const QString& signal_name) -> const PJ::PlotData* {
+    auto it = _mapped_plot_data.numeric.find(signal_name.toStdString());
+    return (it != _mapped_plot_data.numeric.end()) ? &it->second : nullptr;
+  };
+
+  const auto update_generator_controls = [&]() {
+    const auto generator =
+        static_cast<AnnotationGeneratorKind>(generator_combo->currentData().toInt());
+    const bool is_threshold = (generator == AnnotationGeneratorKind::ThresholdRegions);
+    comparator_label->setVisible(is_threshold);
+    comparator_combo->setVisible(is_threshold);
+    threshold_spin->setVisible(is_threshold);
+    form->labelForField(threshold_spin)->setVisible(is_threshold);
+    mask_edit->setVisible(!is_threshold);
+    form->labelForField(mask_edit)->setVisible(!is_threshold);
+    match_edit->setVisible(!is_threshold);
+    form->labelForField(match_edit)->setVisible(!is_threshold);
+  };
+
+  const auto update_preview = [&]() {
+    const auto params = preview_params();
+    const auto* signal = find_signal(params.signal_name);
+    if (!signal)
+    {
+      preview_label->setText(tr("Preview unavailable: source signal not found."));
+      buttons->button(QDialogButtonBox::Ok)->setEnabled(false);
+      return;
+    }
+
+    bool hit_limit = false;
+    QString error_message;
+    QVector<AnnotationManager::AnnotationItem> items;
+    if (params.generator == AnnotationGeneratorKind::ThresholdRegions)
+    {
+      items = generateThresholdRegions(*signal, params, &hit_limit);
+    }
+    else
+    {
+      items = generateMaskedIntegerRegions(*signal, params, &hit_limit, &error_message);
+    }
+    if (!error_message.isEmpty())
+    {
+      preview_label->setText(error_message);
+      buttons->button(QDialogButtonBox::Ok)->setEnabled(false);
+      return;
+    }
+
+    QString preview = tr("Preview: %1 region(s)").arg(items.size());
+    if (hit_limit)
+    {
+      preview += tr(" (limited to %1)").arg(params.max_regions);
+    }
+    if (items.isEmpty())
+    {
+      preview += tr(". Adjust the threshold or duration settings.");
+    }
+    preview_label->setText(preview);
+    buttons->button(QDialogButtonBox::Ok)->setEnabled(!items.isEmpty());
+  };
+
+  connect(signal_combo, &QComboBox::currentTextChanged, &dialog, [&](const QString& signal_name) {
+    if (!layer_name_custom)
+    {
+      layer_name_edit->setText(suggestedGeneratedLayerName(signal_name));
+    }
+    update_preview();
+  });
+  connect(generator_combo, qOverload<int>(&QComboBox::currentIndexChanged), &dialog, [&](int) {
+    update_generator_controls();
+    update_preview();
+  });
+  connect(comparator_combo, qOverload<int>(&QComboBox::currentIndexChanged), &dialog,
+          [&](int) { update_preview(); });
+  connect(threshold_spin, qOverload<double>(&QDoubleSpinBox::valueChanged), &dialog,
+          [&](double) { update_preview(); });
+  connect(mask_edit, &QLineEdit::textChanged, &dialog, [&](const QString&) { update_preview(); });
+  connect(match_edit, &QLineEdit::textChanged, &dialog, [&](const QString&) { update_preview(); });
+  connect(min_duration_spin, qOverload<double>(&QDoubleSpinBox::valueChanged), &dialog,
+          [&](double) { update_preview(); });
+  connect(max_regions_spin, qOverload<int>(&QSpinBox::valueChanged), &dialog,
+          [&](int) { update_preview(); });
+  connect(target_combo, qOverload<int>(&QComboBox::currentIndexChanged), &dialog, [&](int) {
+    const bool create_new = target_combo->currentData().toBool();
+    layer_name_edit->setEnabled(create_new);
+    if (!group_name_custom)
+    {
+      group_name_edit->setText(create_new ? suggestedGeneratedGroupName() : QString());
+    }
+    update_preview();
+  });
+  connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+  connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+  layer_name_edit->setEnabled(target_combo->currentData().toBool());
+  update_generator_controls();
+  update_preview();
+
+  if (dialog.exec() != QDialog::Accepted)
+  {
+    return;
+  }
+
+  const auto params = preview_params();
+  const auto* signal = find_signal(params.signal_name);
+  if (!signal)
+  {
+    return;
+  }
+
+  bool hit_limit = false;
+  QString error_message;
+  QVector<AnnotationManager::AnnotationItem> generated_items;
+  if (params.generator == AnnotationGeneratorKind::ThresholdRegions)
+  {
+    generated_items = generateThresholdRegions(*signal, params, &hit_limit);
+  }
+  else
+  {
+    generated_items = generateMaskedIntegerRegions(*signal, params, &hit_limit, &error_message);
+  }
+  if (!error_message.isEmpty())
+  {
+    QMessageBox::warning(this, tr("Generate Annotations"), error_message);
+    return;
+  }
+  if (generated_items.isEmpty())
+  {
+    QMessageBox::information(this, tr("Generate Annotations"),
+                             tr("No regions matched the selected settings."));
+    return;
+  }
+
+  const auto unique_group_name = [&](int layer_index, const QString& parent_path,
+                                     const QString& requested_name) {
+    QString base = requested_name.trimmed();
+    if (base.isEmpty())
+    {
+      return QString();
+    }
+
+    QSet<QString> used_names;
+    if (parent_path.isEmpty())
+    {
+      if (layer_index >= 0 && layer_index < _annotation_manager->layers().size())
+      {
+        for (const auto& node : _annotation_manager->layers()[layer_index].nodes)
+        {
+          if (node.type == AnnotationManager::AnnotationLayer::NodeType::Group)
+          {
+            used_names.insert(node.name.trimmed());
+          }
+        }
+      }
+    }
+    else if (const auto* parent = _annotation_manager->nodeAtPath(layer_index, parent_path))
+    {
+      for (const auto& child : parent->children)
+      {
+        if (child.type == AnnotationManager::AnnotationLayer::NodeType::Group)
+        {
+          used_names.insert(child.name.trimmed());
+        }
+      }
+    }
+
+    if (!used_names.contains(base))
+    {
+      return base;
+    }
+    int suffix = 2;
+    QString candidate;
+    do
+    {
+      candidate = QString("%1 %2").arg(base).arg(suffix++);
+    } while (used_names.contains(candidate));
+    return candidate;
+  };
+
+  int destination_layer_index = target_layer_index;
+  QString destination_parent_path = target_node_path;
+
+  if (params.create_new_layer || destination_layer_index < 0)
+  {
+    QString desired_name = params.layer_name.trimmed();
+    if (desired_name.isEmpty())
+    {
+      desired_name = suggestedGeneratedLayerName(params.signal_name);
+    }
+
+    QSet<QString> existing_names;
+    for (const auto& layer : _annotation_manager->layers())
+    {
+      existing_names.insert(layer.name.trimmed());
+    }
+    QString unique_name = desired_name;
+    int suffix = 2;
+    while (existing_names.contains(unique_name))
+    {
+      unique_name = QString("%1 %2").arg(desired_name).arg(suffix++);
+    }
+
+    destination_layer_index = _annotation_manager->createLayer(unique_name);
+    if (destination_layer_index < 0)
+    {
+      return;
+    }
+    const QString axis_id = currentSessionAxisId();
+    if (!axis_id.isEmpty())
+    {
+      _annotation_manager->setLayerAxisId(destination_layer_index, axis_id, true);
+    }
+    destination_parent_path.clear();
+  }
+
+  if (!params.group_name.trimmed().isEmpty())
+  {
+    const QString group_name =
+        unique_group_name(destination_layer_index, destination_parent_path, params.group_name);
+    if (!group_name.isEmpty() &&
+        _annotation_manager->addGroupToLayer(destination_layer_index, group_name, destination_parent_path))
+    {
+      const auto* parent = destination_parent_path.isEmpty() ?
+                               nullptr :
+                               _annotation_manager->nodeAtPath(destination_layer_index, destination_parent_path);
+      const int child_index = parent ? (parent->children.size() - 1) :
+                                       (_annotation_manager->layers()[destination_layer_index].nodes.size() - 1);
+      auto path = AnnotationManager::pathFromString(destination_parent_path);
+      path.push_back(child_index);
+      destination_parent_path = AnnotationManager::pathToString(path);
+    }
+  }
+
+  for (const auto& item : generated_items)
+  {
+    _annotation_manager->addItemToLayer(destination_layer_index, item, destination_parent_path);
+  }
+
+  QString message =
+      tr("Generated %1 region(s) from \"%2\".").arg(generated_items.size()).arg(params.signal_name);
+  if (hit_limit)
+  {
+    message += tr(" The result was limited to %1 regions.").arg(params.max_regions);
+  }
+  showToast(message);
 }
 
 void MainWindow::updateAnnotationViewRange()

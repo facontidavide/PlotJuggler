@@ -252,6 +252,7 @@ private:
   QString currentSessionAxisId() const;
   void refreshAnnotationSessionContext();
   void autoloadCompanionAnnotationFiles();
+  void openAnnotationGeneratorDialog(int target_layer_index, const QString& target_node_path);
 
   void updatedDisplayTime();
 

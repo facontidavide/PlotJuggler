@@ -65,6 +65,39 @@ QIcon colorSwatchIcon(const QColor& color)
   return QIcon(pixmap);
 }
 
+void styleTreeActionButton(QToolButton* button, bool icon_only = false)
+{
+  if (!button)
+  {
+    return;
+  }
+  button->setAutoRaise(true);
+  button->setCursor(Qt::PointingHandCursor);
+  button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  button->setMinimumHeight(16);
+  button->setMinimumWidth(icon_only ? 16 : 20);
+  button->setStyleSheet(
+      "QToolButton {"
+      " padding: 0 2px;"
+      " border: 1px solid transparent;"
+      " border-radius: 2px;"
+      " background: transparent;"
+      " }"
+      "QToolButton:hover {"
+      " border-color: palette(mid);"
+      " background: palette(base);"
+      " }"
+      "QToolButton:pressed {"
+      " border-color: palette(dark);"
+      " background: palette(midlight);"
+      " }"
+      "QToolButton:disabled {"
+      " color: palette(mid);"
+      " border-color: transparent;"
+      " background: transparent;"
+      " }");
+}
+
 QString stripTrailingCopySuffix(QString text)
 {
   text = text.trimmed();
@@ -203,12 +236,15 @@ AnnotationsPanel::AnnotationsPanel(AnnotationManager* manager, QWidget* parent)
   ui->groupDetails->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
   ui->buttonNewLayer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   ui->buttonLoadLayer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  ui->buttonGenerateLayer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   _annotation_text_edit_timer = new QTimer(this);
   _annotation_text_edit_timer->setSingleShot(true);
   _annotation_text_edit_timer->setInterval(250);
 
   connect(ui->buttonNewLayer, &QPushButton::clicked, this, &AnnotationsPanel::onNewLayer);
   connect(ui->buttonLoadLayer, &QPushButton::clicked, this, &AnnotationsPanel::onLoadLayer);
+  connect(ui->buttonGenerateLayer, &QPushButton::clicked, this,
+          [this]() { emit generateAnnotationsRequested(-1, QString()); });
   connect(ui->checkBoxAutoloadCompanionAnnotations, &QCheckBox::toggled, this,
           &AnnotationsPanel::autoloadCompanionAnnotationsChanged);
   connect(ui->checkBoxAnnotationEnabled, &QCheckBox::toggled, this,
@@ -929,6 +965,7 @@ void AnnotationsPanel::updateButtons()
 
   ui->buttonNewLayer->setEnabled(has_dataset);
   ui->buttonLoadLayer->setEnabled(has_dataset);
+  ui->buttonGenerateLayer->setEnabled(has_dataset);
   ui->checkBoxAutoloadCompanionAnnotations->setEnabled(has_dataset);
   ui->treeWidgetAnnotations->setEnabled(has_layer || has_dataset);
 
@@ -1118,6 +1155,7 @@ void AnnotationsPanel::openLayerMenu(int layer_index, const QPoint& global_pos)
   auto* add_point = menu.addAction(tr("Add Point Annotation"));
   auto* add_range = menu.addAction(tr("Add Range Annotation"));
   auto* add_group = menu.addAction(tr("Add Group"));
+  auto* generate = menu.addAction(tr("Generate..."));
   menu.addSeparator();
   auto* copy = menu.addAction(tr("Copy"));
   auto* paste = menu.addAction(tr("Paste"));
@@ -1133,6 +1171,7 @@ void AnnotationsPanel::openLayerMenu(int layer_index, const QPoint& global_pos)
   add_point->setShortcut(QKeySequence(Qt::Key_Insert));
   add_range->setShortcut(QKeySequence(Qt::SHIFT | Qt::Key_Insert));
   add_group->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_G));
+  generate->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_G));
   copy->setShortcut(QKeySequence::Copy);
   paste->setShortcut(QKeySequence::Paste);
   properties->setShortcut(QKeySequence(Qt::Key_F2));
@@ -1143,6 +1182,7 @@ void AnnotationsPanel::openLayerMenu(int layer_index, const QPoint& global_pos)
   add_point->setEnabled(editable);
   add_range->setEnabled(editable);
   add_group->setEnabled(editable);
+  generate->setEnabled(isLayerCompatible(layer));
   copy->setEnabled(true);
   paste->setEnabled(editable);
 
@@ -1170,6 +1210,10 @@ void AnnotationsPanel::openLayerMenu(int layer_index, const QPoint& global_pos)
     {
       selectTreeNodeLater(layer_index, QString::number(insert_index));
     }
+  }
+  else if (selected == generate)
+  {
+    emit generateAnnotationsRequested(layer_index, QString());
   }
   else if (selected == copy)
   {
@@ -1230,6 +1274,7 @@ void AnnotationsPanel::openGroupMenu(int layer_index, const QString& node_path, 
   auto* add_group = menu.addAction(tr("Add Group"));
   auto* add_point = menu.addAction(tr("Add Point Annotation"));
   auto* add_range = menu.addAction(tr("Add Range Annotation"));
+  auto* generate = menu.addAction(tr("Generate..."));
   menu.addSeparator();
   auto* copy = menu.addAction(tr("Copy"));
   auto* cut = menu.addAction(tr("Cut"));
@@ -1239,6 +1284,7 @@ void AnnotationsPanel::openGroupMenu(int layer_index, const QString& node_path, 
   add_group->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_G));
   add_point->setShortcut(QKeySequence(Qt::Key_Insert));
   add_range->setShortcut(QKeySequence(Qt::SHIFT | Qt::Key_Insert));
+  generate->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_G));
   copy->setShortcut(QKeySequence::Copy);
   cut->setShortcut(QKeySequence::Cut);
   properties->setShortcut(QKeySequence(Qt::Key_F2));
@@ -1248,6 +1294,7 @@ void AnnotationsPanel::openGroupMenu(int layer_index, const QString& node_path, 
   add_group->setEnabled(editable);
   add_point->setEnabled(editable);
   add_range->setEnabled(editable);
+  generate->setEnabled(isLayerCompatible(layer));
   copy->setEnabled(true);
   cut->setEnabled(editable);
   paste->setEnabled(editable);
@@ -1316,6 +1363,10 @@ void AnnotationsPanel::openGroupMenu(int layer_index, const QString& node_path, 
       path.push_back(insert_index);
       selectTreeNodeLater(layer_index, AnnotationManager::pathToString(path));
     }
+  }
+  else if (selected == generate)
+  {
+    emit generateAnnotationsRequested(layer_index, node_path);
   }
   else if (selected == copy)
   {
@@ -1520,6 +1571,17 @@ void AnnotationsPanel::installTreeShortcuts()
         selectTreeNodeLater(_detail_layer_index, QString::number(insert_index));
       }
     }
+  });
+
+  auto* generate_shortcut =
+      new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_G), ui->treeWidgetAnnotations);
+  connect(generate_shortcut, &QShortcut::activated, this, [this]() {
+    if (_detail_layer_index < 0)
+    {
+      return;
+    }
+    const QString node_path = nodePathFromItem(currentTreeItem());
+    emit generateAnnotationsRequested(_detail_layer_index, node_path);
   });
 }
 
@@ -2074,9 +2136,9 @@ void AnnotationsPanel::addLayerItem(int layer_index, const AnnotationManager::An
   layer_layout->setSpacing(2);
   const auto make_text_button = [&](QWidget* parent, const QString& text, const QString& tooltip) {
     auto* button = new QToolButton(parent);
-    button->setAutoRaise(true);
     button->setText(text);
     button->setToolTip(tooltip);
+    styleTreeActionButton(button);
     return button;
   };
 
@@ -2126,11 +2188,11 @@ void AnnotationsPanel::addLayerItem(int layer_index, const AnnotationManager::An
   layer_layout->addWidget(properties_button);
 
   auto* save_button = new QToolButton(layer_actions);
-  save_button->setAutoRaise(true);
   save_button->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
   save_button->setToolTip(layer.dirty ? tr("Save annotation file") :
                                         tr("Annotation file is already saved"));
   save_button->setEnabled(compatible && layer.dirty);
+  styleTreeActionButton(save_button, true);
   connect(save_button, &QToolButton::clicked, this, [this, layer_item, layer_index]() {
     ui->treeWidgetAnnotations->setCurrentItem(layer_item);
     _manager->setActiveLayerIndex(layer_index);
@@ -2214,10 +2276,10 @@ void AnnotationsPanel::addNodeItem(QTreeWidgetItem* parent_item, int layer_index
 
     const QString group_path = AnnotationManager::pathToString(node_path);
     auto* add_point_button = new QToolButton(group_actions);
-    add_point_button->setAutoRaise(true);
     add_point_button->setText("+P");
     add_point_button->setToolTip(tr("Add point annotation to this group"));
     add_point_button->setEnabled(layer.editable && isLayerCompatible(layer));
+    styleTreeActionButton(add_point_button);
     connect(add_point_button, &QToolButton::clicked, this,
             [this, tree_item, layer_index, group_path]() {
               _manager->setActiveLayerIndex(layer_index);
@@ -2244,10 +2306,10 @@ void AnnotationsPanel::addNodeItem(QTreeWidgetItem* parent_item, int layer_index
     group_layout->addWidget(add_point_button);
 
     auto* add_range_button = new QToolButton(group_actions);
-    add_range_button->setAutoRaise(true);
     add_range_button->setText("+R");
     add_range_button->setToolTip(tr("Add range annotation to this group"));
     add_range_button->setEnabled(layer.editable && isLayerCompatible(layer));
+    styleTreeActionButton(add_range_button);
     connect(add_range_button, &QToolButton::clicked, this,
             [this, tree_item, layer_index, group_path]() {
               _manager->setActiveLayerIndex(layer_index);
@@ -2279,10 +2341,10 @@ void AnnotationsPanel::addNodeItem(QTreeWidgetItem* parent_item, int layer_index
     group_layout->addWidget(add_range_button);
 
     auto* add_group_button = new QToolButton(group_actions);
-    add_group_button->setAutoRaise(true);
     add_group_button->setText("+G");
     add_group_button->setToolTip(tr("Add subgroup"));
     add_group_button->setEnabled(layer.editable && isLayerCompatible(layer));
+    styleTreeActionButton(add_group_button);
     connect(add_group_button, &QToolButton::clicked, this,
             [this, tree_item, layer_index, group_path]() {
               _manager->setActiveLayerIndex(layer_index);
@@ -2300,19 +2362,19 @@ void AnnotationsPanel::addNodeItem(QTreeWidgetItem* parent_item, int layer_index
     group_layout->addWidget(add_group_button);
 
     auto* properties_button = new QToolButton(group_actions);
-    properties_button->setAutoRaise(true);
     properties_button->setText("Prop");
     properties_button->setToolTip(tr("Group properties"));
     properties_button->setEnabled(isLayerCompatible(layer));
+    styleTreeActionButton(properties_button);
     connect(properties_button, &QToolButton::clicked, this,
             [this, layer_index, group_path]() { editGroupPropertiesDialog(layer_index, group_path); });
     group_layout->addWidget(properties_button);
 
     auto* remove_button = new QToolButton(group_actions);
-    remove_button->setAutoRaise(true);
     remove_button->setText("Del");
     remove_button->setToolTip(tr("Delete group"));
     remove_button->setEnabled(layer.editable);
+    styleTreeActionButton(remove_button);
     connect(remove_button, &QToolButton::clicked, this,
             [this, layer_index, group_path]() { _manager->removeLayerNode(layer_index, group_path); });
     group_layout->addWidget(remove_button);
@@ -2335,9 +2397,7 @@ void AnnotationsPanel::addNodeItem(QTreeWidgetItem* parent_item, int layer_index
   tree_item->setFlags(tree_item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable |
                       Qt::ItemIsEnabled | Qt::ItemIsDragEnabled);
   tree_item->setCheckState(COLUMN_ON, annotation.enabled ? Qt::Checked : Qt::Unchecked);
-  QString summary =
-      annotation.label.isEmpty() ? QString("%1 %2").arg(kind, timing) :
-                                   QString("%1  %2").arg(annotation.label, timing);
+  QString summary = annotation.label.isEmpty() ? kind : annotation.label;
   if (!in_range)
   {
     summary += tr(" [out of range]");
@@ -2364,10 +2424,10 @@ void AnnotationsPanel::addNodeItem(QTreeWidgetItem* parent_item, int layer_index
   annotation_layout->setSpacing(2);
 
   auto* jump_button = new QToolButton(annotation_actions);
-  jump_button->setAutoRaise(true);
   jump_button->setText("Go");
   jump_button->setToolTip(tr("Jump to annotation"));
   jump_button->setEnabled(in_range);
+  styleTreeActionButton(jump_button);
   connect(jump_button, &QToolButton::clicked, this,
           [this, layer_index, tree_item]() {
             _manager->setActiveLayerIndex(layer_index);
@@ -2376,34 +2436,18 @@ void AnnotationsPanel::addNodeItem(QTreeWidgetItem* parent_item, int layer_index
           });
   annotation_layout->addWidget(jump_button);
 
-  const QString parent_group_path = _manager->parentGroupPath(AnnotationManager::pathToString(node_path));
+  QString detail_text = timing;
+  if (!annotation.tags.trimmed().isEmpty())
+  {
+    detail_text += QString("  %1").arg(annotation.tags.trimmed());
+  }
+  auto* detail_label = new QLabel(detail_text, annotation_actions);
+  detail_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  detail_label->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+  detail_label->setStyleSheet("color: palette(mid); padding-left: 4px;");
+  detail_label->setToolTip(tree_item->toolTip(COLUMN_NAME));
+  annotation_layout->addWidget(detail_label);
 
-  auto* duplicate_button = new QToolButton(annotation_actions);
-  duplicate_button->setAutoRaise(true);
-  duplicate_button->setText("Dup");
-  duplicate_button->setToolTip(tr("Duplicate annotation"));
-  duplicate_button->setEnabled(layer.editable && isLayerCompatible(layer));
-  connect(duplicate_button, &QToolButton::clicked, this,
-          [this, layer_index, parent_group_path, annotation]() mutable {
-            auto item = annotation;
-            if (!item.label.isEmpty())
-            {
-              item.label += " copy";
-            }
-            _manager->addItemToLayer(layer_index, item, parent_group_path);
-          });
-  annotation_layout->addWidget(duplicate_button);
-
-  auto* remove_button = new QToolButton(annotation_actions);
-  remove_button->setAutoRaise(true);
-  remove_button->setText("Del");
-  remove_button->setToolTip(tr("Delete annotation"));
-  remove_button->setEnabled(layer.editable);
-  connect(remove_button, &QToolButton::clicked, this,
-          [this, layer_index, node_path_string = AnnotationManager::pathToString(node_path)]() {
-            _manager->removeLayerNode(layer_index, node_path_string);
-          });
-  annotation_layout->addWidget(remove_button);
   ui->treeWidgetAnnotations->setItemWidget(tree_item, COLUMN_ACTIONS, annotation_actions);
 
   total_leaf_count++;
