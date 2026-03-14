@@ -250,6 +250,7 @@ private:
   void updateAnnotationViewRange();
   QStringList currentSessionDataFiles() const;
   QString currentSessionAxisId() const;
+  bool promptToSaveAnnotationsBefore(const QString& action_description);
   void refreshAnnotationSessionContext();
   void autoloadCompanionAnnotationFiles();
   void openAnnotationGeneratorDialog(int target_layer_index, const QString& target_node_path);

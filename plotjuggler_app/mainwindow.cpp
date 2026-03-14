@@ -78,6 +78,15 @@
 
 namespace
 {
+void ensureAppResourcesInitialized()
+{
+  static const bool initialized = []() {
+    Q_INIT_RESOURCE(resource);
+    return true;
+  }();
+  Q_UNUSED(initialized);
+}
+
 enum class AnnotationGeneratorKind
 {
   ThresholdRegions,
@@ -413,6 +422,7 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   , _recent_layout_files(new QMenu())
   , _toast_manager(nullptr)
 {
+  ensureAppResourcesInitialized();
   QLocale::setDefault(QLocale::c());  // set as default
   setAcceptDrops(true);
 
@@ -1742,6 +1752,11 @@ bool MainWindow::isStreamingActive() const
 
 bool MainWindow::loadDataFromFiles(QStringList filenames)
 {
+  if (!filenames.isEmpty() && !promptToSaveAnnotationsBefore(tr("opening new data")))
+  {
+    return false;
+  }
+
   filenames.sort();
   std::map<QString, QString> filename_prefix;
 
@@ -3489,6 +3504,15 @@ void MainWindow::refreshAnnotationSessionContext()
   }
 }
 
+bool MainWindow::promptToSaveAnnotationsBefore(const QString& action_description)
+{
+  if (!_annotations_panel || !_annotations_panel->hasUnsavedChanges())
+  {
+    return true;
+  }
+  return _annotations_panel->promptToSaveUnsavedChanges(action_description);
+}
+
 void MainWindow::autoloadCompanionAnnotationFiles()
 {
   if (!_annotation_manager || !_annotations_panel)
@@ -3877,6 +3901,12 @@ void MainWindow::on_buttonTimeTracker_pressed()
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
+  if (!promptToSaveAnnotationsBefore(tr("closing the application")))
+  {
+    event->ignore();
+    return;
+  }
+
   _replot_timer->stop();
   _publish_timer->stop();
 
@@ -3900,6 +3930,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
   settings.setValue("MainWindow.splitterWidth", ui->mainSplitter->sizes()[0]);
 
   _plugin_manager.unloadAllPlugins();
+  QMainWindow::closeEvent(event);
 }
 
 void MainWindow::onAddCustomPlot(const std::string& plot_name)

@@ -1,11 +1,11 @@
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-qt5_add_resources(RES_SRC resource.qrc)
+qt5_add_resources(APP_RES_SRC resource.qrc)
 
 if(WIN32)
   # Adds icon to plotjuggler.exe
-  set(RES_SRC ${RES_SRC} plotjuggler.rc)
+  set(EXE_RES_SRC plotjuggler.rc)
 endif()
 
 qt5_wrap_ui(
@@ -48,7 +48,6 @@ set(PLOTJUGGLER_SRC
     curvelist_view.cpp
     curvetree_view.cpp
     dummy_data.cpp
-    main.cpp
     mainwindow.cpp
     messageparser_base.cpp
     toast_notification.cpp
@@ -97,52 +96,72 @@ if(wasmer_FOUND)
   list(APPEND PLOTJUGGLER_SRC wasm_runtime.cpp wasm_parser.cpp)
 endif()
 
-add_executable(plotjuggler ${PLOTJUGGLER_SRC} ${RES_SRC} ${UI_SRC}
-                           ${BACKWARD_ENABLE})
+add_library(plotjuggler_app_lib STATIC ${PLOTJUGGLER_SRC} ${APP_RES_SRC} ${UI_SRC}
+                                       ${BACKWARD_ENABLE})
 
 if(wasmer_FOUND)
-  target_link_libraries(plotjuggler PRIVATE wasmer::wasmer)
-  target_compile_definitions(plotjuggler PRIVATE WASM_RUNTIME_ENABLED)
-  if(WIN32 AND NOT MINGW)
-    add_custom_command(TARGET plotjuggler POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "$<TARGET_FILE:wasmer::wasmer>"
-        "$<TARGET_FILE_DIR:plotjuggler>"
-      COMMENT "Copying wasmer.dll to output directory")
-  endif()
-endif()
-
-if(NOT WIN32)
-  add_backward(plotjuggler)
+  target_link_libraries(plotjuggler_app_lib PUBLIC wasmer::wasmer)
+  target_compile_definitions(plotjuggler_app_lib PRIVATE WASM_RUNTIME_ENABLED)
 endif()
 
 if(APPIMAGE_BUILD)
   message(STATUS "Building PlotJuggler as an AppImage")
-  target_compile_definitions(plotjuggler PRIVATE APPIMAGE_BUILD)
+  target_compile_definitions(plotjuggler_app_lib PRIVATE APPIMAGE_BUILD)
 endif()
 
-target_compile_definitions(plotjuggler PRIVATE PJ_INSTALLATION="${PJ_INSTALLATION}")
+target_compile_definitions(plotjuggler_app_lib PRIVATE PJ_INSTALLATION="${PJ_INSTALLATION}")
 
 target_include_directories(
-  plotjuggler
-  PRIVATE
+  plotjuggler_app_lib
+  PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/3rdparty/color_widgets/include>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/3rdparty/Qt-Advanced-Docking/include>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/3rdparty/QCodeEditor/include>)
 
 
 target_link_libraries(
-  plotjuggler
-  PRIVATE ${QT_LINK_LIBRARIES}
-          plotjuggler_base
-          colorwidgets
-          qt_advanced_docking
-          plotjuggler_qwt
-          QCodeEditor
-          nlohmann_json::nlohmann_json
-          fmt::fmt
-          lua::lua
-        )
+  plotjuggler_app_lib
+  PUBLIC ${QT_LINK_LIBRARIES}
+         plotjuggler_base
+         colorwidgets
+         qt_advanced_docking
+         plotjuggler_qwt
+         QCodeEditor
+         nlohmann_json::nlohmann_json
+         fmt::fmt
+         lua::lua)
+
+add_executable(plotjuggler main.cpp ${EXE_RES_SRC})
+target_compile_definitions(plotjuggler PRIVATE PJ_INSTALLATION="${PJ_INSTALLATION}")
+target_link_libraries(plotjuggler PRIVATE plotjuggler_app_lib)
+
+if(wasmer_FOUND AND WIN32 AND NOT MINGW)
+  add_custom_command(TARGET plotjuggler POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "$<TARGET_FILE:wasmer::wasmer>"
+      "$<TARGET_FILE_DIR:plotjuggler>"
+    COMMENT "Copying wasmer.dll to output directory")
+endif()
+
+if(NOT WIN32)
+  add_backward(plotjuggler)
+endif()
+
+if(BUILD_TESTING)
+  add_executable(plotjuggler_smoke_qttest tests/smoke_mainwindow_test.cpp)
+  set_target_properties(plotjuggler_smoke_qttest PROPERTIES WIN32_EXECUTABLE OFF)
+  target_link_libraries(plotjuggler_smoke_qttest PRIVATE plotjuggler_app_lib Qt5::Test)
+  target_compile_definitions(
+    plotjuggler_smoke_qttest PRIVATE PJ_TEST_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+                                      PJ_TEST_BINARY_DIR="${CMAKE_BINARY_DIR}")
+  add_test(
+    NAME plotjuggler_smoke_qttest
+    COMMAND powershell -ExecutionPolicy Bypass -File
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/run_smoke_qttest.ps1
+            -ExePath $<TARGET_FILE:plotjuggler_smoke_qttest>
+            -BuildBinDir ${CMAKE_BINARY_DIR}/bin
+            -VcpkgBinDir ${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows/bin)
+endif()
 
 if(COMPILING_WITH_CATKIN)
   target_link_libraries(plotjuggler PRIVATE ${catkin_LIBRARIES})

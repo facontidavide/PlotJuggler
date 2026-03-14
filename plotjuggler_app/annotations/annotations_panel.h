@@ -37,6 +37,8 @@ public:
   void setSessionTimeRange(double start_time, double end_time);
   void setAutoloadCompanionAnnotations(bool enabled);
   bool autoloadCompanionAnnotations() const;
+  bool hasUnsavedChanges() const;
+  bool promptToSaveUnsavedChanges(const QString& action_description);
   void clearForSessionChange();
   bool eventFilter(QObject* watched, QEvent* event) override;
 
@@ -113,11 +115,13 @@ private:
   QString suggestDuplicateLayerName(const QString& source_name) const;
   QString sanitizeAnnotationVariant(QString text) const;
   QString autoloadSafeAnnotationBaseName(const QString& layer_name) const;
+  QString suggestAnnotationFilePathForLayer(int layer_index) const;
   QString suggestUniqueLayerName() const;
   QString nextCopyLayerName(const QString& base_name, const QSet<QString>& used_names) const;
   QString nextCopyFileBaseName(const QString& base_name, const QDir& dir) const;
   QString suggestUniqueAnnotationFilePath() const;
   bool editLayerPropertiesDialog(int layer_index);
+  bool saveLayerWithPrompt(int layer_index);
 
   Ui::AnnotationsPanel* ui = nullptr;
   AnnotationManager* _manager = nullptr;

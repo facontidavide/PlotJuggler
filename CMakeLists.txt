@@ -130,6 +130,11 @@ find_package(
              WebSockets
              Network)
 
+if(BUILD_TESTING)
+  find_package(Qt5 REQUIRED COMPONENTS Test)
+  enable_testing()
+endif()
+
 set(QT_LINK_LIBRARIES
     Qt5::Core
     Qt5::Widgets
@@ -315,6 +320,10 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/plotjuggler.svg
 
 add_subdirectory(plotjuggler_app)
 add_subdirectory(plotjuggler_plugins)
+
+if(BUILD_TESTING AND TARGET plotjuggler_smoke_qttest AND TARGET DataLoadCSV)
+  add_dependencies(plotjuggler_smoke_qttest DataLoadCSV)
+endif()
 
 # # Install targets
 

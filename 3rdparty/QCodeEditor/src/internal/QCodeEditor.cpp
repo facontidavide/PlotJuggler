@@ -258,6 +258,11 @@ void QCodeEditor::updateExtraSelection()
 
 void QCodeEditor::highlightParenthesis(QList<QTextEdit::ExtraSelection>& extraSelection)
 {
+    if (!m_syntaxStyle)
+    {
+        return;
+    }
+
     auto currentSymbol = charUnderCursor();
     auto prevSymbol = charUnderCursor(-1);
 
@@ -355,6 +360,11 @@ void QCodeEditor::highlightParenthesis(QList<QTextEdit::ExtraSelection>& extraSe
 
 void QCodeEditor::highlightCurrentLine(QList<QTextEdit::ExtraSelection>& extraSelection)
 {
+    if (!m_syntaxStyle)
+    {
+        return;
+    }
+
     if (!isReadOnly())
     {
         QTextEdit::ExtraSelection selection{};

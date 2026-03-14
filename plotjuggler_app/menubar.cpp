@@ -15,9 +15,11 @@ MenuBar::MenuBar(QWidget* parent) : QMenuBar(parent)
 {
   int font_id = QFontDatabase::addApplicationFont("://resources/"
                                                   "DejaVuSans-ExtraLight.ttf");
-  QString family = QFontDatabase::applicationFontFamilies(font_id).at(0);
-
-  _font.setFamily(family);
+  const QStringList families = QFontDatabase::applicationFontFamilies(font_id);
+  if (!families.isEmpty())
+  {
+    _font.setFamily(families.front());
+  }
   _font.setStyleStrategy(QFont::PreferAntialias);
   _font.setPixelSize(18);
 

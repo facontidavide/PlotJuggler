@@ -370,6 +370,69 @@ bool AnnotationsPanel::autoloadCompanionAnnotations() const
   return ui->checkBoxAutoloadCompanionAnnotations->isChecked();
 }
 
+bool AnnotationsPanel::hasUnsavedChanges() const
+{
+  for (const auto& layer : _manager->layers())
+  {
+    if (layer.dirty)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool AnnotationsPanel::promptToSaveUnsavedChanges(const QString& action_description)
+{
+  QVector<int> dirty_indices;
+  QStringList dirty_names;
+  const auto& layers = _manager->layers();
+  for (int i = 0; i < layers.size(); ++i)
+  {
+    if (layers[i].dirty)
+    {
+      dirty_indices.push_back(i);
+      dirty_names.push_back(layers[i].name.trimmed().isEmpty() ? tr("Unnamed annotations") :
+                                                             layers[i].name.trimmed());
+    }
+  }
+
+  if (dirty_indices.isEmpty())
+  {
+    return true;
+  }
+
+  QMessageBox message_box(this);
+  message_box.setIcon(QMessageBox::Warning);
+  message_box.setWindowTitle(tr("Unsaved Annotation Changes"));
+  message_box.setText(action_description.trimmed().isEmpty() ?
+                          tr("There are unsaved annotation changes.") :
+                          tr("Do you want to save annotation changes before %1?")
+                              .arg(action_description));
+  message_box.setInformativeText(tr("Unsaved files: %1").arg(dirty_names.join(", ")));
+  message_box.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+  message_box.setDefaultButton(QMessageBox::Save);
+
+  const auto choice = static_cast<QMessageBox::StandardButton>(message_box.exec());
+  if (choice == QMessageBox::Cancel)
+  {
+    return false;
+  }
+  if (choice == QMessageBox::Discard)
+  {
+    return true;
+  }
+
+  for (int index : dirty_indices)
+  {
+    if (!saveLayerWithPrompt(index))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
 void AnnotationsPanel::clearForSessionChange()
 {
   _tree_refresh_pending = false;
@@ -2716,6 +2779,43 @@ QString AnnotationsPanel::autoloadSafeAnnotationBaseName(const QString& layer_na
   return annotation_prefix + "." + variant;
 }
 
+QString AnnotationsPanel::suggestAnnotationFilePathForLayer(int layer_index) const
+{
+  const auto& layers = _manager->layers();
+  if (layer_index < 0 || layer_index >= layers.size())
+  {
+    return suggestUniqueAnnotationFilePath();
+  }
+
+  const auto& layer = layers[layer_index];
+  QDir dir;
+  if (!_session_data_files.isEmpty())
+  {
+    dir = QDir(QFileInfo(_session_data_files.front()).absolutePath());
+  }
+  else if (!layer.file_path.isEmpty())
+  {
+    dir = QDir(QFileInfo(layer.file_path).absolutePath());
+  }
+  else
+  {
+    dir = QDir(defaultAnnotationDirectory());
+  }
+
+  const QString layer_name = !layer.name.trimmed().isEmpty() ? layer.name.trimmed() :
+                                                             suggestUniqueLayerName();
+  const QString base = !_session_data_files.isEmpty() ? autoloadSafeAnnotationBaseName(layer_name) :
+                                                        sanitizeAnnotationVariant(layer_name);
+
+  QString candidate = base;
+  if (dir.exists(candidate + ".json"))
+  {
+    candidate = nextCopyFileBaseName(base, dir);
+  }
+
+  return dir.filePath(candidate + ".json");
+}
+
 QString AnnotationsPanel::suggestUniqueAnnotationFilePath() const
 {
   const QDir dir(defaultAnnotationDirectory());
@@ -2733,6 +2833,47 @@ QString AnnotationsPanel::suggestUniqueAnnotationFilePath() const
   }
 
   return dir.filePath(candidate + ".json");
+}
+
+bool AnnotationsPanel::saveLayerWithPrompt(int layer_index)
+{
+  if (layer_index < 0 || layer_index >= _manager->layers().size())
+  {
+    return false;
+  }
+
+  const auto& layer = _manager->layers()[layer_index];
+  if (!layer.axis_explicit && !_current_axis_id.isEmpty())
+  {
+    _manager->setLayerAxisId(layer_index, _current_axis_id, true);
+  }
+
+  if (!layer.file_path.isEmpty())
+  {
+    if (_manager->saveLayer(layer_index))
+    {
+      return true;
+    }
+    QMessageBox::warning(this, tr("Save failed"), tr("Failed to save annotation file."));
+    return false;
+  }
+
+  const QString file_path = QFileDialog::getSaveFileName(
+      this, tr("Save Annotation File As"), suggestAnnotationFilePathForLayer(layer_index),
+      tr("Annotation Files (*.annotations*.json);;JSON Files (*.json);;All Files (*)"));
+
+  if (file_path.isEmpty())
+  {
+    return false;
+  }
+
+  if (_manager->saveLayerAs(layer_index, file_path))
+  {
+    return true;
+  }
+
+  QMessageBox::warning(this, tr("Save failed"), tr("Failed to save annotation file."));
+  return false;
 }
 
 QString AnnotationsPanel::nextCopyLayerName(const QString& base_name,
