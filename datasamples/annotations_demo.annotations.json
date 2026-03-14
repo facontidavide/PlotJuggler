@@ -1,0 +1,79 @@
+{
+  "schema": "plotjuggler.annotations",
+  "version": 3,
+  "name": "annotations_demo",
+  "axis": {
+    "id": "time",
+    "kind": "column",
+    "label": "time"
+  },
+  "visible": true,
+  "editable": true,
+  "color": "#f59e0b",
+  "nodes": [
+    {
+      "type": "group",
+      "name": "sine_a peaks",
+      "visible": true,
+      "color": "#f59e0b",
+      "children": [
+        {
+          "type": "point",
+          "name": "peak 1",
+          "visible": true,
+          "label": "sine_a peak 1",
+          "tags": "demo,peak,sine_a",
+          "notes": "Reference peak marker for the first sine wave.",
+          "enabled": true,
+          "start": 3.0,
+          "end": 3.0,
+          "color": "#f59e0b"
+        },
+        {
+          "type": "point",
+          "name": "peak 2",
+          "visible": true,
+          "label": "sine_a peak 2",
+          "tags": "demo,peak,sine_a",
+          "notes": "Reference peak marker for the first sine wave.",
+          "enabled": true,
+          "start": 15.5,
+          "end": 15.5,
+          "color": "#f59e0b"
+        },
+        {
+          "type": "point",
+          "name": "peak 3",
+          "visible": true,
+          "label": "sine_a peak 3",
+          "tags": "demo,peak,sine_a",
+          "notes": "Reference peak marker for the first sine wave.",
+          "enabled": true,
+          "start": 28.0,
+          "end": 28.0,
+          "color": "#f59e0b"
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "name": "sine_b reference",
+      "visible": true,
+      "color": "#0ea5a4",
+      "children": [
+        {
+          "type": "region",
+          "name": "full period",
+          "visible": true,
+          "label": "sine_b full period",
+          "tags": "demo,region,sine_b",
+          "notes": "One full reference period of the second sine wave, starting at the zero crossing of the second period.",
+          "enabled": true,
+          "start": 11.5,
+          "end": 24.0,
+          "color": "#0ea5a4"
+        }
+      ]
+    }
+  ]
+}

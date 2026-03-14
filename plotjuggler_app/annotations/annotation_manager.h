@@ -27,7 +27,7 @@ public:
     QString label;
     QString tags;
     QString notes;
-    QColor color = Qt::yellow;
+    QColor color;
   };
 
   struct AnnotationLayer

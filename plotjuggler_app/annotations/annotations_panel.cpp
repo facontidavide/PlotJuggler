@@ -115,7 +115,10 @@ QJsonObject annotationItemToJson(const AnnotationManager::AnnotationItem& item)
   obj["label"] = item.label;
   obj["tags"] = item.tags;
   obj["notes"] = item.notes;
-  obj["color"] = item.color.name(QColor::HexRgb);
+  if (item.color.isValid())
+  {
+    obj["color"] = item.color.name(QColor::HexRgb);
+  }
   return obj;
 }
 
@@ -512,6 +515,67 @@ void AnnotationsPanel::onTreeItemChanged(QTreeWidgetItem* item, int column)
     return;
   }
 
+  const auto set_descendants_check_state = [&](QTreeWidgetItem* parent_item, Qt::CheckState state,
+                                               const auto& self) -> void {
+    if (!parent_item)
+    {
+      return;
+    }
+    for (int child = 0; child < parent_item->childCount(); ++child)
+    {
+      auto* child_item = parent_item->child(child);
+      child_item->setCheckState(COLUMN_ON, state);
+      self(child_item, state, self);
+    }
+  };
+
+  const auto update_ancestor_states = [&](QTreeWidgetItem* start_item, const auto& self) -> void {
+    if (!start_item)
+    {
+      return;
+    }
+
+    int checked_count = 0;
+    int unchecked_count = 0;
+    for (int child = 0; child < start_item->childCount(); ++child)
+    {
+      const auto state = start_item->child(child)->checkState(COLUMN_ON);
+      if (state == Qt::Checked)
+      {
+        checked_count++;
+      }
+      else if (state == Qt::Unchecked)
+      {
+        unchecked_count++;
+      }
+    }
+
+    Qt::CheckState parent_state = Qt::PartiallyChecked;
+    if (checked_count == start_item->childCount())
+    {
+      parent_state = Qt::Checked;
+    }
+    else if (unchecked_count == start_item->childCount())
+    {
+      parent_state = Qt::Unchecked;
+    }
+    start_item->setCheckState(COLUMN_ON, parent_state);
+
+    const int ancestor_layer_index = layerIndexFromItem(start_item);
+    const QString ancestor_node_path = nodePathFromItem(start_item);
+    if (ancestor_node_path.isEmpty())
+    {
+      _manager->setLayerVisible(ancestor_layer_index, parent_state != Qt::Unchecked);
+    }
+    else if (auto* ancestor_node = _manager->nodeAtPath(ancestor_layer_index, ancestor_node_path))
+    {
+      ancestor_node->visible = (parent_state != Qt::Unchecked);
+      _manager->rebuildLayerItems(ancestor_layer_index);
+    }
+
+    self(start_item->parent(), self);
+  };
+
   if (annotation_row < 0)
   {
     if (column == COLUMN_ON)
@@ -529,6 +593,11 @@ void AnnotationsPanel::onTreeItemChanged(QTreeWidgetItem* item, int column)
         if (node_path.isEmpty())
         {
           _manager->setLayerVisible(layer_index, true);
+        }
+        else if (auto* node = _manager->nodeAtPath(layer_index, node_path))
+        {
+          node->visible = true;
+          _manager->rebuildLayerItems(layer_index);
         }
         return;
       }
@@ -560,10 +629,9 @@ void AnnotationsPanel::onTreeItemChanged(QTreeWidgetItem* item, int column)
       }
 
       const QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
-      for (int child = 0; child < item->childCount(); ++child)
-      {
-        item->child(child)->setCheckState(COLUMN_ON, enabled ? Qt::Checked : Qt::Unchecked);
-      }
+      set_descendants_check_state(item, enabled ? Qt::Checked : Qt::Unchecked,
+                                  set_descendants_check_state);
+      update_ancestor_states(item->parent(), update_ancestor_states);
     }
     return;
   }
@@ -584,47 +652,10 @@ void AnnotationsPanel::onTreeItemChanged(QTreeWidgetItem* item, int column)
     annotation.enabled = (item->checkState(COLUMN_ON) == Qt::Checked);
     _manager->updateLayerNodeAnnotation(layer_index, node_path, annotation);
 
+    const QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
     if (auto* parent = item->parent())
     {
-      int checked_count = 0;
-      int unchecked_count = 0;
-      for (int child = 0; child < parent->childCount(); ++child)
-      {
-        const auto state = parent->child(child)->checkState(COLUMN_ON);
-        if (state == Qt::Checked)
-        {
-          checked_count++;
-        }
-        else
-        {
-          unchecked_count++;
-        }
-      }
-
-      Qt::CheckState parent_state = Qt::PartiallyChecked;
-      if (checked_count == parent->childCount())
-      {
-        parent_state = Qt::Checked;
-      }
-      else if (unchecked_count == parent->childCount())
-      {
-        parent_state = Qt::Unchecked;
-      }
-
-      const QSignalBlocker tree_blocker(ui->treeWidgetAnnotations);
-      parent->setCheckState(COLUMN_ON, parent_state);
-      if (!nodePathFromItem(parent).isEmpty())
-      {
-        if (auto* parent_node = _manager->nodeAtPath(layer_index, nodePathFromItem(parent)))
-        {
-          parent_node->visible = (parent_state != Qt::Unchecked);
-          _manager->rebuildLayerItems(layer_index);
-        }
-      }
-      else
-      {
-        _manager->setLayerVisible(layer_index, parent_state != Qt::Unchecked);
-      }
+      update_ancestor_states(parent, update_ancestor_states);
     }
   }
   else if (column == COLUMN_NAME)
@@ -761,10 +792,6 @@ void AnnotationsPanel::onAddPoint()
   item.end_time = item.start_time;
   item.label = QString("Point @ %1").arg(item.start_time, 0, 'f', 3);
 
-  if (const auto* layer = _manager->activeLayer())
-  {
-    item.color = layer->color;
-  }
   QString parent_path;
   if (_detail_layer_index == _manager->activeLayerIndex())
   {
@@ -798,10 +825,6 @@ void AnnotationsPanel::onAddRegion()
     item.label = QString("Range @ %1").arg(center, 0, 'f', 3);
   }
 
-  if (const auto* layer = _manager->activeLayer())
-  {
-    item.color = layer->color;
-  }
   QString parent_path;
   if (_detail_layer_index == _manager->activeLayerIndex())
   {
@@ -1328,7 +1351,6 @@ void AnnotationsPanel::openGroupMenu(int layer_index, const QString& node_path, 
     item.start_time = _streaming_active ? _current_time : 0.5 * (_view_start_time + _view_end_time);
     item.end_time = item.start_time;
     item.label = QString("Point @ %1").arg(item.start_time, 0, 'f', 3);
-    item.color = node->color.isValid() ? node->color : layer.color;
     if (_manager->addItemToLayer(layer_index, item, node_path))
     {
       auto path = AnnotationManager::pathFromString(node_path);
@@ -1356,7 +1378,6 @@ void AnnotationsPanel::openGroupMenu(int layer_index, const QString& node_path, 
     item.start_time = center - 0.5 * width;
     item.end_time = center + 0.5 * width;
     item.label = QString("Range @ %1").arg(center, 0, 'f', 3);
-    item.color = node->color.isValid() ? node->color : layer.color;
     if (_manager->addItemToLayer(layer_index, item, node_path))
     {
       auto path = AnnotationManager::pathFromString(node_path);
@@ -2292,10 +2313,6 @@ void AnnotationsPanel::addNodeItem(QTreeWidgetItem* parent_item, int layer_index
                   _streaming_active ? _current_time : 0.5 * (_view_start_time + _view_end_time);
               item.end_time = item.start_time;
               item.label = QString("Point @ %1").arg(item.start_time, 0, 'f', 3);
-              if (const auto* active_layer = _manager->activeLayer())
-              {
-                item.color = active_layer->color;
-              }
               if (_manager->addItemToLayer(layer_index, item, group_path))
               {
                 auto path = AnnotationManager::pathFromString(group_path);
@@ -2327,10 +2344,6 @@ void AnnotationsPanel::addNodeItem(QTreeWidgetItem* parent_item, int layer_index
               item.start_time = center - 0.5 * width;
               item.end_time = center + 0.5 * width;
               item.label = QString("Range @ %1").arg(center, 0, 'f', 3);
-              if (const auto* active_layer = _manager->activeLayer())
-              {
-                item.color = active_layer->color;
-              }
               if (_manager->addItemToLayer(layer_index, item, group_path))
               {
                 auto path = AnnotationManager::pathFromString(group_path);

@@ -78,7 +78,10 @@ json annotationItemToJson(const AnnotationManager::AnnotationItem& item, const Q
   item_json["label"] = item.label.toStdString();
   item_json["tags"] = item.tags.toStdString();
   item_json["notes"] = item.notes.toStdString();
-  item_json["color"] = colorToJson(item.color.isValid() ? item.color : fallback_color);
+  if (item.color.isValid())
+  {
+    item_json["color"] = colorToJson(item.color);
+  }
   return item_json;
 }
 
@@ -93,8 +96,8 @@ AnnotationManager::AnnotationItem annotationItemFromJson(const json& item_json, 
   item.label = QString::fromStdString(item_json.value("label", std::string()));
   item.tags = QString::fromStdString(item_json.value("tags", std::string()));
   item.notes = QString::fromStdString(item_json.value("notes", std::string()));
-  item.color = item_json.contains("color") ? colorFromJson(item_json["color"], fallback_color) :
-                                             fallback_color;
+  Q_UNUSED(fallback_color);
+  item.color = item_json.contains("color") ? colorFromJson(item_json["color"], QColor()) : QColor();
   return item;
 }
 
@@ -672,10 +675,6 @@ bool AnnotationManager::addItemToLayer(int layer_index, const AnnotationItem& it
   }
 
   AnnotationItem new_item = item;
-  if (!new_item.color.isValid())
-  {
-    new_item.color = layer.color;
-  }
   auto node = annotationNodeFromItem(new_item);
 
   if (parent_node_path.isEmpty())
@@ -715,7 +714,6 @@ bool AnnotationManager::addGroupToLayer(int layer_index, const QString& name,
   node.type = NodeType::Group;
   node.name = name.trimmed().isEmpty() ? QString("Group") : name.trimmed();
   node.visible = true;
-  node.color = layer.color;
 
   if (parent_node_path.isEmpty())
   {
