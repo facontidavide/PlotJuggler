@@ -30,12 +30,15 @@
 *.snap
 
 /build*
+/build-release/
 /.git-split/
 /install/
+/install-release/
 /*.user
 
 site/images/
 /PlotJugglerInstaller
+/PlotJuggler-*.zip
 
 # Temp folders for local binary creation
 obj-x86_64-linux-gnu
