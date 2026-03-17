@@ -108,12 +108,15 @@ inline void AddPrefixToPlotData(const std::string& prefix,
   for (size_t i = 0; i < temp_key.size(); i++)
   {
     const std::string& key = temp_key[i];
+    auto group = temp_value[i].group();
 
     auto it = data.emplace(std::piecewise_construct, std::forward_as_tuple(key),
-                           std::forward_as_tuple(key, PlotGroup::Ptr()))
+                           std::forward_as_tuple(key, group))
                   .first;
 
-    it->second = std::move(temp_value[i]);
+    // Keep the new prefixed plot name while moving samples and metadata.
+    it->second.attributes() = std::move(temp_value[i].attributes());
+    it->second.swapData(temp_value[i]);
   }
 }
 
