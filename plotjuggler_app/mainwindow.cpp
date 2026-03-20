@@ -822,6 +822,7 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
   connect(plot, &PlotWidget::curveListChanged, this, [this]() {
     updateTimeOffset();
     updateTimeSlider();
+    QTimer::singleShot(0, this, [this]() { replotAllPlots("onCurveListChanged"); });
   });
 
   connect(&_time_offset, &MonitoredValue::valueChanged, plot, &PlotWidget::on_changeTimeOffset);

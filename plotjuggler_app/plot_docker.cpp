@@ -286,7 +286,9 @@ void PlotDocker::updateAxisAlignmentCache(bool force_recompute)
     for (int index = 0; index < plotCount(); index++)
     {
       auto* plot = plotAt(index);
-      if (plot->leftAxisExtent() > _axis_alignment_cache.left_extent ||
+      if (plot->leftAxisWidth() > _axis_alignment_cache.left_width ||
+          plot->bottomAxisHeight() > _axis_alignment_cache.bottom_height ||
+          plot->leftAxisExtent() > _axis_alignment_cache.left_extent ||
           plot->bottomAxisExtent() > _axis_alignment_cache.bottom_extent)
       {
         needs_recompute = true;
