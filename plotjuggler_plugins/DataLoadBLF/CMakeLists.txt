@@ -81,6 +81,18 @@ if(TARGET plotjuggler_base)
   install(TARGETS DataLoadBLF DESTINATION ${PJ_PLUGIN_INSTALL_DIRECTORY})
 endif()
 
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  option(BLF_BUILD_E2E_RUNNER "Build BLF end-to-end validation runner" ON)
+else()
+  option(BLF_BUILD_E2E_RUNNER "Build BLF end-to-end validation runner" OFF)
+endif()
+
+if(BLF_BUILD_E2E_RUNNER)
+  add_executable(blf_e2e_runner tools/blf_e2e_runner.cpp)
+  target_compile_features(blf_e2e_runner PRIVATE cxx_std_17)
+  target_link_libraries(blf_e2e_runner PRIVATE blf_core blf_adapters Qt5::Core Qt5::Xml)
+endif()
+
 if(BUILD_TESTING)
   find_package(GTest QUIET)
   if(GTest_FOUND)
