@@ -183,6 +183,12 @@ find_or_download_json()
 include(cmake/find_or_download_fmt.cmake)
 find_or_download_fmt()
 
+include(cmake/find_or_download_vector_blf.cmake)
+find_or_download_vector_blf()
+
+include(cmake/find_or_download_dbcppp.cmake)
+find_or_download_dbcppp()
+
 # IMPORTANT: LZ4 and ZSTD must be included after Arrow, since Arrow also includes
 # Findlz4Alt.cmake and FindzstdAlt.cmake and we want to avoid target conflicts
 # Arrow 23.0.0+ requires CURL::libcurl target to exist before loading Arrow config

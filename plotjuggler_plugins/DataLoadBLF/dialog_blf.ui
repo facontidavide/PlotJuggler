@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DialogBLF</class>
+ <widget class="QDialog" name="DialogBLF">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>760</width>
+    <height>620</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>BLF Loader</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="groupOptions">
+     <property name="title">
+      <string>Output Options</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayoutOptions">
+      <item>
+       <widget class="QCheckBox" name="checkEmitRaw">
+        <property name="text">
+         <string>Emit Raw CAN/CAN FD Series</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkEmitDecoded">
+        <property name="text">
+         <string>Emit DBC Decoded Series</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkUseSourceTs">
+        <property name="text">
+         <string>Use BLF Source Timestamp (fallback to index when disabled)</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupDbcFiles">
+     <property name="title">
+      <string>DBC Files</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayoutDbc">
+      <item>
+       <widget class="QListWidget" name="listDbcFiles"/>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayoutDbcButtons">
+        <item>
+         <widget class="QPushButton" name="btnAddDbc">
+          <property name="text">
+           <string>Add DBC...</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btnRemoveDbc">
+          <property name="text">
+           <string>Remove Selected</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacerDbc">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupChannelMap">
+     <property name="title">
+      <string>Channel to DBC Mapping</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayoutMap">
+      <item>
+       <widget class="QTableWidget" name="tableChannelMap">
+        <property name="columnCount">
+         <number>2</number>
+        </property>
+        <attribute name="horizontalHeaderStretchLastSection">
+         <bool>true</bool>
+        </attribute>
+        <column>
+         <property name="text">
+          <string>Channel</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>DBC File Path</string>
+         </property>
+        </column>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayoutMapButtons">
+        <item>
+         <widget class="QPushButton" name="btnAddMapRow">
+          <property name="text">
+           <string>Add Mapping</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btnRemoveMapRow">
+          <property name="text">
+           <string>Remove Mapping</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacerMap">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
