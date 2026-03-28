@@ -71,7 +71,11 @@ void FoxgloveDialog::setChannels(const QMap<quint64, FoxgloveChannelInfo>& chann
   auto* vsb = view->verticalScrollBar();
   const int scroll_y = vsb ? vsb->value() : 0;
 
-  QSet<QString> wanted(preselectNames.constBegin(), preselectNames.constEnd());
+  QSet<QString> wanted;
+  for (const auto& name : preselectNames)
+  {
+    wanted.insert(name);
+  }
   for (auto* item : view->selectedItems())
   {
     const QString topic = item->text(0);

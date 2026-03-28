@@ -4,6 +4,7 @@
 #include <QJsonArray>
 #include <QJsonParseError>
 #include <QMessageBox>
+#include <QUuid>
 
 #include <QtEndian>
 #include <cstring>
@@ -631,7 +632,7 @@ void WebsocketClient::onBinaryMessageReceived(const QByteArray& message)
   // Validate magic and flags
   if (magic != 0x42524A50)
   {  // "PJRB"
-    qWarning() << "Bad magic:" << Qt::hex << magic;
+    qWarning() << "Bad magic: 0x" + QString::number(magic, 16);
     return;
   }
   if (flags != 0)

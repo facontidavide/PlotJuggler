@@ -196,7 +196,7 @@ void PluginManager::loadWASM(const QString& pluginPath)
     auto manifest = QString::fromStdString(readPluginManifest(*runtime));
     // split into lines
     std::map<QString, QString> manifest_map;
-    for (const auto& line : manifest.split('\n', Qt::SkipEmptyParts))
+    for (const auto& line : manifest.split('\n', QString::SkipEmptyParts))
     {
       auto parts = line.split(':');
       if (parts.size() == 2)
@@ -223,7 +223,7 @@ void PluginManager::loadWASM(const QString& pluginPath)
     {
       auto parser =
           std::make_shared<ParserFactoryWASM>(std::move(runtime), plugin_name, plugin_encoding);
-      auto encoding_list = plugin_encoding.split(';', Qt::SkipEmptyParts);
+      auto encoding_list = plugin_encoding.split(';', QString::SkipEmptyParts);
       for (const auto& encoding : encoding_list)
       {
         _parser_factories.insert(std::make_pair(encoding, parser));

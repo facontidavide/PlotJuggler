@@ -5,7 +5,7 @@ function(find_or_download_json)
   if(NLOHMANN_JSON_INCLUDE_DIR)
     message(STATUS "Found nlohmann_json in system")
 
-    add_library(nlohmann_json INTERFACE IMPORTED)
+    add_library(nlohmann_json INTERFACE IMPORTED GLOBAL)
     set_target_properties(
       nlohmann_json PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
                                "${NLOHMANN_JSON_INCLUDE_DIR}")

@@ -1,6 +1,7 @@
 #include "wasm_parser.hpp"
 #include "PlotJuggler/pj_serializer.hpp"
 #include "PlotJuggler/contrib/unordered_dense.hpp"
+#include <QDebug>
 
 namespace PJ
 {
