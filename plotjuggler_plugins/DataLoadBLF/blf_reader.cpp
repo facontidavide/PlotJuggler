@@ -124,7 +124,7 @@ NormalizedCanFrame ToFrame(const Vector::BLF::CanMessage2& msg)
   frame.is_fd = false;
   frame.is_brs = false;
   frame.is_esi = false;
-  std::copy_n(msg.data, frame.size, frame.data.begin());
+  std::copy_n(msg.data.begin(), frame.size, frame.data.begin());
   return frame;
 }
 
@@ -140,7 +140,7 @@ NormalizedCanFrame ToFrame(const Vector::BLF::CanMessage& msg)
   frame.is_fd = false;
   frame.is_brs = false;
   frame.is_esi = false;
-  std::copy_n(msg.data, frame.size, frame.data.begin());
+  std::copy_n(msg.data.begin(), frame.size, frame.data.begin());
   return frame;
 }
 

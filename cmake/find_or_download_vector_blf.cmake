@@ -25,10 +25,26 @@ function(find_or_download_vector_blf)
     return()
   endif()
 
+  find_library(VECTOR_BLF_LIBRARY NAMES Vector_BLF)
+  find_path(VECTOR_BLF_INCLUDE_DIR NAMES Vector/BLF/File.h)
+  if(VECTOR_BLF_LIBRARY AND VECTOR_BLF_INCLUDE_DIR)
+    message(STATUS "Found Vector_BLF via library/header lookup")
+    add_library(vector_blf::vector_blf INTERFACE IMPORTED)
+    set_target_properties(
+      vector_blf::vector_blf
+      PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${VECTOR_BLF_INCLUDE_DIR}"
+                 INTERFACE_LINK_LIBRARIES "${VECTOR_BLF_LIBRARY}")
+    set(VECTOR_BLF_FOUND TRUE PARENT_SCOPE)
+    return()
+  endif()
+
   message(STATUS "vector_blf not found, downloading")
   cpmaddpackage(
     NAME vector_blf
-    URL https://github.com/Technica-Engineering/vector_blf/archive/refs/tags/v2.4.2.zip)
+    URL https://github.com/Technica-Engineering/vector_blf/archive/refs/tags/v2.4.2.zip
+    OPTIONS "OPTION_RUN_DOXYGEN OFF"
+            "OPTION_BUILD_EXAMPLES OFF"
+            "OPTION_BUILD_TESTS OFF")
 
   if(TARGET vector_blf::vector_blf)
     set(VECTOR_BLF_FOUND TRUE PARENT_SCOPE)

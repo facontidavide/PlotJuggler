@@ -43,6 +43,18 @@ uint64_t NormalizeCanId(uint32_t can_id, bool extended)
   return static_cast<uint64_t>(can_id) & (extended ? kExtendedCanIdMask : kStandardCanIdMask);
 }
 
+template <typename T>
+const T* ToPtr(const T& value)
+{
+  return &value;
+}
+
+template <typename T>
+const T* ToPtr(const T* value)
+{
+  return value;
+}
+
 #if PJ_CAN_USE_DBCPPP
 uint8_t DlcToPayloadSize(uint8_t dlc)
 {
@@ -133,9 +145,10 @@ DbcpppDecoder::DbcpppDecoder(const std::string& dbc_file, std::string* error)
 
   for (const auto& message : impl_->network->Messages())
   {
-    if (message)
+    const auto* message_ptr = ToPtr(message);
+    if (message_ptr)
     {
-      impl_->messages_by_id[message->Id()].push_back(message.get());
+      impl_->messages_by_id[message_ptr->Id()].push_back(message_ptr);
     }
   }
 
@@ -192,24 +205,25 @@ std::vector<DecodedSignalValue> DbcpppDecoder::Decode(uint32_t can_id, bool exte
 
   for (const auto& signal : message->Signals())
   {
-    if (!signal)
+    const auto* signal_ptr = ToPtr(signal);
+    if (!signal_ptr)
     {
       continue;
     }
 
     const bool is_mux_value_signal =
-        signal->MultiplexerIndicator() == dbcppp::ISignal::EMultiplexer::MuxValue;
+        signal_ptr->MultiplexerIndicator() == dbcppp::ISignal::EMultiplexer::MuxValue;
     if (is_mux_value_signal && mux_signal &&
-        mux_value != static_cast<int64_t>(signal->MultiplexerSwitchValue()))
+        mux_value != static_cast<int64_t>(signal_ptr->MultiplexerSwitchValue()))
     {
       continue;
     }
 
-    const auto raw = signal->Decode(payload.data());
-    const auto phys = signal->RawToPhys(raw);
+    const auto raw = signal_ptr->Decode(payload.data());
+    const auto phys = signal_ptr->RawToPhys(raw);
 
     decoded_values.push_back(
-        DecodedSignalValue{message->Name().c_str(), signal->Name().c_str(), phys});
+        DecodedSignalValue{message->Name().c_str(), signal_ptr->Name().c_str(), phys});
   }
 
   return decoded_values;

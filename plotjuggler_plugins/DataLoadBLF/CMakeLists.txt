@@ -12,11 +12,32 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
       vector_blf::vector_blf
       PROPERTIES INTERFACE_LINK_LIBRARIES Vector_BLF::Vector_BLF)
   endif()
+  if(NOT TARGET vector_blf::vector_blf)
+    find_library(VECTOR_BLF_LIBRARY NAMES Vector_BLF)
+    find_path(VECTOR_BLF_INCLUDE_DIR NAMES Vector/BLF/File.h)
+    if(VECTOR_BLF_LIBRARY AND VECTOR_BLF_INCLUDE_DIR)
+      add_library(vector_blf::vector_blf INTERFACE IMPORTED)
+      set_target_properties(
+        vector_blf::vector_blf
+        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${VECTOR_BLF_INCLUDE_DIR}"
+                   INTERFACE_LINK_LIBRARIES "${VECTOR_BLF_LIBRARY}")
+    endif()
+  endif()
 
   find_package(dbcppp QUIET CONFIG)
   if(NOT TARGET dbcppp::dbcppp AND TARGET dbcppp)
     add_library(dbcppp::dbcppp INTERFACE IMPORTED)
     set_target_properties(dbcppp::dbcppp PROPERTIES INTERFACE_LINK_LIBRARIES dbcppp)
+  endif()
+  if(NOT TARGET dbcppp::dbcppp)
+    find_library(DBCPPP_LIBRARY NAMES dbcppp)
+    find_path(DBCPPP_INCLUDE_DIR NAMES dbcppp/Network.h)
+    if(DBCPPP_LIBRARY AND DBCPPP_INCLUDE_DIR)
+      add_library(dbcppp::dbcppp INTERFACE IMPORTED)
+      set_target_properties(dbcppp::dbcppp PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${DBCPPP_INCLUDE_DIR}"
+        INTERFACE_LINK_LIBRARIES "${DBCPPP_LIBRARY}")
+    endif()
   endif()
 
   include(CTest)
