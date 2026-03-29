@@ -69,6 +69,11 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #endif
 
+namespace
+{
+constexpr const char* kBlfHasValidAbsoluteTimeProperty = "pj_blf_has_valid_absolute_time";
+}
+
 MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* parent)
   : QMainWindow(parent)
   , ui(new Ui::MainWindow)
@@ -1544,6 +1549,12 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
         if (!duplicate)
         {
           _loaded_datafiles_history.push_back(new_info);
+        }
+
+        if (QString(dataloader->name()) == "DataLoad BLF" &&
+            dataloader->property("pj_blf_has_valid_absolute_time").toBool())
+        {
+          ui->buttonUseDateTime->setChecked(true);
         }
       }
 

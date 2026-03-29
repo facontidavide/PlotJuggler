@@ -17,6 +17,8 @@ namespace PJ::BLF
 {
 namespace
 {
+constexpr const char* kHasValidAbsoluteTimeProperty = "pj_blf_has_valid_absolute_time";
+constexpr const char* kFirstAbsoluteTimeMsecProperty = "pj_blf_first_absolute_time_msec";
 
 class PlotDataSeriesWriter : public ISeriesWriter
 {
@@ -51,6 +53,8 @@ bool DataLoadBLF::readDataFromFile(PJ::FileLoadInfo* fileload_info, PJ::PlotData
   }
 
   last_metadata_ = {};
+  setProperty(kHasValidAbsoluteTimeProperty, false);
+  setProperty(kFirstAbsoluteTimeMsecProperty, QVariant());
 
   BlfPluginConfig runtime_config = config_;
   if (fileload_info->plugin_config.hasChildNodes())
@@ -177,6 +181,10 @@ bool DataLoadBLF::readDataFromFile(PJ::FileLoadInfo* fileload_info, PJ::PlotData
                     << ", raw_samples=" << stats.raw_samples_written
                     << ", decoded_samples=" << stats.decoded_samples_written
                     << ", decode_errors=" << stats.decode_errors;
+
+  setProperty(kHasValidAbsoluteTimeProperty, last_metadata_.has_valid_absolute_time);
+  setProperty(kFirstAbsoluteTimeMsecProperty,
+              QVariant::fromValue<qlonglong>(last_metadata_.first_absolute_time_msec));
 
   return true;
 }
