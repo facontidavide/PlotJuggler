@@ -14,6 +14,7 @@
 #include <QStandardItemModel>
 #include <QTableView>
 #include <QItemSelection>
+#include <QStringList>
 #include <unordered_set>
 
 #include "transforms/custom_function.h"
@@ -35,6 +36,10 @@ public:
                           QWidget* parent);
 
   ~CurveListPanel() override;
+
+  static QString CompactHeaderText(const QString& text, int max_len);
+
+  static QString FormatSummaryLine(const QStringList& basenames, int max_len);
 
   void clear();
 
@@ -59,6 +64,8 @@ public:
   virtual void keyPressEvent(QKeyEvent* event) override;
 
   void updateAppearance();
+
+  void setLoadedDataSummary(const QString& file_summary, const QString& dbc_summary);
 
 private slots:
 

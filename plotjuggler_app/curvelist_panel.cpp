@@ -81,12 +81,44 @@ CurveListPanel::~CurveListPanel()
   delete ui;
 }
 
+QString CurveListPanel::CompactHeaderText(const QString& text, int max_len)
+{
+  if (text.size() <= max_len || max_len < 5)
+  {
+    return text;
+  }
+  const int head = (max_len - 1) / 2;
+  const int tail = max_len - 1 - head;
+  return text.left(head) + "*" + text.right(tail);
+}
+
+QString CurveListPanel::FormatSummaryLine(const QStringList& basenames, int max_len)
+{
+  if (basenames.isEmpty())
+  {
+    return "none";
+  }
+  QString first = CompactHeaderText(basenames.front(), max_len);
+  if (basenames.size() == 1)
+  {
+    return first;
+  }
+  return QString("%1 (+%2)").arg(first).arg(basenames.size() - 1);
+}
+
+void CurveListPanel::setLoadedDataSummary(const QString& file_summary, const QString& dbc_summary)
+{
+  ui->labelDataFileSummary->setText("data: " + file_summary);
+  ui->labelDbcSummary->setText("dbc: " + dbc_summary);
+}
+
 void CurveListPanel::clear()
 {
   _custom_view->clear();
   _tree_view->clear();
   _tree_view_items.clear();
   ui->labelNumberDisplayed->setText("0 of 0");
+  setLoadedDataSummary("none", "none");
 }
 
 bool CurveListPanel::addCurve(const std::string& plot_name)

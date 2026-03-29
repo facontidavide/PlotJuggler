@@ -141,6 +141,43 @@ target_link_libraries(
           lua::lua
         )
 
+if(BUILD_TESTING)
+  find_package(GTest QUIET)
+  if(GTest_FOUND)
+    enable_testing()
+    include(GoogleTest)
+    add_executable(
+      test_curve_panel_header_utils
+      tests/test_curve_panel_header_utils.cpp
+      curvelist_panel.cpp
+      curvelist_view.cpp
+      curvetree_view.cpp
+      ${UI_SRC})
+    target_include_directories(
+      test_curve_panel_header_utils
+      PRIVATE
+        ${PROJECT_SOURCE_DIR}/plotjuggler_base/include
+        ${PROJECT_SOURCE_DIR}/plotjuggler_app
+        ${PROJECT_SOURCE_DIR}/3rdparty/color_widgets/include
+        ${PROJECT_SOURCE_DIR}/3rdparty/Qt-Advanced-Docking/include
+        ${PROJECT_SOURCE_DIR}/3rdparty/QCodeEditor/include)
+    target_link_libraries(
+      test_curve_panel_header_utils
+      PRIVATE
+        ${QT_LINK_LIBRARIES}
+        plotjuggler_base
+        colorwidgets
+        qt_advanced_docking
+        plotjuggler_qwt
+        QCodeEditor
+        nlohmann_json::nlohmann_json
+        fmt::fmt
+        lua::lua
+        GTest::gtest_main)
+    gtest_discover_tests(test_curve_panel_header_utils)
+  endif()
+endif()
+
 if(COMPILING_WITH_CATKIN)
   target_link_libraries(plotjuggler PRIVATE ${catkin_LIBRARIES})
   install(
