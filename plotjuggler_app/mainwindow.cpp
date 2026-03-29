@@ -1551,8 +1551,8 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
           _loaded_datafiles_history.push_back(new_info);
         }
 
-        if (QString(dataloader->name()) == "DataLoad BLF" &&
-            dataloader->property("pj_blf_has_valid_absolute_time").toBool())
+        if (QString::fromLatin1(dataloader->name()) == QStringLiteral("DataLoad BLF") &&
+            dataloader->property(kBlfHasValidAbsoluteTimeProperty).toBool())
         {
           ui->buttonUseDateTime->setChecked(true);
         }
