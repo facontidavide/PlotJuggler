@@ -140,6 +140,19 @@ PlotWidget::~PlotWidget()
   delete _action_data_statistics;
 }
 
+void PlotWidget::setLockYMouseZoom(bool locked)
+{
+  _lock_y_mouse_zoom = locked;
+  if (magnifier())
+  {
+    magnifier()->setLockYMouseZoom(locked);
+  }
+  if (zoomer())
+  {
+    zoomer()->setLockYMouseZoom(locked);
+  }
+}
+
 void PlotWidget::setContextMenuEnabled(bool enabled)
 {
   _context_menu_enabled = enabled;

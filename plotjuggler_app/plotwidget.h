@@ -85,6 +85,13 @@ public:
 
   void changeDots(bool force_dots);
 
+  void setLockYMouseZoom(bool locked);
+
+  bool isYMouseZoomLocked() const
+  {
+    return _lock_y_mouse_zoom;
+  }
+
 protected:
   PlotDataMapRef& _mapped_data;
 
@@ -205,6 +212,7 @@ private:
   std::unique_ptr<BackgroundColorItem> _background_item;
 
   bool _use_date_time_scale;
+  bool _lock_y_mouse_zoom = false;
 
   StatisticsDialog* _statistics_dialog = nullptr;
 

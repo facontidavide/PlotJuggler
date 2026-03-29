@@ -40,6 +40,11 @@ public:
     _default_mode = mode;
   }
 
+  void setLockYMouseZoom(bool locked)
+  {
+    _lock_y_mouse_zoom = locked;
+  }
+
   void rescale(double factor, AxisMode axis);
 
 protected:
@@ -57,6 +62,7 @@ private:
   QPointF invTransform(QPoint pos);
   QTimer _future_emit;
   AxisMode _default_mode;
+  bool _lock_y_mouse_zoom = false;
 };
 
 #endif  // PLOTMAGNIFIER_H

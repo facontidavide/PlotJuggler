@@ -115,7 +115,13 @@ void PlotZoomer::zoom(const QRectF& zoomRect)
 {
   QRectF rect = zoomRect;
 
-  if (_keep_aspect_ratio)
+  if (_lock_y_mouse_zoom)
+  {
+    const auto y_scale = plot()->axisScaleDiv(QwtPlot::yLeft);
+    rect.setBottom(y_scale.lowerBound());
+    rect.setTop(y_scale.upperBound());
+  }
+  else if (_keep_aspect_ratio)
   {
     const QRectF cr = canvas()->contentsRect();
     const double canvas_ratio = cr.width() / cr.height();

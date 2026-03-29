@@ -37,6 +37,14 @@ void PlotMagnifier::setAxisLimits(int axis, double lower, double upper)
 
 void PlotMagnifier::rescale(double factor, AxisMode axis)
 {
+  if (_lock_y_mouse_zoom)
+  {
+    if (axis == Y_AXIS || axis == BOTH_AXES)
+    {
+      axis = X_AXIS;
+    }
+  }
+
   factor = qAbs(1.0 / factor);
 
   QwtPlot* plt = plot();

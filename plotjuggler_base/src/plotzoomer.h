@@ -26,6 +26,11 @@ public:
     _keep_aspect_ratio = doKeep;
   }
 
+  void setLockYMouseZoom(bool locked)
+  {
+    _lock_y_mouse_zoom = locked;
+  }
+
 protected:
   virtual void widgetMousePressEvent(QMouseEvent* event) override;
   virtual void widgetMouseReleaseEvent(QMouseEvent* event) override;
@@ -40,6 +45,7 @@ private:
   bool _mouse_pressed;
   bool _zoom_enabled;
   bool _keep_aspect_ratio;
+  bool _lock_y_mouse_zoom = false;
   QPoint _initial_pos;
 };
 
