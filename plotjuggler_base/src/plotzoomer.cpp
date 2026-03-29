@@ -12,6 +12,7 @@
 
 #include "qwt_plot_zoomer.h"
 #include "qwt_scale_map.h"
+#include "qwt_scale_div.h"
 #include "qwt_plot.h"
 #include "PlotJuggler/svg_util.h"
 
