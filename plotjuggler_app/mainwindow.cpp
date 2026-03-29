@@ -1266,6 +1266,7 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
 {
   filenames.sort();
   std::map<QString, QString> filename_prefix;
+  const auto previous_loaded_infos = _loaded_datafiles_previous;
 
   const bool add_prefix = ui->checkBoxAddPrefix->isChecked();
   const bool merge_data = ui->checkBoxMergeData->isChecked();
@@ -1338,10 +1339,32 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
     _loaded_datafiles_history.resize(1);
   }
 
+  if (loaded_filenames.empty())
+  {
+    _loaded_datafiles_previous = previous_loaded_infos;
+  }
+  else if (!data_replaced_entirely)
+  {
+    for (const auto& prev_info : previous_loaded_infos)
+    {
+      const auto duplicate = std::find_if(_loaded_datafiles_previous.begin(),
+                                          _loaded_datafiles_previous.end(),
+                                          [&](const FileLoadInfo& current_info) {
+                                            return current_info.filename == prev_info.filename &&
+                                                   current_info.prefix == prev_info.prefix;
+                                          });
+      if (duplicate == _loaded_datafiles_previous.end())
+      {
+        _loaded_datafiles_previous.push_back(prev_info);
+      }
+    }
+  }
+
   ui->buttonReloadData->setEnabled(!loaded_filenames.empty());
 
   if (loaded_filenames.size() > 0)
   {
+    refreshLoadedDataSummary();
     updateRecentDataMenu(loaded_filenames);
     linkedZoomOut();
     return true;
@@ -1565,7 +1588,6 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
   forEachWidget([](PlotWidget* plot) { plot->updateCurves(true); });
 
   updateDataAndReplot(true);
-  refreshLoadedDataSummary();
   ui->timeSlider->setRealValue(ui->timeSlider->getMinimum());
 
   return added_names;
@@ -2077,6 +2099,10 @@ bool MainWindow::loadLayoutFromFile(QString filename)
 
     loadDataFromFile(info, false);
     datafile_elem = datafile_elem.nextSiblingElement("fileInfo");
+  }
+  if (!_loaded_datafiles_previous.empty())
+  {
+    refreshLoadedDataSummary();
   }
 
   QDomElement previous_streamer = root.firstChildElement("previouslyLoaded_Streamer");
@@ -3598,6 +3624,10 @@ void MainWindow::on_buttonReloadData_clicked()
   for (const auto& info : prev_infos)
   {
     loadDataFromFile(info, false);
+  }
+  if (!_loaded_datafiles_previous.empty())
+  {
+    refreshLoadedDataSummary();
   }
   ui->buttonReloadData->setEnabled(!_loaded_datafiles_previous.empty());
 }
