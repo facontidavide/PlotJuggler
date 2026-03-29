@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#include <cmath>
 #include <limits>
 #include <QDebug>
 #include <QWheelEvent>
