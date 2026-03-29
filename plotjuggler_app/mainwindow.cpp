@@ -18,6 +18,7 @@
 #include <QDoubleSpinBox>
 #include <QElapsedTimer>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QInputDialog>
 #include <QMenu>
 #include <QGroupBox>
@@ -28,6 +29,7 @@
 #include <QPluginLoader>
 #include <QPushButton>
 #include <QKeySequence>
+#include <QSet>
 #include <QScrollBar>
 #include <QSettings>
 #include <QStringListModel>
@@ -1347,6 +1349,61 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
   return false;
 }
 
+QStringList MainWindow::loadedDataBasenames() const
+{
+  QStringList out;
+  const auto& infos =
+      _loaded_datafiles_previous.empty() ? _loaded_datafiles_history : _loaded_datafiles_previous;
+  for (const auto& info : infos)
+  {
+    const QString basename = QFileInfo(info.filename).fileName();
+    if (!basename.isEmpty())
+    {
+      out.push_back(basename);
+    }
+  }
+  return out;
+}
+
+QStringList MainWindow::loadedDbcBasenames() const
+{
+  QStringList out;
+  QSet<QString> seen;
+  const auto& infos =
+      _loaded_datafiles_previous.empty() ? _loaded_datafiles_history : _loaded_datafiles_previous;
+
+  for (const auto& info : infos)
+  {
+    const QDomElement plugin_elem = info.plugin_config.documentElement();
+    const QDomElement blf_config_elem = plugin_elem.firstChildElement("blf_config");
+    if (blf_config_elem.isNull())
+    {
+      continue;
+    }
+
+    const QDomElement dbc_files_elem = blf_config_elem.firstChildElement("dbc_files");
+    for (QDomElement file_elem = dbc_files_elem.firstChildElement("file"); !file_elem.isNull();
+         file_elem = file_elem.nextSiblingElement("file"))
+    {
+      const QString basename = QFileInfo(file_elem.attribute("path")).fileName();
+      if (!basename.isEmpty() && !seen.contains(basename))
+      {
+        seen.insert(basename);
+        out.push_back(basename);
+      }
+    }
+  }
+  return out;
+}
+
+void MainWindow::refreshLoadedDataSummary()
+{
+  const QString file_text = CurveListPanel::FormatSummaryLine(loadedDataBasenames(), 36);
+  const QString dbc_text = CurveListPanel::FormatSummaryLine(loadedDbcBasenames(), 36);
+  _curvelist_widget->setLoadedDataSummary(file_text, dbc_text.isEmpty() ? "none" : dbc_text);
+  _curvelist_widget->collapseSignalTreesToTopLevel();
+}
+
 std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo& info,
                                                              bool merge_files)
 {
@@ -1495,6 +1552,7 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
   forEachWidget([](PlotWidget* plot) { plot->updateCurves(true); });
 
   updateDataAndReplot(true);
+  refreshLoadedDataSummary();
   ui->timeSlider->setRealValue(ui->timeSlider->getMinimum());
 
   return added_names;

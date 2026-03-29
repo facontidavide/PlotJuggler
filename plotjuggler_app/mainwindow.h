@@ -216,6 +216,9 @@ private:
   void forEachWidget(std::function<void(PlotWidget*)> op);
 
   void rearrangeGridLayout();
+  void refreshLoadedDataSummary();
+  QStringList loadedDataBasenames() const;
+  QStringList loadedDbcBasenames() const;
 
   QDomDocument xmlSaveState() const;
   bool xmlLoadState(QDomDocument state_document);

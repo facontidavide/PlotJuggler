@@ -93,6 +93,8 @@ public slots:
 
   void clearSelections();
 
+  void collapseSignalTreesToTopLevel();
+
   void on_stylesheetChanged(QString theme);
 
   void refreshValues();

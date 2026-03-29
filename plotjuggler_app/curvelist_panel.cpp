@@ -112,6 +112,12 @@ void CurveListPanel::setLoadedDataSummary(const QString& file_summary, const QSt
   ui->labelDbcSummary->setText("dbc: " + dbc_summary);
 }
 
+void CurveListPanel::collapseSignalTreesToTopLevel()
+{
+  _tree_view->collapseAll();
+  _custom_view->collapseAll();
+}
+
 void CurveListPanel::clear()
 {
   _custom_view->clear();
