@@ -2115,6 +2115,7 @@ bool MainWindow::loadLayoutFromFile(QString filename)
 
   bool had_layout_datafiles = false;
   bool loaded_any_file = false;
+  std::vector<FileLoadInfo> requested_layout_infos;
   QDomElement datafile_elem = previously_loaded_datafile.firstChildElement("fileInfo");
   if (!datafile_elem.isNull())
   {
@@ -2137,6 +2138,7 @@ bool MainWindow::loadLayoutFromFile(QString filename)
 
     auto plugin_elem = datafile_elem.firstChildElement("plugin");
     info.plugin_config.appendChild(info.plugin_config.importNode(plugin_elem, true));
+    requested_layout_infos.push_back(info);
 
     if (!loadDataFromFile(info, false).empty())
     {
@@ -2154,6 +2156,19 @@ bool MainWindow::loadLayoutFromFile(QString filename)
   }
   else
   {
+    for (const auto& requested_info : requested_layout_infos)
+    {
+      const auto duplicate = std::find_if(_loaded_datafiles_previous.begin(),
+                                          _loaded_datafiles_previous.end(),
+                                          [&](const FileLoadInfo& current_info) {
+                                            return current_info.filename == requested_info.filename &&
+                                                   current_info.prefix == requested_info.prefix;
+                                          });
+      if (duplicate == _loaded_datafiles_previous.end())
+      {
+        _loaded_datafiles_previous.push_back(requested_info);
+      }
+    }
     refreshLoadedDataSummary();
   }
   ui->buttonReloadData->setEnabled(!_loaded_datafiles_previous.empty());
