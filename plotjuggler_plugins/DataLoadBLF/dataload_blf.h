@@ -4,6 +4,7 @@
 #include <QtPlugin>
 
 #include "PlotJuggler/dataloader_base.h"
+#include "blf_reader.h"
 #include "blf_config.h"
 
 namespace PJ::BLF
@@ -30,8 +31,14 @@ public:
     return "DataLoad BLF";
   }
 
+  const BlfLoadMetadata& lastLoadMetadata() const
+  {
+    return last_metadata_;
+  }
+
 private:
   BlfPluginConfig config_;
+  BlfLoadMetadata last_metadata_;
 };
 
 }  // namespace PJ::BLF

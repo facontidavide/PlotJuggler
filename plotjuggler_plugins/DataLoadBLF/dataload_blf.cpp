@@ -50,6 +50,8 @@ bool DataLoadBLF::readDataFromFile(PJ::FileLoadInfo* fileload_info, PJ::PlotData
     return false;
   }
 
+  last_metadata_ = {};
+
   BlfPluginConfig runtime_config = config_;
   if (fileload_info->plugin_config.hasChildNodes())
   {
@@ -70,6 +72,7 @@ bool DataLoadBLF::readDataFromFile(PJ::FileLoadInfo* fileload_info, PJ::PlotData
   }
   runtime_config = dialog.GetConfig();
   config_ = runtime_config;
+  last_metadata_.dbc_files = runtime_config.dbc_files;
 
   std::vector<std::string> decoder_errors;
   DbcManager dbc_manager([&decoder_errors](const std::string& dbc_file) {
@@ -153,7 +156,8 @@ bool DataLoadBLF::readDataFromFile(PJ::FileLoadInfo* fileload_info, PJ::PlotData
                           ++frames_count;
                           pipeline.ProcessFrame(frame);
                         },
-                        read_error);
+                        read_error,
+                        &last_metadata_);
   if (!read_ok)
   {
     QMessageBox::warning(nullptr, tr("BLF Read Failed"),

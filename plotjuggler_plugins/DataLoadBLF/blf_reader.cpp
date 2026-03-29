@@ -1,6 +1,7 @@
 #include "blf_reader.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <exception>
 #include <memory>
@@ -185,11 +186,38 @@ NormalizedCanFrame ToFrame(const Vector::BLF::CanFdMessage& msg)
 
 }  // namespace
 
+bool IsPlausibleUnixEpochSeconds(double seconds)
+{
+  constexpr double kMinUnixSeconds = 946684800.0;
+  constexpr double kMaxUnixSeconds = 4102444800.0;
+  return std::isfinite(seconds) && seconds >= kMinUnixSeconds && seconds <= kMaxUnixSeconds;
+}
+
+qint64 UnixEpochSecondsToMsec(double seconds, bool* ok)
+{
+  const bool valid = IsPlausibleUnixEpochSeconds(seconds);
+  if (ok)
+  {
+    *ok = valid;
+  }
+  if (!valid)
+  {
+    return 0;
+  }
+  return static_cast<qint64>(seconds * 1000.0);
+}
+
 bool BlfReader::ReadFrames(const QString& path,
                            const std::function<void(const NormalizedCanFrame&)>& on_frame,
-                           QString& error) const
+                           QString& error,
+                           BlfLoadMetadata* metadata) const
 {
   error.clear();
+  if (metadata)
+  {
+    metadata->has_valid_absolute_time = false;
+    metadata->first_absolute_time_msec = 0;
+  }
 
   if (path.trimmed().isEmpty())
   {
@@ -218,18 +246,40 @@ bool BlfReader::ReadFrames(const QString& path,
 
       if (const auto* msg = dynamic_cast<const Vector::BLF::CanMessage2*>(object.get()))
       {
+        const auto frame = ToFrame(*msg);
+        if (metadata && !metadata->has_valid_absolute_time)
+        {
+          bool ok = false;
+          const qint64 absolute_time_msec = UnixEpochSecondsToMsec(frame.timestamp, &ok);
+          if (ok)
+          {
+            metadata->first_absolute_time_msec = absolute_time_msec;
+            metadata->has_valid_absolute_time = true;
+          }
+        }
         if (on_frame)
         {
-          on_frame(ToFrame(*msg));
+          on_frame(frame);
         }
         continue;
       }
 
       if (const auto* msg = dynamic_cast<const Vector::BLF::CanFdMessage64*>(object.get()))
       {
+        const auto frame = ToFrame(*msg);
+        if (metadata && !metadata->has_valid_absolute_time)
+        {
+          bool ok = false;
+          const qint64 absolute_time_msec = UnixEpochSecondsToMsec(frame.timestamp, &ok);
+          if (ok)
+          {
+            metadata->first_absolute_time_msec = absolute_time_msec;
+            metadata->has_valid_absolute_time = true;
+          }
+        }
         if (on_frame)
         {
-          on_frame(ToFrame(*msg));
+          on_frame(frame);
         }
         continue;
       }
@@ -237,9 +287,20 @@ bool BlfReader::ReadFrames(const QString& path,
 #if PJ_CAN_HAS_CANFD_MESSAGE
       if (const auto* msg = dynamic_cast<const Vector::BLF::CanFdMessage*>(object.get()))
       {
+        const auto frame = ToFrame(*msg);
+        if (metadata && !metadata->has_valid_absolute_time)
+        {
+          bool ok = false;
+          const qint64 absolute_time_msec = UnixEpochSecondsToMsec(frame.timestamp, &ok);
+          if (ok)
+          {
+            metadata->first_absolute_time_msec = absolute_time_msec;
+            metadata->has_valid_absolute_time = true;
+          }
+        }
         if (on_frame)
         {
-          on_frame(ToFrame(*msg));
+          on_frame(frame);
         }
         continue;
       }
@@ -247,9 +308,20 @@ bool BlfReader::ReadFrames(const QString& path,
 
       if (const auto* msg = dynamic_cast<const Vector::BLF::CanMessage*>(object.get()))
       {
+        const auto frame = ToFrame(*msg);
+        if (metadata && !metadata->has_valid_absolute_time)
+        {
+          bool ok = false;
+          const qint64 absolute_time_msec = UnixEpochSecondsToMsec(frame.timestamp, &ok);
+          if (ok)
+          {
+            metadata->first_absolute_time_msec = absolute_time_msec;
+            metadata->has_valid_absolute_time = true;
+          }
+        }
         if (on_frame)
         {
-          on_frame(ToFrame(*msg));
+          on_frame(frame);
         }
       }
     }
@@ -264,6 +336,7 @@ bool BlfReader::ReadFrames(const QString& path,
   }
 #else
   (void)on_frame;
+  (void)metadata;
   error = "vector_blf support is not available in this build";
   return false;
 #endif
