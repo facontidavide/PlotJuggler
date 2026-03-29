@@ -37,14 +37,6 @@ void PlotMagnifier::setAxisLimits(int axis, double lower, double upper)
 
 void PlotMagnifier::rescale(double factor, AxisMode axis)
 {
-  if (_lock_y_mouse_zoom)
-  {
-    if (axis == Y_AXIS || axis == BOTH_AXES)
-    {
-      axis = X_AXIS;
-    }
-  }
-
   factor = qAbs(1.0 / factor);
 
   QwtPlot* plt = plot();
@@ -159,7 +151,26 @@ QPointF PlotMagnifier::invTransform(QPoint pos)
 void PlotMagnifier::widgetWheelEvent(QWheelEvent* event)
 {
   _mouse_position = invTransform(event->pos());
-  QwtPlotMagnifier::widgetWheelEvent(event);
+  if (!_lock_y_mouse_zoom)
+  {
+    QwtPlotMagnifier::widgetWheelEvent(event);
+    return;
+  }
+
+  if (event->modifiers() != wheelModifiers() || wheelFactor() == 0.0)
+  {
+    return;
+  }
+
+  const QPoint delta = event->angleDelta();
+  const int wheel_delta =
+      (qAbs(delta.x()) > qAbs(delta.y())) ? delta.x() : delta.y();
+  double factor = std::pow(wheelFactor(), qAbs(wheel_delta / 120.0));
+  if (wheel_delta > 0)
+  {
+    factor = 1.0 / factor;
+  }
+  rescale(factor, X_AXIS);
 }
 
 void PlotMagnifier::widgetMousePressEvent(QMouseEvent* event)
