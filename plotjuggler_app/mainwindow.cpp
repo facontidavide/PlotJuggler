@@ -2043,6 +2043,7 @@ std::tuple<double, double, int> MainWindow::calculateVisibleRangeX()
 bool MainWindow::loadLayoutFromFile(QString filename)
 {
   QSettings settings;
+  const auto previous_loaded_infos = _loaded_datafiles_previous;
 
   QFile file(filename);
   if (!file.open(QFile::ReadOnly | QFile::Text))
@@ -2079,9 +2080,13 @@ bool MainWindow::loadLayoutFromFile(QString filename)
   QDomElement previously_loaded_datafile = root.firstChildElement("previouslyLoaded_"
                                                                   "Datafiles");
 
+  _loaded_datafiles_previous.clear();
+  bool had_layout_datafiles = false;
+  bool loaded_any_file = false;
   QDomElement datafile_elem = previously_loaded_datafile.firstChildElement("fileInfo");
   while (!datafile_elem.isNull())
   {
+    had_layout_datafiles = true;
     QString datafile_path = datafile_elem.attribute("filename");
     if (QDir(datafile_path).isRelative())
     {
@@ -2097,13 +2102,21 @@ bool MainWindow::loadLayoutFromFile(QString filename)
     auto plugin_elem = datafile_elem.firstChildElement("plugin");
     info.plugin_config.appendChild(info.plugin_config.importNode(plugin_elem, true));
 
-    loadDataFromFile(info, false);
+    if (!loadDataFromFile(info, false).empty())
+    {
+      loaded_any_file = true;
+    }
     datafile_elem = datafile_elem.nextSiblingElement("fileInfo");
   }
-  if (!_loaded_datafiles_previous.empty())
+  if (had_layout_datafiles && !loaded_any_file)
+  {
+    _loaded_datafiles_previous = previous_loaded_infos;
+  }
+  else
   {
     refreshLoadedDataSummary();
   }
+  ui->buttonReloadData->setEnabled(!_loaded_datafiles_previous.empty());
 
   QDomElement previous_streamer = root.firstChildElement("previouslyLoaded_Streamer");
   if (!previous_streamer.isNull())
@@ -3130,10 +3143,7 @@ void MainWindow::on_buttonLoadDatafile_clicked()
   directory_path = QFileInfo(fileNames[0]).absolutePath();
   settings.setValue("MainWindow.lastDatafileDirectory", directory_path);
 
-  if (loadDataFromFiles(fileNames))
-  {
-    updateRecentDataMenu(fileNames);
-  }
+  loadDataFromFiles(fileNames);
 }
 
 void MainWindow::on_buttonLoadLayout_clicked()
@@ -3621,21 +3631,25 @@ void MainWindow::on_buttonReloadData_clicked()
 {
   const auto prev_infos = std::move(_loaded_datafiles_previous);
   _loaded_datafiles_previous.clear();
+  bool reloaded_any_file = false;
   for (const auto& info : prev_infos)
   {
-    loadDataFromFile(info, false);
+    if (!loadDataFromFile(info, false).empty())
+    {
+      reloaded_any_file = true;
+    }
   }
-  if (_loaded_datafiles_previous.empty())
+  if (!reloaded_any_file)
   {
     _loaded_datafiles_previous = prev_infos;
-  }
-  refreshLoadedDataSummary();
-  if (!_loaded_datafiles_previous.empty())
-  {
-    ui->buttonReloadData->setEnabled(true);
+    _curvelist_widget->setLoadedDataSummary(
+        CurveListPanel::FormatSummaryLine(loadedDataBasenames(), 36),
+        CurveListPanel::FormatSummaryLine(loadedDbcBasenames(), 36));
+    ui->buttonReloadData->setEnabled(!_loaded_datafiles_previous.empty());
     return;
   }
-  ui->buttonReloadData->setEnabled(false);
+  refreshLoadedDataSummary();
+  ui->buttonReloadData->setEnabled(!_loaded_datafiles_previous.empty());
 }
 
 void MainWindow::on_buttonCloseStatus_clicked()
