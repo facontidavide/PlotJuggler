@@ -1352,9 +1352,7 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
 QStringList MainWindow::loadedDataBasenames() const
 {
   QStringList out;
-  const auto& infos =
-      _loaded_datafiles_previous.empty() ? _loaded_datafiles_history : _loaded_datafiles_previous;
-  for (const auto& info : infos)
+  for (const auto& info : _loaded_datafiles_previous)
   {
     const QString basename = QFileInfo(info.filename).fileName();
     if (!basename.isEmpty())
@@ -1369,10 +1367,8 @@ QStringList MainWindow::loadedDbcBasenames() const
 {
   QStringList out;
   QSet<QString> seen;
-  const auto& infos =
-      _loaded_datafiles_previous.empty() ? _loaded_datafiles_history : _loaded_datafiles_previous;
 
-  for (const auto& info : infos)
+  for (const auto& info : _loaded_datafiles_previous)
   {
     const QDomElement plugin_elem = info.plugin_config.documentElement();
     const QDomElement blf_config_elem = plugin_elem.firstChildElement("blf_config");
@@ -1483,6 +1479,7 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
     {
       PlotDataMapRef mapped_data;
       FileLoadInfo new_info = info;
+      bool load_succeeded = false;
 
       if (info.plugin_config.hasChildNodes())
       {
@@ -1491,6 +1488,7 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
 
       if (dataloader->readDataFromFile(&new_info, mapped_data))
       {
+        load_succeeded = true;
         AddPrefixToPlotData(info.prefix.toStdString(), mapped_data.numeric);
         AddPrefixToPlotData(info.prefix.toStdString(), mapped_data.strings);
 
@@ -1519,6 +1517,11 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
         {
           _loaded_datafiles_history.push_back(new_info);
         }
+      }
+
+      if (!load_succeeded)
+      {
+        return {};
       }
     }
     catch (std::exception& ex)
