@@ -1360,7 +1360,7 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
     }
   }
 
-  ui->buttonReloadData->setEnabled(!loaded_filenames.empty());
+  ui->buttonReloadData->setEnabled(!_loaded_datafiles_previous.empty());
 
   if (loaded_filenames.size() > 0)
   {
@@ -3625,11 +3625,17 @@ void MainWindow::on_buttonReloadData_clicked()
   {
     loadDataFromFile(info, false);
   }
+  if (_loaded_datafiles_previous.empty())
+  {
+    _loaded_datafiles_previous = prev_infos;
+  }
+  refreshLoadedDataSummary();
   if (!_loaded_datafiles_previous.empty())
   {
-    refreshLoadedDataSummary();
+    ui->buttonReloadData->setEnabled(true);
+    return;
   }
-  ui->buttonReloadData->setEnabled(!_loaded_datafiles_previous.empty());
+  ui->buttonReloadData->setEnabled(false);
 }
 
 void MainWindow::on_buttonCloseStatus_clicked()
