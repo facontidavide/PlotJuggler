@@ -91,6 +91,7 @@ public slots:
   void onPlotTabAdded(PlotDocker* docker);
 
   void onPlotZoomChanged(PlotWidget* modified_plot, QRectF new_range);
+  void onPlotPanChanged(PlotWidget* modified_plot, QRectF new_range);
 
   void on_tabbedAreaDestroyed(QObject* object);
 

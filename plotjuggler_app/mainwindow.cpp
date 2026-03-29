@@ -850,6 +850,7 @@ void MainWindow::onPlotAdded(PlotWidget* plot)
   });
 
   connect(plot, &PlotWidget::rectChanged, this, &MainWindow::onPlotZoomChanged);
+  connect(plot, &PlotWidget::xAxisPanned, this, &MainWindow::onPlotPanChanged);
 
   plot->setTrackerPosition(_tracker_time);
   plot->on_changeTimeOffset(_time_offset.get());
@@ -897,6 +898,27 @@ void MainWindow::onPlotZoomChanged(PlotWidget* modified_plot, QRectF new_range)
         bound_act.setRight(new_range.right());
         plot->setZoomRectangle(bound_act, false);
         plot->on_zoomOutVertical_triggered(false);
+        plot->replot();
+      }
+    };
+    this->forEachWidget(visitor);
+  }
+
+  onUndoableChange();
+}
+
+void MainWindow::onPlotPanChanged(PlotWidget* modified_plot, QRectF new_range)
+{
+  if (ui->buttonLink->isChecked())
+  {
+    auto visitor = [=](PlotWidget* plot) {
+      if (plot != modified_plot && !plot->isEmpty() && !plot->isXYPlot() &&
+          plot->isZoomLinkEnabled())
+      {
+        QRectF bound_act = plot->currentBoundingRect();
+        bound_act.setLeft(new_range.left());
+        bound_act.setRight(new_range.right());
+        plot->setZoomRectangle(bound_act, false);
         plot->replot();
       }
     };

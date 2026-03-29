@@ -121,6 +121,7 @@ protected:
 signals:
   void swapWidgetsRequested(PlotWidget* source, PlotWidget* destination);
   void rectChanged(PlotWidget* self, QRectF rect);
+  void xAxisPanned(PlotWidget* self, QRectF rect);
   void undoableChange();
   void trackerMoved(QPointF pos);
   void curveListChanged();

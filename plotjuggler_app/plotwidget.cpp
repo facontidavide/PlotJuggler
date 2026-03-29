@@ -188,7 +188,11 @@ void PlotWidget::panXAxisByFraction(double direction_sign, bool emit_signal)
 
   rect.setLeft(left);
   rect.setRight(right);
-  setZoomRectangle(rect, emit_signal);
+  setZoomRectangle(rect, false);
+  if (emit_signal)
+  {
+    emit xAxisPanned(this, rect);
+  }
   replot();
 }
 
