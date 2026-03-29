@@ -1428,12 +1428,13 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
 
   DataLoaderPtr dataloader;
   std::unordered_set<std::string> added_names;
+  bool loader_selection_canceled = false;
 
   if (compatible_loaders.size() == 1)
   {
     dataloader = compatible_loaders.front()->second;
   }
-  else
+  else if (!compatible_loaders.empty())
   {
     static QString last_plugin_name_used;
 
@@ -1459,6 +1460,10 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
     {
       dataloader = dataLoaders().at(plugin_name);
       last_plugin_name_used = plugin_name;
+    }
+    else
+    {
+      loader_selection_canceled = true;
     }
   }
 
@@ -1535,10 +1540,15 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
   }
   else
   {
+    if (loader_selection_canceled)
+    {
+      return {};
+    }
     QMessageBox::warning(this, tr("Error"),
                          tr("Cannot read files with extension %1.\n No plugin can handle "
                             "that!\n")
                              .arg(info.filename));
+    return {};
   }
   _curvelist_widget->updateFilter();
 
