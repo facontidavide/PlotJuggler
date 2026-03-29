@@ -2080,10 +2080,13 @@ bool MainWindow::loadLayoutFromFile(QString filename)
   QDomElement previously_loaded_datafile = root.firstChildElement("previouslyLoaded_"
                                                                   "Datafiles");
 
-  _loaded_datafiles_previous.clear();
   bool had_layout_datafiles = false;
   bool loaded_any_file = false;
   QDomElement datafile_elem = previously_loaded_datafile.firstChildElement("fileInfo");
+  if (!datafile_elem.isNull())
+  {
+    _loaded_datafiles_previous.clear();
+  }
   while (!datafile_elem.isNull())
   {
     had_layout_datafiles = true;
@@ -2108,7 +2111,11 @@ bool MainWindow::loadLayoutFromFile(QString filename)
     }
     datafile_elem = datafile_elem.nextSiblingElement("fileInfo");
   }
-  if (had_layout_datafiles && !loaded_any_file)
+  if (!had_layout_datafiles)
+  {
+    _loaded_datafiles_previous = previous_loaded_infos;
+  }
+  else if (!loaded_any_file)
   {
     _loaded_datafiles_previous = previous_loaded_infos;
   }
@@ -3647,6 +3654,19 @@ void MainWindow::on_buttonReloadData_clicked()
         CurveListPanel::FormatSummaryLine(loadedDbcBasenames(), 36));
     ui->buttonReloadData->setEnabled(!_loaded_datafiles_previous.empty());
     return;
+  }
+  for (const auto& prev_info : prev_infos)
+  {
+    const auto duplicate = std::find_if(_loaded_datafiles_previous.begin(),
+                                        _loaded_datafiles_previous.end(),
+                                        [&](const FileLoadInfo& current_info) {
+                                          return current_info.filename == prev_info.filename &&
+                                                 current_info.prefix == prev_info.prefix;
+                                        });
+    if (duplicate == _loaded_datafiles_previous.end())
+    {
+      _loaded_datafiles_previous.push_back(prev_info);
+    }
   }
   refreshLoadedDataSummary();
   ui->buttonReloadData->setEnabled(!_loaded_datafiles_previous.empty());
