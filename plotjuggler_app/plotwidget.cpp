@@ -83,6 +83,7 @@ PlotWidget::PlotWidget(PlotDataMapRef& datamap, QWidget* parent)
   , _context_menu_enabled(true)
 {
   connect(this, &PlotWidget::curveListChanged, this, [this]() { this->updateMaximumZoomArea(); });
+  setFocusPolicy(Qt::StrongFocus);
 
   qwtPlot()->setAcceptDrops(true);
 
@@ -133,6 +134,9 @@ PlotWidget::~PlotWidget()
   delete _action_zoomOutMaximum;
   delete _action_zoomOutHorizontally;
   delete _action_zoomOutVertically;
+  delete _action_panLeft;
+  delete _action_panRight;
+  delete _action_lockY_mouse_zoom;
   delete _action_saveToFile;
   delete _action_copy;
   delete _action_paste;
@@ -151,6 +155,41 @@ void PlotWidget::setLockYMouseZoom(bool locked)
   {
     zoomer()->setLockYMouseZoom(locked);
   }
+}
+
+void PlotWidget::panXAxisByFraction(double direction_sign, bool emit_signal)
+{
+  if (isXYPlot())
+  {
+    return;
+  }
+
+  QRectF rect = currentBoundingRect();
+  const double width = rect.width();
+  if (width <= 0.0)
+  {
+    return;
+  }
+
+  const QRectF max_rect = maxZoomRect();
+  double left = rect.left() + (width * direction_sign);
+  double right = rect.right() + (width * direction_sign);
+
+  if (left < max_rect.left())
+  {
+    right += (max_rect.left() - left);
+    left = max_rect.left();
+  }
+  if (right > max_rect.right())
+  {
+    left -= (right - max_rect.right());
+    right = max_rect.right();
+  }
+
+  rect.setLeft(left);
+  rect.setRight(right);
+  setZoomRectangle(rect, emit_signal);
+  replot();
 }
 
 void PlotWidget::setContextMenuEnabled(bool enabled)
@@ -191,6 +230,8 @@ void PlotWidget::buildActions()
   connect(_action_removeAllCurves, &QAction::triggered, this, &PlotWidget::undoableChange);
 
   _action_zoomOutMaximum = new QAction("&Zoom Out", this);
+  _action_zoomOutMaximum->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_W));
+  _action_zoomOutMaximum->setShortcutContext(Qt::WidgetWithChildrenShortcut);
   connect(_action_zoomOutMaximum, &QAction::triggered, this, [this]() {
     zoomOut(true);
     replot();
@@ -205,11 +246,29 @@ void PlotWidget::buildActions()
   });
 
   _action_zoomOutVertically = new QAction("&Zoom Out Vertically", this);
+  _action_zoomOutVertically->setShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_W));
+  _action_zoomOutVertically->setShortcutContext(Qt::WidgetWithChildrenShortcut);
   connect(_action_zoomOutVertically, &QAction::triggered, this, [this]() {
     on_zoomOutVertical_triggered(true);
     replot();
     emit undoableChange();
   });
+
+  _action_panLeft = new QAction("Pan Left", this);
+  _action_panLeft->setShortcut(QKeySequence(Qt::Key_Left));
+  _action_panLeft->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+  connect(_action_panLeft, &QAction::triggered, this,
+          [this]() { panXAxisByFraction(-0.1, true); });
+
+  _action_panRight = new QAction("Pan Right", this);
+  _action_panRight->setShortcut(QKeySequence(Qt::Key_Right));
+  _action_panRight->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+  connect(_action_panRight, &QAction::triggered, this,
+          [this]() { panXAxisByFraction(0.1, true); });
+
+  _action_lockY_mouse_zoom = new QAction("Lock Y For Mouse Zoom", this);
+  _action_lockY_mouse_zoom->setCheckable(true);
+  connect(_action_lockY_mouse_zoom, &QAction::toggled, this, &PlotWidget::setLockYMouseZoom);
 
   QFont font;
   font.setPointSize(10);
@@ -236,6 +295,11 @@ void PlotWidget::buildActions()
 
   _action_data_statistics = new QAction("&Show data statistics", this);
   connect(_action_data_statistics, &QAction::triggered, this, &PlotWidget::onShowDataStatistics);
+
+  addAction(_action_zoomOutMaximum);
+  addAction(_action_zoomOutVertically);
+  addAction(_action_panLeft);
+  addAction(_action_panRight);
 }
 
 void PlotWidget::canvasContextMenuTriggered(const QPoint& pos)
@@ -272,6 +336,7 @@ void PlotWidget::canvasContextMenuTriggered(const QPoint& pos)
   menu.addAction(_action_zoomOutMaximum);
   menu.addAction(_action_zoomOutHorizontally);
   menu.addAction(_action_zoomOutVertically);
+  menu.addAction(_action_lockY_mouse_zoom);
   menu.addSeparator();
   menu.addAction(_action_removeAllCurves);
   menu.addSeparator();

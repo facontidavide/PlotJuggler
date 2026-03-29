@@ -19,6 +19,9 @@ DockToolbar::DockToolbar(ads::CDockWidget* parent)
   ui->buttonFullscreen->setVisible(false);
   ui->buttonSplitHorizontal->setVisible(false);
   ui->buttonSplitVertical->setVisible(false);
+  ui->buttonPanLeft->setVisible(false);
+  ui->buttonPanRight->setVisible(false);
+  ui->buttonLockYMouseZoom->setVisible(false);
   ui->buttonBackground->setVisible(false);
 
   setMouseTracking(true);
@@ -51,6 +54,9 @@ void DockToolbar::toggleFullscreen()
   {
     ui->buttonSplitHorizontal->setVisible(false);
     ui->buttonSplitVertical->setVisible(false);
+    ui->buttonPanLeft->setVisible(false);
+    ui->buttonPanRight->setVisible(false);
+    ui->buttonLockYMouseZoom->setVisible(false);
   }
 }
 
@@ -70,6 +76,9 @@ void DockToolbar::mouseMoveEvent(QMouseEvent* ev)
   ui->buttonBackground->setVisible(true);
   ui->buttonSplitHorizontal->setVisible(!_fullscreen_mode);
   ui->buttonSplitVertical->setVisible(!_fullscreen_mode);
+  ui->buttonPanLeft->setVisible(true);
+  ui->buttonPanRight->setVisible(true);
+  ui->buttonLockYMouseZoom->setVisible(true);
   _parent->dockAreaWidget()->titleBar()->mouseMoveEvent(ev);
 
   ev->accept();
@@ -82,6 +91,9 @@ void DockToolbar::enterEvent(QEvent* ev)
   ui->buttonBackground->setVisible(true);
   ui->buttonSplitHorizontal->setVisible(!_fullscreen_mode);
   ui->buttonSplitVertical->setVisible(!_fullscreen_mode);
+  ui->buttonPanLeft->setVisible(true);
+  ui->buttonPanRight->setVisible(true);
+  ui->buttonLockYMouseZoom->setVisible(true);
 
   ev->accept();
   QWidget::enterEvent(ev);
@@ -115,6 +127,8 @@ void DockToolbar::on_stylesheetChanged(QString theme)
   setButtonIcon(ui->buttonClose, LoadSvg(":/resources/svg/close-button.svg", theme));
   setButtonIcon(ui->buttonSplitHorizontal, LoadSvg(":/resources/svg/add_column.svg", theme));
   setButtonIcon(ui->buttonSplitVertical, LoadSvg(":/resources/svg/add_row.svg", theme));
+  setButtonIcon(ui->buttonPanLeft, LoadSvg(":/resources/svg/left-arrow.svg", theme));
+  setButtonIcon(ui->buttonPanRight, LoadSvg(":/resources/svg/right-arrow.svg", theme));
 }
 
 void DockToolbar::dragEnterEvent(QDragEnterEvent* event)
@@ -158,6 +172,9 @@ void DockToolbar::dragEnterEvent(QDragEnterEvent* event)
     ui->buttonBackground->setVisible(true);
     ui->buttonSplitHorizontal->setVisible(!_fullscreen_mode);
     ui->buttonSplitVertical->setVisible(!_fullscreen_mode);
+    ui->buttonPanLeft->setVisible(true);
+    ui->buttonPanRight->setVisible(true);
+    ui->buttonLockYMouseZoom->setVisible(true);
   }
 }
 
@@ -186,6 +203,9 @@ void DockToolbar::leaveEvent(QEvent* ev)
   ui->buttonFullscreen->setVisible(_fullscreen_mode);
   ui->buttonSplitHorizontal->setVisible(false);
   ui->buttonSplitVertical->setVisible(false);
+  ui->buttonPanLeft->setVisible(false);
+  ui->buttonPanRight->setVisible(false);
+  ui->buttonLockYMouseZoom->setVisible(false);
   ui->buttonBackground->setVisible(ui->buttonBackground->isChecked());
   QWidget::leaveEvent(ev);
 }

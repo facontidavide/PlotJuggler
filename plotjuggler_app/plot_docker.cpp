@@ -8,6 +8,7 @@
 #include "PlotJuggler/save_plot.h"
 #include "plotwidget_editor.h"
 #include "Qads/DockSplitter.h"
+#include <QAction>
 #include <QPushButton>
 #include <QBoxLayout>
 #include <QMouseEvent>
@@ -339,6 +340,16 @@ DockWidget::DockWidget(PlotDataMapRef& datamap, QWidget* parent)
           &DockWidget::splitHorizontal);
 
   connect(_toolbar->buttonSplitVertical(), &QPushButton::clicked, this, &DockWidget::splitVertical);
+
+  connect(_toolbar->buttonPanLeft(), &QPushButton::clicked, _plot_widget->actionPanLeft(),
+          &QAction::trigger);
+  connect(_toolbar->buttonPanRight(), &QPushButton::clicked, _plot_widget->actionPanRight(),
+          &QAction::trigger);
+  connect(_toolbar->buttonLockYMouseZoom(), &QPushButton::toggled,
+          _plot_widget->actionLockYMouseZoom(), &QAction::setChecked);
+  connect(_plot_widget->actionLockYMouseZoom(), &QAction::toggled,
+          _toolbar->buttonLockYMouseZoom(), &QPushButton::setChecked);
+  _toolbar->buttonLockYMouseZoom()->setChecked(_plot_widget->isYMouseZoomLocked());
 
   connect(_toolbar, &DockToolbar::backgroundColorRequest, _plot_widget,
           &PlotWidget::onBackgroundColorRequest);

@@ -86,10 +86,26 @@ public:
   void changeDots(bool force_dots);
 
   void setLockYMouseZoom(bool locked);
+  void panXAxisByFraction(double direction_sign, bool emit_signal = true);
 
   bool isYMouseZoomLocked() const
   {
     return _lock_y_mouse_zoom;
+  }
+
+  QAction* actionPanLeft() const
+  {
+    return _action_panLeft;
+  }
+
+  QAction* actionPanRight() const
+  {
+    return _action_panRight;
+  }
+
+  QAction* actionLockYMouseZoom() const
+  {
+    return _action_lockY_mouse_zoom;
   }
 
 protected:
@@ -191,6 +207,9 @@ private:
   QAction* _action_zoomOutMaximum;
   QAction* _action_zoomOutHorizontally;
   QAction* _action_zoomOutVertically;
+  QAction* _action_panLeft;
+  QAction* _action_panRight;
+  QAction* _action_lockY_mouse_zoom;
   QAction* _action_saveToFile;
   QAction* _action_copy;
   QAction* _action_paste;

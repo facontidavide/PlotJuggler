@@ -44,6 +44,18 @@ public:
   {
     return ui->buttonSplitVertical;
   }
+  QPushButton* buttonPanLeft()
+  {
+    return ui->buttonPanLeft;
+  }
+  QPushButton* buttonPanRight()
+  {
+    return ui->buttonPanRight;
+  }
+  QPushButton* buttonLockYMouseZoom()
+  {
+    return ui->buttonLockYMouseZoom;
+  }
 
   void toggleFullscreen();
 
