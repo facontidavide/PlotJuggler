@@ -57,6 +57,9 @@ function(find_or_download_vector_blf)
   # When consumed as a subproject, that can point to the parent project and
   # break header lookup on Windows. Force the correct source/build include roots.
   if(TARGET Vector_BLF)
+    if(TARGET ZLIB::ZLIB)
+      target_link_libraries(Vector_BLF PRIVATE ZLIB::ZLIB)
+    endif()
     if(DEFINED vector_blf_SOURCE_DIR)
       target_include_directories(Vector_BLF PRIVATE "${vector_blf_SOURCE_DIR}/src")
       target_include_directories(Vector_BLF PUBLIC "$<BUILD_INTERFACE:${vector_blf_SOURCE_DIR}/src>")
