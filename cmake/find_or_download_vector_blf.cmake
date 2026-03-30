@@ -1,4 +1,9 @@
 function(find_or_download_vector_blf)
+  if(DEFINED PJ_ENABLE_VECTOR_BLF AND NOT PJ_ENABLE_VECTOR_BLF)
+    message(STATUS "vector_blf support disabled (PJ_ENABLE_VECTOR_BLF=OFF)")
+    set(VECTOR_BLF_FOUND FALSE PARENT_SCOPE)
+    return()
+  endif()
 
   if(TARGET vector_blf::vector_blf)
     message(STATUS "vector_blf target already defined")
