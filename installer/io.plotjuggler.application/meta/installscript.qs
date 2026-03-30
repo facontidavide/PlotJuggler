@@ -30,7 +30,6 @@ var targetDirectoryPage = null;
 
 function Component()
 {
-    installer.gainAdminRights();
     component.loaded.connect(this, this.installerLoaded);
 }
 
