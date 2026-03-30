@@ -24,8 +24,6 @@ jobs:
         include:
           - ubuntu-distro: ubuntu-20.04
             arch: x86_64
-          - ubuntu-distro: ubuntu-22.04-arm
-            arch: aarch64
 
     steps:
       - name: Sync repository
