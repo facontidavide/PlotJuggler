@@ -1,6 +1,4 @@
 function(find_or_download_vector_blf)
-  find_package(ZLIB REQUIRED)
-
   if(DEFINED PJ_ENABLE_VECTOR_BLF AND NOT PJ_ENABLE_VECTOR_BLF)
     message(STATUS "vector_blf support disabled (PJ_ENABLE_VECTOR_BLF=OFF)")
     set(VECTOR_BLF_FOUND FALSE PARENT_SCOPE)
@@ -59,8 +57,12 @@ function(find_or_download_vector_blf)
   # When consumed as a subproject, that can point to the parent project and
   # break header lookup on Windows. Force the correct source/build include roots.
   if(TARGET Vector_BLF)
+    find_path(PJ_ZLIB_HEADER_DIR NAMES zlib.h)
     if(TARGET ZLIB::ZLIB)
       target_link_libraries(Vector_BLF PRIVATE ZLIB::ZLIB)
+    endif()
+    if(PJ_ZLIB_HEADER_DIR)
+      target_include_directories(Vector_BLF PRIVATE "${PJ_ZLIB_HEADER_DIR}")
     endif()
     if(DEFINED vector_blf_SOURCE_DIR)
       target_include_directories(Vector_BLF PRIVATE "${vector_blf_SOURCE_DIR}/src")

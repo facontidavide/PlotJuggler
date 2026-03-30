@@ -53,7 +53,14 @@ jobs:
       - name: Build Plotjuggler
         shell: pwsh
         run: |
-          cmake --preset conan-default -S . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="windows" -DPJ_PLUGINS_DIRECTORY="bin" -DBUILD_TESTING=OFF -DPJ_ENABLE_VECTOR_BLF=ON -DPJ_ENABLE_DBCPPP=ON
+          cmake --preset conan-default -S . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="windows" -DPJ_PLUGINS_DIRECTORY="bin" -DBUILD_TESTING=OFF -DPJ_ENABLE_VECTOR_BLF=ON -DPJ_ENABLE_DBCPPP=ON 2>&1 | Tee-Object -FilePath build\configure.log
+          if ($LASTEXITCODE -ne 0) {
+              $tail = Get-Content build\configure.log -Tail 120
+              $message = ($tail -join "`n")
+              $message = $message -replace '%','%25' -replace "`r",'%0D' -replace "`n",'%0A'
+              Write-Host "::error title=CMake configure failed::$message"
+              exit $LASTEXITCODE
+          }
           cmake --build build --config Release 2>&1 | Tee-Object -FilePath build\build.log
           if ($LASTEXITCODE -ne 0) {
               $error_lines = Select-String -Path build\build.log `
