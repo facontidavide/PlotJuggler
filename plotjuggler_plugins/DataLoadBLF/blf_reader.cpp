@@ -6,7 +6,6 @@
 #include <exception>
 #include <memory>
 #include <limits>
-#include <type_traits>
 
 #include <QDebug>
 
@@ -174,18 +173,13 @@ NormalizedCanFrame ToFrame(const Vector::BLF::CanFdMessage& msg)
   frame.extended = IsExtendedId(msg.id);
   frame.id = StripCanId(msg.id, frame.extended);
   frame.dlc = msg.dlc;
-  using CanFdFlagsT = decltype(msg.canFdFlags);
-  using CanFdFlagsUnderlying = std::underlying_type_t<CanFdFlagsT>;
-  const auto canfd_flags = static_cast<CanFdFlagsUnderlying>(msg.canFdFlags);
-  const auto edl_flag =
-      static_cast<CanFdFlagsUnderlying>(Vector::BLF::CanFdMessage::CanFdFlags::EDL);
-  const auto brs_flag =
-      static_cast<CanFdFlagsUnderlying>(Vector::BLF::CanFdMessage::CanFdFlags::BRS);
-  const auto esi_flag =
-      static_cast<CanFdFlagsUnderlying>(Vector::BLF::CanFdMessage::CanFdFlags::ESI);
-  frame.is_fd = (canfd_flags & edl_flag) != 0;
-  frame.is_brs = (canfd_flags & brs_flag) != 0;
-  frame.is_esi = (canfd_flags & esi_flag) != 0;
+  const uint32_t canfd_flags = static_cast<uint32_t>(msg.canFdFlags);
+  const uint32_t edl_flag = static_cast<uint32_t>(Vector::BLF::CanFdMessage::CanFdFlags::EDL);
+  const uint32_t brs_flag = static_cast<uint32_t>(Vector::BLF::CanFdMessage::CanFdFlags::BRS);
+  const uint32_t esi_flag = static_cast<uint32_t>(Vector::BLF::CanFdMessage::CanFdFlags::ESI);
+  frame.is_fd = (canfd_flags & edl_flag) != 0U;
+  frame.is_brs = (canfd_flags & brs_flag) != 0U;
+  frame.is_esi = (canfd_flags & esi_flag) != 0U;
 
   const uint8_t payload_size = msg.validDataBytes ? msg.validDataBytes : DlcToFdSize(msg.dlc);
   frame.size = std::min<uint8_t>(payload_size, static_cast<uint8_t>(frame.data.size()));
