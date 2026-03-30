@@ -7,6 +7,24 @@
 [![ROS2](https://github.com/facontidavide/PlotJuggler/workflows/ros2/badge.svg)](https://github.com/facontidavide/PlotJuggler/actions?query=workflow%3Aros2)
 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=I%20use%20PlotJuggler%20and%20it%20is%20amazing%0D%0A&url=https://github.com/facontidavide/PlotJuggler&via=facontidavide&hashtags=dataviz,plotjuggler,GoROS,PX4)
 
+## Fork Modifications (huanghaiyangyy)
+
+This fork adds local features and workflow updates focused on CAN/BLF analysis and local delivery.
+
+- Added built-in `DataLoadBLF` capabilities for CAN/CAN FD loading with DBC decode support and raw-byte fallback for undecoded messages.
+- Added BLF-oriented UI/interaction updates, including data header summary, signal tree behavior tuning, timestamp display fixes, and plot interaction enhancements.
+- Added built-in Lua snippets for single-signal filtering:
+  - `01_moving_average_single_signal`
+  - `02_first_order_low_pass_filter`
+- Added snippet migration logic to preserve older local snippet names while moving to the new prefixed names.
+- Added local dev/dist workspace migration and packaging flow for Ubuntu 20.04 delivery.
+
+Design and implementation references are tracked in:
+
+- `docs/superpowers/specs/2026-03-28-canfd-blf-dataloader-design.md`
+- `docs/superpowers/specs/2026-03-29-plotjuggler-blf-ui-interactions-design.md`
+- `docs/superpowers/specs/2026-03-30-plotjuggler-dev-migration-design.md`
+
 ## Gold Sponsor:
 [![Greenzie](docs/sponsor_greenzie.png)](https://www.greenzie.com/)
 [![Intermodalics](docs/sponsor_intermodalics.png)](https://www.intermodalics.ai/)
