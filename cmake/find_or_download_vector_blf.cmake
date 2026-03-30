@@ -46,7 +46,9 @@ function(find_or_download_vector_blf)
   message(STATUS "vector_blf not found, downloading")
   cpmaddpackage(
     NAME vector_blf
-    URL https://github.com/Technica-Engineering/vector_blf/archive/refs/tags/v2.4.2.zip
+    GIT_REPOSITORY https://github.com/Technica-Engineering/vector_blf.git
+    GIT_TAG v2.4.2
+    GIT_SHALLOW TRUE
     OPTIONS "OPTION_RUN_DOXYGEN OFF"
             "OPTION_BUILD_EXAMPLES OFF"
             "OPTION_BUILD_TESTS OFF")

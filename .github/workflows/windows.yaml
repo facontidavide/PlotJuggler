@@ -53,7 +53,7 @@ jobs:
       - name: Build Plotjuggler
         shell: pwsh
         run: |
-          cmake --preset conan-default -S . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="windows" -DPJ_PLUGINS_DIRECTORY="bin" -DBUILD_TESTING=OFF -DPJ_ENABLE_VECTOR_BLF=OFF -DPJ_ENABLE_DBCPPP=OFF
+          cmake --preset conan-default -S . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="windows" -DPJ_PLUGINS_DIRECTORY="bin" -DBUILD_TESTING=OFF -DPJ_ENABLE_VECTOR_BLF=ON -DPJ_ENABLE_DBCPPP=ON
           cmake --build build --config Release 2>&1 | Tee-Object -FilePath build\build.log
           if ($LASTEXITCODE -ne 0) {
               $error_lines = Select-String -Path build\build.log `
