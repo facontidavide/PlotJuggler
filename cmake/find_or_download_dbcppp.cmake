@@ -1,4 +1,9 @@
 function(find_or_download_dbcppp)
+  if(DEFINED PJ_ENABLE_DBCPPP AND NOT PJ_ENABLE_DBCPPP)
+    message(STATUS "dbcppp support disabled (PJ_ENABLE_DBCPPP=OFF)")
+    set(DBCPPP_FOUND FALSE PARENT_SCOPE)
+    return()
+  endif()
 
   if(TARGET dbcppp::dbcppp)
     message(STATUS "dbcppp target already defined")

@@ -191,8 +191,9 @@ if(BUILD_TESTING)
     gtest_discover_tests(test_plugin_manager_utils)
 
     add_executable(test_default_snippets tests/test_default_snippets.cpp)
+    file(TO_CMAKE_PATH "${PROJECT_SOURCE_DIR}" PJ_PROJECT_SOURCE_DIR_CMAKE)
     target_compile_definitions(test_default_snippets
-                               PRIVATE PJ_PROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+                               PRIVATE PJ_PROJECT_SOURCE_DIR="${PJ_PROJECT_SOURCE_DIR_CMAKE}")
     target_link_libraries(
       test_default_snippets
       PRIVATE

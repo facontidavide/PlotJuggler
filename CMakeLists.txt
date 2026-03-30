@@ -22,6 +22,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
 option(ENABLE_ASAN "Enable Address Sanitizer" OFF)
 option(BASE_AS_SHARED "Build the base library as a shared library" OFF)
 option(BUILDING_WITH_CONAN "Using Conan for dependencies" OFF)
+option(PJ_ENABLE_DBCPPP "Enable dbcppp dependency for BLF DBC decoding" ON)
 set(PJ_INSTALLATION "undefined" CACHE STRING "Installation type")
 set(PJ_PLUGINS_DIRECTORY "lib/plotjuggler/plugins" CACHE STRING "Plugins directory")
 

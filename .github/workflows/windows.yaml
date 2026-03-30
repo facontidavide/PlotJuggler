@@ -53,8 +53,15 @@ jobs:
       - name: Build Plotjuggler
         shell: pwsh
         run: |
-          cmake --preset conan-default -S . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="windows" -DPJ_PLUGINS_DIRECTORY="bin"
-          cmake --build build --config Release
+          cmake --preset conan-default -S . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="windows" -DPJ_PLUGINS_DIRECTORY="bin" -DBUILD_TESTING=OFF -DPJ_ENABLE_DBCPPP=OFF
+          cmake --build build --config Release 2>&1 | Tee-Object -FilePath build\build.log
+          if ($LASTEXITCODE -ne 0) {
+              $tail = Get-Content build\build.log -Tail 200
+              $message = ($tail -join "`n")
+              $message = $message -replace '%','%25' -replace "`r",'%0D' -replace "`n",'%0A'
+              Write-Host "::error title=Build Plotjuggler failed::$message"
+              exit $LASTEXITCODE
+          }
 
       - name: Prepare installer directory
         shell: pwsh
