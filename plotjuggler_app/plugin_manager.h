@@ -10,6 +10,8 @@
 
 namespace PJ
 {
+QString PluginDedupKey(const QString& pluginPath);
+
 class PluginManager
 {
 public:

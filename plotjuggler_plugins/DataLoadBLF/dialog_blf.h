@@ -32,6 +32,7 @@ private slots:
 
 private:
   void AppendMapRow(uint32_t channel, const QString& dbc_path);
+  uint32_t NextDefaultChannel() const;
 
   Ui::DialogBLF* ui_;
 };

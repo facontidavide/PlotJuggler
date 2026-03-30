@@ -37,7 +37,14 @@ function(find_or_download_dbcppp)
   message(STATUS "dbcppp not found, downloading")
   cpmaddpackage(
     NAME dbcppp
-    URL https://github.com/xR3b0rn/dbcppp/archive/refs/tags/v3.2.6.zip
+    GIT_REPOSITORY https://github.com/xR3b0rn/dbcppp.git
+    GIT_TAG 54ce78ad53442db94e03d16a4fd5f3b339dab193
+    GIT_SHALLOW TRUE
+    GIT_SUBMODULES
+      third-party/cxxopts
+      third-party/libxml2
+      third-party/libxmlmm
+    GIT_SUBMODULES_RECURSE TRUE
     OPTIONS "build_kcd OFF"
             "build_tools OFF"
             "build_tests OFF"

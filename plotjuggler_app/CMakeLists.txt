@@ -175,6 +175,20 @@ if(BUILD_TESTING)
         lua::lua
         GTest::gtest_main)
     gtest_discover_tests(test_curve_panel_header_utils)
+
+    add_executable(test_plugin_manager_utils tests/test_plugin_manager_utils.cpp plugin_manager.cpp)
+    target_include_directories(
+      test_plugin_manager_utils
+      PRIVATE
+        ${PROJECT_SOURCE_DIR}/plotjuggler_base/include
+        ${PROJECT_SOURCE_DIR}/plotjuggler_app)
+    target_link_libraries(
+      test_plugin_manager_utils
+      PRIVATE
+        ${QT_LINK_LIBRARIES}
+        plotjuggler_base
+        GTest::gtest_main)
+    gtest_discover_tests(test_plugin_manager_utils)
   endif()
 endif()
 

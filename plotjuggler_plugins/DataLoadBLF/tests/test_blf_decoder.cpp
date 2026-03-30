@@ -110,4 +110,44 @@ TEST(BlfDecoderPipeline, WritesRawAndDecodedSeries)
   EXPECT_EQ(stats.decode_errors, 0U);
 }
 
+TEST(BlfDecoderPipeline, FallsBackToRawWhenDbcCannotDecodeFrame)
+{
+  DbcManager manager([](const std::string&) { return std::make_unique<FakeDecoder>(); });
+  ASSERT_TRUE(manager.LoadBindings({{1U, "vehicle.dbc"}}));
+
+  BlfPluginConfig config;
+  config.emit_raw = false;
+  config.emit_decoded = true;
+  config.use_source_timestamp = true;
+
+  RecordingSeriesWriter writer;
+  BlfDecoderPipeline pipeline(config, &manager, &writer);
+
+  NormalizedCanFrame frame;
+  frame.timestamp = 1.0;
+  frame.channel = 1U;
+  frame.id = 0x321U;  // FakeDecoder only decodes 0x123, this one should fallback to raw.
+  frame.is_fd = false;
+  frame.is_brs = false;
+  frame.is_esi = false;
+  frame.extended = false;
+  frame.dlc = 8U;
+  frame.size = 2U;
+  frame.data[0] = 0xAAU;
+  frame.data[1] = 0x55U;
+
+  ASSERT_TRUE(pipeline.ProcessFrame(frame));
+
+  EXPECT_TRUE(writer.HasSample("raw/can1/0x321/dlc", 1.0, 8.0));
+  EXPECT_TRUE(writer.HasSample("raw/can1/0x321/data_00", 1.0, 170.0));
+  EXPECT_TRUE(writer.HasSample("raw/can1/0x321/data_01", 1.0, 85.0));
+  EXPECT_FALSE(writer.HasSample("dbc/can1/VehicleStatus/SpeedKph", 1.0, 88.5));
+
+  const BlfDecodeStats stats = pipeline.stats();
+  EXPECT_EQ(stats.frames_processed, 1U);
+  EXPECT_EQ(stats.raw_samples_written, 6U);
+  EXPECT_EQ(stats.decoded_samples_written, 0U);
+  EXPECT_EQ(stats.decode_errors, 0U);
+}
+
 }  // namespace PJ::BLF

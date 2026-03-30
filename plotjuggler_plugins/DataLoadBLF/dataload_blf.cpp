@@ -2,6 +2,9 @@
 
 #include <QDebug>
 #include <QMessageBox>
+#include <QProgressDialog>
+#include <QFileInfo>
+#include <QCoreApplication>
 
 #include <memory>
 #include <string>
@@ -154,6 +157,21 @@ bool DataLoadBLF::readDataFromFile(PJ::FileLoadInfo* fileload_info, PJ::PlotData
   uint64_t frames_count = 0;
   BlfReader reader;
   QString read_error;
+  bool load_cancelled = false;
+  int last_progress = -1;
+
+  QProgressDialog progress_dialog;
+  progress_dialog.setWindowTitle(tr("Loading BLF"));
+  progress_dialog.setLabelText(
+      tr("Parsing %1").arg(QFileInfo(fileload_info->filename).fileName()));
+  progress_dialog.setCancelButtonText(tr("Cancel"));
+  progress_dialog.setRange(0, 100);
+  progress_dialog.setValue(0);
+  progress_dialog.setWindowModality(Qt::ApplicationModal);
+  progress_dialog.setMinimumDuration(0);
+  progress_dialog.setAutoClose(false);
+  progress_dialog.setAutoReset(false);
+
   const bool read_ok =
       reader.ReadFrames(fileload_info->filename,
                         [&](const NormalizedCanFrame& frame) {
@@ -161,9 +179,29 @@ bool DataLoadBLF::readDataFromFile(PJ::FileLoadInfo* fileload_info, PJ::PlotData
                           pipeline.ProcessFrame(frame);
                         },
                         read_error,
-                        &last_metadata_);
+                        &last_metadata_,
+                        [&](const BlfReadProgress& progress) {
+                          if (progress.percentage != last_progress)
+                          {
+                            last_progress = progress.percentage;
+                            progress_dialog.setValue(progress.percentage);
+                            progress_dialog.setLabelText(
+                                tr("Parsing %1\n%2 / %3 objects")
+                                    .arg(QFileInfo(fileload_info->filename).fileName())
+                                    .arg(progress.current_object)
+                                    .arg(progress.total_objects));
+                            QCoreApplication::processEvents();
+                          }
+                          load_cancelled = progress_dialog.wasCanceled();
+                          return !load_cancelled;
+                        });
+  progress_dialog.setValue(100);
   if (!read_ok)
   {
+    if (load_cancelled || read_error == "BLF loading cancelled")
+    {
+      return false;
+    }
     QMessageBox::warning(nullptr, tr("BLF Read Failed"),
                          tr("Failed to parse BLF file:\n%1").arg(read_error));
     return false;

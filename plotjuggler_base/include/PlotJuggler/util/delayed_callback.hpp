@@ -9,6 +9,7 @@
 
 #include <QTimer>
 #include <QMetaMethod>
+#include <memory>
 #include <functional>
 
 namespace PJ
@@ -19,19 +20,20 @@ class DelayedCallback
 public:
   DelayedCallback()
   {
-    _delay_timer = new QTimer();
+    _delay_timer = std::make_unique<QTimer>();
     _delay_timer->setSingleShot(true);
   }
 
-  ~DelayedCallback()
-  {
-    delete _delay_timer;
-  }
+  ~DelayedCallback() = default;
+  DelayedCallback(const DelayedCallback&) = delete;
+  DelayedCallback& operator=(const DelayedCallback&) = delete;
+  DelayedCallback(DelayedCallback&&) = delete;
+  DelayedCallback& operator=(DelayedCallback&&) = delete;
 
   template <class Function>
   void connectCallback(Function callback)
   {
-    QObject::connect(_delay_timer, &QTimer::timeout, callback);
+    QObject::connect(_delay_timer.get(), &QTimer::timeout, callback);
   }
 
   void triggerSignal(int delay_ms)
@@ -43,7 +45,7 @@ public:
   }
 
 private:
-  QTimer* _delay_timer;
+  std::unique_ptr<QTimer> _delay_timer;
 };
 
 }  // namespace PJ

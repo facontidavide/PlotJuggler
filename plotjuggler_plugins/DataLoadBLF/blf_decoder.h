@@ -51,7 +51,7 @@ public:
 private:
   double ResolveTimestamp(const NormalizedCanFrame& frame) const;
   void EmitRaw(const NormalizedCanFrame& frame, double timestamp);
-  void EmitDecoded(const NormalizedCanFrame& frame, double timestamp);
+  bool EmitDecoded(const NormalizedCanFrame& frame, double timestamp);
 
   BlfPluginConfig config_;
   DbcManager* dbc_manager_ = nullptr;

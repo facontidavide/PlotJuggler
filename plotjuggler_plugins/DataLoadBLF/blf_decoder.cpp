@@ -24,21 +24,33 @@ bool BlfDecoderPipeline::ProcessFrame(const NormalizedCanFrame& frame)
   }
 
   const double timestamp = ResolveTimestamp(frame);
+  bool wrote_raw = false;
 
   if (config_.emit_raw)
   {
     EmitRaw(frame, timestamp);
+    wrote_raw = true;
   }
 
   if (config_.emit_decoded && dbc_manager_)
   {
     try
     {
-      EmitDecoded(frame, timestamp);
+      const bool decoded = EmitDecoded(frame, timestamp);
+      // When a frame is not decodable by DBC (unknown channel/ID/signals), fall back to raw bytes.
+      if (!decoded && !wrote_raw)
+      {
+        EmitRaw(frame, timestamp);
+        wrote_raw = true;
+      }
     }
     catch (const std::exception&)
     {
       ++stats_.decode_errors;
+      if (!wrote_raw)
+      {
+        EmitRaw(frame, timestamp);
+      }
       return false;
     }
   }
@@ -81,7 +93,7 @@ void BlfDecoderPipeline::EmitRaw(const NormalizedCanFrame& frame, double timesta
   }
 }
 
-void BlfDecoderPipeline::EmitDecoded(const NormalizedCanFrame& frame, double timestamp)
+bool BlfDecoderPipeline::EmitDecoded(const NormalizedCanFrame& frame, double timestamp)
 {
   const std::size_t payload_size =
       std::min<std::size_t>(frame.size, static_cast<std::size_t>(frame.data.size()));
@@ -95,6 +107,7 @@ void BlfDecoderPipeline::EmitDecoded(const NormalizedCanFrame& frame, double tim
         DecodedSeriesName(frame.channel, signal.message, signal.signal), timestamp, signal.value);
     ++stats_.decoded_samples_written;
   }
+  return !decoded_signals.empty();
 }
 
 }  // namespace PJ::BLF

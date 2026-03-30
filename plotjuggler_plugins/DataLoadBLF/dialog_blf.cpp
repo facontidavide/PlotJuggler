@@ -127,7 +127,7 @@ void DialogBLF::OnAddMapRow()
 {
   const QString default_dbc =
       (ui_->listDbcFiles->count() > 0) ? ui_->listDbcFiles->item(0)->text() : QString();
-  AppendMapRow(0U, default_dbc);
+  AppendMapRow(NextDefaultChannel(), default_dbc);
 }
 
 void DialogBLF::OnRemoveMapRow()
@@ -211,6 +211,34 @@ void DialogBLF::AppendMapRow(uint32_t channel, const QString& dbc_path)
 
   ui_->tableChannelMap->setItem(row, 0, channel_item);
   ui_->tableChannelMap->setItem(row, 1, dbc_item);
+}
+
+uint32_t DialogBLF::NextDefaultChannel() const
+{
+  std::unordered_set<uint32_t> used_channels;
+  const int rows = ui_->tableChannelMap->rowCount();
+  for (int row = 0; row < rows; ++row)
+  {
+    const QTableWidgetItem* channel_item = ui_->tableChannelMap->item(row, 0);
+    if (!channel_item)
+    {
+      continue;
+    }
+
+    bool ok = false;
+    const uint32_t channel = channel_item->text().trimmed().toUInt(&ok);
+    if (ok)
+    {
+      used_channels.insert(channel);
+    }
+  }
+
+  uint32_t candidate = 1U;
+  while (used_channels.find(candidate) != used_channels.end())
+  {
+    ++candidate;
+  }
+  return candidate;
 }
 
 }  // namespace PJ::BLF

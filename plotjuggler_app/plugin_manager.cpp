@@ -12,6 +12,11 @@
 namespace PJ
 {
 
+QString PluginDedupKey(const QString& pluginPath)
+{
+  return QFileInfo(pluginPath).fileName();
+}
+
 void PluginManager::loadPluginsFromFolder(const QString& folderPath)
 {
   qDebug() << "Loading compatible plugins from directory: " << folderPath;
@@ -26,7 +31,8 @@ void PluginManager::loadPluginsFromFolder(const QString& folderPath)
   {
     QFileInfo fileInfo(filename);
     QString pluginPath = pluginsDir.absoluteFilePath(filename);
-    if (_loaded_plugins.find(filename) != _loaded_plugins.end())
+    const QString dedup_key = PluginDedupKey(pluginPath);
+    if (_loaded_plugins.find(dedup_key) != _loaded_plugins.end())
     {
       continue;
     }
@@ -117,7 +123,7 @@ void PluginManager::loadPlugin(const QString& filename)
       return;
     }
     qDebug() << message;
-    _loaded_plugins.insert(plugin_name);
+    _loaded_plugins.insert(PluginDedupKey(filename));
 
     if (loader)
     {

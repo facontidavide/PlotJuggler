@@ -27,4 +27,13 @@ TEST(BlfReaderTime, ConvertsEpochSecondsToMsecOnlyWhenValid)
   EXPECT_FALSE(ok);
 }
 
+TEST(BlfReaderTime, ComputesProgressPercentageSafely)
+{
+  EXPECT_EQ(ComputeBlfReadPercentage(0, 0), 0);
+  EXPECT_EQ(ComputeBlfReadPercentage(0, 100), 0);
+  EXPECT_EQ(ComputeBlfReadPercentage(50, 100), 50);
+  EXPECT_EQ(ComputeBlfReadPercentage(100, 100), 100);
+  EXPECT_EQ(ComputeBlfReadPercentage(150, 100), 100);
+}
+
 }  // namespace PJ::BLF

@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <exception>
 #include <memory>
+#include <limits>
 
 #include <QDebug>
 
@@ -207,10 +208,22 @@ qint64 UnixEpochSecondsToMsec(double seconds, bool* ok)
   return static_cast<qint64>(seconds * 1000.0);
 }
 
+int ComputeBlfReadPercentage(uint32_t current_object, uint32_t total_objects)
+{
+  if (total_objects == 0U)
+  {
+    return 0;
+  }
+  const uint64_t scaled =
+      (static_cast<uint64_t>(std::min(current_object, total_objects)) * 100ULL) / total_objects;
+  return static_cast<int>(std::min<uint64_t>(scaled, 100ULL));
+}
+
 bool BlfReader::ReadFrames(const QString& path,
                            const std::function<void(const NormalizedCanFrame&)>& on_frame,
                            QString& error,
-                           BlfLoadMetadata* metadata) const
+                           BlfLoadMetadata* metadata,
+                           const std::function<bool(const BlfReadProgress&)>& on_progress) const
 {
   error.clear();
   if (metadata)
@@ -233,6 +246,26 @@ bool BlfReader::ReadFrames(const QString& path,
     if (!file.is_open())
     {
       error = QString("Failed to open BLF file: %1").arg(path);
+      return false;
+    }
+
+    const uint32_t total_objects = file.fileStatistics.objectCount;
+    auto report_progress = [&]() -> bool {
+      if (!on_progress)
+      {
+        return true;
+      }
+      BlfReadProgress progress;
+      progress.current_object = file.currentObjectCount.load();
+      progress.total_objects = total_objects;
+      progress.percentage = ComputeBlfReadPercentage(progress.current_object, progress.total_objects);
+      return on_progress(progress);
+    };
+
+    if (!report_progress())
+    {
+      error = "BLF loading cancelled";
+      file.close();
       return false;
     }
 
@@ -261,6 +294,12 @@ bool BlfReader::ReadFrames(const QString& path,
         {
           on_frame(frame);
         }
+        if (!report_progress())
+        {
+          error = "BLF loading cancelled";
+          file.close();
+          return false;
+        }
         continue;
       }
 
@@ -280,6 +319,12 @@ bool BlfReader::ReadFrames(const QString& path,
         if (on_frame)
         {
           on_frame(frame);
+        }
+        if (!report_progress())
+        {
+          error = "BLF loading cancelled";
+          file.close();
+          return false;
         }
         continue;
       }
@@ -302,6 +347,12 @@ bool BlfReader::ReadFrames(const QString& path,
         {
           on_frame(frame);
         }
+        if (!report_progress())
+        {
+          error = "BLF loading cancelled";
+          file.close();
+          return false;
+        }
         continue;
       }
 #endif
@@ -323,7 +374,19 @@ bool BlfReader::ReadFrames(const QString& path,
         {
           on_frame(frame);
         }
+        if (!report_progress())
+        {
+          error = "BLF loading cancelled";
+          file.close();
+          return false;
+        }
       }
+    }
+
+    if (on_progress)
+    {
+      on_progress(BlfReadProgress{total_objects, total_objects,
+                                  ComputeBlfReadPercentage(total_objects, total_objects)});
     }
 
     file.close();
