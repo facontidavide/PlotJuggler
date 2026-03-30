@@ -50,10 +50,9 @@ function(find_or_download_dbcppp)
       third-party/libxml2
       third-party/libxmlmm
     GIT_SUBMODULES_RECURSE TRUE
-    OPTIONS "build_kcd OFF"
-            "build_tools OFF"
-            "build_tests OFF"
-            "build_examples OFF")
+    OPTIONS "build_tests OFF"
+            "build_examples OFF"
+            "LIBXML2_WITH_PROGRAMS OFF")
 
   if(TARGET dbcppp::dbcppp)
     set(DBCPPP_FOUND TRUE PARENT_SCOPE)

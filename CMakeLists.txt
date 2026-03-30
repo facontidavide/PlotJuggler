@@ -149,7 +149,6 @@ endif()
 
 if(WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -D_USE_MATH_DEFINES")
-  set(CMAKE_WIN32_EXECUTABLE ON)
   set(GUI_TYPE WIN32)
   if(MSVC)
     add_compile_options(/wd4267 /wd4996)

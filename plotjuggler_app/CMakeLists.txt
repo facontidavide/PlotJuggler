@@ -97,6 +97,12 @@ endif()
 add_executable(plotjuggler ${PLOTJUGGLER_SRC} ${RES_SRC} ${UI_SRC}
                            ${BACKWARD_ENABLE})
 
+if(WIN32)
+  # Keep PlotJuggler as a GUI app without forcing all subprojects' executables
+  # to require WinMain.
+  set_target_properties(plotjuggler PROPERTIES WIN32_EXECUTABLE ON)
+endif()
+
 if(wasmer_FOUND)
   target_link_libraries(plotjuggler PRIVATE wasmer::wasmer)
   target_compile_definitions(plotjuggler PRIVATE WASM_RUNTIME_ENABLED)
