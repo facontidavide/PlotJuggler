@@ -1,4 +1,6 @@
 function(find_or_download_vector_blf)
+  find_package(ZLIB REQUIRED)
+
   if(DEFINED PJ_ENABLE_VECTOR_BLF AND NOT PJ_ENABLE_VECTOR_BLF)
     message(STATUS "vector_blf support disabled (PJ_ENABLE_VECTOR_BLF=OFF)")
     set(VECTOR_BLF_FOUND FALSE PARENT_SCOPE)
