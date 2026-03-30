@@ -53,6 +53,20 @@ function(find_or_download_vector_blf)
             "OPTION_BUILD_EXAMPLES OFF"
             "OPTION_BUILD_TESTS OFF")
 
+  # vector_blf upstream uses CMAKE_SOURCE_DIR in include_directories().
+  # When consumed as a subproject, that can point to the parent project and
+  # break header lookup on Windows. Force the correct source/build include roots.
+  if(TARGET Vector_BLF)
+    if(DEFINED vector_blf_SOURCE_DIR)
+      target_include_directories(Vector_BLF PRIVATE "${vector_blf_SOURCE_DIR}/src")
+      target_include_directories(Vector_BLF PUBLIC "$<BUILD_INTERFACE:${vector_blf_SOURCE_DIR}/src>")
+    endif()
+    if(DEFINED vector_blf_BINARY_DIR)
+      target_include_directories(Vector_BLF PRIVATE "${vector_blf_BINARY_DIR}/src")
+      target_include_directories(Vector_BLF PUBLIC "$<BUILD_INTERFACE:${vector_blf_BINARY_DIR}/src>")
+    endif()
+  endif()
+
   if(TARGET vector_blf::vector_blf)
     set(VECTOR_BLF_FOUND TRUE PARENT_SCOPE)
   elseif(TARGET Vector_BLF::Vector_BLF)
