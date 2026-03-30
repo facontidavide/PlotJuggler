@@ -57,6 +57,56 @@ return dy/dx</function>
     <function>return (value+v1)/2</function>
     <linkedSource></linkedSource>
   </snippet>
+
+  <snippet name="01_moving_average_single_signal">
+    <global>moving_average_window = 5
+moving_average_buffer = {}
+moving_average_sum = 0</global>
+    <function>if (moving_average_window &lt; 1) then
+  moving_average_window = 1
+end
+if (moving_average_window &gt; 15) then
+  moving_average_window = 15
+end
+
+table.insert(moving_average_buffer, value)
+moving_average_sum = moving_average_sum + value
+
+if (#moving_average_buffer &gt; moving_average_window) then
+  moving_average_sum = moving_average_sum - moving_average_buffer[1]
+  table.remove(moving_average_buffer, 1)
+end
+
+return moving_average_sum / #moving_average_buffer</function>
+    <linkedSource></linkedSource>
+  </snippet>
+
+  <snippet name="02_first_order_low_pass_filter">
+    <global>dvx_low_pass_filter_alpha = 0.9
+prev_delta_v_filtered = 0
+dvx_low_pass_initialized = false</global>
+    <function>if (dvx_low_pass_filter_alpha &lt; 0) then
+  dvx_low_pass_filter_alpha = 0
+end
+if (dvx_low_pass_filter_alpha &gt; 1) then
+  dvx_low_pass_filter_alpha = 1
+end
+
+delta_v = value
+
+if (not dvx_low_pass_initialized) then
+  prev_delta_v_filtered = delta_v
+  dvx_low_pass_initialized = true
+  return prev_delta_v_filtered
+end
+
+filtered_delta_v = dvx_low_pass_filter_alpha * prev_delta_v_filtered + (1 - dvx_low_pass_filter_alpha) * delta_v
+prev_delta_v_filtered = filtered_delta_v
+
+return filtered_delta_v</function>
+    <linkedSource></linkedSource>
+  </snippet>
+
   <snippet name="integral">
     <global>prevX = 0
 integral = 0

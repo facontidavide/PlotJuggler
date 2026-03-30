@@ -189,6 +189,16 @@ if(BUILD_TESTING)
         plotjuggler_base
         GTest::gtest_main)
     gtest_discover_tests(test_plugin_manager_utils)
+
+    add_executable(test_default_snippets tests/test_default_snippets.cpp)
+    target_compile_definitions(test_default_snippets
+                               PRIVATE PJ_PROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+    target_link_libraries(
+      test_default_snippets
+      PRIVATE
+        ${QT_LINK_LIBRARIES}
+        GTest::gtest_main)
+    gtest_discover_tests(test_default_snippets)
   endif()
 endif()
 

@@ -110,14 +110,65 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
       settings.value("FunctionEditorWidget.recentSnippetsXML", QByteArray()).toByteArray();
   restoreGeometry(settings.value("FunctionEditorWidget.geometry").toByteArray());
 
-  if (saved_xml.isEmpty())
+  QByteArray default_xml;
   {
     QFile file("://resources/default.snippets.xml");
     if (!file.open(QIODevice::ReadOnly))
     {
       throw std::runtime_error("problem with default.snippets.xml");
     }
-    saved_xml = file.readAll();
+    default_xml = file.readAll();
+  }
+
+  if (saved_xml.isEmpty())
+  {
+    saved_xml = default_xml;
+  }
+  else
+  {
+    auto saved_snippets = GetSnippetsFromXML(saved_xml);
+    auto default_snippets = GetSnippetsFromXML(default_xml);
+
+    bool updated = false;
+
+    const std::vector<std::pair<QString, QString>> renamed_defaults = {
+      { "moving_average_single_signal", "01_moving_average_single_signal" },
+      { "first_order_low_pass_filter", "02_first_order_low_pass_filter" },
+    };
+
+    for (const auto& [legacy_name, new_name] : renamed_defaults)
+    {
+      auto legacy_it = saved_snippets.find(legacy_name);
+      if (legacy_it == saved_snippets.end())
+      {
+        continue;
+      }
+
+      if (saved_snippets.count(new_name) == 0)
+      {
+        auto migrated = legacy_it->second;
+        migrated.alias_name = new_name;
+        saved_snippets.insert({ new_name, migrated });
+      }
+      saved_snippets.erase(legacy_it);
+      updated = true;
+    }
+
+    for (const auto& [name, snippet] : default_snippets)
+    {
+      if (saved_snippets.count(name) == 0)
+      {
+        saved_snippets.insert({ name, snippet });
+        updated = true;
+      }
+    }
+
+    if (updated)
+    {
+      QDomDocument doc;
+      doc.appendChild(ExportSnippets(saved_snippets, doc));
+      saved_xml = doc.toByteArray(2);
+    }
   }
 
   importSnippets(saved_xml);
