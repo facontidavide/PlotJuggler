@@ -45,6 +45,14 @@ jobs:
           if command -v sudo >/dev/null 2>&1; then
             SUDO="sudo"
           fi
+          export DEBIAN_FRONTEND=noninteractive
+          APT_ARGS="-y -V -o Dpkg::Use-Pty=0 -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+          ${SUDO} apt-get ${APT_ARGS} update
+          if ${SUDO} apt-get ${APT_ARGS} install libarrow-dev libparquet-dev; then
+            echo "Installed Arrow packages from Ubuntu repositories."
+            exit 0
+          fi
+          echo "::warning::Ubuntu repositories do not provide Arrow packages; falling back to Apache Arrow apt source."
           . /etc/os-release
           DISTRO_ID="${ID:-ubuntu}"
           CODENAME="${VERSION_CODENAME:-${UBUNTU_CODENAME:-}}"
@@ -53,13 +61,12 @@ jobs:
             exit 1
           fi
           if ! command -v wget >/dev/null 2>&1; then
-            ${SUDO} apt-get update
-            ${SUDO} apt-get install -y -V wget ca-certificates
+            ${SUDO} apt-get ${APT_ARGS} install wget ca-certificates
           fi
-          wget "https://packages.apache.org/artifactory/arrow/${DISTRO_ID}/apache-arrow-apt-source-latest-${CODENAME}.deb"
-          ${SUDO} apt-get install -y -V "./apache-arrow-apt-source-latest-${CODENAME}.deb"
-          ${SUDO} apt-get update
-          ${SUDO} apt-get install -y -V libarrow-dev libparquet-dev
+          wget --timeout=30 --tries=3 --waitretry=5 "https://packages.apache.org/artifactory/arrow/${DISTRO_ID}/apache-arrow-apt-source-latest-${CODENAME}.deb"
+          ${SUDO} apt-get ${APT_ARGS} install "./apache-arrow-apt-source-latest-${CODENAME}.deb"
+          ${SUDO} apt-get ${APT_ARGS} update
+          ${SUDO} apt-get ${APT_ARGS} install libarrow-dev libparquet-dev
 
       - name: Prepare ccache
         shell: bash
