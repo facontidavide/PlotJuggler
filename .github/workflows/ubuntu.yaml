@@ -104,7 +104,10 @@ jobs:
               exit 1
             fi
             if ! cmake --build build 2>&1 | tee build/build.log; then
-              tail="$(tail -n 120 build/build.log)"
+              tail="$(grep -Ei '(^|[^a-z])(error|fatal|undefined reference|collect2:|ld:|no such file|FAILED:|CMake Error)' build/build.log | tail -n 80 || true)"
+              if [ -z "${tail}" ]; then
+                tail="$(tail -n 80 build/build.log)"
+              fi
               tail="${tail//'%'/'%25'}"
               tail="${tail//$'\r'/'%0D'}"
               tail="${tail//$'\n'/'%0A'}"
