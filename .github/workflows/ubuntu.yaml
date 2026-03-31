@@ -45,8 +45,19 @@ jobs:
           if command -v sudo >/dev/null 2>&1; then
             SUDO="sudo"
           fi
-          wget https://packages.apache.org/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
-          ${SUDO} apt-get install -y -V ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+          . /etc/os-release
+          DISTRO_ID="${ID:-ubuntu}"
+          CODENAME="${VERSION_CODENAME:-${UBUNTU_CODENAME:-}}"
+          if [ -z "${CODENAME}" ]; then
+            echo "::error::Unable to determine Ubuntu codename from /etc/os-release"
+            exit 1
+          fi
+          if ! command -v wget >/dev/null 2>&1; then
+            ${SUDO} apt-get update
+            ${SUDO} apt-get install -y -V wget ca-certificates
+          fi
+          wget "https://packages.apache.org/artifactory/arrow/${DISTRO_ID}/apache-arrow-apt-source-latest-${CODENAME}.deb"
+          ${SUDO} apt-get install -y -V "./apache-arrow-apt-source-latest-${CODENAME}.deb"
           ${SUDO} apt-get update
           ${SUDO} apt-get install -y -V libarrow-dev libparquet-dev
 
