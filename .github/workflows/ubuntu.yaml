@@ -31,11 +31,22 @@ jobs:
       - name: Sync repository
         uses: actions/checkout@v6
 
-      - name: Cache apt packages
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: build-essential cmake pkg-config software-properties-common qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev ccache libmosquitto-dev ca-certificates lsb-release wget libcurl4-openssl-dev
-          version: 2.1
+      - name: Install system dependencies
+        shell: bash
+        run: |
+          set -euxo pipefail
+          SUDO=""
+          if command -v sudo >/dev/null 2>&1; then
+            SUDO="sudo"
+          fi
+          export DEBIAN_FRONTEND=noninteractive
+          export TZ=Etc/UTC
+          ${SUDO} apt-get update
+          ${SUDO} apt-get install -y -V --no-install-recommends \
+            build-essential cmake pkg-config ccache software-properties-common \
+            qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev \
+            libqt5x11extras5-dev libprotoc-dev libmosquitto-dev ca-certificates \
+            lsb-release wget libcurl4-openssl-dev
 
       - name: Install Apache Arrow for Parquet support
         shell: bash
@@ -81,6 +92,7 @@ jobs:
               ${SUDO} apt-get update
               ${SUDO} apt-get install -y -V --no-install-recommends build-essential cmake pkg-config
             fi
+            mkdir -p build
             if ! cmake . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="appimage" \
               -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
               -DPJ_PLUGINS_DIRECTORY="bin" 2>&1 | tee build/configure.log; then
