@@ -95,6 +95,7 @@ jobs:
             mkdir -p build
             if ! cmake . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="appimage" \
               -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+              -DPJ_ENABLE_PARSER_PROTOBUF=OFF \
               -DPJ_PLUGINS_DIRECTORY="bin" 2>&1 | tee build/configure.log; then
               tail="$(tail -n 120 build/configure.log)"
               tail="${tail//'%'/'%25'}"
