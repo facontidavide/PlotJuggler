@@ -43,7 +43,7 @@ jobs:
           export TZ=Etc/UTC
           ${SUDO} apt-get update
           ${SUDO} apt-get install -y -V --no-install-recommends \
-            build-essential cmake pkg-config ccache software-properties-common \
+            build-essential cmake pkg-config git ccache software-properties-common \
             qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev \
             libqt5x11extras5-dev libprotoc-dev libmosquitto-dev ca-certificates \
             lsb-release wget libcurl4-openssl-dev
@@ -86,11 +86,11 @@ jobs:
             if command -v sudo >/dev/null 2>&1; then
               SUDO="sudo"
             fi
-            if ! command -v cmake >/dev/null 2>&1; then
+            if ! command -v cmake >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1; then
               export DEBIAN_FRONTEND=noninteractive
               export TZ=Etc/UTC
               ${SUDO} apt-get update
-              ${SUDO} apt-get install -y -V --no-install-recommends build-essential cmake pkg-config
+              ${SUDO} apt-get install -y -V --no-install-recommends build-essential cmake pkg-config git
             fi
             mkdir -p build
             if ! cmake . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="appimage" \
