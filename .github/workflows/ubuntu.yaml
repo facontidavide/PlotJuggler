@@ -17,7 +17,9 @@ concurrency:
 jobs:
 
   ubuntu-build:
-    runs-on: ${{ matrix.ubuntu-distro }}
+    runs-on: ubuntu-22.04
+    container:
+      image: ubuntu:20.04
     strategy:
       fail-fast: false
       matrix:
@@ -38,10 +40,15 @@ jobs:
       - name: Install Apache Arrow for Parquet support
         shell: bash
         run: |
+          set -euxo pipefail
+          SUDO=""
+          if command -v sudo >/dev/null 2>&1; then
+            SUDO="sudo"
+          fi
           wget https://packages.apache.org/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
-          sudo apt install -y -V ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
-          sudo apt update
-          sudo apt install -y -V libarrow-dev libparquet-dev
+          ${SUDO} apt-get install -y -V ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+          ${SUDO} apt-get update
+          ${SUDO} apt-get install -y -V libarrow-dev libparquet-dev
 
       - name: Prepare ccache
         shell: bash
