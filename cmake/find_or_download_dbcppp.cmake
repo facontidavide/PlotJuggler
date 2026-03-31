@@ -51,7 +51,7 @@ function(find_or_download_dbcppp)
   endif()
 
   message(STATUS "dbcppp not found, downloading")
-  cpmaddpackage(
+  set(_dbcppp_cpm_args
     NAME dbcppp
     GIT_REPOSITORY https://github.com/xR3b0rn/dbcppp.git
     GIT_TAG 54ce78ad53442db94e03d16a4fd5f3b339dab193
@@ -60,10 +60,17 @@ function(find_or_download_dbcppp)
       third-party/cxxopts
       third-party/libxml2
       third-party/libxmlmm
-    GIT_SUBMODULES_RECURSE TRUE
     OPTIONS "build_tests OFF"
             "build_examples OFF"
             "LIBXML2_WITH_PROGRAMS OFF")
+
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.17")
+    list(APPEND _dbcppp_cpm_args GIT_SUBMODULES_RECURSE TRUE)
+  else()
+    message(STATUS "CMake < 3.17 detected, skipping GIT_SUBMODULES_RECURSE for dbcppp")
+  endif()
+
+  cpmaddpackage(${_dbcppp_cpm_args})
 
   if(TARGET dbcppp::dbcppp)
     set(DBCPPP_FOUND TRUE PARENT_SCOPE)
