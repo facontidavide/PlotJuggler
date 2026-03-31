@@ -125,6 +125,7 @@ jobs:
             chmod +x linuxdeploy*.AppImage
             mkdir -p AppDir/usr/bin
             cp -v build/bin/* AppDir/usr/bin
+            export APPIMAGE_EXTRACT_AND_RUN=1
             ./linuxdeploy-${{ matrix.arch }}.AppImage --appdir=AppDir \
               -d ./io.plotjuggler.PlotJuggler.desktop \
               -i ./plotjuggler.png \
