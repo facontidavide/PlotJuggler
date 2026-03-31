@@ -46,7 +46,7 @@ jobs:
             build-essential cmake pkg-config git ccache software-properties-common \
             qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev \
             libqt5x11extras5-dev libprotoc-dev libmosquitto-dev ca-certificates \
-            lsb-release wget libcurl4-openssl-dev
+            lsb-release wget libcurl4-openssl-dev file
 
       - name: Install Apache Arrow for Parquet support
         shell: bash
