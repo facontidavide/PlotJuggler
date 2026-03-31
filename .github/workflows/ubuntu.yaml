@@ -76,8 +76,10 @@ jobs:
               SUDO="sudo"
             fi
             if ! command -v cmake >/dev/null 2>&1; then
+              export DEBIAN_FRONTEND=noninteractive
+              export TZ=Etc/UTC
               ${SUDO} apt-get update
-              ${SUDO} apt-get install -y -V build-essential cmake pkg-config
+              ${SUDO} apt-get install -y -V --no-install-recommends build-essential cmake pkg-config
             fi
             if ! cmake . -B build -DCMAKE_BUILD_TYPE=Release -DPJ_INSTALLATION="appimage" \
               -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
