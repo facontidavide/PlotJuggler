@@ -6,11 +6,15 @@
 
 #include "mainwindow.h"
 #include <iostream>
+#include <cstdlib>
+#include <exception>
 #include <QApplication>
 #include <QSplashScreen>
 #include <QThread>
 #include <QCommandLineParser>
 #include <QDesktopWidget>
+#include <QDateTime>
+#include <QDebug>
 #include <QFontDatabase>
 #include <QSettings>
 #include <QPushButton>
@@ -20,9 +24,13 @@
 #include <QDir>
 #include <QDialog>
 #include <QDesktopServices>
+#include <QFile>
 #include <QHostInfo>
+#include <QMutex>
+#include <QMutexLocker>
 #include <QSslConfiguration>
 #include <QSslSocket>
+#include <QTextStream>
 
 #include "PlotJuggler/transform_function.h"
 #include "transforms/binary_filter.h"
@@ -43,6 +51,111 @@
 #ifdef COMPILED_WITH_AMENT
 #include <rclcpp/rclcpp.hpp>
 #endif
+
+namespace
+{
+QFile* g_startup_log = nullptr;
+QMutex g_startup_log_mutex;
+
+const char* msgTypeToText(QtMsgType type)
+{
+  switch (type)
+  {
+    case QtDebugMsg:
+      return "DEBUG";
+    case QtInfoMsg:
+      return "INFO";
+    case QtWarningMsg:
+      return "WARN";
+    case QtCriticalMsg:
+      return "ERROR";
+    case QtFatalMsg:
+      return "FATAL";
+  }
+  return "UNKNOWN";
+}
+
+void appendStartupLogLine(const QString& line)
+{
+  QMutexLocker lock(&g_startup_log_mutex);
+  if (!g_startup_log || !g_startup_log->isOpen())
+  {
+    return;
+  }
+  QTextStream stream(g_startup_log);
+  stream << line << '\n';
+  stream.flush();
+  g_startup_log->flush();
+}
+
+void startupMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg)
+{
+  QString line = QString("[%1] [%2] %3")
+                     .arg(QDateTime::currentDateTime().toString(Qt::ISODateWithMs))
+                     .arg(msgTypeToText(type))
+                     .arg(msg);
+  if (context.file && context.line > 0)
+  {
+    line += QString(" (%1:%2)").arg(context.file).arg(context.line);
+  }
+
+  appendStartupLogLine(line);
+  fprintf(stderr, "%s\n", line.toLocal8Bit().constData());
+
+  if (type == QtFatalMsg)
+  {
+    abort();
+  }
+}
+
+void terminateLogHandler()
+{
+  QString line = QString("[%1] [FATAL] std::terminate called")
+                     .arg(QDateTime::currentDateTime().toString(Qt::ISODateWithMs));
+  appendStartupLogLine(line);
+  fprintf(stderr, "%s\n", line.toLocal8Bit().constData());
+  abort();
+}
+
+class StartupLogGuard
+{
+public:
+  explicit StartupLogGuard(const QString& app_dir_path)
+  {
+    auto* file = new QFile(QDir(app_dir_path).filePath("plotjuggler_startup.log"));
+    if (!file->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+    {
+      delete file;
+      return;
+    }
+
+    g_startup_log = file;
+    qInstallMessageHandler(startupMessageHandler);
+    std::set_terminate(terminateLogHandler);
+
+    qInfo() << "======================================";
+    qInfo() << "PlotJuggler startup logging enabled";
+    qInfo() << "Log file:" << g_startup_log->fileName();
+    qInfo() << "======================================";
+  }
+
+  ~StartupLogGuard()
+  {
+    if (!g_startup_log)
+    {
+      return;
+    }
+
+    qInfo() << "PlotJuggler startup logging closed";
+    qInstallMessageHandler(nullptr);
+
+    QMutexLocker lock(&g_startup_log_mutex);
+    g_startup_log->close();
+    delete g_startup_log;
+    g_startup_log = nullptr;
+  }
+};
+}  // namespace
 
 static QString VERSION_STRING =
     QString("%1.%2.%3").arg(PJ_MAJOR_VERSION).arg(PJ_MINOR_VERSION).arg(PJ_PATCH_VERSION);
@@ -165,6 +278,17 @@ int main(int argc, char* argv[])
   }
 
   QApplication app(new_argc, new_argv.data());
+  StartupLogGuard startup_log_guard(QCoreApplication::applicationDirPath());
+
+  QStringList argv_list;
+  argv_list.reserve(new_argc);
+  for (const auto& arg : args)
+  {
+    argv_list.push_back(QString::fromLocal8Bit(arg.c_str()));
+  }
+  qInfo() << "Application version:" << VERSION_STRING;
+  qInfo() << "Executable path:" << QCoreApplication::applicationFilePath();
+  qInfo() << "Arguments:" << argv_list.join(" ");
 
   //-------------------------
 
@@ -358,7 +482,9 @@ int main(int argc, char* argv[])
       app.processEvents();
     }
 
+    qInfo() << "Creating MainWindow with splash screen";
     window = new MainWindow(parser);
+    qInfo() << "MainWindow created";
 
     deadline = QDateTime::currentDateTime().addMSecs(3000);
     while (QDateTime::currentDateTime() < deadline && !splash.isHidden())
@@ -369,10 +495,14 @@ int main(int argc, char* argv[])
 
   if (!window)
   {
+    qInfo() << "Creating MainWindow without splash screen";
     window = new MainWindow(parser);
+    qInfo() << "MainWindow created";
   }
 
+  qInfo() << "Showing MainWindow";
   window->show();
+  qInfo() << "MainWindow show() called";
 
   if (parser.isSet(start_streamer))
   {
@@ -472,5 +602,8 @@ int main(int argc, char* argv[])
   // Send POST request
   manager_message.post(request_message, jsonData);
 
-  return app.exec();
+  qInfo() << "Entering Qt event loop";
+  int exit_code = app.exec();
+  qInfo() << "Qt event loop exited with code" << exit_code;
+  return exit_code;
 }
