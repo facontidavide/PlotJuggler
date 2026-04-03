@@ -92,11 +92,13 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   , _recent_layout_files(new QMenu())
   , _toast_manager(nullptr)
 {
+  qDebug() << "[DEBUG] MainWindow: constructor started";
   QLocale::setDefault(QLocale::c());  // set as default
   setAcceptDrops(true);
 
   _test_option = commandline_parser.isSet("test");
   _autostart_publishers = commandline_parser.isSet("publish");
+  qDebug() << "[DEBUG] MainWindow: commandline options parsed";
 
   if (commandline_parser.isSet("enabled_plugins"))
   {
@@ -118,8 +120,10 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   }
 
   _curvelist_widget = new CurveListPanel(_mapped_plot_data, _transform_functions, this);
+  qDebug() << "[DEBUG] MainWindow: CurveListPanel created";
 
   ui->setupUi(this);
+  qDebug() << "[DEBUG] MainWindow: ui->setupUi completed";
 
   // setupUi() sets the windowTitle so the skin-based setting must be done after
   _skin_path = "://resources/skin";
@@ -227,10 +231,13 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
 
   // Initialize toast notification manager
   _toast_manager = new ToastManager(ui->centralWidget);
+  qDebug() << "[DEBUG] MainWindow: ToastManager created";
 
   initializeActions();
+  qDebug() << "[DEBUG] MainWindow: initializeActions completed";
 
   LoadColorMapFromSettings();
+  qDebug() << "[DEBUG] MainWindow: LoadColorMapFromSettings completed";
 
   //------------ Load plugins -------------
   auto plugin_extra_folders =
@@ -242,22 +249,30 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
 
   //------------------------------------
 
+  qDebug() << "[DEBUG] MainWindow: loadAllPlugins completed";
+
   _undo_timer.start();
+  qDebug() << "[DEBUG] MainWindow: undo_timer started";
 
   // save initial state
   onUndoableChange();
+  qDebug() << "[DEBUG] MainWindow: onUndoableChange completed";
 
   _replot_timer = new QTimer(this);
   connect(_replot_timer, &QTimer::timeout, this, [this]() { updateDataAndReplot(false); });
+  qDebug() << "[DEBUG] MainWindow: replot_timer created";
 
   _publish_timer = new QTimer(this);
   _publish_timer->setInterval(20);
   connect(_publish_timer, &QTimer::timeout, this, &MainWindow::onPlaybackLoop);
+  qDebug() << "[DEBUG] MainWindow: publish_timer created";
 
   ui->menuFile->setToolTipsVisible(true);
+  qDebug() << "[DEBUG] MainWindow: menuFile setToolTipsVisible";
 
   this->setMenuBar(ui->menuBar);
   ui->menuBar->setNativeMenuBar(false);
+  qDebug() << "[DEBUG] MainWindow: menuBar set";
 
   if (_test_option)
   {
@@ -275,8 +290,11 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
     loadLayoutFromFile(commandline_parser.value("layout"));
   }
 
+  qDebug() << "[DEBUG] MainWindow: before restoreGeometry";
   restoreGeometry(settings.value("MainWindow.geometry").toByteArray());
+  qDebug() << "[DEBUG] MainWindow: after restoreGeometry";
   restoreState(settings.value("MainWindow.state").toByteArray());
+  qDebug() << "[DEBUG] MainWindow: after restoreState";
 
   // qDebug() << "restoreGeometry";
 
@@ -353,10 +371,12 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
     theme = "light";
   }
   loadStyleSheet(tr(":/resources/stylesheet_%1.qss").arg(theme));
+  qDebug() << "[DEBUG] MainWindow: loadStyleSheet completed";
 
   // builtin messageParsers
   auto json_parser = std::make_shared<JSON_ParserFactory>();
   _parser_factories.insert({ json_parser->encoding(), json_parser });
+  qDebug() << "[DEBUG] MainWindow: JSON_ParserFactory created";
 
   auto cbor_parser = std::make_shared<CBOR_ParserFactory>();
   _parser_factories.insert({ cbor_parser->encoding(), cbor_parser });
@@ -366,6 +386,7 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
 
   auto msgpack = std::make_shared<MessagePack_ParserFactory>();
   _parser_factories.insert({ msgpack->encoding(), msgpack });
+  qDebug() << "[DEBUG] MainWindow: builtin parsers created";
 
   if (!_default_streamer.isEmpty())
   {
@@ -376,6 +397,8 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
       settings.setValue("MainWindow.previousStreamingPlugin", _default_streamer);
     }
   }
+
+  qDebug() << "[DEBUG] MainWindow: constructor completed successfully";
 }
 
 MainWindow::~MainWindow()
