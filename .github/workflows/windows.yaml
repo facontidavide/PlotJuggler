@@ -90,6 +90,7 @@ jobs:
           # Sanitize ref_name to replace / with - for valid Windows filename
           $ref_name = "${{ github.ref_name }}" -replace '/', '-'
           $installer_name = "PlotJuggler-$ref_name-Windows-x64.exe"
+          "INSTALLER_NAME=$installer_name" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
           # Find binarycreator executable
           $binarycreator = Get-ChildItem -Path "${{ github.workspace }}\qt_installation" -Recurse -Name "binarycreator.exe" | Select-Object -First 1
@@ -112,15 +113,14 @@ jobs:
 
       - name: Upload installer
         uses: actions/upload-artifact@v7
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: PlotJuggler-${{ github.ref_name }}-Windows-x64.exe
-          path: PlotJuggler-${{ github.ref_name }}-Windows-x64.exe
+          name: ${{ env.INSTALLER_NAME }}
+          path: ${{ env.INSTALLER_NAME }}
 
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: PlotJuggler-${{ github.ref_name }}-Windows-x64.exe
+          files: ${{ env.INSTALLER_NAME }}
           generate_release_notes: false
           fail_on_unmatched_files: false
