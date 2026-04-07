@@ -100,6 +100,11 @@ void CurveListPanel::clear()
 
 bool CurveListPanel::addCurve(const std::string& plot_name)
 {
+  if (_transforms_map.count(plot_name) > 0)
+  {
+    return false;
+  }
+
   QString plot_id = QString::fromStdString(plot_name);
   if (_tree_view_items.count(plot_name) > 0)
   {

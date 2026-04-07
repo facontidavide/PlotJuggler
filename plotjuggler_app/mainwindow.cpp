@@ -2174,6 +2174,10 @@ bool MainWindow::loadLayoutFromFile(QString filename, bool load_datafiles)
           if (_mapped_plot_data.numeric.count(curve_str) == 0)
           {
             _mapped_plot_data.addNumeric(curve_str);
+            _curvelist_widget->addCurve(curve_str);
+          }
+        }
+        _curvelist_widget->refreshColumns();
           }
         }
 
