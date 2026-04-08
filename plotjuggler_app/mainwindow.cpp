@@ -1422,6 +1422,14 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
 
   ui->buttonReloadData->setEnabled(!loaded_filenames.empty());
 
+  QList<QFileInfo> loaded_fileinfos{};
+  for (const auto& file_info : loaded_filenames)
+  {
+    loaded_fileinfos.push_back(QFileInfo(file_info));
+  }
+  updateCurrentLoadedFilesLabel(loaded_fileinfos);
+
+
   if (loaded_filenames.size() > 0)
   {
     updateRecentDataMenu(loaded_filenames);
@@ -1580,6 +1588,11 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
 
   updateDataAndReplot(true);
   ui->timeSlider->setRealValue(ui->timeSlider->getMinimum());
+
+  if (!added_names.empty())
+  {
+    updateCurrentLoadedFilesLabel({ QFileInfo(info.filename) });
+  }
 
   return added_names;
 }
@@ -3633,6 +3646,35 @@ void MainWindow::on_actionColorMap_Editor_triggered()
 {
   ColorMapEditor dialog;
   dialog.exec();
+}
+
+void MainWindow::updateCurrentLoadedFilesLabel(const QList<QFileInfo>& files)
+{
+  QStringList basenames{};
+  QStringList fullpaths{};
+  for (const auto& file_info : files)
+  {
+    basenames.push_back(file_info.fileName());
+    fullpaths.push_back(file_info.absoluteFilePath());
+  }
+
+  if(files.empty())
+  {
+    ui->labelCurrentLoadedFiles->setText(tr("File: "));
+    ui->labelCurrentLoadedFiles->setToolTip("");
+    return;
+  }
+
+  if(files.size() == 1)
+  {
+    ui->labelCurrentLoadedFiles->setText(tr("File: %1").arg(basenames.first()));
+    ui->labelCurrentLoadedFiles->setToolTip(fullpaths.first());
+    return;
+  }
+
+  //Multiple files loaded. Don't try and show what could be a long list of files in the label, but show them in the tooltip instead.
+  ui->labelCurrentLoadedFiles->setText(tr("Files (%1): %2 ...").arg(files.size()).arg(basenames.first()));
+  ui->labelCurrentLoadedFiles->setToolTip(fullpaths.join('\n'));
 }
 
 void MainWindow::on_buttonReloadData_clicked()
