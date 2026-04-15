@@ -83,4 +83,7 @@ private:
   double _time_offset = 0.0;
 
   bool eventFilter(QObject* obj, QEvent* ev) override;
+
+  // Insert topics from list, skipping duplicates. Applies active filter to new rows.
+  void insertTopics(const QStringList& topics);
 };

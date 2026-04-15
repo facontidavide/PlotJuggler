@@ -119,6 +119,7 @@ ToolBoxUI::ToolBoxUI()
   connect(ui->checkBoxMultifile, &QCheckBox::toggled, this, [this](bool multi_file) {
     ui->lineEditPrefix->setHidden(!multi_file);
     ui->labelPrefix->setHidden(!multi_file);
+    QSettings().setValue("ExportPlugin::multifile", multi_file);
   });
 
   const bool is_multifile = settings.value("ExportPlugin::multifile", false).toBool();
@@ -145,7 +146,7 @@ ToolBoxUI::ToolBoxUI()
       const QString filter = is_csv ? "CSV (*.csv)" : "Parquet (*.parquet *.pq)";
       const QString suffix = is_csv ? "csv" : "parquet";
       const QString default_name =
-          QDir(last_dir).filePath(is_csv ? "ExportPlugin::csv" : "ExportPlugin::parquet");
+          QDir(last_dir).filePath(is_csv ? "export.csv" : "export.parquet");
 
       QString filename = QFileDialog::getSaveFileName(_widget, "Export data", default_name, filter);
       if (filename.isEmpty())
@@ -346,45 +347,8 @@ bool ToolBoxUI::eventFilter(QObject* obj, QEvent* ev)
       return false;
     }
 
-    QSet<QString> existing;
-    existing.reserve(ui->tableWidget->rowCount());
-
-    for (int row = 0; row < ui->tableWidget->rowCount(); row++)
-    {
-      auto* item = ui->tableWidget->item(row, 0);
-      if (item)
-      {
-        const QString text = item->text().trimmed();
-        if (!text.isEmpty())
-        {
-          existing.insert(text);
-        }
-      }
-    }
-
-    for (const QString& raw : _dragging_curves)
-    {
-      const QString topic = raw.trimmed();
-      if (topic.isEmpty())
-      {
-        continue;
-      }
-
-      if (existing.contains(topic))
-      {
-        continue;
-      }
-
-      existing.insert(topic);
-
-      const int row = ui->tableWidget->rowCount();
-      ui->tableWidget->insertRow(row);
-      ui->tableWidget->setItem(row, 0, new QTableWidgetItem(topic));
-    }
-
+    insertTopics(_dragging_curves);
     _dragging_curves.clear();
-    updateTimeControlsEnabled();
-    emit recomputeTime();
     event->acceptProposedAction();
     return true;
   }
@@ -431,9 +395,6 @@ void ToolBoxUI::setTimeRange(double tmin, double tmax)
     ui->endTime->setDecimals(decimals);
     ui->endTime->setRange(0.0, duration);
     ui->endTime->setValue(duration);
-
-    ui->rangeSlider->setLowerValue(ui->rangeSlider->toInt(0.0));
-    ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(duration));
   }
   else
   {
@@ -448,17 +409,24 @@ void ToolBoxUI::setTimeRange(double tmin, double tmax)
     ui->endTime->setDecimals(decimals);
     ui->endTime->setRange(tmin, tmax);
     ui->endTime->setValue(tmax);
-
-    ui->rangeSlider->setLowerValue(ui->rangeSlider->toInt(tmin));
-    ui->rangeSlider->setUpperValue(ui->rangeSlider->toInt(tmax));
   }
 }
 
 void ToolBoxUI::setTopics(const std::vector<std::string>& topics)
 {
+  QStringList list;
+  list.reserve(static_cast<int>(topics.size()));
+  for (const auto& s : topics)
+  {
+    list.append(QString::fromStdString(s));
+  }
+  insertTopics(list);
+}
+
+void ToolBoxUI::insertTopics(const QStringList& topics)
+{
   QSet<QString> existing;
   existing.reserve(ui->tableWidget->rowCount());
-
   for (int row = 0; row < ui->tableWidget->rowCount(); row++)
   {
     auto* item = ui->tableWidget->item(row, 0);
@@ -472,29 +440,22 @@ void ToolBoxUI::setTopics(const std::vector<std::string>& topics)
     }
   }
 
-  for (const auto& s : topics)
+  const QString filter = ui->lineEditFilter->text().trimmed();
+  for (const QString& raw : topics)
   {
-    const QString topic = QString::fromStdString(s).trimmed();
+    const QString topic = raw.trimmed();
     if (topic.isEmpty() || existing.contains(topic))
     {
       continue;
     }
-
     existing.insert(topic);
-
     const int row = ui->tableWidget->rowCount();
     ui->tableWidget->insertRow(row);
     ui->tableWidget->setItem(row, 0, new QTableWidgetItem(topic));
-  }
-
-  // Re-apply the active filter so newly inserted rows respect it.
-  const QString filter = ui->lineEditFilter->text().trimmed();
-  for (int row = 0; row < ui->tableWidget->rowCount(); row++)
-  {
-    auto* item = ui->tableWidget->item(row, 0);
-    const bool hidden =
-        !filter.isEmpty() && (!item || !item->text().contains(filter, Qt::CaseInsensitive));
-    ui->tableWidget->setRowHidden(row, hidden);
+    if (!filter.isEmpty())
+    {
+      ui->tableWidget->setRowHidden(row, !topic.contains(filter, Qt::CaseInsensitive));
+    }
   }
 
   updateTimeControlsEnabled();

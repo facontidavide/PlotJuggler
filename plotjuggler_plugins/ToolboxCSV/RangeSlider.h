@@ -25,20 +25,6 @@ public:
 
   QSize minimumSizeHint() const override;
 
-  int GetMinimun() const;
-  void SetMinimum(int aMinimum);
-
-  int GetMaximun() const;
-  void SetMaximum(int aMaximum);
-
-  int GetLowerValue() const;
-  void SetLowerValue(int aLowerValue);
-
-  int GetUpperValue() const;
-  void SetUpperValue(int aUpperValue);
-
-  void SetRange(int aMinimum, int aMaximum);
-
   void setOptions(Options t);
 
   void setMinTickPixelSpacing(int px);

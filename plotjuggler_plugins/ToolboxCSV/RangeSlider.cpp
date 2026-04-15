@@ -307,46 +307,6 @@ QSize RangeSlider::minimumSizeHint() const
   return QSize(scHandleSideLength * 2 + scLeftRightMargin * 2, scHandleSideLength);
 }
 
-int RangeSlider::GetMinimun() const
-{
-  return mMinimum;
-}
-
-void RangeSlider::SetMinimum(int aMinimum)
-{
-  setMinimum(aMinimum);
-}
-
-int RangeSlider::GetMaximun() const
-{
-  return mMaximum;
-}
-
-void RangeSlider::SetMaximum(int aMaximum)
-{
-  setMaximum(aMaximum);
-}
-
-int RangeSlider::GetLowerValue() const
-{
-  return mLowerValue;
-}
-
-void RangeSlider::SetLowerValue(int aLowerValue)
-{
-  setLowerValue(aLowerValue);
-}
-
-int RangeSlider::GetUpperValue() const
-{
-  return mUpperValue;
-}
-
-void RangeSlider::SetUpperValue(int aUpperValue)
-{
-  setUpperValue(aUpperValue);
-}
-
 void RangeSlider::setLowerValue(int aLowerValue)
 {
   if (aLowerValue > mMaximum)
@@ -429,13 +389,6 @@ int RangeSlider::validLength() const
 {
   int len = (orientation == Qt::Horizontal) ? width() : height();
   return len - scLeftRightMargin * 2 - scHandleSideLength * (type.testFlag(DoubleHandles) ? 2 : 1);
-}
-
-void RangeSlider::SetRange(int aMinimum, int mMaximum)
-{
-  setMinimum(aMinimum);
-  setMaximum(mMaximum);
-  mDecimals = 0;
 }
 
 void RangeSlider::setOptions(Options t)
@@ -679,17 +632,14 @@ void RangeSlider::setRangeReal(double minV, double maxV, int decimals)
   }
 
   int d = std::max(0, decimals);
-  while (d > 0)
+  long long s = 1;
+  for (int i = 0; i < d; i++)
   {
-    long long s = 1;
-    for (int i = 0; i < d; i++)
-    {
-      s *= 10;
-    }
-    if (span * double(s) <= double(std::numeric_limits<int>::max()))
-    {
-      break;
-    }
+    s *= 10;
+  }
+  while (d > 0 && span * double(s) > double(std::numeric_limits<int>::max()))
+  {
+    s /= 10;
     d--;
   }
 
