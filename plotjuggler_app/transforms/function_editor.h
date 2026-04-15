@@ -9,6 +9,7 @@
 #include "custom_function.h"
 #include "qwt_plot_curve.h"
 #include "ui_function_editor.h"
+#include "ui_functions_library.h"
 #include "plotwidget.h"
 #include "PlotJuggler/util/delayed_callback.hpp"
 
@@ -33,6 +34,12 @@ public:
     MODIFY
   };
 
+  enum class ScriptLang
+  {
+    Lua,
+    Python
+  };
+
   void clear();
 
   QString getLinkedData() const;
@@ -52,21 +59,13 @@ public slots:
 
 private slots:
 
-  void on_snippetsListSaved_currentRowChanged(int currentRow);
-
-  void on_snippetsListSaved_doubleClicked(const QModelIndex& index);
-
   void on_nameLineEdit_textChanged(const QString& arg1);
-
-  void savedContextMenu(const QPoint& pos);
 
   void on_buttonLoadFunctions_clicked();
 
   void on_buttonSaveFunctions_clicked();
 
   void on_buttonSaveCurrent_clicked();
-
-  void onRenameSaved();
 
   void on_pushButtonCreate_clicked();
 
@@ -77,8 +76,6 @@ private slots:
   void on_pushButtonDeleteCurves_clicked();
 
   void on_listSourcesChanged();
-
-  void on_lineEditSource_textChanged(const QString& text);
 
   void onUpdatePreview();
 
@@ -104,6 +101,8 @@ private slots:
 
   void on_functionText_textChanged();
 
+  void onScriptLangChanged();
+
 private:
   void importSnippets(const QByteArray& xml_text);
 
@@ -118,6 +117,15 @@ private:
   PlotDataMapRef& _plot_map_data;
   const TransformsMap& _transform_maps;
   Ui::FunctionEditor* ui;
+  Ui::FunctionsLibrary* _functions_library_ui;
+
+  QDialog* _functions_library_dialog;
+  QWidget* _functions_library_overlay;
+
+  QString _selected_library_name;
+
+  void reloadFunctionsLibraryTable();
+  void updateFunctionsLibraryPreview();
 
   int _v_count;
 
@@ -138,7 +146,20 @@ private:
   DelayedCallback _update_preview_tab1;
   DelayedCallback _update_preview_tab2;
 
-  void setSemaphore(QLabel* semaphore, QString errors);
+  void setupFunctionAppsButton();
+
+  void syncSourceFromRadio();
+
+  ScriptLang currentLang() const;
+  ScriptLang currentLangBatch() const;
+
+  CustomPlotPtr createCustomFunction(const SnippetData& snippet, ScriptLang lang) const;
+
+  void reassignRadioRows();
+
+  QButtonGroup* _source_group = nullptr;
+  QString _linked_source;
+  int _linked_source_row = -1;
 
 signals:
   void accept(std::vector<CustomPlotPtr> plot);

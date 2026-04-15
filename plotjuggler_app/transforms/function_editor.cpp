@@ -26,10 +26,19 @@
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QSyntaxHighlighter>
+#include <QHeaderView>
+#include <QPlainTextEdit>
+
+#include <QGraphicsDropShadowEffect>
+#include <QFontDatabase>
 
 #include "QLuaHighlighter"
 
 #include "lua_custom_function.h"
+#ifdef PJ_HAS_PYTHON
+#include "python_custom_function.h"
+#endif
+
 #include "PlotJuggler/svg_util.h"
 #include "ui_function_editor_help.h"
 #include "stylesheet.h"
@@ -40,6 +49,7 @@ void FunctionEditorWidget::on_stylesheetChanged(QString theme)
   ui->buttonLoadFunctions->setIcon(LoadSvg(":/resources/svg/import.svg", theme));
   ui->buttonSaveFunctions->setIcon(LoadSvg(":/resources/svg/export.svg", theme));
   ui->buttonSaveCurrent->setIcon(LoadSvg(":/resources/svg/save.svg", theme));
+  ui->buttonLibraryBox->setIcon(LoadSvg(":/resources/svg/apps_box.svg", theme));
 
   auto style = GetLuaSyntaxStyle(theme);
 
@@ -57,10 +67,15 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
   , _plot_map_data(plotMapData)
   , _transform_maps(mapped_custom_plots)
   , ui(new Ui::FunctionEditor)
+  , _functions_library_ui(nullptr)
+  , _functions_library_dialog(nullptr)
+  , _functions_library_overlay(nullptr)
   , _v_count(1)
   , _preview_widget(new PlotWidget(_local_plot_data, this))
 {
   ui->setupUi(this);
+
+  setupFunctionAppsButton();
 
   ui->globalVarsText->setHighlighter(new QLuaHighlighter);
   ui->globalVarsTextBatch->setHighlighter(new QLuaHighlighter);
@@ -88,7 +103,6 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
   ui->functionText->setFont(fixedFont);
   ui->globalVarsTextBatch->setFont(fixedFont);
   ui->functionTextBatch->setFont(fixedFont);
-  ui->snippetPreview->setFont(fixedFont);
 
   auto theme = settings.value("StyleSheet::theme", "light").toString();
   on_stylesheetChanged(theme);
@@ -122,11 +136,6 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
 
   importSnippets(saved_xml);
 
-  ui->snippetsListSaved->setContextMenuPolicy(Qt::CustomContextMenu);
-
-  connect(ui->snippetsListSaved, &QListWidget::customContextMenuRequested, this,
-          &FunctionEditorWidget::savedContextMenu);
-
   ui->globalVarsText->setPlainText(
       settings.value("FunctionEditorWidget.previousGlobals", "").toString());
   ui->globalVarsTextBatch->setPlainText(
@@ -137,7 +146,6 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
   ui->functionTextBatch->setPlainText(
       settings.value("FunctionEditorWidget.previousFunctionBatch", "return value").toString());
 
-  ui->lineEditSource->installEventFilter(this);
   ui->listAdditionalSources->installEventFilter(this);
   ui->lineEditTab2Filter->installEventFilter(this);
 
@@ -170,6 +178,430 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
 
   bool use_batch_prefix = settings.value("FunctionEditorWidget.batchPrefix", false).toBool();
   ui->radioButtonPrefix->setChecked(use_batch_prefix);
+  ui->luaButton->setChecked(true);
+  ui->luaBatchButton->setChecked(true);
+
+  _source_group = new QButtonGroup(this);
+  _source_group->setExclusive(true);
+
+  connect(_source_group, QOverload<QAbstractButton*, bool>::of(&QButtonGroup::buttonToggled), this,
+          [this](QAbstractButton* b, bool checked) {
+            if (!checked)
+            {
+              return;
+            }
+            syncSourceFromRadio();
+            on_listSourcesChanged();
+            updatePreview();
+          });
+
+  if (ui->luaButton)
+  {
+    connect(ui->luaButton, &QAbstractButton::toggled, this, [this](bool checked) {
+      if (checked)
+      {
+        onScriptLangChanged();
+      }
+    });
+  }
+
+  if (ui->pythonButton)
+  {
+    connect(ui->pythonButton, &QAbstractButton::toggled, this, [this](bool checked) {
+      if (checked)
+      {
+        onScriptLangChanged();
+      }
+    });
+  }
+
+  if (ui->luaBatchButton)
+  {
+    connect(ui->luaBatchButton, &QAbstractButton::toggled, this, [this](bool checked) {
+      if (checked)
+      {
+        onScriptLangChanged();
+      }
+    });
+  }
+
+  if (ui->pythonBatchButton)
+  {
+    connect(ui->pythonBatchButton, &QAbstractButton::toggled, this, [this](bool checked) {
+      if (checked)
+      {
+        onScriptLangChanged();
+      }
+    });
+  }
+}
+
+FunctionEditorWidget::ScriptLang FunctionEditorWidget::currentLang() const
+{
+  if (ui->pythonButton && ui->pythonButton->isChecked())
+  {
+    return ScriptLang::Python;
+  }
+  return ScriptLang::Lua;
+}
+
+FunctionEditorWidget::ScriptLang FunctionEditorWidget::currentLangBatch() const
+{
+  if (ui->pythonBatchButton && ui->pythonBatchButton->isChecked())
+  {
+    return ScriptLang::Python;
+  }
+  return ScriptLang::Lua;
+}
+
+void FunctionEditorWidget::onScriptLangChanged()
+{
+  updateFunctionsLibraryPreview();
+  onUpdatePreview();
+  onUpdatePreviewBatch();
+}
+
+CustomPlotPtr FunctionEditorWidget::createCustomFunction(const SnippetData& snippet,
+                                                         ScriptLang lang) const
+{
+  if (lang == ScriptLang::Python)
+  {
+#ifdef PJ_HAS_PYTHON
+    return std::make_shared<PythonCustomFunction>(snippet);
+#else
+    throw std::runtime_error("Python support not available (compiled without Python3 dev).");
+#endif
+  }
+  return std::make_shared<LuaCustomFunction>(snippet);
+}
+
+void FunctionEditorWidget::setupFunctionAppsButton()
+{
+  connect(ui->buttonLibraryBox, &QToolButton::clicked, this, [this]() {
+    if (!_functions_library_dialog)
+    {
+      _functions_library_dialog = new QDialog(this);
+      _functions_library_ui = new Ui::FunctionsLibrary();
+      _functions_library_ui->setupUi(_functions_library_dialog);
+
+      reloadFunctionsLibraryTable();
+      updateFunctionsLibraryPreview();
+
+      _functions_library_dialog->adjustSize();
+
+      _functions_library_dialog->setWindowTitle(tr("Function Library"));
+      _functions_library_dialog->setWindowFlags(Qt::Dialog);
+      _functions_library_dialog->setMinimumSize(350, 300);
+
+      _functions_library_dialog->installEventFilter(this);
+
+      connect(_functions_library_ui->tableFunctions, &QTableWidget::cellDoubleClicked, this,
+              [this](int, int) {
+                if (_functions_library_ui && _functions_library_ui->useButton)
+                {
+                  _functions_library_ui->useButton->click();
+                }
+              });
+
+      connect(_functions_library_dialog, &QObject::destroyed, this, [this]() {
+        if (_functions_library_overlay)
+        {
+          _functions_library_overlay->hide();
+          _functions_library_overlay->deleteLater();
+          _functions_library_overlay = nullptr;
+        }
+        _functions_library_dialog = nullptr;
+        delete _functions_library_ui;
+        _functions_library_ui = nullptr;
+      });
+
+      connect(_functions_library_ui->tableFunctions, &QTableWidget::itemSelectionChanged, this,
+              [this]() { updateFunctionsLibraryPreview(); });
+
+      connect(_functions_library_ui->useButton, &QPushButton::clicked, this, [this]() {
+        auto t = _functions_library_ui->tableFunctions;
+        auto selected = t->selectionModel()->selectedRows();
+        if (selected.isEmpty())
+        {
+          return;
+        }
+
+        QString combined_globals;
+        QString combined_function;
+        QString first_language;
+
+        for (const auto& index : selected)
+        {
+          auto item = t->item(index.row(), 0);
+          if (!item)
+          {
+            continue;
+          }
+
+          auto it = _snipped_saved.find(item->text());
+          if (it == _snipped_saved.end())
+          {
+            continue;
+          }
+
+          const auto& sn = it->second;
+
+          if (first_language.isEmpty())
+          {
+            first_language = sn.language;
+          }
+
+          if (!sn.global_vars.trimmed().isEmpty())
+          {
+            if (!combined_globals.isEmpty())
+            {
+              combined_globals += "\n\n";
+            }
+            combined_globals += sn.global_vars;
+          }
+
+          if (!sn.function.trimmed().isEmpty())
+          {
+            if (!combined_function.isEmpty())
+            {
+              combined_function += "\n\n";
+            }
+            combined_function += sn.function;
+          }
+        }
+
+        if (first_language.toLower() == "python")
+        {
+          if (ui->pythonButton)
+          {
+            ui->pythonButton->setChecked(true);
+          }
+        }
+        else
+        {
+          if (ui->luaButton)
+          {
+            ui->luaButton->setChecked(true);
+          }
+        }
+
+        ui->globalVarsText->setPlainText(combined_globals);
+        ui->functionText->setPlainText(combined_function);
+        onUpdatePreview();
+
+        _functions_library_dialog->hide();
+      });
+
+      connect(_functions_library_ui->searchLineEdit, &QLineEdit::textChanged, this,
+              [this](const QString& text) {
+                auto t = _functions_library_ui->tableFunctions;
+                for (int row = 0; row < t->rowCount(); row++)
+                {
+                  auto item = t->item(row, 0);
+                  bool match = !item || item->text().contains(text, Qt::CaseInsensitive);
+                  t->setRowHidden(row, !match);
+                }
+              });
+    }
+
+    QWidget* top = window();
+
+    if (!_functions_library_overlay)
+    {
+      _functions_library_overlay = new QWidget(top);
+      _functions_library_overlay->setObjectName("functionsLibraryOverlay");
+      _functions_library_overlay->setStyleSheet(
+          "#functionsLibraryOverlay { background-color: rgba(0,0,0,90); }");
+      _functions_library_overlay->setFocusPolicy(Qt::StrongFocus);
+      _functions_library_overlay->show();
+    }
+
+    _functions_library_overlay->setGeometry(top->rect());
+    _functions_library_overlay->raise();
+    _functions_library_overlay->show();
+
+    _functions_library_dialog->adjustSize();
+    QRect topGeom = top->frameGeometry();
+    int x = topGeom.x() + (topGeom.width() - _functions_library_dialog->width()) / 2;
+    int y = topGeom.y() + (topGeom.height() - _functions_library_dialog->height()) / 2;
+    _functions_library_dialog->move(x, y);
+
+    if (_functions_library_ui && _functions_library_ui->searchLineEdit)
+    {
+      _functions_library_ui->searchLineEdit->setFocus();
+      _functions_library_ui->searchLineEdit->selectAll();
+    }
+
+    _functions_library_dialog->exec();
+
+    _functions_library_overlay->hide();
+  });
+}
+
+void FunctionEditorWidget::syncSourceFromRadio()
+{
+  auto t = ui->listAdditionalSources;
+  if (!t || !_source_group)
+  {
+    return;
+  }
+
+  for (auto* btn : _source_group->buttons())
+  {
+    auto* rb = qobject_cast<QRadioButton*>(btn);
+    if (rb && rb->isChecked())
+    {
+      int row = rb->property("row").toInt();
+      auto item = t->item(row, 2);
+      _linked_source = item ? item->text() : "";
+
+      // Restore previous row label
+      if (_linked_source_row >= 0 && _linked_source_row < t->rowCount())
+      {
+        if (auto* prev_item = t->item(_linked_source_row, 1))
+        {
+          prev_item->setText(QString("v%1").arg(_linked_source_row + 1));
+        }
+      }
+      // Set new row label
+      if (auto* new_item = t->item(row, 1))
+      {
+        new_item->setText("value");
+      }
+
+      _linked_source_row = row;
+      return;
+    }
+  }
+  _linked_source.clear();
+  _linked_source_row = -1;
+}
+
+void FunctionEditorWidget::reassignRadioRows()
+{
+  auto t = ui->listAdditionalSources;
+  if (!t)
+  {
+    return;
+  }
+
+  for (int row = 0; row < t->rowCount(); row++)
+  {
+    if (auto* rb = qobject_cast<QRadioButton*>(t->cellWidget(row, 0)))
+    {
+      rb->setProperty("row", row);
+    }
+  }
+}
+
+void FunctionEditorWidget::reloadFunctionsLibraryTable()
+{
+  if (!_functions_library_ui || !_functions_library_ui->tableFunctions)
+  {
+    return;
+  }
+
+  auto t = _functions_library_ui->tableFunctions;
+
+  _selected_library_name.clear();
+
+  t->clear();
+  t->setColumnCount(1);
+  t->setHorizontalHeaderLabels({ "Name" });
+  t->setRowCount((int)_snipped_saved.size());
+
+  t->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  t->setSelectionBehavior(QAbstractItemView::SelectRows);
+  t->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
+  t->horizontalHeader()->setStretchLastSection(true);
+  t->verticalHeader()->setVisible(false);
+
+  int row = 0;
+  for (const auto& it : _snipped_saved)
+  {
+    t->setItem(row, 0, new QTableWidgetItem(it.first));
+    row++;
+  }
+
+  if (t->rowCount() > 0)
+  {
+    t->selectRow(0);
+    auto item0 = t->item(0, 0);
+    if (item0)
+    {
+      _selected_library_name = item0->text();
+    }
+  }
+}
+
+void FunctionEditorWidget::updateFunctionsLibraryPreview()
+{
+  if (!_functions_library_ui)
+  {
+    return;
+  }
+
+  auto preview = _functions_library_ui->previewPlainText;
+  if (!preview)
+  {
+    return;
+  }
+
+  auto t = _functions_library_ui->tableFunctions;
+  auto selected = t->selectionModel()->selectedRows();
+  if (selected.isEmpty())
+  {
+    preview->clear();
+    return;
+  }
+
+  QString text;
+
+  for (const auto& index : selected)
+  {
+    auto item = t->item(index.row(), 0);
+    if (!item)
+    {
+      continue;
+    }
+
+    auto it = _snipped_saved.find(item->text());
+    if (it == _snipped_saved.end())
+    {
+      continue;
+    }
+
+    const SnippetData& snippet = it->second;
+
+    if (!text.isEmpty())
+    {
+      text += "\n\n";
+    }
+
+    if (!snippet.global_vars.isEmpty())
+    {
+      text += snippet.global_vars + "\n\n";
+    }
+
+    text += "function calc(time, value";
+    for (int i = 1; i <= snippet.additional_sources.size(); i++)
+    {
+      text += QString(", v%1").arg(i);
+    }
+    QString lang_label = snippet.language;
+    lang_label[0] = lang_label[0].toUpper();
+    text += ")  [" + lang_label + "]\n";
+
+    const auto lines = snippet.function.split("\n");
+    for (const auto& line : lines)
+    {
+      text += "    " + line + "\n";
+    }
+    text += "end";
+  }
+
+  preview->setPlainText(text);
 }
 
 void FunctionEditorWidget::saveSettings()
@@ -214,12 +646,13 @@ FunctionEditorWidget::~FunctionEditorWidget()
 
 void FunctionEditorWidget::setLinkedPlotName(const QString& linkedPlotName)
 {
-  ui->lineEditSource->setText(linkedPlotName);
+  _linked_source = linkedPlotName;
 }
 
 void FunctionEditorWidget::clear()
 {
-  ui->lineEditSource->setText("");
+  _linked_source.clear();
+  _linked_source_row = -1;
   ui->nameLineEdit->setText("");
   ui->listAdditionalSources->setRowCount(0);
 
@@ -230,40 +663,79 @@ void FunctionEditorWidget::clear()
 
 QString FunctionEditorWidget::getLinkedData() const
 {
-  return ui->lineEditSource->text();
+  return _linked_source;
 }
 
 void FunctionEditorWidget::createNewPlot()
 {
   ui->nameLineEdit->setEnabled(true);
-  ui->lineEditSource->setEnabled(true);
   _editor_mode = CREATE;
 }
 
 void FunctionEditorWidget::editExistingPlot(CustomPlotPtr data)
 {
+  if (data->language().toLower() == "python")
+  {
+    if (ui->pythonButton)
+    {
+      ui->pythonButton->setChecked(true);
+    }
+  }
+  else
+  {
+    if (ui->luaButton)
+    {
+      ui->luaButton->setChecked(true);
+    }
+  }
+
+  auto list_widget = ui->listAdditionalSources;
+  list_widget->setRowCount(0);
+
   ui->globalVarsText->setPlainText(data->snippet().global_vars);
   ui->functionText->setPlainText(data->snippet().function);
+
   setLinkedPlotName(data->snippet().linked_source);
   ui->nameLineEdit->setText(data->aliasName());
   ui->nameLineEdit->setEnabled(false);
 
   _editor_mode = MODIFY;
 
-  auto list_widget = ui->listAdditionalSources;
-  list_widget->setRowCount(0);
+  if (!data->snippet().linked_source.isEmpty())
+  {
+    int row = list_widget->rowCount();
+    list_widget->setRowCount(row + 1);
+
+    auto rb = new QRadioButton(list_widget);
+    rb->setProperty("row", row);
+    _source_group->addButton(rb);
+    list_widget->setCellWidget(row, 0, rb);
+
+    list_widget->setItem(row, 1, new QTableWidgetItem(QString("v%1").arg(row + 1)));
+    list_widget->setItem(row, 2, new QTableWidgetItem(data->snippet().linked_source));
+
+    rb->setChecked(true);
+  }
 
   for (QString curve_name : data->snippet().additional_sources)
   {
-    if (list_widget->findItems(curve_name, Qt::MatchExactly).isEmpty() &&
-        curve_name != ui->lineEditSource->text())
+    if (curve_name == data->snippet().linked_source)
     {
-      int row = list_widget->rowCount();
-      list_widget->setRowCount(row + 1);
-      list_widget->setItem(row, 0, new QTableWidgetItem(QString("v%1").arg(row + 1)));
-      list_widget->setItem(row, 1, new QTableWidgetItem(curve_name));
+      continue;
     }
+
+    int row = list_widget->rowCount();
+    list_widget->setRowCount(row + 1);
+
+    auto rb = new QRadioButton(list_widget);
+    rb->setProperty("row", row);
+    _source_group->addButton(rb);
+    list_widget->setCellWidget(row, 0, rb);
+
+    list_widget->setItem(row, 1, new QTableWidgetItem(QString("v%1").arg(row + 1)));
+    list_widget->setItem(row, 2, new QTableWidgetItem(curve_name));
   }
+
   on_listSourcesChanged();
 }
 
@@ -274,6 +746,15 @@ void FunctionEditorWidget::editExistingPlot(CustomPlotPtr data)
 
 bool FunctionEditorWidget::eventFilter(QObject* obj, QEvent* ev)
 {
+  if (obj == _functions_library_dialog && ev->type() == QEvent::Hide)
+  {
+    if (_functions_library_overlay)
+    {
+      _functions_library_overlay->hide();
+    }
+    return false;
+  }
+
   if (ev->type() == QEvent::DragEnter)
   {
     auto event = static_cast<QDragEnterEvent*>(ev);
@@ -301,8 +782,7 @@ bool FunctionEditorWidget::eventFilter(QObject* obj, QEvent* ev)
           _dragging_curves.push_back(curve_name);
         }
       }
-      if ((obj == ui->lineEditSource && _dragging_curves.size() == 1) ||
-          (obj == ui->lineEditTab2Filter && _dragging_curves.size() == 1) ||
+      if ((obj == ui->lineEditTab2Filter && _dragging_curves.size() == 1) ||
           (obj == ui->listAdditionalSources && _dragging_curves.size() > 0))
       {
         event->acceptProposedAction();
@@ -312,11 +792,7 @@ bool FunctionEditorWidget::eventFilter(QObject* obj, QEvent* ev)
   }
   else if (ev->type() == QEvent::Drop)
   {
-    if (obj == ui->lineEditSource)
-    {
-      ui->lineEditSource->setText(_dragging_curves.front());
-    }
-    else if (obj == ui->lineEditTab2Filter)
+    if (obj == ui->lineEditTab2Filter)
     {
       ui->lineEditTab2Filter->setText(_dragging_curves.front());
     }
@@ -326,12 +802,24 @@ bool FunctionEditorWidget::eventFilter(QObject* obj, QEvent* ev)
       for (QString curve_name : _dragging_curves)
       {
         if (list_widget->findItems(curve_name, Qt::MatchExactly).isEmpty() &&
-            curve_name != ui->lineEditSource->text())
+            curve_name != _linked_source)
         {
           int row = list_widget->rowCount();
           list_widget->setRowCount(row + 1);
-          list_widget->setItem(row, 0, new QTableWidgetItem(QString("v%1").arg(row + 1)));
-          list_widget->setItem(row, 1, new QTableWidgetItem(curve_name));
+
+          auto rb = new QRadioButton(list_widget);
+          rb->setFocusPolicy(Qt::NoFocus);
+          rb->setProperty("row", row);
+          _source_group->addButton(rb);
+          list_widget->setCellWidget(row, 0, rb);
+
+          list_widget->setItem(row, 1, new QTableWidgetItem(QString("v%1").arg(row + 1)));
+          list_widget->setItem(row, 2, new QTableWidgetItem(curve_name));
+
+          if (row == 0)
+          {
+            rb->setChecked(true);
+          }
         }
       }
       on_listSourcesChanged();
@@ -343,24 +831,19 @@ bool FunctionEditorWidget::eventFilter(QObject* obj, QEvent* ev)
 
 void FunctionEditorWidget::importSnippets(const QByteArray& xml_text)
 {
-  ui->snippetsListSaved->clear();
-
   _snipped_saved = GetSnippetsFromXML(xml_text);
-
-  for (const auto& it : _snipped_saved)
-  {
-    ui->snippetsListSaved->addItem(it.first);
-  }
 
   for (const auto& custom_it : _transform_maps)
   {
-    auto math_plot = dynamic_cast<LuaCustomFunction*>(custom_it.second.get());
+    auto math_plot = dynamic_cast<CustomFunction*>(custom_it.second.get());
     if (!math_plot)
     {
       continue;
     }
+
     SnippetData snippet;
     snippet.alias_name = math_plot->aliasName();
+    snippet.language = math_plot->language().toLower();
 
     if (_snipped_saved.count(snippet.alias_name) > 0)
     {
@@ -369,8 +852,16 @@ void FunctionEditorWidget::importSnippets(const QByteArray& xml_text)
 
     snippet.global_vars = math_plot->snippet().global_vars;
     snippet.function = math_plot->snippet().function;
+    snippet.linked_source = math_plot->snippet().linked_source;
+    snippet.additional_sources = math_plot->snippet().additional_sources;
+    _snipped_saved.insert({ snippet.alias_name, snippet });
   }
-  ui->snippetsListSaved->sortItems();
+
+  if (_functions_library_ui)
+  {
+    reloadFunctionsLibraryTable();
+    updateFunctionsLibraryPreview();
+  }
 }
 
 QByteArray FunctionEditorWidget::exportSnippets() const
@@ -379,76 +870,6 @@ QByteArray FunctionEditorWidget::exportSnippets() const
   auto root = ExportSnippets(_snipped_saved, doc);
   doc.appendChild(root);
   return doc.toByteArray(2);
-}
-
-void FunctionEditorWidget::on_snippetsListSaved_currentRowChanged(int current_row)
-{
-  if (current_row < 0)
-  {
-    ui->snippetPreview->setPlainText("");
-    return;
-  }
-  const auto& name = ui->snippetsListSaved->currentItem()->text();
-  const SnippetData& snippet = _snipped_saved.at(name);
-
-  QString preview;
-
-  if (!snippet.global_vars.isEmpty())
-  {
-    preview += snippet.global_vars + "\n\n";
-  }
-  preview += "function calc(time, value";
-
-  for (int i = 1; i <= snippet.additional_sources.size(); i++)
-  {
-    preview += QString(", v%1").arg(i);
-  }
-
-  preview += ")\n";
-  auto function_lines = snippet.function.split("\n");
-  for (const auto& line : function_lines)
-  {
-    preview += "    " + line + "\n";
-  }
-  preview += "end";
-  ui->snippetPreview->setPlainText(preview);
-}
-
-void FunctionEditorWidget::on_snippetsListSaved_doubleClicked(const QModelIndex& index)
-{
-  const auto& name = ui->snippetsListSaved->item(index.row())->text();
-  const SnippetData& snippet = _snipped_saved.at(name);
-
-  ui->globalVarsText->setPlainText(snippet.global_vars);
-  ui->functionText->setPlainText(snippet.function);
-}
-
-void FunctionEditorWidget::savedContextMenu(const QPoint& pos)
-{
-  auto list_saved = ui->snippetsListSaved;
-
-  if (list_saved->selectedItems().size() != 1)
-  {
-    return;
-  }
-
-  QMenu menu;
-
-  QAction* rename_item = new QAction("Rename...", this);
-  menu.addAction(rename_item);
-
-  connect(rename_item, &QAction::triggered, this, &FunctionEditorWidget::onRenameSaved);
-
-  QAction* remove_item = new QAction("Remove", this);
-  menu.addAction(remove_item);
-
-  connect(remove_item, &QAction::triggered, this, [list_saved, this]() {
-    const auto& item = list_saved->selectedItems().first();
-    _snipped_saved.erase(item->text());
-    delete list_saved->takeItem(list_saved->row(item));
-  });
-
-  menu.exec(list_saved->mapToGlobal(pos));
 }
 
 void FunctionEditorWidget::on_nameLineEdit_textChanged(const QString& name)
@@ -526,17 +947,24 @@ void FunctionEditorWidget::on_buttonSaveFunctions_clicked()
 
 void FunctionEditorWidget::on_buttonSaveCurrent_clicked()
 {
-  QString name;
+  QString name = _selected_library_name;
 
-  auto selected_snippets = ui->snippetsListSaved->selectedItems();
-  if (selected_snippets.size() >= 1)
+  if (_functions_library_ui && _functions_library_ui->tableFunctions)
   {
-    name = selected_snippets.front()->text();
+    int r = _functions_library_ui->tableFunctions->currentRow();
+    if (r >= 0)
+    {
+      auto item = _functions_library_ui->tableFunctions->item(r, 0);
+      if (item)
+      {
+        name = item->text();
+      }
+    }
   }
+
   bool ok = false;
   name = QInputDialog::getText(this, tr("Name of the Function"), tr("Name:"), QLineEdit::Normal,
                                name, &ok);
-
   if (!ok || name.isEmpty())
   {
     return;
@@ -544,12 +972,17 @@ void FunctionEditorWidget::on_buttonSaveCurrent_clicked()
 
   SnippetData snippet;
   snippet.alias_name = name;
+  snippet.language = (currentLang() == ScriptLang::Python) ? "python" : "lua";
   snippet.global_vars = ui->globalVarsText->toPlainText();
   snippet.function = ui->functionText->toPlainText();
 
-  addToSaved(name, snippet);
+  snippet.linked_source = getLinkedData();
+  for (int row = 0; row < ui->listAdditionalSources->rowCount(); row++)
+  {
+    snippet.additional_sources.push_back(ui->listAdditionalSources->item(row, 2)->text());
+  }
 
-  on_snippetsListSaved_currentRowChanged(ui->snippetsListSaved->currentRow());
+  addToSaved(name, snippet);
 }
 
 bool FunctionEditorWidget::addToSaved(const QString& name, const SnippetData& snippet)
@@ -558,50 +991,29 @@ bool FunctionEditorWidget::addToSaved(const QString& name, const SnippetData& sn
   {
     QMessageBox msgBox(this);
     msgBox.setWindowTitle("Warning");
-    msgBox.setText(tr("A function with the same name exists already in the list of saved "
-                      "functions.\n"));
+    msgBox.setText(
+        tr("A function with the same name exists already in the list of saved functions.\n"));
     msgBox.addButton(QMessageBox::Cancel);
     QPushButton* button = msgBox.addButton(tr("Overwrite"), QMessageBox::YesRole);
     msgBox.setDefaultButton(button);
 
     int res = msgBox.exec();
-
     if (res < 0 || res == QMessageBox::Cancel)
     {
       return false;
     }
   }
-  else
-  {
-    ui->snippetsListSaved->addItem(name);
-    ui->snippetsListSaved->sortItems();
-  }
+
   _snipped_saved[name] = snippet;
-  return true;
-}
 
-void FunctionEditorWidget::onRenameSaved()
-{
-  auto list_saved = ui->snippetsListSaved;
-  auto item = list_saved->selectedItems().first();
-  const auto& name = item->text();
-
-  bool ok;
-  QString new_name = QInputDialog::getText(this, tr("Change the name of the function"),
-                                           tr("New name:"), QLineEdit::Normal, name, &ok);
-
-  if (!ok || new_name.isEmpty() || new_name == name)
+  if (_functions_library_ui)
   {
-    return;
+    reloadFunctionsLibraryTable();
+    _selected_library_name = name;
+    updateFunctionsLibraryPreview();
   }
 
-  SnippetData snippet = _snipped_saved[name];
-  _snipped_saved.erase(name);
-  snippet.alias_name = new_name;
-
-  _snipped_saved.insert({ new_name, snippet });
-  item->setText(new_name);
-  ui->snippetsListSaved->sortItems();
+  return true;
 }
 
 void FunctionEditorWidget::on_pushButtonCreate_clicked()
@@ -636,18 +1048,20 @@ void FunctionEditorWidget::on_pushButtonCreate_clicked()
       snippet.function = ui->functionText->toPlainText();
       snippet.global_vars = ui->globalVarsText->toPlainText();
       snippet.alias_name = ui->nameLineEdit->text();
+      snippet.language = (currentLang() == ScriptLang::Python) ? "python" : "lua";
       snippet.linked_source = getLinkedData();
       for (int row = 0; row < ui->listAdditionalSources->rowCount(); row++)
       {
-        snippet.additional_sources.push_back(ui->listAdditionalSources->item(row, 1)->text());
+        snippet.additional_sources.push_back(ui->listAdditionalSources->item(row, 2)->text());
       }
-      created_plots.push_back(std::make_unique<LuaCustomFunction>(snippet));
+      created_plots.push_back(createCustomFunction(snippet, currentLang()));
     }
     else  // ----------- batch ------
     {
       for (int row = 0; row < ui->listBatchSources->count(); row++)
       {
         SnippetData snippet;
+        snippet.language = (currentLangBatch() == ScriptLang::Python) ? "python" : "lua";
         snippet.function = ui->functionTextBatch->toPlainText();
         snippet.global_vars = ui->globalVarsTextBatch->toPlainText();
         snippet.linked_source = ui->listBatchSources->item(row)->text();
@@ -659,7 +1073,7 @@ void FunctionEditorWidget::on_pushButtonCreate_clicked()
         {
           snippet.alias_name = snippet.linked_source + ui->suffixLineEdit->text();
         }
-        created_plots.push_back(std::make_unique<LuaCustomFunction>(snippet));
+        created_plots.push_back(createCustomFunction(snippet, currentLangBatch()));
       }
     }
 
@@ -685,11 +1099,22 @@ void FunctionEditorWidget::on_pushButtonCancel_pressed()
 
 void FunctionEditorWidget::on_listSourcesChanged()
 {
+  syncSourceFromRadio();
+  const QString source = getLinkedData();
+
   QString function_text("function( time, value");
+
   for (int row = 0; row < ui->listAdditionalSources->rowCount(); row++)
   {
+    auto name_item = ui->listAdditionalSources->item(row, 2);
+
+    if (!name_item || name_item->text() == source)
+    {
+      continue;
+    }
+
     function_text += ", ";
-    function_text += ui->listAdditionalSources->item(row, 0)->text();
+    function_text += ui->listAdditionalSources->item(row, 1)->text();
   }
   function_text += " )";
   ui->labelFunction->setText(function_text);
@@ -706,60 +1131,60 @@ void FunctionEditorWidget::on_listAdditionalSources_itemSelectionChanged()
 void FunctionEditorWidget::on_pushButtonDeleteCurves_clicked()
 {
   auto list_sources = ui->listAdditionalSources;
+  bool source_deleted = false;
+
+  QSignalBlocker block_group(_source_group);
+
   QModelIndexList selected = list_sources->selectionModel()->selectedRows();
-  while (selected.size() > 0)
+  while (!selected.isEmpty())
   {
-    list_sources->removeRow(selected.first().row());
+    int row = selected.first().row();
+
+    auto name_item = list_sources->item(row, 2);
+    if (name_item && name_item->text() == _linked_source)
+    {
+      source_deleted = true;
+    }
+
+    if (auto* rb = qobject_cast<QRadioButton*>(list_sources->cellWidget(row, 0)))
+    {
+      _source_group->removeButton(rb);
+    }
+
+    list_sources->removeRow(row);
     selected = list_sources->selectionModel()->selectedRows();
   }
+
   for (int row = 0; row < list_sources->rowCount(); row++)
   {
-    list_sources->item(row, 0)->setText(QString("v%1").arg(row + 1));
+    if (auto* v_item = list_sources->item(row, 1))
+    {
+      v_item->setText(QString("v%1").arg(row + 1));
+    }
+
+    if (auto* rb = qobject_cast<QRadioButton*>(list_sources->cellWidget(row, 0)))
+    {
+      rb->setProperty("row", row);
+    }
   }
+
+  if (source_deleted && list_sources->rowCount() > 0)
+  {
+    if (auto* rb0 = qobject_cast<QRadioButton*>(list_sources->cellWidget(0, 0)))
+    {
+      rb0->setChecked(true);
+    }
+  }
+
+  block_group.unblock();
 
   on_listAdditionalSources_itemSelectionChanged();
   on_listSourcesChanged();
 }
 
-void FunctionEditorWidget::on_lineEditSource_textChanged(const QString& text)
-{
-  updatePreview();
-}
-
 void FunctionEditorWidget::updatePreview()
 {
   _update_preview_tab1.triggerSignal(250);
-}
-
-void FunctionEditorWidget::setSemaphore(QLabel* semaphore, QString errors)
-{
-  QFile file(":/resources/svg/red_circle.svg");
-
-  if (errors.isEmpty())
-  {
-    errors = "Everything is fine :)";
-    file.setFileName(":/resources/svg/green_circle.svg");
-    ui->pushButtonCreate->setEnabled(true);
-  }
-  else
-  {
-    errors = errors.left(errors.size() - 1);
-    ui->pushButtonCreate->setEnabled(false);
-  }
-
-  semaphore->setToolTip(errors);
-  semaphore->setToolTipDuration(5000);
-
-  file.open(QFile::ReadOnly | QFile::Text);
-  auto svg_data = file.readAll();
-  file.close();
-  QByteArray content(svg_data);
-  QSvgRenderer rr(content);
-  QImage image(26, 26, QImage::Format_ARGB32);
-  QPainter painter(&image);
-  image.fill(Qt::transparent);
-  rr.render(&painter);
-  semaphore->setPixmap(QPixmap::fromImage(image));
 }
 
 void FunctionEditorWidget::onUpdatePreview()
@@ -770,7 +1195,7 @@ void FunctionEditorWidget::onUpdatePreview()
   if (_transform_maps.count(new_plot_name) != 0)
   {
     QString new_name = ui->nameLineEdit->text();
-    if (ui->lineEditSource->text().toStdString() == new_plot_name ||
+    if (_linked_source.toStdString() == new_plot_name ||
         !ui->listAdditionalSources->findItems(new_name, Qt::MatchExactly).isEmpty())
     {
       errors += "- The name of the new timeseries is the same of one of its "
@@ -792,7 +1217,7 @@ void FunctionEditorWidget::onUpdatePreview()
     }
   }
 
-  if (ui->lineEditSource->text().isEmpty())
+  if (_linked_source.isEmpty())
   {
     errors += "- Missing source time series.\n";
   }
@@ -801,25 +1226,27 @@ void FunctionEditorWidget::onUpdatePreview()
   snippet.function = ui->functionText->toPlainText();
   snippet.global_vars = ui->globalVarsText->toPlainText();
   snippet.alias_name = ui->nameLineEdit->text();
+  snippet.language = (currentLang() == ScriptLang::Python) ? "python" : "lua";
   snippet.linked_source = getLinkedData();
   for (int row = 0; row < ui->listAdditionalSources->rowCount(); row++)
   {
-    snippet.additional_sources.push_back(ui->listAdditionalSources->item(row, 1)->text());
+    snippet.additional_sources.push_back(ui->listAdditionalSources->item(row, 2)->text());
   }
 
-  CustomPlotPtr lua_function;
+  CustomPlotPtr custom_function;
   try
   {
-    lua_function = std::make_unique<LuaCustomFunction>(snippet);
+    custom_function = createCustomFunction(snippet, currentLang());
     ui->buttonSaveCurrent->setEnabled(true);
   }
   catch (std::runtime_error& err)
   {
-    errors += QString("- Error in Lua script: %1").arg(err.what());
+    const QString lang = (currentLang() == ScriptLang::Python) ? "Python" : "Lua";
+    errors += QString("- Error in %1 script: %2").arg(lang).arg(err.what());
     ui->buttonSaveCurrent->setEnabled(false);
   }
 
-  if (lua_function)
+  if (custom_function)
   {
     try
     {
@@ -828,8 +1255,8 @@ void FunctionEditorWidget::onUpdatePreview()
       out_data.clear();
 
       std::vector<PlotData*> out_vector = { &out_data };
-      lua_function->setData(&_plot_map_data, {}, out_vector);
-      lua_function->calculate();
+      custom_function->setData(&_plot_map_data, {}, out_vector);
+      custom_function->calculate();
 
       _preview_widget->removeAllCurves();
       _preview_widget->addCurve(name, Qt::blue);
@@ -837,11 +1264,32 @@ void FunctionEditorWidget::onUpdatePreview()
     }
     catch (std::runtime_error& err)
     {
-      errors += QString("- Error in Lua script: %1").arg(err.what());
+      const QString lang = (currentLang() == ScriptLang::Python) ? "Python" : "Lua";
+      errors += QString("- Error in %1 script: %2").arg(lang).arg(err.what());
     }
   }
 
-  setSemaphore(ui->labelSemaphore, errors);
+  if (errors.isEmpty())
+  {
+    ui->terminalPlainText->hide();
+    ui->framePlotPreview->show();
+    ui->pushButtonCreate->setEnabled(true);
+    return;
+  }
+
+  ui->terminalPlainText->show();
+  ui->framePlotPreview->hide();
+  ui->pushButtonCreate->setEnabled(false);
+  ui->terminalPlainText->setPlainText(errors.trimmed());
+
+  if (QWidget* p = ui->terminalPlainText->parentWidget())
+  {
+    if (QLayout* l = p->layout())
+    {
+      l->activate();
+    }
+  }
+  ui->terminalPlainText->repaint();
 }
 
 void FunctionEditorWidget::onUpdatePreviewBatch()
@@ -861,17 +1309,62 @@ void FunctionEditorWidget::onUpdatePreviewBatch()
   SnippetData snippet;
   snippet.function = ui->functionTextBatch->toPlainText();
   snippet.global_vars = ui->globalVarsTextBatch->toPlainText();
+  snippet.language = (currentLangBatch() == ScriptLang::Python) ? "python" : "lua";
 
+  if (ui->listBatchSources->count() > 0)
+  {
+    snippet.linked_source = ui->listBatchSources->item(0)->text();
+  }
+
+  CustomPlotPtr custom_function;
   try
   {
-    auto lua_function = std::make_unique<LuaCustomFunction>(snippet);
+    custom_function = createCustomFunction(snippet, currentLangBatch());
   }
   catch (std::runtime_error& err)
   {
-    errors += QString("- Error in Lua script: %1").arg(err.what());
+    const QString lang = (currentLangBatch() == ScriptLang::Python) ? "Python" : "Lua";
+    errors += QString("- Error in %1 script: %2").arg(lang).arg(err.what());
   }
 
-  setSemaphore(ui->labelSemaphoreBatch, errors);
+  if (custom_function && ui->listBatchSources->count() > 0)
+  {
+    try
+    {
+      std::string name = "batch_preview";
+      PlotData& out_data = _local_plot_data.getOrCreateNumeric(name);
+      out_data.clear();
+
+      std::vector<PlotData*> out_vector = { &out_data };
+      custom_function->setData(&_plot_map_data, {}, out_vector);
+      custom_function->calculate();
+    }
+    catch (std::runtime_error& err)
+    {
+      const QString lang = (currentLangBatch() == ScriptLang::Python) ? "Python" : "Lua";
+      errors += QString("- Error in %1 script: %2").arg(lang).arg(err.what());
+    }
+  }
+
+  if (errors.isEmpty())
+  {
+    ui->terminalBatchPlainText->hide();
+    ui->pushButtonCreate->setEnabled(true);
+    return;
+  }
+
+  ui->terminalBatchPlainText->show();
+  ui->pushButtonCreate->setEnabled(false);
+  ui->terminalBatchPlainText->setPlainText(errors.trimmed());
+
+  if (QWidget* p = ui->terminalBatchPlainText->parentWidget())
+  {
+    if (QLayout* l = p->layout())
+    {
+      l->activate();
+    }
+  }
+  ui->terminalBatchPlainText->repaint();
 }
 
 void FunctionEditorWidget::on_pushButtonHelp_clicked()
@@ -953,6 +1446,11 @@ void FunctionEditorWidget::on_suffixLineEdit_textChanged(const QString& arg1)
 
 void FunctionEditorWidget::on_tabWidget_currentChanged(int index)
 {
+  bool is_batch = (index == 1);
+
+  ui->label_name->setVisible(!is_batch);
+  ui->nameLineEdit->setVisible(!is_batch);
+
   if (index == 0)
   {
     onUpdatePreview();

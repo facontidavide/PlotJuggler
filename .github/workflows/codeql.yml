@@ -48,6 +48,8 @@ jobs:
     - name: Install apt packages
       run: |
             sudo apt update && sudo apt -y install \
+              python3 \
+              python3-dev \
               software-properties-common \
               qtbase5-dev \
               libqt5svg5-dev \
