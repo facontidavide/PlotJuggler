@@ -25,6 +25,7 @@ qt5_wrap_ui(
   transforms/binary_filter.ui
   transforms/function_editor.ui
   transforms/function_editor_help.ui
+  transforms/functions_library.ui
   transforms/transform_selector.ui
   transforms/first_derivative.ui
   transforms/moving_average_filter.ui
@@ -65,6 +66,7 @@ set(PLOTJUGGLER_SRC
     plot_background.cpp
     statistics_dialog.cpp
     suggest_dialog.cpp
+
     # timeseries_qwt.cpp
     tabbedplotwidget.cpp
     tab_widget.h
@@ -72,6 +74,7 @@ set(PLOTJUGGLER_SRC
     transforms/binary_filter.cpp
     transforms/custom_function.cpp
     transforms/function_editor.cpp
+
     transforms/transform_selector.cpp
     transforms/lua_custom_function.cpp
     transforms/moving_average_filter.cpp
@@ -94,8 +97,47 @@ if(wasmer_FOUND)
   list(APPEND PLOTJUGGLER_SRC wasm_runtime.cpp wasm_parser.cpp)
 endif()
 
+find_package(Python3 COMPONENTS Development)
+
+set(PJ_HAS_NANOBIND FALSE)
+
+if(Python3_FOUND)
+  list(APPEND PLOTJUGGLER_SRC transforms/python_custom_function.cpp)
+
+  if(CMAKE_VERSION VERSION_LESS 3.18)
+    set(DEV_MODULE Development)
+  else()
+    set(DEV_MODULE Development.Module)
+  endif()
+
+  find_package(Python 3.9 COMPONENTS Interpreter ${DEV_MODULE} QUIET)
+
+  if(Python_FOUND)
+    execute_process(
+      COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      OUTPUT_VARIABLE nanobind_ROOT
+      RESULT_VARIABLE nanobind_status
+      ERROR_QUIET
+    )
+
+    if(nanobind_status EQUAL 0 AND nanobind_ROOT)
+      find_package(nanobind CONFIG QUIET)
+      if(nanobind_FOUND)
+        set(PJ_HAS_NANOBIND TRUE)
+      endif()
+    endif()
+  endif()
+endif()
+
 add_executable(plotjuggler ${PLOTJUGGLER_SRC} ${RES_SRC} ${UI_SRC}
                            ${BACKWARD_ENABLE})
+
+if(PJ_HAS_NANOBIND)
+  nanobind_add_module(pj NOMINSIZE
+    transforms/pj_python_bindings.cpp
+  )
+endif()
 
 if(wasmer_FOUND)
   target_link_libraries(plotjuggler PRIVATE wasmer::wasmer)
@@ -127,6 +169,20 @@ target_include_directories(
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/3rdparty/Qt-Advanced-Docking/include>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/3rdparty/QCodeEditor/include>)
 
+if(Python3_FOUND)
+  message(STATUS "Python support enabled")
+
+  target_compile_definitions(plotjuggler PRIVATE PJ_HAS_PYTHON)
+
+  if(PJ_HAS_NANOBIND)
+    target_compile_definitions(plotjuggler PRIVATE PJ_HAS_NANOBIND)
+  endif()
+
+  target_link_libraries(plotjuggler PRIVATE Python3::Python)
+  target_include_directories(plotjuggler PRIVATE ${Python3_INCLUDE_DIRS})
+else()
+  message(STATUS "Python3 development libraries not found. PythonCustomFunction disabled.")
+endif()
 
 target_link_libraries(
   plotjuggler
