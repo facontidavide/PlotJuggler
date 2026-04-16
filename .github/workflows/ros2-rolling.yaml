@@ -26,12 +26,11 @@ jobs:
         with:
           required-ros-distributions: rolling
 
-      # Ensure ament_package is importable (ROS rolling packages may
-      # install to a dist-packages path that pip doesn't see).
-      - name: Fix ament_package Python path
-        run: |
-          python3 -c "import ament_package" 2>/dev/null || \
-            pip install --break-system-packages ament-package
+      # Ubuntu 24.04 (ubuntu-latest): apt-installed ROS Python packages land in
+      # /usr/lib/python3/dist-packages but CMake may invoke a different Python
+      # interpreter that doesn't see that path. Expose it explicitly.
+      - name: Fix Python path for ROS packages
+        run: echo "PYTHONPATH=/usr/lib/python3/dist-packages:$PYTHONPATH" >> $GITHUB_ENV
 
       # Run ROS CI
       - uses: ros-tooling/action-ros-ci@v0.4
