@@ -132,7 +132,7 @@ jobs:
 
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: plotjuggler_${{ steps.define_version.outputs.version }}_amd64_${{ steps.dist_short.outputs.short_name }}.deb
           generate_release_notes: false
