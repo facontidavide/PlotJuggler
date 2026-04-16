@@ -925,3 +925,30 @@ TEST(ParseCsvData, TimestampColumnStartingAtZero)
   EXPECT_NEAR(result.columns[1].numeric_points[1].first, 0.003, 1e-9);
   EXPECT_NEAR(result.columns[1].numeric_points[2].first, 0.005, 1e-9);
 }
+
+// ===========================================================================
+// Standalone time-like columns treated as strings (issue #1326)
+// ===========================================================================
+
+TEST(ParseCsvData, StandaloneTimeColumnIsString)
+{
+  std::string csv = "idx,code\n"
+                    "1,17:03:22\n"
+                    "2,08:15:00\n"
+                    "3,23:59:59\n";
+
+  CsvParseConfig config;
+  config.delimiter = ',';
+  config.time_column_index = 0;
+
+  auto result = ParseCsvData(csv, config);
+  ASSERT_TRUE(result.success);
+
+  // "code" column has time-like strings but is NOT part of a date+time pair,
+  // so it should be stored as strings, not converted to seconds.
+  EXPECT_EQ(result.columns[1].numeric_points.size(), 0u);
+  ASSERT_EQ(result.columns[1].string_points.size(), 3u);
+  EXPECT_EQ(result.columns[1].string_points[0].second, "17:03:22");
+  EXPECT_EQ(result.columns[1].string_points[1].second, "08:15:00");
+  EXPECT_EQ(result.columns[1].string_points[2].second, "23:59:59");
+}
