@@ -14,6 +14,7 @@
 #include <QCommandLineParser>
 #include <QDebug>
 #include <QDesktopServices>
+#include <QDirIterator>
 #include <QDomDocument>
 #include <QDoubleSpinBox>
 #include <QElapsedTimer>
@@ -331,8 +332,32 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   if (commandline_parser.isSet("datafile"))
   {
     QStringList datafiles = commandline_parser.values("datafile");
+
+    // Expand directories into their file contents (recursive).
+    QStringList expanded;
+    for (const auto& path : datafiles)
+    {
+      QFileInfo finfo(path);
+      if (finfo.isDir())
+      {
+        QDirIterator it(path, QDirIterator::Subdirectories);
+        while (it.hasNext())
+        {
+          it.next();
+          if (it.fileInfo().isFile())
+          {
+            expanded.push_back(it.filePath());
+          }
+        }
+      }
+      else
+      {
+        expanded.push_back(path);
+      }
+    }
+
     const bool auto_prefix = commandline_parser.isSet("auto-prefix");
-    file_loaded = loadDataFromFiles(datafiles, auto_prefix);
+    file_loaded = loadDataFromFiles(expanded, auto_prefix);
   }
   if (commandline_parser.isSet("layout"))
   {
@@ -1860,6 +1885,7 @@ void MainWindow::dragEnterEvent(QDragEnterEvent* event)
 void MainWindow::dropEvent(QDropEvent* event)
 {
   QStringList file_names;
+  bool has_directory = false;
   const auto urls = event->mimeData()->urls();
 
   for (const auto& url : urls)
@@ -1871,6 +1897,19 @@ void MainWindow::dropEvent(QDropEvent* event)
     {
       file_names << QDir::toNativeSeparators(local_file);
     }
+    else if (fileinfo.exists() && fileinfo.isDir())
+    {
+      has_directory = true;
+      QDirIterator it(local_file, QDirIterator::Subdirectories);
+      while (it.hasNext())
+      {
+        it.next();
+        if (it.fileInfo().isFile())
+        {
+          file_names << QDir::toNativeSeparators(it.filePath());
+        }
+      }
+    }
     else
     {
       QMessageBox::warning(
@@ -1879,7 +1918,7 @@ void MainWindow::dropEvent(QDropEvent* event)
     }
   }
 
-  loadDataFromFiles(file_names);
+  loadDataFromFiles(file_names, has_directory);
 }
 
 void MainWindow::on_stylesheetChanged(QString theme)
