@@ -524,7 +524,11 @@ CsvParseResult ParseCsvData(std::istream& input, const CsvParseConfig& config,
         continue;
       }
 
-      if (col_type.type != ColumnType::STRING)
+      // Standalone TIME_ONLY columns (not part of a date+time pair) are
+      // treated as strings to avoid converting e.g. "17:03:22" to 61402.
+      bool is_standalone_time = (col_type.type == ColumnType::TIME_ONLY);
+
+      if (col_type.type != ColumnType::STRING && !is_standalone_time)
       {
         if (auto val = ParseWithType(str, col_type))
         {

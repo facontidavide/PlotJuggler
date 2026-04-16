@@ -57,12 +57,18 @@ void DockToolbar::toggleFullscreen()
 
 void DockToolbar::mousePressEvent(QMouseEvent* ev)
 {
-  QCoreApplication::sendEvent(_parent->dockAreaWidget()->titleBar(), ev);
+  if (auto* area = _parent->dockAreaWidget())
+  {
+    QCoreApplication::sendEvent(area->titleBar(), ev);
+  }
 }
 
 void DockToolbar::mouseReleaseEvent(QMouseEvent* ev)
 {
-  QCoreApplication::sendEvent(_parent->dockAreaWidget()->titleBar(), ev);
+  if (auto* area = _parent->dockAreaWidget())
+  {
+    QCoreApplication::sendEvent(area->titleBar(), ev);
+  }
 }
 
 void DockToolbar::mouseMoveEvent(QMouseEvent* ev)
@@ -71,7 +77,10 @@ void DockToolbar::mouseMoveEvent(QMouseEvent* ev)
   ui->buttonBackground->setVisible(true);
   ui->buttonSplitHorizontal->setVisible(!_fullscreen_mode);
   ui->buttonSplitVertical->setVisible(!_fullscreen_mode);
-  QCoreApplication::sendEvent(_parent->dockAreaWidget()->titleBar(), ev);
+  if (auto* area = _parent->dockAreaWidget())
+  {
+    QCoreApplication::sendEvent(area->titleBar(), ev);
+  }
 
   ev->accept();
   QWidget::mouseMoveEvent(ev);

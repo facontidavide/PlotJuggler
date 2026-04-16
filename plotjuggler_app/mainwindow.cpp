@@ -70,6 +70,75 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #endif
 
+// Serialize a QDomDocument to XML with attributes in sorted order.
+// Qt's QDomDocument::toString() uses a hash map for attributes, producing
+// non-deterministic ordering that causes noisy diffs in version control.
+static void WriteSortedXml(QTextStream& out, const QDomNode& node, int indent = 0)
+{
+  const QString pad(indent, ' ');
+
+  if (node.isProcessingInstruction())
+  {
+    auto pi = node.toProcessingInstruction();
+    out << pad << "<?" << pi.target() << " " << pi.data() << "?>\n";
+    return;
+  }
+  if (node.isComment())
+  {
+    out << pad << "<!--" << node.toComment().data() << "-->\n";
+    return;
+  }
+  if (node.isText())
+  {
+    out << node.toText().data().toHtmlEscaped();
+    return;
+  }
+  if (!node.isElement())
+  {
+    return;
+  }
+
+  auto elem = node.toElement();
+  out << pad << "<" << elem.tagName();
+
+  // Collect and sort attributes alphabetically
+  QDomNamedNodeMap attrs = elem.attributes();
+  QStringList attr_names;
+  attr_names.reserve(attrs.length());
+  for (int i = 0; i < attrs.length(); ++i)
+  {
+    attr_names << attrs.item(i).nodeName();
+  }
+  attr_names.sort();
+  for (const auto& name : attr_names)
+  {
+    out << " " << name << "=\"" << elem.attribute(name).toHtmlEscaped() << "\"";
+  }
+
+  QDomNodeList children = elem.childNodes();
+  if (children.isEmpty())
+  {
+    out << "/>\n";
+    return;
+  }
+
+  // If the only child is a text node, write inline
+  if (children.length() == 1 && children.at(0).isText())
+  {
+    out << ">";
+    WriteSortedXml(out, children.at(0), 0);
+    out << "</" << elem.tagName() << ">\n";
+    return;
+  }
+
+  out << ">\n";
+  for (int i = 0; i < children.length(); ++i)
+  {
+    WriteSortedXml(out, children.at(i), indent + 1);
+  }
+  out << pad << "</" << elem.tagName() << ">\n";
+}
+
 MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* parent)
   : QMainWindow(parent)
   , ui(new Ui::MainWindow)
@@ -147,6 +216,7 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   {
     int buffer_size = std::max(10, commandline_parser.value("buffer_size").toInt());
     ui->streamingSpinBox->setMaximum(buffer_size);
+    ui->streamingSpinBox->setValue(buffer_size);
   }
 
   _animated_streaming_movie = new QMovie(":/resources/animated_radio.gif");
@@ -268,7 +338,7 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   }
   if (commandline_parser.isSet("layout"))
   {
-    loadLayoutFromFile(commandline_parser.value("layout"));
+    loadLayoutFromFile(commandline_parser.value("layout"), !file_loaded);
   }
 
   restoreGeometry(settings.value("MainWindow.geometry").toByteArray());
@@ -935,6 +1005,10 @@ QDomDocument MainWindow::xmlSaveState() const
   relative_time.setAttribute("enabled", ui->buttonRemoveTimeOffset->isChecked());
   root.appendChild(relative_time);
 
+  QDomElement streaming_buffer = doc.createElement("streaming_buffer_size");
+  streaming_buffer.setAttribute("value", ui->streamingSpinBox->value());
+  root.appendChild(streaming_buffer);
+
   return doc;
 }
 
@@ -1066,6 +1140,13 @@ bool MainWindow::xmlLoadState(QDomDocument state_document)
   {
     bool remove_offset = (relative_time.attribute("enabled") == QString("1"));
     ui->buttonRemoveTimeOffset->setChecked(remove_offset);
+  }
+
+  QDomElement streaming_buffer = root.firstChildElement("streaming_buffer_size");
+  if (!streaming_buffer.isNull())
+  {
+    int buffer_val = streaming_buffer.attribute("value", "5").toInt();
+    ui->streamingSpinBox->setValue(buffer_val);
   }
   return true;
 }
@@ -1950,7 +2031,7 @@ std::tuple<double, double, int> MainWindow::calculateVisibleRangeX()
   return std::tuple<double, double, int>(min_time, max_time, max_steps);
 }
 
-bool MainWindow::loadLayoutFromFile(QString filename)
+bool MainWindow::loadLayoutFromFile(QString filename, bool load_datafiles)
 {
   QSettings settings;
 
@@ -1986,29 +2067,32 @@ bool MainWindow::loadLayoutFromFile(QString filename)
 
   loadPluginState(root);
   //-------------------------------------------------
-  QDomElement previously_loaded_datafile = root.firstChildElement("previouslyLoaded_"
-                                                                  "Datafiles");
-
-  QDomElement datafile_elem = previously_loaded_datafile.firstChildElement("fileInfo");
-  while (!datafile_elem.isNull())
+  if (load_datafiles)
   {
-    QString datafile_path = datafile_elem.attribute("filename");
-    if (QDir(datafile_path).isRelative())
+    QDomElement previously_loaded_datafile = root.firstChildElement("previouslyLoaded_"
+                                                                    "Datafiles");
+
+    QDomElement datafile_elem = previously_loaded_datafile.firstChildElement("fileInfo");
+    while (!datafile_elem.isNull())
     {
-      QDir layout_directory = QFileInfo(filename).absoluteDir();
-      QString new_path = layout_directory.filePath(datafile_path);
-      datafile_path = QFileInfo(new_path).absoluteFilePath();
+      QString datafile_path = datafile_elem.attribute("filename");
+      if (QDir(datafile_path).isRelative())
+      {
+        QDir layout_directory = QFileInfo(filename).absoluteDir();
+        QString new_path = layout_directory.filePath(datafile_path);
+        datafile_path = QFileInfo(new_path).absoluteFilePath();
+      }
+
+      FileLoadInfo info;
+      info.filename = datafile_path;
+      info.prefix = datafile_elem.attribute("prefix");
+
+      auto plugin_elem = datafile_elem.firstChildElement("plugin");
+      info.plugin_config.appendChild(info.plugin_config.importNode(plugin_elem, true));
+
+      loadDataFromFile(info, false);
+      datafile_elem = datafile_elem.nextSiblingElement("fileInfo");
     }
-
-    FileLoadInfo info;
-    info.filename = datafile_path;
-    info.prefix = datafile_elem.attribute("prefix");
-
-    auto plugin_elem = datafile_elem.firstChildElement("plugin");
-    info.plugin_config.appendChild(info.plugin_config.importNode(plugin_elem, true));
-
-    loadDataFromFile(info, false);
-    datafile_elem = datafile_elem.nextSiblingElement("fileInfo");
   }
 
   QDomElement previous_streamer = root.firstChildElement("previouslyLoaded_Streamer");
@@ -2526,6 +2610,7 @@ void MainWindow::on_actionExit_triggered()
 void MainWindow::on_buttonRemoveTimeOffset_toggled(bool)
 {
   updateTimeOffset();
+  updateTimeSlider();
   updatedDisplayTime();
 
   forEachWidget([](PlotWidget* plot) { plot->replot(); });
@@ -3209,19 +3294,20 @@ void MainWindow::on_buttonSaveLayout_clicked()
     auto snipped_saved = GetSnippetsFromXML(snippets_xml_text);
     auto snippets_root = ExportSnippets(snipped_saved, doc);
     root.appendChild(snippets_root);
-
-    QDomElement color_maps = doc.createElement("colorMaps");
-    for (const auto& it : ColorMapLibrary())
-    {
-      QString colormap_name = it.first;
-      QDomElement colormap = doc.createElement("colorMap");
-      QDomText colormap_script = doc.createTextNode(it.second->script());
-      colormap.setAttribute("name", colormap_name);
-      colormap.appendChild(colormap_script);
-      color_maps.appendChild(colormap);
-    }
-    root.appendChild(color_maps);
   }
+
+  QDomElement color_maps = doc.createElement("colorMaps");
+  for (const auto& it : ColorMapLibrary())
+  {
+    QString colormap_name = it.first;
+    QDomElement colormap = doc.createElement("colorMap");
+    QDomText colormap_script = doc.createTextNode(it.second->script());
+    colormap.setAttribute("name", colormap_name);
+    colormap.appendChild(colormap_script);
+    color_maps.appendChild(colormap);
+  }
+  root.appendChild(color_maps);
+
   root.appendChild(doc.createComment(" - - - - - - - - - - - - - - "));
   //------------------------------------
   QFile file(fileName);
@@ -3229,7 +3315,7 @@ void MainWindow::on_buttonSaveLayout_clicked()
   {
     QTextStream stream(&file);
     stream.setCodec("UTF-8");
-    stream << doc.toString() << "\n";
+    WriteSortedXml(stream, doc);
   }
 }
 

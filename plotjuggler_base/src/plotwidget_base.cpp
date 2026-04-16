@@ -265,18 +265,13 @@ Range PlotWidgetBase::getVisualizationRangeY(Range range_X) const
     }
   }
 
-  double margin = 0.1;
-
   if (bottom > top)
   {
-    bottom = 0;
-    top = 0;
+    bottom = -1.0;
+    top = 1.0;
   }
 
-  if (top - bottom > std::numeric_limits<double>::epsilon())
-  {
-    margin = (top - bottom) * 0.025;
-  }
+  double margin = (top - bottom) * 0.025;
 
   top += margin;
   bottom -= margin;
