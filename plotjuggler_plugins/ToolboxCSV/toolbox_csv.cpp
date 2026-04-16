@@ -147,6 +147,12 @@ void ToolboxCSV::onExportSingleFile(bool is_csv, QString filename)
     return;
   }
 
+  const QString folder = QFileInfo(filename).absolutePath();
+  const QString fname = QFileInfo(filename).fileName();
+  QMessageBox::information(
+      _ui.widget(), "Export",
+      QString("<b>File saved in folder:</b><br>%1<br><br><b>File name:</b><br>%2")
+          .arg(folder.toHtmlEscaped(), fname.toHtmlEscaped()));
   emit closed();
 }
 
@@ -179,7 +185,7 @@ void ToolboxCSV::onExportMultipleFiles(bool is_csv, QDir dir, QString prefix)
     groups[group_name].push_back(topic_name);
   }
 
-  int files_written = 0;
+  QStringList saved_files;
 
   for (const auto& [group_name, topics] : groups)
   {
@@ -219,15 +225,25 @@ void ToolboxCSV::onExportMultipleFiles(bool is_csv, QDir dir, QString prefix)
       return;
     }
 
-    files_written++;
+    saved_files.append(filename);
   }
 
-  if (files_written == 0)
+  if (saved_files.isEmpty())
   {
     QMessageBox::warning(_ui.widget(), "Export", "No samples found in the selected time range.");
     return;
   }
 
+  QStringList file_names;
+  for (const QString& f : saved_files)
+  {
+    file_names.append(QFileInfo(f).fileName().toHtmlEscaped());
+  }
+  const QString names_label = (saved_files.size() == 1) ? "File name:" : "File names:";
+  QMessageBox::information(
+      _ui.widget(), "Export",
+      QString("<b>Files saved in folder:</b><br>%1<br><br><b>%2</b><br>%3")
+          .arg(dir.absolutePath().toHtmlEscaped(), names_label, file_names.join("<br>")));
   emit closed();
 }
 
