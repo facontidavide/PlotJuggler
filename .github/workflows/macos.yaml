@@ -34,15 +34,15 @@ jobs:
         with:
           cache_packages: true
 
+      - name: Conan install
+        run: |
+          conan install . -of build --build=missing -pr:b=default -s build_type=Release -s compiler.cppstd=17
+
       - name: Install and cache Homebrew tools
         uses: tecolicom/actions-use-homebrew-tools@v1
         with:
           tools: qt@5 create-dmg
           cache: yes
-
-      - name: Conan install
-        run: |
-          conan install . -of build --build=missing -pr:b=default -s build_type=Release -s compiler.cppstd=17
 
       - name: Build PlotJuggler
         run: |
