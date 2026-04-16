@@ -47,7 +47,7 @@ public:
 
   ~MainWindow();
 
-  bool loadLayoutFromFile(QString filename);
+  bool loadLayoutFromFile(QString filename, bool load_datafiles = true);
   bool loadDataFromFiles(QStringList filenames);
   std::unordered_set<std::string> loadDataFromFile(const FileLoadInfo& info, bool merge_files);
 

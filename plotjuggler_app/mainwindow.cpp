@@ -335,7 +335,7 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   }
   if (commandline_parser.isSet("layout"))
   {
-    loadLayoutFromFile(commandline_parser.value("layout"));
+    loadLayoutFromFile(commandline_parser.value("layout"), !file_loaded);
   }
 
   restoreGeometry(settings.value("MainWindow.geometry").toByteArray());
@@ -2028,7 +2028,7 @@ std::tuple<double, double, int> MainWindow::calculateVisibleRangeX()
   return std::tuple<double, double, int>(min_time, max_time, max_steps);
 }
 
-bool MainWindow::loadLayoutFromFile(QString filename)
+bool MainWindow::loadLayoutFromFile(QString filename, bool load_datafiles)
 {
   QSettings settings;
 
@@ -2064,29 +2064,32 @@ bool MainWindow::loadLayoutFromFile(QString filename)
 
   loadPluginState(root);
   //-------------------------------------------------
-  QDomElement previously_loaded_datafile = root.firstChildElement("previouslyLoaded_"
-                                                                  "Datafiles");
-
-  QDomElement datafile_elem = previously_loaded_datafile.firstChildElement("fileInfo");
-  while (!datafile_elem.isNull())
+  if (load_datafiles)
   {
-    QString datafile_path = datafile_elem.attribute("filename");
-    if (QDir(datafile_path).isRelative())
+    QDomElement previously_loaded_datafile = root.firstChildElement("previouslyLoaded_"
+                                                                    "Datafiles");
+
+    QDomElement datafile_elem = previously_loaded_datafile.firstChildElement("fileInfo");
+    while (!datafile_elem.isNull())
     {
-      QDir layout_directory = QFileInfo(filename).absoluteDir();
-      QString new_path = layout_directory.filePath(datafile_path);
-      datafile_path = QFileInfo(new_path).absoluteFilePath();
+      QString datafile_path = datafile_elem.attribute("filename");
+      if (QDir(datafile_path).isRelative())
+      {
+        QDir layout_directory = QFileInfo(filename).absoluteDir();
+        QString new_path = layout_directory.filePath(datafile_path);
+        datafile_path = QFileInfo(new_path).absoluteFilePath();
+      }
+
+      FileLoadInfo info;
+      info.filename = datafile_path;
+      info.prefix = datafile_elem.attribute("prefix");
+
+      auto plugin_elem = datafile_elem.firstChildElement("plugin");
+      info.plugin_config.appendChild(info.plugin_config.importNode(plugin_elem, true));
+
+      loadDataFromFile(info, false);
+      datafile_elem = datafile_elem.nextSiblingElement("fileInfo");
     }
-
-    FileLoadInfo info;
-    info.filename = datafile_path;
-    info.prefix = datafile_elem.attribute("prefix");
-
-    auto plugin_elem = datafile_elem.firstChildElement("plugin");
-    info.plugin_config.appendChild(info.plugin_config.importNode(plugin_elem, true));
-
-    loadDataFromFile(info, false);
-    datafile_elem = datafile_elem.nextSiblingElement("fileInfo");
   }
 
   QDomElement previous_streamer = root.firstChildElement("previouslyLoaded_Streamer");
