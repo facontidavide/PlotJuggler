@@ -130,7 +130,7 @@
          <item>
           <widget class="QLabel" name="label_4">
            <property name="text">
-            <string>Skipped rows:</string>
+            <string>Skip lines before header:</string>
            </property>
           </widget>
          </item>
