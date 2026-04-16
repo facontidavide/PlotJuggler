@@ -213,6 +213,7 @@ MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* pa
   {
     int buffer_size = std::max(10, commandline_parser.value("buffer_size").toInt());
     ui->streamingSpinBox->setMaximum(buffer_size);
+    ui->streamingSpinBox->setValue(buffer_size);
   }
 
   _animated_streaming_movie = new QMovie(":/resources/animated_radio.gif");
@@ -2589,6 +2590,7 @@ void MainWindow::on_actionExit_triggered()
 void MainWindow::on_buttonRemoveTimeOffset_toggled(bool)
 {
   updateTimeOffset();
+  updateTimeSlider();
   updatedDisplayTime();
 
   forEachWidget([](PlotWidget* plot) { plot->replot(); });
