@@ -3574,28 +3574,29 @@ QStringList MainWindow::readAllCurvesFromXML(QDomElement root_node)
 {
   QStringList curves;
 
-  QStringList level_names = { "tabbed_widget", "Tab",  "Container", "DockSplitter",
-                              "DockArea",      "plot", "curve" };
-
-  std::function<void(int, QDomElement)> recursiveXmlStream;
-  recursiveXmlStream = [&](int level, QDomElement parent_elem) {
-    QString level_name = level_names[level];
-    for (auto elem = parent_elem.firstChildElement(level_name); elem.isNull() == false;
-         elem = elem.nextSiblingElement(level_name))
+  // Recursively find all <curve> elements regardless of nesting
+  std::function<void(QDomElement)> findCurves;
+  findCurves = [&](QDomElement elem) {
+    // Check if this element is a curve
+    if (elem.tagName() == "curve")
     {
-      if (level_name == "curve")
+      QString name = elem.attribute("name");
+      if (!name.isEmpty())
       {
-        curves.push_back(elem.attribute("name"));
+        curves.push_back(name);
       }
-      else
-      {
-        recursiveXmlStream(level + 1, elem);
-      }
+      return;  // curves don't have child curves
+    }
+
+    // Recursively process all child elements
+    for (QDomElement child = elem.firstChildElement(); !child.isNull();
+         child = child.nextSiblingElement())
+    {
+      findCurves(child);
     }
   };
 
-  // start recursion
-  recursiveXmlStream(0, root_node);
+  findCurves(root_node);
 
   return curves;
 }
