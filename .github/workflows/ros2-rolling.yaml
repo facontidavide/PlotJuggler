@@ -26,6 +26,13 @@ jobs:
         with:
           required-ros-distributions: rolling
 
+      # Ensure ament_package is importable (ROS rolling packages may
+      # install to a dist-packages path that pip doesn't see).
+      - name: Fix ament_package Python path
+        run: |
+          python3 -c "import ament_package" 2>/dev/null || \
+            pip install --break-system-packages ament-package
+
       # Run ROS CI
       - uses: ros-tooling/action-ros-ci@v0.4
         with:
