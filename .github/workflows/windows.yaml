@@ -103,7 +103,7 @@ jobs:
 
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: PlotJuggler-${{ github.ref_name }}-Windows-x64.exe
           generate_release_notes: false
