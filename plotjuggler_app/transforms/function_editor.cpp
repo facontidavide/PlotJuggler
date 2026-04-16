@@ -28,6 +28,7 @@
 #include <QSyntaxHighlighter>
 #include <QHeaderView>
 #include <QPlainTextEdit>
+#include <QSplitter>
 
 #include <QGraphicsDropShadowEffect>
 #include <QFontDatabase>
@@ -74,6 +75,40 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
   , _preview_widget(new PlotWidget(_local_plot_data, this))
 {
   ui->setupUi(this);
+
+  // Create a vertical QSplitter between preview/terminal and the editor area
+  {
+    auto* tab_layout = ui->tab->layout();
+
+    // Remove the three items from the tab layout (preview, terminal, editor)
+    tab_layout->removeWidget(ui->framePlotPreview);
+    tab_layout->removeWidget(ui->terminalPlainText);
+    tab_layout->removeItem(ui->horizontalLayout_5);
+
+    // Top container: preview frame + terminal (stacked, only one visible at a time)
+    auto* top_widget = new QWidget();
+    auto* top_layout = new QVBoxLayout(top_widget);
+    top_layout->setContentsMargins(0, 0, 0, 0);
+    top_layout->addWidget(ui->framePlotPreview);
+    top_layout->addWidget(ui->terminalPlainText);
+
+    // Bottom container: the editor area (timeseries list + code editor)
+    auto* bottom_widget = new QWidget();
+    auto* bottom_layout = new QHBoxLayout(bottom_widget);
+    bottom_layout->setContentsMargins(0, 0, 0, 0);
+    bottom_layout->setSpacing(ui->horizontalLayout_5->spacing());
+    bottom_layout->addWidget(ui->leftWidget);
+    bottom_layout->addWidget(ui->rightWidget);
+
+    auto* splitter = new QSplitter(Qt::Vertical, ui->tab);
+    splitter->setChildrenCollapsible(false);
+    splitter->addWidget(top_widget);
+    splitter->addWidget(bottom_widget);
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 2);
+
+    static_cast<QVBoxLayout*>(tab_layout)->insertWidget(0, splitter);
+  }
 
   setupFunctionAppsButton();
 
@@ -1267,6 +1302,15 @@ void FunctionEditorWidget::onUpdatePreview()
       const QString lang = (currentLang() == ScriptLang::Python) ? "Python" : "Lua";
       errors += QString("- Error in %1 script: %2").arg(lang).arg(err.what());
     }
+  }
+
+  if (new_plot_name.empty())
+  {
+    ui->nameLineEdit->setStyleSheet("QLineEdit{ background-color: #ffcccc; }");
+  }
+  else
+  {
+    ui->nameLineEdit->setStyleSheet("");
   }
 
   if (errors.isEmpty())
