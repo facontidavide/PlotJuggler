@@ -19,6 +19,7 @@ class CDockAreaTitleBar;
 class CDockAreaTabBar;
 class CDockAreaWidget;
 class CDockWidget;
+class CAutoHideTab;
 
 
 
@@ -47,6 +48,12 @@ public:
 	virtual CDockWidgetTab* createDockWidgetTab(CDockWidget* DockWidget) const;
 
 	/**
+	 * This default implementation just creates a dock widget side tab with
+	 * new CDockWidgetTab(DockWidget).
+	 */
+	virtual CAutoHideTab* createDockWidgetSideTab(CDockWidget* DockWidget) const;
+
+	/**
 	 * This default implementation just creates a dock area tab bar with
 	 * new CDockAreaTabBar(DockArea).
 	 */
@@ -59,9 +66,11 @@ public:
 	virtual CDockAreaTitleBar* createDockAreaTitleBar(CDockAreaWidget* DockArea) const;
 
 	/**
-	 * Returns the default components factory
+	 * This returns the default dock components factory instance.
+	 * If no components factory is assigned to a specific dock manager, this
+	 * global factory instance will be used.
 	 */
-	static const CDockComponentsFactory* factory();
+    static QSharedPointer<ads::CDockComponentsFactory> factory();
 
 	/**
 	 * Sets a new default factory for creation of GUI elements.
@@ -74,15 +83,6 @@ public:
 	 */
 	static void resetDefaultFactory();
 };
-
-
-/**
- * Convenience function to ease factory instance access
- */
-inline const CDockComponentsFactory* componentsFactory()
-{
-	return CDockComponentsFactory::factory();
-}
 
 } // namespace ads
 

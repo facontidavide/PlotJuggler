@@ -74,7 +74,7 @@ void ElidingLabelPrivate::elideText(int Width)
     IsElided = str != Text;
     if(IsElided != WasElided)
     {
-        emit _this->elidedChanged(IsElided);
+        Q_EMIT _this->elidedChanged(IsElided);
     }
     _this->QLabel::setText(str);
 }
@@ -136,7 +136,7 @@ void CElidingLabel::mouseReleaseEvent(QMouseEvent* event)
 		return;
 	}
 
-	emit clicked();
+	Q_EMIT clicked();
 }
 
 
@@ -144,7 +144,7 @@ void CElidingLabel::mouseReleaseEvent(QMouseEvent* event)
 void CElidingLabel::mouseDoubleClickEvent( QMouseEvent *ev )
 {
 	Q_UNUSED(ev)
-	emit doubleClicked();
+	Q_EMIT doubleClicked();
 	Super::mouseDoubleClickEvent(ev);
 }
 
@@ -163,7 +163,12 @@ void CElidingLabel::resizeEvent(QResizeEvent *event)
 //============================================================================
 QSize CElidingLabel::minimumSizeHint() const
 {
-    if (pixmap() != nullptr || d->isModeElideNone())
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+    bool HasPixmap = !pixmap(Qt::ReturnByValue).isNull();
+#else
+    bool HasPixmap = (pixmap() != nullptr);
+#endif
+    if (HasPixmap || d->isModeElideNone())
     {
         return QLabel::minimumSizeHint();
     }
@@ -180,7 +185,12 @@ QSize CElidingLabel::minimumSizeHint() const
 //============================================================================
 QSize CElidingLabel::sizeHint() const
 {
-    if (pixmap() != nullptr || d->isModeElideNone())
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+    bool HasPixmap = !pixmap(Qt::ReturnByValue).isNull();
+#else
+    bool HasPixmap = (pixmap() != nullptr);
+#endif
+    if (HasPixmap || d->isModeElideNone())
     {
         return QLabel::sizeHint();
     }

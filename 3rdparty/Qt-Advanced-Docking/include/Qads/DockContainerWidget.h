@@ -33,6 +33,7 @@
 #include <QFrame>
 
 #include "ads_globals.h"
+#include "AutoHideTab.h"
 #include "DockWidget.h"
 
 QT_FORWARD_DECLARE_CLASS(QXmlStreamWriter)
@@ -50,10 +51,16 @@ struct FloatingDockContainerPrivate;
 class CFloatingDragPreview;
 struct FloatingDragPreviewPrivate;
 class CDockingStateReader;
+class CAutoHideSideBar;
+class CAutoHideTab;
+class CDockSplitter;
+struct AutoHideTabPrivate;
+struct AutoHideDockContainerPrivate;
+
 
 /**
  * Container that manages a number of dock areas with single dock widgets
- * or tabyfied dock widgets in each area.
+ * or tabified dock widgets in each area.
  * Each window that support docking has a DockContainerWidget. That means
  * the main application window and all floating windows contain a 
  * DockContainerWidget instance.
@@ -73,12 +80,11 @@ private:
 	friend class CDockWidget;
 	friend class CFloatingDragPreview;
 	friend struct FloatingDragPreviewPrivate;
-
-public:
-  /**
-   * Access function for the internal root splitter
-   */
-  QSplitter* rootSplitter() const;
+	friend CAutoHideDockContainer;
+	friend CAutoHideTab;
+	friend AutoHideTabPrivate;
+	friend AutoHideDockContainerPrivate;
+	friend CAutoHideSideBar;
 
 protected:
 	/**
@@ -86,11 +92,27 @@ protected:
 	 */
 	virtual bool event(QEvent *e) override;
 
+	/**
+	 * Access function for the internal root splitter
+	 */
+	CDockSplitter* rootSplitter() const;
+
+	/**
+	 * Creates and initializes a dockwidget auto hide container into the given area.
+	 * Initializing inserts the tabs into the side tab widget and hides it
+	 * Returns nullptr if you try and insert into an area where the configuration is not enabled
+	 */
+	CAutoHideDockContainer* createAndSetupAutoHideContainer(SideBarLocation area, CDockWidget* DockWidget, int TabIndex = -1);
 
 	/**
 	 * Helper function for creation of the root splitter
 	 */
 	void createRootSplitter();
+
+	/**
+	 * Helper function for creation of the side tab bar widgets
+	 */
+	void createSideTabBarWidgets();
 
 	/**
 	 * Drop floating widget into the container
@@ -104,17 +126,23 @@ protected:
 	 * a nullptr, then the DropArea indicates the drop area in the given
 	 * TargetAreaWidget
 	 */
-	void dropWidget(QWidget* Widget, DockWidgetArea DropArea, CDockAreaWidget* TargetAreaWidget);
+	void dropWidget(QWidget* Widget, DockWidgetArea DropArea, CDockAreaWidget* TargetAreaWidget,
+		int TabIndex = -1);
 
 	/**
 	 * Adds the given dock area to this container widget
 	 */
-	void addDockArea(CDockAreaWidget* DockAreaWidget, DockWidgetArea area = CenterDockWidgetArea);
+	void addDockArea(CDockAreaWidget* DockAreaWidget, DockWidgetArea area = ads::CenterDockWidgetArea);
 
 	/**
 	 * Removes the given dock area from this container
 	 */
 	void removeDockArea(CDockAreaWidget* area);
+
+	/**
+	 * Remove all dock areas and returns the list of removed dock areas
+	 */
+	QList<QPointer<CDockAreaWidget>> removeAllDockAreas();
 
 	/**
 	 * Saves the state into the given stream
@@ -143,7 +171,8 @@ protected:
 	CDockWidget* topLevelDockWidget() const;
 
 	/**
-	 * Returns the top level dock area.
+	 * If the container has only one single visible dock area, then this
+	 * functions returns this top level dock area
 	 */
 	CDockAreaWidget* topLevelDockArea() const;
 
@@ -163,6 +192,24 @@ protected:
      */
     void updateSplitterHandles(QSplitter* splitter);
 
+	/**
+	 * Registers the given floating widget in the internal list of
+	 * auto hide widgets
+	 */
+    void registerAutoHideWidget(CAutoHideDockContainer* AutoHideWidget);
+
+    /**
+	 * Remove the given auto hide widget from the list of registered auto hide
+	 * widgets
+	 */
+    void removeAutoHideWidget(CAutoHideDockContainer* AutoHideWidget);
+
+    /**
+     * Handles widget events of auto hide widgets to trigger delayed show
+     * or hide actions for auto hide container on auto hide tab mouse over
+     */
+    void handleAutoHideWidgetEvent(QEvent* e, QWidget* w);
+
 public:
 	/**
 	 * Default Constructor
@@ -172,7 +219,7 @@ public:
 	/**
 	 * Virtual Destructor
 	 */
-	virtual ~CDockContainerWidget();
+    ~CDockContainerWidget() override;
 
 	/**
 	 * Adds dockwidget into the given area.
@@ -182,7 +229,7 @@ public:
 	 * \return Returns the dock area widget that contains the new DockWidget
 	 */
 	CDockAreaWidget* addDockWidget(DockWidgetArea area, CDockWidget* Dockwidget,
-		CDockAreaWidget* DockAreaWidget = nullptr);
+		CDockAreaWidget* DockAreaWidget = nullptr, int Index = -1);
 
 	/**
 	 * Removes dockwidget
@@ -217,6 +264,18 @@ public:
 	 * If all dock widgets in a dock area are closed, the dock area will be closed
 	 */
 	QList<CDockAreaWidget*> openedDockAreas() const;
+
+	/**
+	 * Returns a list for all open dock widgets in all open dock areas
+	 */
+	QList<CDockWidget*> openedDockWidgets() const;
+
+	/**
+	 * This function returns true, if the container has open dock areas.
+	 * This functions is a little bit faster than calling openedDockAreas().isEmpty()
+	 * because it returns as soon as it finds an open dock area
+	 */
+	bool hasOpenDockAreas() const;
 
     /**
      * This function returns true if this dock area has only one single
@@ -267,13 +326,48 @@ public:
 	 */
 	void closeOtherAreas(CDockAreaWidget* KeepOpenArea);
 
-signals:
+	/**
+	 * Returns the side tab widget for the given area
+	 */
+	CAutoHideSideBar* autoHideSideBar(SideBarLocation area) const;
+
+
+	/**
+	 * Access function for auto hide widgets
+	 */
+	QList<CAutoHideDockContainer*> autoHideWidgets() const;
+
+	/**
+	 * Returns the content rectangle without the autohide side bars
+	 */
+	QRect contentRect() const;
+
+	/**
+	 * Returns the content rectangle mapped to global space.
+	 * The content rectangle is the rectangle of the dock manager widget minus
+	 * the auto hide side bars. So that means, it is the geometry of the
+	 * internal root splitter mapped to global space.
+	 */
+	QRect contentRectGlobal() const;
+
+	/**
+	 * Returns the dock manager that owns this container
+	 */
+	CDockManager* dockManager() const;
+
+
+Q_SIGNALS:
 	/**
 	 * This signal is emitted if one or multiple dock areas has been added to
 	 * the internal list of dock areas.
 	 * If multiple dock areas are inserted, this signal is emitted only once
 	 */
 	void dockAreasAdded();
+
+	/**
+	 * This signal is emitted, if a new auto hide widget has been created.
+	 */
+	void autoHideWidgetCreated(ads::CAutoHideDockContainer* AutoHideWidget);
 
 	/**
 	 * This signal is emitted if one or multiple dock areas has been removed

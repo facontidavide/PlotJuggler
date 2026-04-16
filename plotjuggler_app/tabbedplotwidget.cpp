@@ -132,7 +132,7 @@ PlotDocker* TabbedPlotWidget::addTab(QString tab_name)
   // this must be done before any PlotDocker is created
   ads::CDockManager::setConfigFlag(ads::CDockManager::DockAreaHasTabsMenuButton, false);
   ads::CDockManager::setConfigFlag(ads::CDockManager::DockAreaHasUndockButton, false);
-  ads::CDockManager::setConfigFlag(ads::CDockManager::AlwaysShowTabs, true);
+  ads::CDockManager::setConfigFlag(ads::CDockManager::DockAreaHasCloseButton, false);
   ads::CDockManager::setConfigFlag(ads::CDockManager::EqualSplitOnInsertion, true);
   ads::CDockManager::setConfigFlag(ads::CDockManager::OpaqueSplitterResize, true);
 

@@ -33,10 +33,12 @@
 #include <QFrame>
 
 #include "ads_globals.h"
+#include "AutoHideTab.h"
 #include "DockWidget.h"
 
 QT_FORWARD_DECLARE_CLASS(QXmlStreamWriter)
 QT_FORWARD_DECLARE_CLASS(QAbstractButton)
+QT_FORWARD_DECLARE_CLASS(QMenu)
 
 namespace ads
 {
@@ -45,6 +47,8 @@ class CDockManager;
 class CDockContainerWidget;
 class DockContainerWidgetPrivate;
 class CDockAreaTitleBar;
+class CDockingStateReader;
+class CDockSplitter;
 
 
 /**
@@ -65,9 +69,10 @@ private:
 	friend class CDockWidget;
 	friend struct DockManagerPrivate;
 	friend class CDockManager;
+	friend class CAutoHideDockContainer;
 	void onDockWidgetFeaturesChanged();
 
-private slots:
+private Q_SLOTS:
 	void onTabCloseRequested(int Index);
 
 	/**
@@ -76,7 +81,34 @@ private slots:
 	 */
 	void reorderDockWidget(int fromIndex, int toIndex);
 
+	/*
+	 * Update the auto hide button checked state based on if it's contained in an auto hide container or not
+	 */
+	void updateAutoHideButtonCheckState();
+
+	/*
+	 * Update the title bar button tooltips
+	 */
+	void updateTitleBarButtonsToolTips();
+
+	/**
+	 * Calculate the auto hide side bar location depending on the dock area
+	 * widget position in the container
+	 */
+	SideBarLocation calculateSideTabBarArea() const;
+
 protected:
+
+#ifdef Q_OS_WIN
+	/**
+	 * Reimplements QWidget::event to handle QEvent::PlatformSurface
+	 * This is here to fix issue #294 Tab refresh problem with a QGLWidget
+	 * that exists since Qt version 5.12.7. So this function is here to
+	 * work around a Qt issue.
+	 */
+	virtual bool event(QEvent *event) override;
+#endif
+
 	/**
 	 * Inserts a dock widget into dock area.
 	 * All dockwidgets in the dock area tabified in a stacked layout with tabs.
@@ -138,7 +170,12 @@ protected:
 	 */
 	void markTitleBarMenuOutdated();
 
-protected slots:
+	/*
+	 * Update the title bar button visibility based on if it's top level or not
+	 */
+	void updateTitleBarButtonVisibility(bool IsTopLevel) const;
+
+protected Q_SLOTS:
 	void toggleView(bool Open);
 
 public:
@@ -162,7 +199,7 @@ public:
 	/**
 	 * Virtual Destructor
 	 */
-	virtual ~CDockAreaWidget();
+	~CDockAreaWidget() override;
 
 	/**
 	 * Returns the dock manager object this dock area belongs to
@@ -174,6 +211,27 @@ public:
 	 * if there is no
 	 */
 	CDockContainerWidget* dockContainer() const;
+
+	/**
+	 * Returns the auto hide dock container widget this dock area widget belongs to or 0
+	 * if there is no
+	 */
+	CAutoHideDockContainer* autoHideDockContainer() const; 
+
+	/**
+	 * Returns the parent splitter that contains this dock area
+	 */
+	CDockSplitter* parentSplitter() const;
+
+	/**
+	 * Returns true if the dock area is in an auto hide container
+	 */
+	bool isAutoHide() const;
+
+	/**
+	 * Sets the current auto hide dock container
+	 */
+	void setAutoHideDockContainer(CAutoHideDockContainer* AutoHideDockContainer);
 
     /**
      * Returns the largest minimumSizeHint() of the dock widgets in this
@@ -251,6 +309,13 @@ public:
 	 */
 	void saveState(QXmlStreamWriter& Stream) const;
 
+    /**
+	 * Restores a dock area.
+	 * \see restoreChildNodes() for details
+	 */
+    static bool restoreState(CDockingStateReader& Stream, CDockAreaWidget*& CreatedWidget,
+		bool Testing, CDockContainerWidget* ParentContainer);
+
 	/**
 	 * This functions returns the dock widget features of all dock widget in
 	 * this area.
@@ -308,11 +373,23 @@ public:
 	void setDockAreaFlag(eDockAreaFlag Flag, bool On);
 
     /**
-     * Returns true if the area contains the central widget of it's manager.
+     * Returns true if the area has a single dock widget and contains the central widget of it's manager.
      */
     bool isCentralWidgetArea() const;
 
-public slots:
+    /**
+     * Returns true if the area contains the central widget of it's manager.
+     */
+    bool containsCentralWidget() const;
+
+    /**
+     * If this dock area is the one and only visible area in a container, then
+     * this function returns true
+     */
+    bool isTopLevelArea() const;
+
+
+public Q_SLOTS:
 	/**
 	 * This activates the tab for the given tab index.
 	 * If the dock widget for the given tab is not visible, the this function
@@ -326,11 +403,30 @@ public slots:
 	void closeArea();
 
 	/**
+	 * Sets the dock area into auto hide mode or into normal mode.
+	 * If the dock area is switched to auto hide mode, then all dock widgets
+	 * that are pinable will be added to the sidebar
+	 */
+	void setAutoHide(bool Enable, SideBarLocation Location = SideBarNone, int TabIndex = -1);
+
+	/**
+	 * Switches the dock area to auto hide mode or vice versa depending on its
+	 * current state.
+	 */
+	void toggleAutoHide(SideBarLocation Location = SideBarNone);
+
+    /**
 	 * This function closes all other areas except of this area
 	 */
 	void closeOtherAreas();
 
-signals:
+	/**
+	 * Moves the dock area into its own floating widget if the area
+	 * DockWidgetFloatable flag is true
+	 */
+	void setFloating();
+
+Q_SIGNALS:
 	/**
 	 * This signal is emitted when user clicks on a tab at an index.
 	 */
@@ -356,7 +452,8 @@ signals:
 	 */
 	void viewToggled(bool Open);
 }; // class DockAreaWidget
-}
- // namespace ads
+} // namespace ads
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(ads::CDockAreaWidget::DockAreaFlags)
 //-----------------------------------------------------------------------------
 #endif // DockAreaWidgetH

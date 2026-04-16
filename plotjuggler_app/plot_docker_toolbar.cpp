@@ -6,6 +6,7 @@
 
 #include "plot_docker_toolbar.h"
 #include "PlotJuggler/svg_util.h"
+#include <QCoreApplication>
 
 DockToolbar::DockToolbar(ads::CDockWidget* parent)
   : QWidget(parent), _parent(parent), ui(new Ui::DraggableToolbar), _fullscreen_mode(false)
@@ -56,12 +57,12 @@ void DockToolbar::toggleFullscreen()
 
 void DockToolbar::mousePressEvent(QMouseEvent* ev)
 {
-  _parent->dockAreaWidget()->titleBar()->mousePressEvent(ev);
+  QCoreApplication::sendEvent(_parent->dockAreaWidget()->titleBar(), ev);
 }
 
 void DockToolbar::mouseReleaseEvent(QMouseEvent* ev)
 {
-  _parent->dockAreaWidget()->titleBar()->mouseReleaseEvent(ev);
+  QCoreApplication::sendEvent(_parent->dockAreaWidget()->titleBar(), ev);
 }
 
 void DockToolbar::mouseMoveEvent(QMouseEvent* ev)
@@ -70,7 +71,7 @@ void DockToolbar::mouseMoveEvent(QMouseEvent* ev)
   ui->buttonBackground->setVisible(true);
   ui->buttonSplitHorizontal->setVisible(!_fullscreen_mode);
   ui->buttonSplitVertical->setVisible(!_fullscreen_mode);
-  _parent->dockAreaWidget()->titleBar()->mouseMoveEvent(ev);
+  QCoreApplication::sendEvent(_parent->dockAreaWidget()->titleBar(), ev);
 
   ev->accept();
   QWidget::mouseMoveEvent(ev);

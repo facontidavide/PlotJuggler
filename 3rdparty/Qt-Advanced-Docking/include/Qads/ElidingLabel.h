@@ -58,8 +58,8 @@ protected:
 public:
     using Super = QLabel;
 
-	CElidingLabel(QWidget* parent = 0, Qt::WindowFlags f = 0);
-	CElidingLabel(const QString& text, QWidget* parent = 0, Qt::WindowFlags f = 0);
+    CElidingLabel(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags ());
+    CElidingLabel(const QString& text, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags ());
 	virtual ~CElidingLabel();
 
 	/**
@@ -84,7 +84,7 @@ public: // reimplements QLabel ----------------------------------------------
 	void setText(const QString &text);
 	QString text() const;
 
-signals:
+Q_SIGNALS:
 	/**
 	 * This signal is emitted if the user clicks on the label (i.e. pressed
 	 * down then released while the mouse cursor is inside the label)

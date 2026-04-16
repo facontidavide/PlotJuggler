@@ -39,7 +39,7 @@ struct DockSplitterPrivate;
 
 /**
  * Splitter used internally instead of QSplitter with some additional
- * fuctionality.
+ * functionality.
  */
 class ADS_EXPORT CDockSplitter : public QSplitter
 {

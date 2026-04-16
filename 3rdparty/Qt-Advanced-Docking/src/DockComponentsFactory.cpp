@@ -8,6 +8,7 @@
 //============================================================================
 //                                   INCLUDES
 //============================================================================
+#include <AutoHideTab.h>
 #include "DockComponentsFactory.h"
 
 #include <memory>
@@ -20,13 +21,20 @@
 
 namespace ads
 {
-static std::unique_ptr<CDockComponentsFactory> DefaultFactory(new CDockComponentsFactory());
+
+static QSharedPointer<ads::CDockComponentsFactory> DefaultFactory;
 
 
 //============================================================================
 CDockWidgetTab* CDockComponentsFactory::createDockWidgetTab(CDockWidget* DockWidget) const
 {
 	return new CDockWidgetTab(DockWidget);
+}
+
+//============================================================================
+CAutoHideTab* CDockComponentsFactory::createDockWidgetSideTab(CDockWidget *DockWidget) const
+{
+	return new CAutoHideTab(DockWidget);
 }
 
 
@@ -45,9 +53,13 @@ CDockAreaTitleBar* CDockComponentsFactory::createDockAreaTitleBar(CDockAreaWidge
 
 
 //============================================================================
-const CDockComponentsFactory* CDockComponentsFactory::factory()
+QSharedPointer<ads::CDockComponentsFactory> CDockComponentsFactory::factory()
 {
-	return DefaultFactory.get();
+	if (!DefaultFactory)
+	{
+		DefaultFactory.reset(new CDockComponentsFactory());
+	}
+	return DefaultFactory;
 }
 
 
@@ -63,6 +75,7 @@ void CDockComponentsFactory::resetDefaultFactory()
 {
 	DefaultFactory.reset(new CDockComponentsFactory());
 }
+
 } // namespace ads
 
 //---------------------------------------------------------------------------

@@ -29,6 +29,11 @@ set(ads_SRCS
     src/FloatingDragPreview.cpp
     src/IconProvider.cpp
     src/DockComponentsFactory.cpp
+    src/AutoHideSideBar.cpp
+    src/AutoHideTab.cpp
+    src/AutoHideDockContainer.cpp
+    src/PushButton.cpp
+    src/ResizeHandle.cpp
 
     src/ads.qrc
 
@@ -50,11 +55,17 @@ set(ads_SRCS
     include/Qads/FloatingDragPreview.h
     include/Qads/IconProvider.h
     include/Qads/DockComponentsFactory.h
+    include/Qads/AutoHideSideBar.h
+    include/Qads/AutoHideTab.h
+    include/Qads/AutoHideDockContainer.h
+    include/Qads/PushButton.h
+    include/Qads/ResizeHandle.h
 )
 
 if (UNIX AND NOT APPLE)
     set(ads_SRCS
         src/linux/FloatingWidgetTitleBar.cpp
+        src/linux/FloatingWidgetTitleBar.h
         ${ads_SRCS}
     )
 endif()
@@ -66,8 +77,9 @@ target_compile_definitions(qt_advanced_docking PUBLIC ADS_STATIC)
 target_link_libraries(qt_advanced_docking PUBLIC Qt5::Core Qt5::Gui Qt5::Widgets)
 
 if(UNIX AND NOT APPLE)
+    target_include_directories(qt_advanced_docking PRIVATE ${Qt5Gui_PRIVATE_INCLUDE_DIRS})
     target_link_libraries(qt_advanced_docking PUBLIC Qt5::X11Extras)
-        target_link_libraries(qt_advanced_docking PRIVATE xcb)
+    target_link_libraries(qt_advanced_docking PRIVATE xcb)
 endif()
 
 set_target_properties(qt_advanced_docking PROPERTIES

@@ -58,15 +58,14 @@ private:
 	friend struct DockAreaTabBarPrivate;
 	friend class CDockAreaTitleBar;
 
-private slots:
+private Q_SLOTS:
 	void onTabClicked();
 	void onTabCloseRequested();
 	void onCloseOtherTabsRequested();
 	void onTabWidgetMoved(const QPoint& GlobalPos);
 
 protected:
-	virtual void wheelEvent(QWheelEvent* Event) override;
-
+    virtual void wheelEvent(QWheelEvent* Event) override;
 
 public:
 	using Super = QScrollArea;
@@ -114,6 +113,19 @@ public:
 	CDockWidgetTab* tab(int Index) const;
 
 	/**
+	 * Returns the tab at the given position.
+	 * Returns -1 if the position is left of the first tab and count() if the
+	 * position is right of the last tab. Returns -2 to indicate an invalid
+	 * value.
+	 */
+	int tabAt(const QPoint& Pos) const;
+
+	/**
+	 * Returns the tab insertion index for the given mouse cursor position
+	 */
+	int tabInsertIndexAt(const QPoint& Pos) const;
+
+	/**
 	 * Filters the tab widget events
 	 */
 	virtual bool eventFilter(QObject *watched, QEvent *event) override;
@@ -128,7 +140,7 @@ public:
 	/**
 	 * Overrides the minimumSizeHint() function of QScrollArea
 	 * The minimumSizeHint() is bigger than the sizeHint () for the scroll
-	 * area because even if the scrollbars are invisible, the required speace
+	 * area because even if the scrollbars are invisible, the required space
 	 * is reserved in the minimumSizeHint(). This override simply returns
 	 * sizeHint();
 	 */
@@ -140,7 +152,13 @@ public:
 	 */
 	virtual QSize sizeHint() const override;
 
-public slots:
+	/**
+	 * This function returns true, if the tabs need more space than the size
+	 * of the tab bar.
+	 */
+	bool areTabsOverflowing() const;
+
+public Q_SLOTS:
 	/**
 	 * This property sets the index of the tab bar's visible tab
 	 */
@@ -152,7 +170,7 @@ public slots:
 	 */
 	void closeTab(int Index);
 
-signals:
+Q_SIGNALS:
     /**
      * This signal is emitted when the tab bar's current tab is about to be changed. The new
      * current has the given index, or -1 if there isn't a new one.

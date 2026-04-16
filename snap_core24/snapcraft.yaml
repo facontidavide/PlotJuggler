@@ -59,6 +59,7 @@ parts:
       - libqt5svg5-dev
       - libqt5opengl5-dev
       - libqt5websockets5-dev
+      - libqt5serialport5-dev
       - libqt5x11extras5-dev
       - libzmq3-dev
       - libzstd-dev
@@ -76,6 +77,7 @@ parts:
       - libqt5svg5-dev
       - libqt5opengl5-dev
       - libqt5websockets5-dev
+      - libqt5serialport5-dev
       - libqt5x11extras5-dev
     override-pull: |
         craftctl default
@@ -114,6 +116,7 @@ parts:
       - libqt5svg5-dev
       - libqt5opengl5-dev
       - libqt5websockets5-dev
+      - libqt5serialport5-dev
       - libqt5x11extras5-dev
       # ROS 2 plugin need to source messages to plot them
       # No custom message is going to be support for now

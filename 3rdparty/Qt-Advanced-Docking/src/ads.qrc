@@ -2,6 +2,7 @@
     <qresource prefix="/ads">
         <file>stylesheets/default.css</file>
         <file>images/close-button.svg</file>
+        <file>images/pin-button.svg</file>
         <file>images/close-button-disabled.svg</file>
         <file>stylesheets/default_linux.css</file>
         <file>images/close-button-focused.svg</file>
@@ -10,5 +11,17 @@
         <file>images/tabs-menu-button.svg</file>
         <file>images/detach-button.svg</file>
         <file>images/detach-button-disabled.svg</file>
+        <file>images/maximize-button.svg</file>
+        <file>images/maximize-button-focused.svg</file>
+        <file>images/restore-button.svg</file>
+        <file>images/restore-button-focused.svg</file>
+        <file>images/vs-pin-button.svg</file>
+        <file>images/vs-pin-button-pinned.svg</file>
+        <file>images/vs-pin-button-pinned-focused.svg</file>
+        <file>images/vs-pin-button_45.svg</file>
+        <file>images/pin-button-big.svg</file>
+        <file>images/minimize-button.svg</file>
+        <file>images/minimize-button-focused.svg</file>
+        <file>images/vs-pin-button-disabled.svg</file>
     </qresource>
 </RCC>

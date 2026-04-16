@@ -32,7 +32,7 @@ private:
 	FloatingDragPreviewPrivate* d;
 	friend struct FloatingDragPreviewPrivate;
 
-private slots:
+private Q_SLOTS:
 	/**
 	 * Cancel non opaque undocking if application becomes inactive
 	 */
@@ -92,7 +92,12 @@ public: // implements IFloatingWidget -----------------------------------------
 	 */
 	virtual void finishDragging() override;
 
-signals:
+	/**
+	 * Cleanup auto hide container if the dragged widget has one
+	 */
+	void cleanupAutoHideContainerWidget(DockWidgetArea ContainerDropArea);
+
+Q_SIGNALS:
 	/**
 	 * This signal is emitted, if dragging has been canceled by escape key
 	 * or by active application switching via task manager

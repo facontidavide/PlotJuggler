@@ -38,29 +38,64 @@
 #include "IconProvider.h"
 #include "ads_globals.h"
 
-#ifdef Q_OS_LINUX
-#include <QX11Info>
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
 #include <QSettings>
 #include <QFile>
-#endif
-
-
 #include <QApplication>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#include <QX11Info>
+#else
+#include <qpa/qplatformnativeinterface.h>
+#endif
+#endif
 
 namespace ads
 {
 
 namespace internal
 {
-#ifdef Q_OS_LINUX
+const int FloatingWidgetDragStartEvent = QEvent::registerEventType();
+const int DockedWidgetDragStartEvent = QEvent::registerEventType();
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
 static QString _window_manager;
 static QHash<QString, xcb_atom_t> _xcb_atom_cache;
 
 
 //============================================================================
+ bool is_platform_x11()
+{
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+	return QX11Info::isPlatformX11();
+#else
+	return QGuiApplication::platformName() == QLatin1String("xcb");
+#endif
+}
+
+
+//============================================================================
+xcb_connection_t* x11_connection()
+{
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+	if (!QX11Info::isPlatformX11())
+		return nullptr;
+	return QX11Info::connection();
+#else
+	if (!qApp)
+		return nullptr;
+	QPlatformNativeInterface *native = qApp->platformNativeInterface();
+	if (!native)
+		return nullptr;
+
+	void *connection = native->nativeResourceForIntegration(QByteArray("connection"));
+	return reinterpret_cast<xcb_connection_t *>(connection);
+#endif
+}
+
+
+//============================================================================
 xcb_atom_t xcb_get_atom(const char *name)
 {
-	if (!QX11Info::isPlatformX11())
+	if (!is_platform_x11())
 	{
 		return XCB_ATOM_NONE;
 	}
@@ -69,9 +104,9 @@ xcb_atom_t xcb_get_atom(const char *name)
 	{
 		return _xcb_atom_cache[key];
 	}
-	xcb_connection_t *connection = QX11Info::connection();
+	xcb_connection_t *connection = x11_connection();
 	xcb_intern_atom_cookie_t request = xcb_intern_atom(connection, 1, strlen(name), name);
-	xcb_intern_atom_reply_t *reply = xcb_intern_atom_reply(connection, request, NULL);
+	xcb_intern_atom_reply_t *reply = xcb_intern_atom_reply(connection, request, nullptr);
 	if (!reply)
 	{
 		return XCB_ATOM_NONE;
@@ -93,7 +128,7 @@ xcb_atom_t xcb_get_atom(const char *name)
 //============================================================================
 void xcb_update_prop(bool set, WId window, const char *type, const char *prop, const char *prop2)
 {
-	auto connection = QX11Info::connection();
+	auto connection = x11_connection();
 	xcb_atom_t type_atom = xcb_get_atom(type);
 	xcb_atom_t prop_atom = xcb_get_atom(prop);
 	xcb_client_message_event_t event;
@@ -118,11 +153,11 @@ void xcb_update_prop(bool set, WId window, const char *type, const char *prop, c
 //============================================================================
 xcb_get_property_reply_t* _xcb_get_props(WId window, const char *type, unsigned int atom_type)
 {
-	if (!QX11Info::isPlatformX11())
+    if (!is_platform_x11())
 	{
 		return nullptr;
 	}
-	xcb_connection_t *connection = QX11Info::connection();
+	xcb_connection_t *connection = x11_connection();
 	xcb_atom_t type_atom = xcb_get_atom(type);
 	if (type_atom == XCB_ATOM_NONE)
 	{
@@ -191,7 +226,7 @@ bool xcb_dump_props(WId window, const char *type)
 	QVector<xcb_atom_t> atoms;
 	xcb_get_prop_list(window, type, atoms, XCB_ATOM_ATOM);
 	qDebug() << "\n\n!!!" << type << "  -  " << atoms.length();
-	xcb_connection_t *connection = QX11Info::connection();
+	xcb_connection_t *connection = x11_connection();
 	for (auto atom : atoms)
 	{
 		auto foo = xcb_get_atom_name(connection, atom);
@@ -206,7 +241,7 @@ bool xcb_dump_props(WId window, const char *type)
 //============================================================================
 void xcb_add_prop(bool state, WId window, const char *type, const char *prop)
 {
-	if (!QX11Info::isPlatformX11())
+    if (!is_platform_x11())
 	{
 		return;
 	}
@@ -227,7 +262,7 @@ void xcb_add_prop(bool state, WId window, const char *type, const char *prop)
 	{
 		atoms.remove(index);
 	}
-	xcb_connection_t *connection = QX11Info::connection();
+	xcb_connection_t *connection = x11_connection();
 	xcb_change_property(connection, XCB_PROP_MODE_REPLACE, window, type_atom, XCB_ATOM_ATOM, 32, atoms.count(), atoms.constData());
 	xcb_flush(connection);
 }
@@ -238,11 +273,11 @@ QString detectWindowManagerX11()
 {
 	// Tries to detect the windowmanager via X11.
 	// See: https://specifications.freedesktop.org/wm-spec/1.3/ar01s03.html#idm46018259946000
-	if (!QX11Info::isPlatformX11())
+    if (!is_platform_x11())
 	{
 		return "UNKNOWN";
 	}
-	xcb_connection_t *connection = QX11Info::connection();
+	xcb_connection_t *connection = x11_connection();
 	xcb_screen_t *first_screen = xcb_setup_roots_iterator (xcb_get_setup (connection)).data;
 	if(!first_screen)
 	{
@@ -262,14 +297,14 @@ QString detectWindowManagerX11()
 	}
 	if(sup_windows.length() == 0)
 	{
-		ADS_PRINT("Failed to get the supporting window on non EWMH comform WM.");
+		ADS_PRINT("Failed to get the supporting window on non EWMH conform WM.");
 		return "UNKNOWN";
 	}
 	support_win = sup_windows[0];
 	QString ret = xcb_get_prop_string(support_win, "_NET_WM_NAME");
 	if(ret.length() == 0)
 	{
-		ADS_PRINT("Empty WM name occured.");
+		ADS_PRINT("Empty WM name occurred.");
 		return "UNKNOWN";
 	}
 	return ret;
@@ -313,6 +348,47 @@ CDockInsertParam dockAreaInsertParameters(DockWidgetArea Area)
 
 
 //============================================================================
+SideBarLocation toSideBarLocation(DockWidgetArea Area)
+{
+	switch (Area)
+	{
+	case LeftAutoHideArea: return SideBarLeft;
+	case RightAutoHideArea: return SideBarRight;
+	case TopAutoHideArea: return SideBarTop;
+	case BottomAutoHideArea: return SideBarBottom;
+	default:
+		return SideBarNone;
+	}
+
+	return SideBarNone;
+}
+
+
+//============================================================================
+bool isHorizontalSideBarLocation(SideBarLocation Location)
+{
+	switch (Location)
+	{
+	case SideBarTop:
+	case SideBarBottom: return true;
+	case SideBarLeft:
+	case SideBarRight: return false;
+	default:
+		return false;
+	}
+
+	return false;
+}
+
+
+//============================================================================
+bool isSideBarArea(DockWidgetArea Area)
+{
+	return toSideBarLocation(Area) != SideBarNone;
+}
+
+
+//============================================================================
 QPixmap createTransparentPixmap(const QPixmap& Source, qreal Opacity)
 {
 	QPixmap TransparentPixmap(Source.size());
@@ -350,7 +426,7 @@ void setButtonIcon(QAbstractButton* Button, QStyle::StandardPixmap StandarPixmap
 		return;
 	}
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
 	Button->setIcon(Button->style()->standardIcon(StandarPixmap));
 #else
 	// The standard icons does not look good on high DPI screens so we create
@@ -385,6 +461,15 @@ void repolishStyle(QWidget* w, eRepolishChildOptions Options)
 		Widget->style()->unpolish(Widget);
 		Widget->style()->polish(Widget);
 	}
+}
+
+
+//============================================================================
+QRect globalGeometry(QWidget* w)
+{
+    QRect g = w->geometry();
+    g.moveTopLeft(w->mapToGlobal(QPoint(0, 0)));
+    return g;
 }
 
 } // namespace internal

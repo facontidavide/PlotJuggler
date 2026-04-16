@@ -45,11 +45,31 @@
        <string>Maximum</string>
       </property>
      </column>
+    <column>
+     <property name="text">
+      <string>Peak to Peak</string>
+     </property>
+    </column>
      <column>
       <property name="text">
        <string>Average</string>
       </property>
      </column>
+    <column>
+     <property name="text">
+      <string>RMS</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>Std Dev</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>Mean Abs Value</string>
+     </property>
+    </column>
      <column>
       <property name="text">
        <string>Avg Interval</string>

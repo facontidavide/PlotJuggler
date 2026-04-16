@@ -36,8 +36,11 @@
 #include <QWidget>
 #include <QDebug>
 #include <QStyle>
+#include <QMouseEvent>
 
-#ifdef Q_OS_LINUX
+#include <iostream>
+
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
 #include <xcb/xcb.h>
 #endif
 
@@ -68,6 +71,7 @@ QT_FORWARD_DECLARE_CLASS(QSplitter)
 
 namespace ads
 {
+Q_NAMESPACE
 class CDockSplitter;
 
 enum DockWidgetArea
@@ -78,19 +82,33 @@ enum DockWidgetArea
 	TopDockWidgetArea = 0x04,
 	BottomDockWidgetArea = 0x08,
 	CenterDockWidgetArea = 0x10,
+	LeftAutoHideArea = 0x20,
+	RightAutoHideArea = 0x40,
+	TopAutoHideArea = 0x80,
+	BottomAutoHideArea = 0x100,
 
 	InvalidDockWidgetArea = NoDockWidgetArea,
 	OuterDockAreas = TopDockWidgetArea | LeftDockWidgetArea | RightDockWidgetArea | BottomDockWidgetArea,
+	AutoHideDockAreas = LeftAutoHideArea | RightAutoHideArea | TopAutoHideArea | BottomAutoHideArea,
 	AllDockAreas = OuterDockAreas | CenterDockWidgetArea
 };
 Q_DECLARE_FLAGS(DockWidgetAreas, DockWidgetArea)
+
+
+enum eTabIndex
+{
+	TabDefaultInsertIndex = -1,
+	TabInvalidIndex = -2
+};
 
 
 enum TitleBarButton
 {
 	TitleBarButtonTabsMenu,
 	TitleBarButtonUndock,
-	TitleBarButtonClose
+	TitleBarButtonClose,
+	TitleBarButtonAutoHide,
+	TitleBarButtonMinimize
 };
 
 /**
@@ -110,9 +128,11 @@ enum eDragState
 enum eIcon
 {
 	TabCloseIcon,      //!< TabCloseIcon
+	AutoHideIcon,      //!< AutoHideIcon
 	DockAreaMenuIcon,  //!< DockAreaMenuIcon
 	DockAreaUndockIcon,//!< DockAreaUndockIcon
 	DockAreaCloseIcon, //!< DockAreaCloseIcon
+	DockAreaMinimizeIcon,
 
 	IconCount,         //!< just a delimiter for range checks
 };
@@ -127,14 +147,31 @@ enum eBitwiseOperator
 };
 
 
+/**
+ * Each dock container supports 4 sidebars
+ */
+enum SideBarLocation
+{
+	SideBarTop,
+	SideBarLeft,
+	SideBarRight,
+	SideBarBottom,
+	SideBarNone
+};
+Q_ENUMS(SideBarLocation)
+
+
 namespace internal
 {
 static const bool RestoreTesting = true;
 static const bool Restore = false;
 static const char* const ClosedProperty = "close";
 static const char* const DirtyProperty = "dirty";
+static const char* const LocationProperty = "Location";
+extern const int FloatingWidgetDragStartEvent;
+extern const int DockedWidgetDragStartEvent;
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
 // Utils to directly communicate with the X server
 /**
  * Get atom from cache or request it from the XServer.
@@ -155,7 +192,7 @@ void xcb_update_prop(bool set, WId window, const char *type, const char *prop, c
 bool xcb_dump_props(WId window, const char *type);
 /**
  * Gets the active window manager from the X11 Server.
- * Requires a EWMH conform window manager (Allmost all common used ones are).
+ * Requires a EWMH conform window manager (Almost all common used ones are).
  * Returns "UNKNOWN" otherwise.
  */
 QString windowManager();
@@ -172,6 +209,7 @@ void replaceSplitterWidget(QSplitter* Splitter, QWidget* From, QWidget* To);
  */
 void hideEmptyParentSplitters(CDockSplitter* FirstParentSplitter);
 
+
 /**
  * Convenience class for QPair to provide better naming than first and
  * second
@@ -179,7 +217,7 @@ void hideEmptyParentSplitters(CDockSplitter* FirstParentSplitter);
 class CDockInsertParam : public QPair<Qt::Orientation, bool>
 {
 public:
-	using QPair::QPair;
+    using QPair<Qt::Orientation, bool>::QPair;
 	Qt::Orientation orientation() const {return this->first;}
 	bool append() const {return this->second;}
 	int insertOffset() const {return append() ? 1 : 0;}
@@ -189,6 +227,25 @@ public:
  * Returns the insertion parameters for the given dock area
  */
 CDockInsertParam dockAreaInsertParameters(DockWidgetArea Area);
+
+
+/**
+ * Returns the SieBarLocation for the AutoHide dock widget areas
+ */
+SideBarLocation toSideBarLocation(DockWidgetArea Area);
+
+
+/**
+ * Returns true for the top or bottom side bar and false for the
+ * left and right side bar
+ */
+bool isHorizontalSideBarLocation(SideBarLocation Location);
+
+
+/**
+ * Returns true, if the given dock area is a SideBar area
+ */
+bool isSideBarArea(DockWidgetArea Area);
 
 /**
  * Searches for the parent widget of the given type.
@@ -212,7 +269,7 @@ T findParent(const QWidget* w)
 		}
 		parentWidget = parentWidget->parentWidget();
 	}
-	return 0;
+	return nullptr;
 }
 
 /**
@@ -261,6 +318,19 @@ void setToolTip(QObjectPtr obj, const QString &tip)
 
 
 /**
+ * Helper function for access to mouse event global position in Qt5 and
+ */
+inline QPoint globalPositionOf(QMouseEvent* ev)
+{
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    return ev->globalPosition().toPoint();
+#else
+    return ev->globalPos();
+#endif
+}
+
+
+/**
  * Helper function to set the icon of a certain button.
  * Use this function to set the icons for the dock area and dock widget buttons.
  * The function first uses the CustomIconId to get an icon from the
@@ -291,8 +361,14 @@ enum eRepolishChildOptions
 void repolishStyle(QWidget* w, eRepolishChildOptions Options = RepolishIgnoreChildren);
 
 
+/**
+ * Returns the geometry of the given widget in global space
+ */
+QRect globalGeometry(QWidget* w);
+
 } // namespace internal
 } // namespace ads
 
+Q_DECLARE_OPERATORS_FOR_FLAGS(ads::DockWidgetAreas)
 //---------------------------------------------------------------------------
 #endif // ads_globalsH

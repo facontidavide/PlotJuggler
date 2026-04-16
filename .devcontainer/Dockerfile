@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y \
     qtbase5-dev \
     libqt5svg5-dev \
     libqt5websockets5-dev \
+    libqt5serialport5-dev \
     libqt5opengl5-dev \
     libqt5x11extras5-dev \
     libprotoc-dev \

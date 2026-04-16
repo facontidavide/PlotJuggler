@@ -19,7 +19,7 @@ jobs:
       - name: Cache apt packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: software-properties-common qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq3-dev liblz4-dev libzstd-dev libmosquitto-dev
+          packages: software-properties-common qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5serialport5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq3-dev liblz4-dev libzstd-dev libmosquitto-dev
           version: 1.0
 
       # Set up ROS

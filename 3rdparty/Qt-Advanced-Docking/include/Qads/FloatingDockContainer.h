@@ -33,7 +33,7 @@
 
 #include <QRubberBand>
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
 #include <QDockWidget>
 #define tFloatingWidgetBase QDockWidget
 #else
@@ -65,7 +65,7 @@ class CDockingStateReader;
  * This interface is used for opaque and non-opaque undocking. If opaque
  * undocking is used, the a real CFloatingDockContainer widget will be created
  */
-class IFloatingWidget
+class ADS_EXPORT IFloatingWidget
 {
 public:
     virtual ~IFloatingWidget() = default;
@@ -118,7 +118,7 @@ private:
 	friend class CDockAreaWidget;
     friend class CFloatingWidgetTitleBar;
 
-private slots:
+private Q_SLOTS:
 	void onDockAreasAddedOrRemoved();
 	void onDockAreaCurrentChanged(int Index);
 
@@ -132,19 +132,17 @@ protected:
         eDragState DragState, QWidget* MouseEventHandler) override;
 
 	/**
-	 * Call this function to start dragging the floating widget
-	 */
-    void startDragging(const QPoint& DragStartMousePos, const QSize& Size,
-        QWidget* MouseEventHandler)
-	{
-        startFloating(DragStartMousePos, Size, DraggingFloatingWidget, MouseEventHandler);
-	}
-
-	/**
 	 * Call this function if you explicitly want to signal that dragging has
 	 * finished
 	 */
 	virtual void finishDragging() override;
+
+	/**
+	 * This function deletes all dock widgets in it.
+	 * This functions should be called only from dock manager in its
+	 * destructor before deleting the floating widget
+     */
+	void deleteContent();
 
 	/**
 	 * Call this function if you just want to initialize the position
@@ -182,19 +180,22 @@ protected: // reimplements QWidget
 
 #ifdef Q_OS_MACOS
 	virtual bool event(QEvent *e) override;
-	virtual void moveEvent(QMoveEvent *event) override;
-#endif
-
-#ifdef Q_OS_LINUX
+    virtual void moveEvent(QMoveEvent *event) override;
+#elif defined(Q_OS_UNIX)
 	virtual void moveEvent(QMoveEvent *event) override;
 	virtual void resizeEvent(QResizeEvent *event) override;
+	virtual bool event(QEvent *e) override;
 #endif
 
 #ifdef Q_OS_WIN
 	/**
 	 * Native event filter for handling WM_MOVING messages on Windows
 	 */
-	virtual bool nativeEvent(const QByteArray &eventType, void *message, long *result) override;
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+    virtual bool nativeEvent(const QByteArray &eventType, void *message, long *result) override;
+#else
+    virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
+#endif
 #endif
 
 
@@ -219,12 +220,21 @@ public:
 	/**
 	 * Virtual Destructor
 	 */
-	virtual ~CFloatingDockContainer();
+	~CFloatingDockContainer() override;
 
 	/**
 	 * Access function for the internal dock container
 	 */
 	CDockContainerWidget* dockContainer() const;
+
+	/**
+	 * Call this function to start dragging the floating widget
+	 */
+    void startDragging(const QPoint& DragStartMousePos, const QSize& Size,
+        QWidget* MouseEventHandler)
+	{
+        startFloating(DragStartMousePos, Size, DraggingFloatingWidget, MouseEventHandler);
+	}
 
 	/**
 	 * This function returns true, if it can be closed.
@@ -254,7 +264,12 @@ public:
      */
     QList<CDockWidget*> dockWidgets() const;
 
-#ifdef Q_OS_LINUX
+	/**
+	 * This function hides the floating widget instantly and delete it later.
+	 */
+	void finishDropOperation();
+
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
     /**
 	 * This is a function that responds to FloatingWidgetTitleBar::maximizeRequest()
 	 * Maximize or normalize the container size.
@@ -290,7 +305,6 @@ public:
 	 */
 	bool hasNativeTitleBar();
 #endif
-
 }; // class FloatingDockContainer
 }
  // namespace ads
