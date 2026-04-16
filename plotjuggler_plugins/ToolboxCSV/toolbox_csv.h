@@ -6,6 +6,7 @@
 #include <QtPlugin>
 #include "PlotJuggler/toolbox_base.h"
 #include "PlotJuggler/plotwidget_base.h"
+#include "PlotJuggler/stringseries.h"
 #include "toolbox_ui.h"
 
 // Toolbox plugin to export selected PlotJuggler topics to CSV (extensible to other formats)
@@ -55,17 +56,24 @@ private:
 
   void updateTimeRange();
 
-  // Generic table representation for exporters (time + N columns)
+  // Generic table representation for exporters (time + N numeric + S string columns)
   struct ExportTable
   {
+    // Numeric columns
     std::vector<std::string> names;               // column names
-    std::vector<double> time;                     // time axis
+    std::vector<double> time;                     // shared time axis
     std::vector<std::vector<double>> cols;        // per-topic values
-    std::vector<std::vector<uint8_t>> has_value;  // Values checker
+    std::vector<std::vector<uint8_t>> has_value;  // presence flags
+
+    // String columns (parallel structure, same time axis)
+    std::vector<std::string> string_names;
+    std::vector<std::vector<std::string>> string_cols;
+    std::vector<std::vector<uint8_t>> string_has_value;
   };
 
-  // Tolerance helper
-  static double estimateMinDt(const PJ::PlotData& plot, size_t start_idx, double t_end);
+  // Tolerance helper (works with PlotData and StringSeries — both have .size() and .at().x)
+  template <typename TSeries>
+  static double estimateMinDt(const TSeries& plot, size_t start_idx, double t_end);
 
   // Build a time-aligned export table from selected topics
   ExportTable buildExportTable(const std::vector<std::string>& topics, double t_start,
