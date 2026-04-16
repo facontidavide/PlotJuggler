@@ -3191,19 +3191,20 @@ void MainWindow::on_buttonSaveLayout_clicked()
     auto snipped_saved = GetSnippetsFromXML(snippets_xml_text);
     auto snippets_root = ExportSnippets(snipped_saved, doc);
     root.appendChild(snippets_root);
-
-    QDomElement color_maps = doc.createElement("colorMaps");
-    for (const auto& it : ColorMapLibrary())
-    {
-      QString colormap_name = it.first;
-      QDomElement colormap = doc.createElement("colorMap");
-      QDomText colormap_script = doc.createTextNode(it.second->script());
-      colormap.setAttribute("name", colormap_name);
-      colormap.appendChild(colormap_script);
-      color_maps.appendChild(colormap);
-    }
-    root.appendChild(color_maps);
   }
+
+  QDomElement color_maps = doc.createElement("colorMaps");
+  for (const auto& it : ColorMapLibrary())
+  {
+    QString colormap_name = it.first;
+    QDomElement colormap = doc.createElement("colorMap");
+    QDomText colormap_script = doc.createTextNode(it.second->script());
+    colormap.setAttribute("name", colormap_name);
+    colormap.appendChild(colormap_script);
+    color_maps.appendChild(colormap);
+  }
+  root.appendChild(color_maps);
+
   root.appendChild(doc.createComment(" - - - - - - - - - - - - - - "));
   //------------------------------------
   QFile file(fileName);
