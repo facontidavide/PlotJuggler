@@ -28,7 +28,6 @@
 #include <QSyntaxHighlighter>
 #include <QHeaderView>
 #include <QPlainTextEdit>
-#include <QSplitter>
 
 #include <QGraphicsDropShadowEffect>
 #include <QFontDatabase>
@@ -75,40 +74,6 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
   , _preview_widget(new PlotWidget(_local_plot_data, this))
 {
   ui->setupUi(this);
-
-  // Create a vertical QSplitter between preview/terminal and the editor area
-  {
-    auto* tab_layout = ui->tab->layout();
-
-    // Remove the three items from the tab layout (preview, terminal, editor)
-    tab_layout->removeWidget(ui->framePlotPreview);
-    tab_layout->removeWidget(ui->terminalPlainText);
-    tab_layout->removeItem(ui->horizontalLayout_5);
-
-    // Top container: preview frame + terminal (stacked, only one visible at a time)
-    auto* top_widget = new QWidget();
-    auto* top_layout = new QVBoxLayout(top_widget);
-    top_layout->setContentsMargins(0, 0, 0, 0);
-    top_layout->addWidget(ui->framePlotPreview);
-    top_layout->addWidget(ui->terminalPlainText);
-
-    // Bottom container: the editor area (timeseries list + code editor)
-    auto* bottom_widget = new QWidget();
-    auto* bottom_layout = new QHBoxLayout(bottom_widget);
-    bottom_layout->setContentsMargins(0, 0, 0, 0);
-    bottom_layout->setSpacing(ui->horizontalLayout_5->spacing());
-    bottom_layout->addWidget(ui->leftWidget);
-    bottom_layout->addWidget(ui->rightWidget);
-
-    auto* splitter = new QSplitter(Qt::Vertical, ui->tab);
-    splitter->setChildrenCollapsible(false);
-    splitter->addWidget(top_widget);
-    splitter->addWidget(bottom_widget);
-    splitter->setStretchFactor(0, 1);
-    splitter->setStretchFactor(1, 2);
-
-    static_cast<QVBoxLayout*>(tab_layout)->insertWidget(0, splitter);
-  }
 
   setupFunctionAppsButton();
 
@@ -182,6 +147,7 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
       settings.value("FunctionEditorWidget.previousFunctionBatch", "return value").toString());
 
   ui->listAdditionalSources->installEventFilter(this);
+  ui->listAdditionalSources->viewport()->installEventFilter(this);
   ui->lineEditTab2Filter->installEventFilter(this);
 
   auto preview_layout = new QHBoxLayout(ui->framePlotPreview);
@@ -790,6 +756,10 @@ bool FunctionEditorWidget::eventFilter(QObject* obj, QEvent* ev)
     return false;
   }
 
+  bool is_table = (obj == ui->listAdditionalSources);
+  bool is_viewport = (obj == ui->listAdditionalSources->viewport());
+  bool is_filter = (obj == ui->lineEditTab2Filter);
+
   if (ev->type() == QEvent::DragEnter)
   {
     auto event = static_cast<QDragEnterEvent*>(ev);
@@ -817,21 +787,31 @@ bool FunctionEditorWidget::eventFilter(QObject* obj, QEvent* ev)
           _dragging_curves.push_back(curve_name);
         }
       }
-      if ((obj == ui->lineEditTab2Filter && _dragging_curves.size() == 1) ||
-          (obj == ui->listAdditionalSources && _dragging_curves.size() > 0))
+
+      if ((is_filter && _dragging_curves.size() == 1) ||
+          ((is_table || is_viewport) && _dragging_curves.size() > 0))
       {
         event->acceptProposedAction();
         return true;
       }
     }
   }
+  else if (ev->type() == QEvent::DragMove)
+  {
+    if (is_table || is_viewport || is_filter)
+    {
+      static_cast<QDragMoveEvent*>(ev)->acceptProposedAction();
+      return true;
+    }
+  }
   else if (ev->type() == QEvent::Drop)
   {
-    if (obj == ui->lineEditTab2Filter)
+    if (is_filter)
     {
       ui->lineEditTab2Filter->setText(_dragging_curves.front());
+      return true;
     }
-    else if (obj == ui->listAdditionalSources)
+    else if (is_table || is_viewport)
     {
       auto list_widget = ui->listAdditionalSources;
       for (QString curve_name : _dragging_curves)
@@ -858,6 +838,7 @@ bool FunctionEditorWidget::eventFilter(QObject* obj, QEvent* ev)
         }
       }
       on_listSourcesChanged();
+      return true;
     }
   }
 
