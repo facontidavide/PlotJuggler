@@ -67,6 +67,75 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #endif
 
+// Serialize a QDomDocument to XML with attributes in sorted order.
+// Qt's QDomDocument::toString() uses a hash map for attributes, producing
+// non-deterministic ordering that causes noisy diffs in version control.
+static void WriteSortedXml(QTextStream& out, const QDomNode& node, int indent = 0)
+{
+  const QString pad(indent, ' ');
+
+  if (node.isProcessingInstruction())
+  {
+    auto pi = node.toProcessingInstruction();
+    out << pad << "<?" << pi.target() << " " << pi.data() << "?>\n";
+    return;
+  }
+  if (node.isComment())
+  {
+    out << pad << "<!--" << node.toComment().data() << "-->\n";
+    return;
+  }
+  if (node.isText())
+  {
+    out << node.toText().data().toHtmlEscaped();
+    return;
+  }
+  if (!node.isElement())
+  {
+    return;
+  }
+
+  auto elem = node.toElement();
+  out << pad << "<" << elem.tagName();
+
+  // Collect and sort attributes alphabetically
+  QDomNamedNodeMap attrs = elem.attributes();
+  QStringList attr_names;
+  attr_names.reserve(attrs.length());
+  for (int i = 0; i < attrs.length(); ++i)
+  {
+    attr_names << attrs.item(i).nodeName();
+  }
+  attr_names.sort();
+  for (const auto& name : attr_names)
+  {
+    out << " " << name << "=\"" << elem.attribute(name).toHtmlEscaped() << "\"";
+  }
+
+  QDomNodeList children = elem.childNodes();
+  if (children.isEmpty())
+  {
+    out << "/>\n";
+    return;
+  }
+
+  // If the only child is a text node, write inline
+  if (children.length() == 1 && children.at(0).isText())
+  {
+    out << ">";
+    WriteSortedXml(out, children.at(0), 0);
+    out << "</" << elem.tagName() << ">\n";
+    return;
+  }
+
+  out << ">\n";
+  for (int i = 0; i < children.length(); ++i)
+  {
+    WriteSortedXml(out, children.at(i), indent + 1);
+  }
+  out << pad << "</" << elem.tagName() << ">\n";
+}
+
 MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* parent)
   : QMainWindow(parent)
   , ui(new Ui::MainWindow)
@@ -3212,7 +3281,7 @@ void MainWindow::on_buttonSaveLayout_clicked()
   {
     QTextStream stream(&file);
     stream.setCodec("UTF-8");
-    stream << doc.toString() << "\n";
+    WriteSortedXml(stream, doc);
   }
 }
 
