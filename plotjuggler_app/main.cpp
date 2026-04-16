@@ -273,6 +273,10 @@ int main(int argc, char* argv[])
                                   "window_title");
   parser.addOption(window_title);
 
+  QCommandLineOption auto_prefix_option("auto-prefix",
+                                        "Automatically prefix each data file with its filename");
+  parser.addOption(auto_prefix_option);
+
   parser.process(*qApp);
 
   if (parser.isSet(publish_option) && !parser.isSet(layout_option))
