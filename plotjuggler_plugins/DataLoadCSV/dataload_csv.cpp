@@ -177,8 +177,15 @@ void DataLoadCSV::parseHeader(QFile& file, std::vector<std::string>& column_name
   _ui->listWidgetSeries->clear();
 
   QTextStream inA(&file);
-  // The first line should contain the header. If it contains a number, we will
-  // apply a name ourselves
+
+  // Skip metadata/comment lines before the header.
+  const int skip = _ui->rowBox->value();
+  for (int i = 0; i < skip && !inA.atEnd(); i++)
+  {
+    inA.readLine();
+  }
+
+  // The first non-skipped line should contain the header.
   QString first_line = inA.readLine();
 
   QString preview_lines = first_line + "\n";
@@ -297,6 +304,7 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
   QSettings settings;
   _dialog->restoreGeometry(settings.value("DataLoadCSV.geometry").toByteArray());
 
+  _ui->rowBox->setValue(settings.value("DataLoadCSV.skipRows", 0).toInt());
   _ui->radioButtonIndex->setChecked(settings.value("DataLoadCSV.useIndex", false).toBool());
   bool use_custom_time = settings.value("DataLoadCSV.useDateFormat", false).toBool();
   if (use_custom_time)
@@ -310,10 +318,14 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
   _ui->lineEditDateFormat->setText(
       settings.value("DataLoadCSV.dateFormat", "yyyy-MM-dd hh:mm:ss").toString());
 
-  // Auto-detect delimiter from the first line
+  // Auto-detect delimiter from the header line (after skipping metadata rows).
   {
     file.open(QFile::ReadOnly);
     QTextStream in(&file);
+    for (int i = 0; i < _ui->rowBox->value() && !in.atEnd(); i++)
+    {
+      in.readLine();
+    }
     QString first_line = in.readLine();
     file.close();
 
@@ -356,6 +368,35 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
                      parseHeader(file, *column_names);
                    });
 
+  QObject::connect(_ui->rowBox, qOverload<int>(&QSpinBox::valueChanged), context, [&](int) {
+    if (_ui->radioAutoTime->isChecked())
+    {
+      file.open(QFile::ReadOnly);
+      QTextStream in(&file);
+      for (int i = 0; i < _ui->rowBox->value() && !in.atEnd(); i++)
+      {
+        in.readLine();
+      }
+      QString header_line = in.readLine();
+      file.close();
+
+      _delimiter = DetectDelimiter(header_line);
+      _csvHighlighter.delimiter = _delimiter;
+
+      const std::array<char, 4> delimiters = { ',', ';', ' ', '\t' };
+      QSignalBlocker blocker(*_ui->comboBox);
+      for (int i = 0; i < 4; i++)
+      {
+        if (delimiters[i] == _delimiter)
+        {
+          _ui->comboBox->setCurrentIndex(i);
+          break;
+        }
+      }
+    }
+    parseHeader(file, *column_names);
+  });
+
   // parse the header once and launch the dialog
   parseHeader(file, *column_names);
 
@@ -372,6 +413,7 @@ int DataLoadCSV::launchDialog(QFile& file, std::vector<std::string>* column_name
   int res = _dialog->exec();
 
   settings.setValue("DataLoadCSV.geometry", _dialog->saveGeometry());
+  settings.setValue("DataLoadCSV.skipRows", _ui->rowBox->value());
   settings.setValue("DataLoadCSV.useIndex", _ui->radioButtonIndex->isChecked());
   settings.setValue("DataLoadCSV.useDateFormat", _ui->radioCustomTime->isChecked());
   settings.setValue("DataLoadCSV.dateFormat", _ui->lineEditDateFormat->text());
@@ -475,6 +517,7 @@ bool DataLoadCSV::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   {
     config.custom_time_format = _ui->lineEditDateFormat->text().toStdString();
   }
+  config.skip_rows = _ui->rowBox->value();
 
   //--- Count lines for progress ---
   {
@@ -645,8 +688,8 @@ bool DataLoadCSV::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) c
   QDomElement elem = doc.createElement("parameters");
   elem.setAttribute("time_axis", _default_time_axis.c_str());
   elem.setAttribute("delimiter", _ui->comboBox->currentIndex());
+  elem.setAttribute("skip_rows", _ui->rowBox->value());
 
-  QString date_format;
   if (_ui->radioCustomTime->isChecked())
   {
     elem.setAttribute("date_format", _ui->lineEditDateFormat->text());
@@ -686,6 +729,10 @@ bool DataLoadCSV::xmlLoadState(const QDomElement& parent_element)
         _delimiter = '\t';
         break;
     }
+  }
+  if (elem.hasAttribute("skip_rows"))
+  {
+    _ui->rowBox->setValue(elem.attribute("skip_rows").toInt());
   }
   if (elem.hasAttribute("date_format"))
   {

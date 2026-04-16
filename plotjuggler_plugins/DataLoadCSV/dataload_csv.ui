@@ -127,6 +127,16 @@
            </property>
           </spacer>
          </item>
+         <item>
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>Skipped rows:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="rowBox"/>
+         </item>
         </layout>
        </item>
        <item>
