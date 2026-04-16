@@ -32,6 +32,11 @@ jobs:
       - name: Fix Python path for ROS packages
         run: echo "PYTHONPATH=/usr/lib/python3/dist-packages:$PYTHONPATH" >> $GITHUB_ENV
 
+      # rolling's ros-base does not always pull in typesupport implementations,
+      # causing "No 'rosidl_typesupport_c' found" at CMake configure time.
+      - name: Install missing rolling typesupport
+        run: sudo apt-get install -y ros-rolling-rosidl-typesupport-introspection-c ros-rolling-rosidl-typesupport-introspection-cpp
+
       # Run ROS CI
       - uses: ros-tooling/action-ros-ci@v0.4
         with:
