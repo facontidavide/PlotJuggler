@@ -17,7 +17,7 @@ function(find_or_download_json)
     message(STATUS "nlohmann_json not found, downloading")
     cpmaddpackage(
       NAME nlohmann_json URL
-      https://github.com/nlohmann/json/archive/refs/tags/v3.13.0.zip
+      https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.zip
       DOWNLOAD_ONLY YES)
 
     add_library(nlohmann_json INTERFACE)

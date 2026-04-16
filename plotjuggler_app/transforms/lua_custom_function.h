@@ -13,8 +13,8 @@ public:
 
   void initEngine() override;
 
-  void calculatePoints(const std::vector<const PlotData*>& channels_data, size_t point_index,
-                       std::vector<PlotData::Point>& points) override;
+  void calculatePoints(const MixedSource& main_src, const std::vector<MixedSource>& additional_src,
+                       size_t point_index, std::vector<PlotData::Point>& points) override;
 
   QString language() const override
   {
@@ -31,9 +31,11 @@ public:
   std::string getError(sol::error err);
 
 private:
+  void parseLuaResult(sol::safe_function_result& result, double time,
+                      std::vector<PlotData::Point>& points);
+
   sol::state _lua_engine;
   sol::protected_function _lua_function;
-  std::vector<double> _chan_values;
   std::mutex mutex_;
   int global_lines_ = 0;
   int function_lines_ = 0;

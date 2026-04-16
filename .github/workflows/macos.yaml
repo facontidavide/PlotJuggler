@@ -29,6 +29,11 @@ jobs:
       - name: Sync repository
         uses: actions/checkout@v6
 
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
       - name: Install Conan
         uses: conan-io/setup-conan@v1
         with:
