@@ -1279,6 +1279,9 @@ void MainWindow::deleteAllData()
   _undo_states.clear();
   _redo_states.clear();
 
+  //No data means no files loaded.
+  updateCurrentLoadedFilesLabel(QList<QFileInfo>());
+  
   bool stopped = false;
 
   for (int idx = 0; idx < ui->layoutPublishers->count(); idx++)
