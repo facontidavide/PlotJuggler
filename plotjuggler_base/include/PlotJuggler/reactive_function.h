@@ -115,6 +115,7 @@ protected:
   void prepareLua();
 
   double _tracker_value = 0;
+  bool _disabled_after_error = false;
   std::string _global_code;
   std::string _function_code;
   std::string _library_code;
