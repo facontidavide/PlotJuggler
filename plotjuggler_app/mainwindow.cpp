@@ -1280,7 +1280,7 @@ void MainWindow::deleteAllData()
   _redo_states.clear();
 
   //No data means no files loaded.
-  updateCurrentLoadedFilesLabel(QList<QFileInfo>());
+  updateCurrentLoadedFilesLabel(QList<FileLoadInfo>());
   
   bool stopped = false;
 
@@ -1367,7 +1367,7 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
 
   std::unordered_set<std::string> previous_names = _mapped_plot_data.getAllNames();
 
-  QStringList loaded_filenames;
+  QList<FileLoadInfo> loaded_fileinfos{};
   _loaded_datafiles_previous.clear();
 
   for (int i = 0; i < filenames.size(); i++)
@@ -1381,7 +1381,7 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
     auto added_names = loadDataFromFile(info, merge_data);
     if (!added_names.empty())
     {
-      loaded_filenames.push_back(filenames[i]);
+      loaded_fileinfos.push_back(info);
     }
     for (const auto& name : added_names)
     {
@@ -1416,25 +1416,25 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
   }
 
   // special case when only the last file should be remembered
-  if (loaded_filenames.size() == 1 && data_replaced_entirely &&
+  if (loaded_fileinfos.size() == 1 && data_replaced_entirely &&
       _loaded_datafiles_history.size() > 1)
   {
     std::swap(_loaded_datafiles_history.back(), _loaded_datafiles_history.front());
     _loaded_datafiles_history.resize(1);
   }
 
-  ui->buttonReloadData->setEnabled(!loaded_filenames.empty());
+  ui->buttonReloadData->setEnabled(!loaded_fileinfos.empty());
 
-  QList<QFileInfo> loaded_fileinfos{};
-  for (const auto& file_info : loaded_filenames)
-  {
-    loaded_fileinfos.push_back(QFileInfo(file_info));
-  }
   updateCurrentLoadedFilesLabel(loaded_fileinfos);
 
 
-  if (loaded_filenames.size() > 0)
+  if (loaded_fileinfos.size() > 0)
   {
+    QStringList loaded_filenames;
+    for (const auto& info : loaded_fileinfos)
+    {
+      loaded_filenames.push_back(info.filename);
+    }
     updateRecentDataMenu(loaded_filenames);
     linkedZoomOut();
     return true;
@@ -1594,7 +1594,10 @@ std::unordered_set<std::string> MainWindow::loadDataFromFile(const FileLoadInfo&
 
   if (!added_names.empty())
   {
-    updateCurrentLoadedFilesLabel({ QFileInfo(info.filename) });
+    QList<FileLoadInfo> fileinfos;
+    fileinfos.push_back(info);
+
+    updateCurrentLoadedFilesLabel(fileinfos);
   }
 
   return added_names;
@@ -3651,14 +3654,32 @@ void MainWindow::on_actionColorMap_Editor_triggered()
   dialog.exec();
 }
 
-void MainWindow::updateCurrentLoadedFilesLabel(const QList<QFileInfo>& files)
+void MainWindow::updateCurrentLoadedFilesLabel(const QList<FileLoadInfo>& files)
 {
-  QStringList basenames{};
-  QStringList fullpaths{};
-  for (const auto& file_info : files)
+  QStringList abbreviated_file_paths{}; //WITH prefix if given
+  QStringList absolute_file_paths{};
+
+  for (const auto& file_loaded_info : files)
   {
-    basenames.push_back(file_info.fileName());
-    fullpaths.push_back(file_info.absoluteFilePath());
+    QString absolute_file_path;
+    QString abbreviated_name;
+ 
+    QFileInfo file_info = QFileInfo(file_loaded_info.filename);
+
+    if(file_loaded_info.prefix.isEmpty())
+    {
+      
+      abbreviated_name = file_info.fileName();
+      absolute_file_path = file_info.absoluteFilePath();
+    }
+    else
+    {
+      abbreviated_name = QString("%1: %2").arg(file_loaded_info.prefix).arg(file_info.fileName());
+      absolute_file_path = QString("%1: %2").arg(file_loaded_info.prefix).arg(file_info.absoluteFilePath());
+    }
+
+    abbreviated_file_paths.push_back(abbreviated_name);
+    absolute_file_paths.push_back(absolute_file_path);
   }
 
   if(files.empty())
@@ -3670,14 +3691,14 @@ void MainWindow::updateCurrentLoadedFilesLabel(const QList<QFileInfo>& files)
 
   if(files.size() == 1)
   {
-    ui->labelCurrentLoadedFiles->setText(tr("File: %1").arg(basenames.first()));
-    ui->labelCurrentLoadedFiles->setToolTip(fullpaths.first());
+    ui->labelCurrentLoadedFiles->setText(tr("File: %1").arg(abbreviated_file_paths.first()));
+    ui->labelCurrentLoadedFiles->setToolTip(absolute_file_paths.first());
     return;
   }
 
   //Multiple files loaded. Don't try and show what could be a long list of files in the label, but show them in the tooltip instead.
-  ui->labelCurrentLoadedFiles->setText(tr("Files (%1): %2 ...").arg(files.size()).arg(basenames.first()));
-  ui->labelCurrentLoadedFiles->setToolTip(fullpaths.join('\n'));
+  ui->labelCurrentLoadedFiles->setText(tr("Files (%1): %2 ...").arg(files.size()).arg(abbreviated_file_paths.first()));
+  ui->labelCurrentLoadedFiles->setToolTip(absolute_file_paths.join('\n'));
 }
 
 void MainWindow::on_buttonReloadData_clicked()
