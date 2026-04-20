@@ -18,13 +18,24 @@ jobs:
       - name: Cache apt packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: software-properties-common qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5serialport5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq3-dev liblz4-dev libzstd-dev libmosquitto-dev
+          packages: software-properties-common python3 python3-dev qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libqt5opengl5-dev libqt5x11extras5-dev libprotoc-dev libzmq3-dev liblz4-dev libzstd-dev libmosquitto-dev
           version: 1.0
 
       # Set up ROS
       - uses: ros-tooling/setup-ros@v0.7
         with:
           required-ros-distributions: rolling
+
+      # Ubuntu 24.04 (ubuntu-latest): apt-installed ROS Python packages land in
+      # /usr/lib/python3/dist-packages but CMake may invoke a different Python
+      # interpreter that doesn't see that path. Expose it explicitly.
+      - name: Fix Python path for ROS packages
+        run: echo "PYTHONPATH=/usr/lib/python3/dist-packages:$PYTHONPATH" >> $GITHUB_ENV
+
+      # rolling's ros-base does not always pull in typesupport implementations,
+      # causing "No 'rosidl_typesupport_c' found" at CMake configure time.
+      - name: Install missing rolling typesupport
+        run: sudo apt-get install -y ros-rolling-rosidl-typesupport-introspection-c ros-rolling-rosidl-typesupport-introspection-cpp
 
       # Run ROS CI
       - uses: ros-tooling/action-ros-ci@v0.4

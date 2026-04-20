@@ -3,8 +3,9 @@
 [![windows](https://github.com/facontidavide/PlotJuggler/actions/workflows/windows.yaml/badge.svg)](https://github.com/facontidavide/PlotJuggler/actions/workflows/windows.yaml)
 [![ubuntu](https://github.com/facontidavide/PlotJuggler/actions/workflows/ubuntu.yaml/badge.svg)](https://github.com/facontidavide/PlotJuggler/actions/workflows/ubuntu.yaml)
 [![macos](https://github.com/facontidavide/PlotJuggler/actions/workflows/macos.yaml/badge.svg)](https://github.com/facontidavide/PlotJuggler/actions/workflows/macos.yaml)
-[![ROS1](https://github.com/facontidavide/PlotJuggler/workflows/ros1/badge.svg)](https://github.com/facontidavide/PlotJuggler/actions?query=workflow%3Aros1)
-[![ROS2](https://github.com/facontidavide/PlotJuggler/workflows/ros2/badge.svg)](https://github.com/facontidavide/PlotJuggler/actions?query=workflow%3Aros2)
+[![ros2-humble](https://github.com/facontidavide/PlotJuggler/actions/workflows/ros2-humble.yaml/badge.svg)](https://github.com/facontidavide/PlotJuggler/actions/workflows/ros2-humble.yaml)
+[![ros2-jazzy](https://github.com/facontidavide/PlotJuggler/actions/workflows/ros2-jazzy.yaml/badge.svg)](https://github.com/facontidavide/PlotJuggler/actions/workflows/ros2-jazzy.yaml)
+[![ros2-rolling](https://github.com/facontidavide/PlotJuggler/actions/workflows/ros2-rolling.yaml/badge.svg)](https://github.com/facontidavide/PlotJuggler/actions/workflows/ros2-rolling.yaml)
 [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=I%20use%20PlotJuggler%20and%20it%20is%20amazing%0D%0A&url=https://github.com/facontidavide/PlotJuggler&via=facontidavide&hashtags=dataviz,plotjuggler,GoROS,PX4)
 
 ## Gold Sponsor:

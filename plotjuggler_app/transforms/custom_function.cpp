@@ -4,7 +4,6 @@
 #include <QFile>
 #include <QMessageBox>
 #include <QElapsedTimer>
-#include "lua_custom_function.h"
 
 CustomFunction::CustomFunction(SnippetData snippet)
 {
@@ -18,9 +17,12 @@ void CustomFunction::setSnippet(const SnippetData& snippet)
   _plot_name = snippet.alias_name.toStdString();
 
   _used_channels.clear();
-  for (QString source : snippet.additional_sources)
+  for (const QString& source : snippet.additional_sources)
   {
-    _used_channels.push_back(source.toStdString());
+    if (source != snippet.linked_source)
+    {
+      _used_channels.push_back(source.toStdString());
+    }
   }
 }
 
@@ -70,30 +72,55 @@ void CustomFunction::calculate()
 {
   auto dst_data = _dst_vector.front();
 
-  auto data_it = plotData()->numeric.find(_linked_plot_name);
-  if (data_it == plotData()->numeric.end())
-  {
-    // failed! keep it empty
-    return;
-  }
-  _src_vector.clear();
-  _src_vector.push_back(&data_it->second);
+  // Find main source — numeric or string
+  const PlotData* numeric_main = nullptr;
+  const StringSeries* string_main = nullptr;
 
+  auto num_it = plotData()->numeric.find(_linked_plot_name);
+  if (num_it != plotData()->numeric.end())
+  {
+    numeric_main = &num_it->second;
+  }
+  else
+  {
+    auto str_it = plotData()->strings.find(_linked_plot_name);
+    if (str_it != plotData()->strings.end())
+    {
+      string_main = &str_it->second;
+    }
+  }
+
+  if (!numeric_main && !string_main)
+  {
+    return;  // source not found, keep output empty
+  }
+
+  const MixedSource main_src = numeric_main ? MixedSource(numeric_main) : MixedSource(string_main);
+
+  // Build additional sources — any mix of numeric and string
+  std::vector<MixedSource> additional_src;
   for (const auto& channel : _used_channels)
   {
-    auto it = plotData()->numeric.find(channel);
-    if (it == plotData()->numeric.end())
+    auto num_add = plotData()->numeric.find(channel);
+    if (num_add != plotData()->numeric.end())
     {
-      throw std::runtime_error("Invalid channel name");
+      additional_src.emplace_back(&num_add->second);
+      continue;
     }
-    const PlotData* chan_data = &(it->second);
-    _src_vector.push_back(chan_data);
+    auto str_add = plotData()->strings.find(channel);
+    if (str_add != plotData()->strings.end())
+    {
+      additional_src.emplace_back(&str_add->second);
+      continue;
+    }
+    throw std::runtime_error("Invalid channel name: " + channel);
   }
 
-  const PlotData* main_data_source = _src_vector.front();
+  const size_t main_size = main_src.is_string ? main_src.str->size() : main_src.numeric->size();
+  const double max_range =
+      main_src.is_string ? main_src.str->maximumRangeX() : main_src.numeric->maximumRangeX();
 
-  // clean up old data
-  dst_data->setMaximumRangeX(main_data_source->maximumRangeX());
+  dst_data->setMaximumRangeX(max_range);
 
   double last_updated_stamp = std::numeric_limits<double>::lowest();
   if (dst_data->size() != 0)
@@ -102,14 +129,14 @@ void CustomFunction::calculate()
   }
 
   std::vector<PlotData::Point> points;
-  for (size_t i = 0; i < main_data_source->size(); ++i)
+  for (size_t i = 0; i < main_size; ++i)
   {
-    if (main_data_source->at(i).x > last_updated_stamp)
+    const double t = main_src.is_string ? main_src.str->at(i).x : main_src.numeric->at(i).x;
+    if (t > last_updated_stamp)
     {
       points.clear();
-      calculatePoints(_src_vector, i, points);
-
-      for (PlotData::Point const& point : points)
+      calculatePoints(main_src, additional_src, i, points);
+      for (const PlotData::Point& point : points)
       {
         dst_data->pushBack(point);
       }
@@ -119,7 +146,7 @@ void CustomFunction::calculate()
 
 bool CustomFunction::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const
 {
-  parent_element.appendChild(ExportSnippetToXML(_snippet, doc));
+  parent_element.appendChild(ExportSnippetToXML(_snippet, language(), doc));
   return true;
 }
 
@@ -175,9 +202,10 @@ QDomElement ExportSnippets(const SnippetsMap& snippets, QDomDocument& doc)
   for (const auto& it : snippets)
   {
     const auto& snippet = it.second;
-    auto element = ExportSnippetToXML(snippet, doc);
+    auto element = ExportSnippetToXML(snippet, snippet.language, doc);
     snippets_root.appendChild(element);
   }
+
   return snippets_root;
 }
 
@@ -186,6 +214,7 @@ SnippetData GetSnippetFromXML(const QDomElement& element)
   SnippetData snippet;
   snippet.linked_source = element.firstChildElement("linked_source").text().trimmed();
   snippet.alias_name = element.attribute("name");
+  snippet.language = element.attribute("language", "lua").trimmed().toLower();
   snippet.global_vars = element.firstChildElement("global").text().trimmed();
   snippet.function = element.firstChildElement("function").text().trimmed();
 
@@ -205,11 +234,14 @@ SnippetData GetSnippetFromXML(const QDomElement& element)
   return snippet;
 }
 
-QDomElement ExportSnippetToXML(const SnippetData& snippet, QDomDocument& doc)
+QDomElement ExportSnippetToXML(const SnippetData& snippet, const QString& language,
+                               QDomDocument& doc)
 {
   auto element = doc.createElement("snippet");
 
   element.setAttribute("name", snippet.alias_name);
+
+  element.setAttribute("language", language);
 
   auto global_el = doc.createElement("global");
   global_el.appendChild(doc.createTextNode(snippet.global_vars));

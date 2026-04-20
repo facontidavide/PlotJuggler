@@ -16,6 +16,20 @@ class CustomFunction;
 
 typedef std::shared_ptr<CustomFunction> CustomPlotPtr;
 
+struct MixedSource
+{
+  bool is_string;
+  const PlotData* numeric = nullptr;
+  const StringSeries* str = nullptr;
+
+  explicit MixedSource(const PlotData* p) : is_string(false), numeric(p)
+  {
+  }
+  explicit MixedSource(const StringSeries* s) : is_string(true), str(s)
+  {
+  }
+};
+
 struct SnippetData
 {
   QString alias_name;
@@ -23,6 +37,7 @@ struct SnippetData
   QString function;
   QString linked_source;
   QStringList additional_sources;
+  QString language;
 };
 
 typedef std::map<QString, SnippetData> SnippetsMap;
@@ -33,7 +48,8 @@ SnippetsMap GetSnippetsFromXML(const QString& xml_text);
 
 SnippetsMap GetSnippetsFromXML(const QDomElement& snippets_element);
 
-QDomElement ExportSnippetToXML(const SnippetData& snippet, QDomDocument& destination_doc);
+QDomElement ExportSnippetToXML(const SnippetData& snippet, const QString& language,
+                               QDomDocument& destination_doc);
 
 QDomElement ExportSnippets(const SnippetsMap& snippets, QDomDocument& destination_doc);
 
@@ -75,7 +91,8 @@ public:
 
   void calculateAndAdd(PlotDataMapRef& src_data);
 
-  virtual void calculatePoints(const std::vector<const PlotData*>& src_data, size_t point_index,
+  virtual void calculatePoints(const MixedSource& main_src,
+                               const std::vector<MixedSource>& additional_src, size_t point_index,
                                std::vector<PlotData::Point>& new_points) = 0;
 
 protected:
