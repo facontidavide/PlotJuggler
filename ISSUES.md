@@ -12,10 +12,10 @@ Snapshot of the 156 open GitHub issues (as of 2026-04-15) mapped against commits
 |---|---:|---:|---:|
 | Obsolete / should be closed | 10 | 0 | 10 |
 | Questions / user support | 10 | 0 | 10 |
-| Plugin bugs | 49 | **20** | 29 |
+| Plugin bugs | 49 | **21** | 28 |
 | Core app | 32 | 12 | 20 |
 | Feature requests | 51 | 2 | 49 |
-| **Total** | **156** | **34** | **122** |
+| **Total** | **156** | **35** | **121** |
 
 ## Per-plugin scoreboard
 
@@ -27,7 +27,7 @@ Snapshot of the 156 open GitHub issues (as of 2026-04-15) mapped against commits
 | **Lua / Scripting** | 4 | **4** | **0** |
 | **Parquet** (DataLoadParquet) | 2 | **2** | **0** |
 | MQTT (DataStreamMQTT) | 3 | 0 | 3 |
-| ZMQ (DataStreamZMQ, StatePublisherZMQ) | 3 | 0 | 3 |
+| ZMQ (DataStreamZMQ, StatePublisherZMQ) | 3 | **1** | 2 |
 | ULog (DataLoadULog) | 2 | 0 | 2 |
 | Protobuf (ParserProtobuf) | 1 | 0 | 1 |
 | **UDP** (DataStreamUDP) | 1 | **1** | **0** |
@@ -86,6 +86,12 @@ Snapshot of the 156 open GitHub issues (as of 2026-04-15) mapped against commits
 | #1312 | New Lua version breaks `quat_to_yaw` / `quat_to_roll` | `ae78a30b` — `default.snippets.xml`: PR #1164 had swapped `math.atan(y, x)` for `math.atan2(y, x)` to support Lua 5.1/5.2, but `math.atan2` was removed in Lua 5.4, so the snippets broke on the default bundled 5.4.7. Fix adds `local atan2 = math.atan2 or math.atan` at the top of both snippets so the correct name is picked at load time across Lua 5.1–5.5. `quat_to_pitch` uses `math.asin` and was unaffected. |
 | #968 | Misalignment in time series due to differing sizes with reactive scripts | `8d9c2afb` — `reactive_function.{h,cpp}`: `TimeseriesRef::atTime(t)` silently returns the clamped endpoint value when `t` falls outside the series' recorded range (because `getIndexFromX` in `timeseries.h:152-175` clamps to `size()-1`/`0`). Feb 2026 storage refactor (`48497feb`, `9493434e`) did not change that semantics. Fix exposes `getIndexAtTime(t)` on `TimeseriesRef` so reactive-script Lua (the ToolboxLuaEditor / `ReactiveLuaFunction` context) can compare the retrieved sample's `x` against the query time and detect out-of-range clamping. **Scope note**: applies only to reactive scripts, **not** to Lua custom functions (`LuaCustomFunction` has its own `_lua_engine` with no `TimeseriesRef` binding; its scripts receive pre-computed positional args from the C++ host and share the same clamping bug at `python_custom_function.cpp:483,490` and the equivalent in `lua_custom_function.cpp`). Fixing that second surface requires a host-level range check — deliberately out of scope here since no user has reported it. Purely additive; matches `firemark`'s suggestion on the closed PR #969. Fork-only for now (not sent upstream). |
 | #800 | Crash caused by reactive script errors | `bdf39ec9` — `reactive_function.{h,cpp}`: `ReactiveLuaFunction::calculate()` showed a modal `QMessageBox::warning` for every failure (line present and untouched since 2022-07-25, `af4f9d115`); under streaming sources (UDP 20-100 Hz) a script that errors every tick piled dialogs faster than the user could dismiss them, exhausting Qt USER32 handles on Windows and crashing PJ. Fix adds a `_disabled_after_error` flag set **before** the modal `QMessageBox::warning` is shown (so re-entrant streaming timer firings during the nested modal event loop see the flag and short-circuit, instead of queueing more dialogs). Script is auto re-enabled on save via the existing editor lifecycle (`lua_editor.cpp:271` constructs a fresh `ReactiveLuaFunction` on every save — new instance → default flag), so no explicit resume API was needed. Scope: reactive scripts only; CustomFunction streaming-path errors go to stderr via `qWarning`, no dialog, no parallel spam pathology. |
+
+### Plugin bugs — ZMQ (1 / 3 — upstream already merged)
+
+| # | Title | Evidence |
+|---|---|---|
+| #705 | ZeroMQ Subscriber filter | **COMPLETED — fixed upstream by PR #730 (`db90f70a ZMQ: Add topics filtering`, merged 2022-12-18).** Already on `plugin_issues` (and `main`). Adds semicolon/comma/whitespace-separated topic-filter parsing in `datastream_zmq.cpp:355-372` (`parseTopicFilters`), plus a test publisher at `plotjuggler_plugins/DataStreamZMQ/utilities/start_test_publisher.py`. Safe administrative close — Davide merged this himself. |
 
 ### Plugin bugs — UDP (1 / 1 — administrative close, not worth fixing)
 
@@ -148,13 +154,12 @@ All four Lua / Scripting issues are marked fixed.
 | #876 | MQTT connection creating malformed packets | ⏳ |
 | #747 | MQTT streamer only subscribes to single topic | ⏳ |
 
-### Plugin bugs — ZMQ (3)
+### Plugin bugs — ZMQ (2 waiting of 3)
 
 | # | Title | Status |
 |---|---|---|
 | #1126 | ZMQ Subscriber lacks option to specify Protobuf Paths | ⏳ |
 | #941 | Extraneous suffixes added to ZMQ IPC endpoints | ⏳ |
-| #705 | ZeroMQ Subscriber filter | ⏳ |
 
 ### Plugin bugs — Parquet (0 waiting of 2) ✅
 All two Parquet-category issues are marked fixed.
@@ -214,9 +219,9 @@ Waiting (in issue-number order):
 
 ## Next up — Parquet plugin complete
 
-Plugin-category progress: `#863` by the new BYTE_ARRAY → StringSeries path in `dataload_parquet.cpp` (plus the earlier `900557e0` TIMESTAMP fix), `#862` by administrative close citing commit `00b94253`'s Conan/Arrow Windows CI work, and `#839` (UDP layout-persistence) closed administratively as systemic-not-UDP-specific. Four plugin categories are fully closed — **CSV (8/8)**, **MCAP (5/5)**, **Lua (4/4)**, **Parquet (2/2)** — plus UDP (1/1 via administrative close). **20 plugin issues closed of 49 total.**
+Plugin-category progress: `#863` by the new BYTE_ARRAY → StringSeries path in `dataload_parquet.cpp` (plus the earlier `900557e0` TIMESTAMP fix), `#862` by administrative close citing commit `00b94253`'s Conan/Arrow Windows CI work, `#839` (UDP layout-persistence) closed administratively as systemic-not-UDP-specific, and `#705` (ZMQ topic filter) closed administratively via upstream PR #730 / `db90f70a`. Four plugin categories fully closed — **CSV (8/8)**, **MCAP (5/5)**, **Lua (4/4)**, **Parquet (2/2)** — plus UDP (1/1 administrative) and partial ZMQ (1/3 so far). **21 plugin issues closed of 49 total.**
 
-Remaining plugin categories (29 waiting): ROS/ROS2 (18), MQTT (3), ZMQ (3), ULog (2), Protobuf / FFT / Quaternion (1 each).
+Remaining plugin categories (28 waiting): ROS/ROS2 (18), MQTT (3), ZMQ (2), ULog (2), Protobuf / FFT / Quaternion (1 each).
 
 ### Suggested next target
 - **#537** (ROS/ROS2, rosout dark-theme invisible debug messages): tiniest scope, pure stylesheet. Good warm-up.
