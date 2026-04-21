@@ -48,7 +48,7 @@ public:
   ~MainWindow();
 
   bool loadLayoutFromFile(QString filename, bool load_datafiles = true);
-  bool loadDataFromFiles(QStringList filenames);
+  bool loadDataFromFiles(QStringList filenames, bool auto_prefix = false);
   std::unordered_set<std::string> loadDataFromFile(const FileLoadInfo& info, bool merge_files);
 
   void stopStreamingPlugin();
