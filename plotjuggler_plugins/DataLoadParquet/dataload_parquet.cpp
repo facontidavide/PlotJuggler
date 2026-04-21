@@ -226,7 +226,8 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
   {
     std::string name;
     arrow::Type::type arrow_type;
-    PlotData* plot_data = nullptr;
+    PlotData* numeric_data = nullptr;
+    StringSeries* string_data = nullptr;
     size_t column_index = 0;
   };
 
@@ -249,8 +250,8 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
     info.arrow_type = field->type()->id();
     info.column_index = col;
 
-    // Check if this is a numeric type we can handle
-    const bool is_valid =
+    // Numeric columns can be plotted directly and are offered as timestamp candidates.
+    const bool is_numeric =
         (info.arrow_type == arrow::Type::BOOL || info.arrow_type == arrow::Type::INT8 ||
          info.arrow_type == arrow::Type::INT16 || info.arrow_type == arrow::Type::INT32 ||
          info.arrow_type == arrow::Type::INT64 || info.arrow_type == arrow::Type::UINT8 ||
@@ -258,11 +259,22 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
          info.arrow_type == arrow::Type::UINT64 || info.arrow_type == arrow::Type::FLOAT ||
          info.arrow_type == arrow::Type::TIMESTAMP || info.arrow_type == arrow::Type::DOUBLE);
 
-    if (is_valid)
+    // Parquet BYTE_ARRAY columns (string/binary) land in Arrow as one of these.
+    const bool is_string =
+        (info.arrow_type == arrow::Type::STRING || info.arrow_type == arrow::Type::LARGE_STRING ||
+         info.arrow_type == arrow::Type::BINARY);
+
+    if (is_numeric)
     {
-      info.plot_data = &plot_data.getOrCreateNumeric(info.name, nullptr);
+      info.numeric_data = &plot_data.getOrCreateNumeric(info.name, nullptr);
       columns_info.push_back(info);
       selectable_columns.push_back(QString::fromStdString(info.name));
+    }
+    else if (is_string)
+    {
+      info.string_data = &plot_data.getOrCreateStringSeries(info.name, nullptr);
+      columns_info.push_back(info);
+      // String columns are loaded but not offered as a timestamp axis.
     }
   }
 
@@ -390,10 +402,43 @@ bool DataLoadParquet::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_
           timestamp = timestamp_to_row_index[row].first;
           ordered_row = timestamp_to_row_index[row].second;
         }
-        double value = get_arrow_value(values_array, ordered_row, info.arrow_type);
-        if (!std::isnan(value))
+
+        if (info.numeric_data)
         {
-          info.plot_data->pushBack({ timestamp, value });
+          double value = get_arrow_value(values_array, ordered_row, info.arrow_type);
+          if (!std::isnan(value))
+          {
+            info.numeric_data->pushBack({ timestamp, value });
+          }
+        }
+        else if (info.string_data)
+        {
+          if (values_array->IsNull(ordered_row))
+          {
+            continue;
+          }
+          std::string_view view;
+          switch (info.arrow_type)
+          {
+            case arrow::Type::STRING:
+              view =
+                  std::static_pointer_cast<arrow::StringArray>(values_array)->GetView(ordered_row);
+              break;
+            case arrow::Type::LARGE_STRING:
+              view = std::static_pointer_cast<arrow::LargeStringArray>(values_array)
+                         ->GetView(ordered_row);
+              break;
+            case arrow::Type::BINARY:
+              view =
+                  std::static_pointer_cast<arrow::BinaryArray>(values_array)->GetView(ordered_row);
+              break;
+            default:
+              break;
+          }
+          if (!view.empty())
+          {
+            info.string_data->pushBack({ timestamp, StringRef(view) });
+          }
         }
       }
 

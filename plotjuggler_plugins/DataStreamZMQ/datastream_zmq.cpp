@@ -112,6 +112,17 @@ bool DataStreamZMQ::start(QStringList*)
   dialog->ui->lineEditPort->setText(QString::number(port));
   dialog->ui->lineEditTopics->setText(topics);
 
+  // IPC endpoints are filesystem paths; no port applies. Disable the port
+  // field when ipc:// is selected so the user doesn't type a value that
+  // would be silently ignored.
+  auto updatePortEnabled = [dialog]() {
+    const bool use_port = dialog->ui->comboBox->currentText() != "ipc://";
+    dialog->ui->lineEditPort->setEnabled(use_port);
+  };
+  connect(dialog->ui->comboBox, qOverload<const QString&>(&QComboBox::currentIndexChanged), dialog,
+          [updatePortEnabled](const QString&) { updatePortEnabled(); });
+  updatePortEnabled();
+
   connect(dialog->ui->comboBoxProtocol, qOverload<const QString&>(&QComboBox::currentIndexChanged),
           this, [this, dialog](const QString& selected_protocol) {
             if (_parser_creator)
@@ -150,7 +161,17 @@ bool DataStreamZMQ::start(QStringList*)
   settings.setValue("ZMQ_Subscriber::topics", topics);
   settings.setValue("ZMQ_Subscriber::is_connect", _is_connect);
 
-  QString addr = dialog->ui->comboBox->currentText() + address + ":" + QString::number(port);
+  const QString endpoint_protocol = dialog->ui->comboBox->currentText();
+  QString addr;
+  if (endpoint_protocol == "ipc://")
+  {
+    // IPC endpoints are filesystem paths; no port suffix.
+    addr = endpoint_protocol + address;
+  }
+  else
+  {
+    addr = endpoint_protocol + address + ":" + QString::number(port);
+  }
   _socket_address = addr.toStdString();
   if (_is_connect)
   {
