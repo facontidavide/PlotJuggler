@@ -12,10 +12,10 @@ Snapshot of the 156 open GitHub issues (as of 2026-04-15) mapped against commits
 |---|---:|---:|---:|
 | Obsolete / should be closed | 10 | 0 | 10 |
 | Questions / user support | 10 | 0 | 10 |
-| Plugin bugs | 49 | **21** | 28 |
+| Plugin bugs | 49 | **22** | 27 |
 | Core app | 32 | 12 | 20 |
 | Feature requests | 51 | 2 | 49 |
-| **Total** | **156** | **35** | **121** |
+| **Total** | **156** | **36** | **120** |
 
 ## Per-plugin scoreboard
 
@@ -27,7 +27,7 @@ Snapshot of the 156 open GitHub issues (as of 2026-04-15) mapped against commits
 | **Lua / Scripting** | 4 | **4** | **0** |
 | **Parquet** (DataLoadParquet) | 2 | **2** | **0** |
 | MQTT (DataStreamMQTT) | 3 | 0 | 3 |
-| ZMQ (DataStreamZMQ, StatePublisherZMQ) | 3 | **1** | 2 |
+| ZMQ (DataStreamZMQ, StatePublisherZMQ) | 3 | **2** | 1 |
 | ULog (DataLoadULog) | 2 | 0 | 2 |
 | Protobuf (ParserProtobuf) | 1 | 0 | 1 |
 | **UDP** (DataStreamUDP) | 1 | **1** | **0** |
@@ -87,11 +87,12 @@ Snapshot of the 156 open GitHub issues (as of 2026-04-15) mapped against commits
 | #968 | Misalignment in time series due to differing sizes with reactive scripts | `8d9c2afb` — `reactive_function.{h,cpp}`: `TimeseriesRef::atTime(t)` silently returns the clamped endpoint value when `t` falls outside the series' recorded range (because `getIndexFromX` in `timeseries.h:152-175` clamps to `size()-1`/`0`). Feb 2026 storage refactor (`48497feb`, `9493434e`) did not change that semantics. Fix exposes `getIndexAtTime(t)` on `TimeseriesRef` so reactive-script Lua (the ToolboxLuaEditor / `ReactiveLuaFunction` context) can compare the retrieved sample's `x` against the query time and detect out-of-range clamping. **Scope note**: applies only to reactive scripts, **not** to Lua custom functions (`LuaCustomFunction` has its own `_lua_engine` with no `TimeseriesRef` binding; its scripts receive pre-computed positional args from the C++ host and share the same clamping bug at `python_custom_function.cpp:483,490` and the equivalent in `lua_custom_function.cpp`). Fixing that second surface requires a host-level range check — deliberately out of scope here since no user has reported it. Purely additive; matches `firemark`'s suggestion on the closed PR #969. Fork-only for now (not sent upstream). |
 | #800 | Crash caused by reactive script errors | `bdf39ec9` — `reactive_function.{h,cpp}`: `ReactiveLuaFunction::calculate()` showed a modal `QMessageBox::warning` for every failure (line present and untouched since 2022-07-25, `af4f9d115`); under streaming sources (UDP 20-100 Hz) a script that errors every tick piled dialogs faster than the user could dismiss them, exhausting Qt USER32 handles on Windows and crashing PJ. Fix adds a `_disabled_after_error` flag set **before** the modal `QMessageBox::warning` is shown (so re-entrant streaming timer firings during the nested modal event loop see the flag and short-circuit, instead of queueing more dialogs). Script is auto re-enabled on save via the existing editor lifecycle (`lua_editor.cpp:271` constructs a fresh `ReactiveLuaFunction` on every save — new instance → default flag), so no explicit resume API was needed. Scope: reactive scripts only; CustomFunction streaming-path errors go to stderr via `qWarning`, no dialog, no parallel spam pathology. |
 
-### Plugin bugs — ZMQ (1 / 3 — upstream already merged)
+### Plugin bugs — ZMQ (2 / 3)
 
 | # | Title | Evidence |
 |---|---|---|
 | #705 | ZeroMQ Subscriber filter | **COMPLETED — fixed upstream by PR #730 (`db90f70a ZMQ: Add topics filtering`, merged 2022-12-18).** Already on `plugin_issues` (and `main`). Adds semicolon/comma/whitespace-separated topic-filter parsing in `datastream_zmq.cpp:355-372` (`parseTopicFilters`), plus a test publisher at `plotjuggler_plugins/DataStreamZMQ/utilities/start_test_publisher.py`. Safe administrative close — Davide merged this himself. |
+| #941 | Extraneous suffixes added to ZMQ IPC endpoints | **COMPLETED** — `752e1773` *"datastream_zmq: drop bogus `:port` suffix on ipc:// endpoints"*. The socket-address assembly at `datastream_zmq.cpp:153` always concatenated `<protocol><address>:<port>`, which is correct for `tcp://` but corrupted `ipc://` endpoints (IPC uses filesystem paths, no port). Fix guards the `:port` suffix on protocol and disables the port field in the dialog when `ipc://` is selected so the user can't enter a value that would be silently ignored. **Manually verified on 2026-04-21** with a pyzmq PUB on both `tcp://*:9872` and `ipc:///tmp/pj_zmq_test` against PlotJuggler's ZMQ Subscriber — both paths plot as expected; IPC case no longer appends `:9872`. Two sibling bugs are intentionally left in-tree (separate tickets if re-reported): `radioBind` toggle forces `"0.0.0.0"` (TCP-specific), and the default stored address is `"localhost"` (also TCP-centric). Fork-only for now (not yet sent upstream). |
 
 ### Plugin bugs — UDP (1 / 1 — administrative close, not worth fixing)
 
@@ -154,12 +155,11 @@ All four Lua / Scripting issues are marked fixed.
 | #876 | MQTT connection creating malformed packets | ⏳ |
 | #747 | MQTT streamer only subscribes to single topic | ⏳ |
 
-### Plugin bugs — ZMQ (2 waiting of 3)
+### Plugin bugs — ZMQ (1 waiting of 3)
 
 | # | Title | Status |
 |---|---|---|
 | #1126 | ZMQ Subscriber lacks option to specify Protobuf Paths | ⏳ |
-| #941 | Extraneous suffixes added to ZMQ IPC endpoints | ⏳ |
 
 ### Plugin bugs — Parquet (0 waiting of 2) ✅
 All two Parquet-category issues are marked fixed.
@@ -219,9 +219,9 @@ Waiting (in issue-number order):
 
 ## Next up — Parquet plugin complete
 
-Plugin-category progress: `#863` by the new BYTE_ARRAY → StringSeries path in `dataload_parquet.cpp` (plus the earlier `900557e0` TIMESTAMP fix), `#862` by administrative close citing commit `00b94253`'s Conan/Arrow Windows CI work, `#839` (UDP layout-persistence) closed administratively as systemic-not-UDP-specific, and `#705` (ZMQ topic filter) closed administratively via upstream PR #730 / `db90f70a`. Four plugin categories fully closed — **CSV (8/8)**, **MCAP (5/5)**, **Lua (4/4)**, **Parquet (2/2)** — plus UDP (1/1 administrative) and partial ZMQ (1/3 so far). **21 plugin issues closed of 49 total.**
+Plugin-category progress: `#863` by the new BYTE_ARRAY → StringSeries path in `dataload_parquet.cpp` (plus the earlier `900557e0` TIMESTAMP fix), `#862` by administrative close citing commit `00b94253`'s Conan/Arrow Windows CI work, `#839` (UDP layout-persistence) closed administratively as systemic-not-UDP-specific, `#705` (ZMQ topic filter) closed administratively via upstream PR #730 / `db90f70a`, and `#941` (ZMQ IPC `:port` suffix) fixed by `752e1773`. Four plugin categories fully closed — **CSV (8/8)**, **MCAP (5/5)**, **Lua (4/4)**, **Parquet (2/2)** — plus UDP (1/1 administrative) and ZMQ (2/3 — only `#1126` Protobuf-paths left). **22 plugin issues closed of 49 total.**
 
-Remaining plugin categories (28 waiting): ROS/ROS2 (18), MQTT (3), ZMQ (2), ULog (2), Protobuf / FFT / Quaternion (1 each).
+Remaining plugin categories (27 waiting): ROS/ROS2 (18), MQTT (3), ULog (2), ZMQ (1), Protobuf / FFT / Quaternion (1 each).
 
 ### Suggested next target
 - **#537** (ROS/ROS2, rosout dark-theme invisible debug messages): tiniest scope, pure stylesheet. Good warm-up.
