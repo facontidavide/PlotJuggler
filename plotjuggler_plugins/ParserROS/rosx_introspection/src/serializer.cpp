@@ -1,19 +1,16 @@
 #include "rosx_introspection/serializer.hpp"
-#include "rosx_introspection/contrib/nanocdr.hpp"
-namespace RosMsgParser
-{
 
-NanoCDR_Serializer::NanoCDR_Serializer()
-{
+#include "rosx_introspection/contrib/nanocdr.hpp"
+namespace RosMsgParser {
+
+NanoCDR_Serializer::NanoCDR_Serializer() {
   _storage.reserve(1024);
   _cdr_encoder = std::make_shared<nanocdr::Encoder>(nanocdr::CdrHeader(), _storage);
   // Write the CDR header to the first 4 bytes
 }
 
-void NanoCDR_Serializer::serialize(BuiltinType type, const Variant& val)
-{
-  switch (type)
-  {
+void NanoCDR_Serializer::serialize(BuiltinType type, const Variant& val) {
+  switch (type) {
     case BuiltinType::CHAR:
     case BuiltinType::UINT8:
       _cdr_encoder->encode(val.convert<uint8_t>());
@@ -54,28 +51,23 @@ void NanoCDR_Serializer::serialize(BuiltinType type, const Variant& val)
   }
 }
 
-void NanoCDR_Serializer::serializeString(const std::string& str)
-{
+void NanoCDR_Serializer::serializeString(const std::string& str) {
   _cdr_encoder->encode(str);
 }
 
-void NanoCDR_Serializer::serializeUInt32(uint32_t value)
-{
+void NanoCDR_Serializer::serializeUInt32(uint32_t value) {
   _cdr_encoder->encode(value);
 }
 
-void NanoCDR_Serializer::reset()
-{
+void NanoCDR_Serializer::reset() {
   _cdr_encoder = std::make_shared<nanocdr::Encoder>(nanocdr::CdrHeader(), _storage);
 }
 
-const char* NanoCDR_Serializer::getBufferData() const
-{
+const char* NanoCDR_Serializer::getBufferData() const {
   return reinterpret_cast<const char*>(_storage.data());
 }
 
-size_t NanoCDR_Serializer::getBufferSize() const
-{
+size_t NanoCDR_Serializer::getBufferSize() const {
   return _storage.size();
 }
 

@@ -4,20 +4,18 @@
 
 #include <exception>
 #include <vector>
+
 #include "rosx_introspection/builtin_types.hpp"
 #include "rosx_introspection/variant.hpp"
 
-namespace nanocdr
-{
+namespace nanocdr {
 class Encoder;
 }  // namespace nanocdr
 
-namespace RosMsgParser
-{
+namespace RosMsgParser {
 
-class Serializer
-{
-public:
+class Serializer {
+ public:
   virtual ~Serializer() = default;
 
   virtual bool isROS2() const = 0;
@@ -38,11 +36,9 @@ public:
 //-----------------------------------------------------------------
 
 // Specialization of serializer that works with ROS1
-class ROS_Serializer : public Serializer
-{
-public:
-  bool isROS2() const override
-  {
+class ROS_Serializer : public Serializer {
+ public:
+  bool isROS2() const override {
     return false;
   }
 
@@ -58,16 +54,14 @@ public:
 
   size_t getBufferSize() const override;
 
-protected:
+ protected:
   std::vector<uint8_t> _buffer;
   size_t _current_size = 0;
 
   template <typename T>
-  T serialize(const T& val)
-  {
+  T serialize(const T& val) {
     T out;
-    if (_current_size + sizeof(T) > _buffer.size())
-    {
+    if (_current_size + sizeof(T) > _buffer.size()) {
       _buffer.resize((_current_size * 3) / 2);
     }
     auto* ptr = &(_buffer[_current_size]);
@@ -81,13 +75,11 @@ protected:
 
 // Specialization od deserializer that works with ROS2
 // wrapping FastCDR
-class NanoCDR_Serializer : public Serializer
-{
-public:
+class NanoCDR_Serializer : public Serializer {
+ public:
   NanoCDR_Serializer();
 
-  bool isROS2() const override
-  {
+  bool isROS2() const override {
     return true;
   }
 
@@ -103,7 +95,7 @@ public:
 
   size_t getBufferSize() const override;
 
-protected:
+ protected:
   std::vector<uint8_t> _storage;
   std::shared_ptr<nanocdr::Encoder> _cdr_encoder;
 };
