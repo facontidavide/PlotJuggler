@@ -25,47 +25,42 @@
 #define ROS_INTROSPECTION_ROSMESSAGE_H
 
 #include <unordered_map>
-#include "rosx_introspection/tree.hpp"
+
+#include "rosx_introspection/idl_types.hpp"
 #include "rosx_introspection/ros_field.hpp"
+#include "rosx_introspection/tree.hpp"
 
-namespace RosMsgParser
-{
+namespace RosMsgParser {
 
-class ROSMessage
-{
-public:
+class ROSMessage {
+ public:
   using Ptr = std::shared_ptr<ROSMessage>;
 
   /// This constructor does most of the work in terms of parsing.
   /// It uses the message definition to extract fields and types.
   ROSMessage(const std::string& msg_def);
 
-  const ROSField& field(size_t i) const
-  {
+  const ROSField& field(size_t i) const {
     return _fields[i];
   }
 
-  const std::vector<ROSField>& fields() const
-  {
+  const std::vector<ROSField>& fields() const {
     return _fields;
   }
 
-  std::vector<ROSField>& fields()
-  {
+  std::vector<ROSField>& fields() {
     return _fields;
   }
 
-  const ROSType& type() const
-  {
+  const ROSType& type() const {
     return _type;
   }
 
-  void setType(const ROSType& new_type)
-  {
+  void setType(const ROSType& new_type) {
     _type = new_type;
   }
 
-private:
+ private:
   ROSType _type;
   std::vector<ROSField> _fields;
 };
@@ -73,35 +68,44 @@ private:
 typedef details::TreeNode<const ROSField*> FieldTreeNode;
 typedef details::Tree<const ROSField*> FieldTree;
 
-struct MessageSchema
-{
+struct MessageSchema {
   using Ptr = std::shared_ptr<MessageSchema>;
 
   std::string topic_name;
   FieldTree field_tree;
   ROSMessage::Ptr root_msg;
   RosMessageLibrary msg_library;
+
+  /// Owns the root field that is stored as a raw pointer in field_tree.
+  /// Used by ParseIDL; BuildMessageSchema still uses a raw `new ROSField`.
+  std::unique_ptr<ROSField> root_field;
+
+  // IDL type registries (empty for ROS .msg schemas)
+  std::unordered_map<ROSType, EnumDefinition> enum_library;
+  std::unordered_map<ROSType, DiscriminatedUnion> union_library;
+  std::unordered_map<ROSType, TypedefAlias> typedef_library;
 };
 
 //------------------------------------------------
 
-inline std::ostream& operator<<(std::ostream& os, const ROSMessage& msg)
-{
+inline std::ostream& operator<<(std::ostream& os, const ROSMessage& msg) {
   os << msg.type();
   return os;
 }
 
-inline std::ostream& operator<<(std::ostream& os, const ROSMessage* msg)
-{
+inline std::ostream& operator<<(std::ostream& os, const ROSMessage* msg) {
   os << msg->type();
   return os;
 }
 
-std::vector<ROSMessage::Ptr> ParseMessageDefinitions(const std::string& multi_def,
-                                                     const ROSType& type);
+std::vector<ROSMessage::Ptr> ParseMessageDefinitions(const std::string& multi_def, const ROSType& type);
 
-MessageSchema::Ptr BuildMessageSchema(const std::string& topic_name,
-                                      const std::vector<ROSMessage::Ptr>& parsed_msgs);
+MessageSchema::Ptr BuildMessageSchema(const std::string& topic_name, const std::vector<ROSMessage::Ptr>& parsed_msgs);
+
+/// Walk the field tree to precompute cached path data. The vendored walker does
+/// not rely on caches yet, so this is a no-op kept for API compatibility with
+/// the upstream IDL parser.
+void CacheFieldTreePaths(FieldTree& tree);
 
 }  // namespace RosMsgParser
 

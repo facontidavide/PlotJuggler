@@ -21,30 +21,24 @@
  *   SOFTWARE.
  */
 
-#include <assert.h>
 #include "rosx_introspection/ros_type.hpp"
 
-namespace RosMsgParser
-{
+#include <assert.h>
 
-ROSType::ROSType(const std::string& name) : _base_name(name)
-{
+namespace RosMsgParser {
+
+ROSType::ROSType(const std::string& name) : _base_name(name) {
   int pos = -1;
-  for (size_t i = 0; i < name.size(); i++)
-  {
-    if (name[i] == '/')
-    {
+  for (size_t i = 0; i < name.size(); i++) {
+    if (name[i] == '/') {
       pos = i;
       break;
     }
   }
 
-  if (pos == -1)
-  {
+  if (pos == -1) {
     _msg_name = _base_name;
-  }
-  else
-  {
+  } else {
     _pkg_name = std::string_view(_base_name.data(), pos);
     pos++;
     _msg_name = std::string_view(_base_name.data() + pos, _base_name.size() - pos);
@@ -54,34 +48,33 @@ ROSType::ROSType(const std::string& name) : _base_name(name)
   _hash = std::hash<std::string>{}(_base_name);
 }
 
-ROSType& ROSType::operator=(const ROSType& other)
-{
+ROSType& ROSType::operator=(const ROSType& other) {
   int pos = other._pkg_name.size();
   _base_name = other._base_name;
   _pkg_name = std::string_view(_base_name.data(), pos);
-  if (pos > 0)
+  if (pos > 0) {
     pos++;
+  }
   _msg_name = std::string_view(_base_name.data() + pos, _base_name.size() - pos);
   _id = other._id;
   _hash = other._hash;
   return *this;
 }
 
-ROSType& ROSType::operator=(ROSType&& other)
-{
+ROSType& ROSType::operator=(ROSType&& other) {
   int pos = other._pkg_name.size();
   _base_name = std::move(other._base_name);
   _pkg_name = std::string_view(_base_name.data(), pos);
-  if (pos > 0)
+  if (pos > 0) {
     pos++;
+  }
   _msg_name = std::string_view(_base_name.data() + pos, _base_name.size() - pos);
   _id = other._id;
   _hash = other._hash;
   return *this;
 }
 
-void ROSType::setPkgName(std::string_view new_pkg)
-{
+void ROSType::setPkgName(std::string_view new_pkg) {
   assert(_pkg_name.size() == 0);
 
   size_t pos = new_pkg.size();

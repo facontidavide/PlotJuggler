@@ -20,19 +20,16 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace RosMsgParser
-{
+namespace RosMsgParser {
 
-struct MessageSpec
-{
+struct MessageSpec {
   MessageSpec(std::string text, const std::string& package_context);
   const std::set<std::string> dependencies;
   const std::string text;
 };
 
-class MessageDefinitionCache final
-{
-public:
+class MessageDefinitionCache final {
+ public:
   /**
    * Concatenate the message definition with its dependencies into a self-contained
    * schema. Uses a format similar to ROS 1's gendeps:
@@ -40,7 +37,7 @@ public:
    */
   std::string get_full_text(const std::string& datatype);
 
-private:
+ private:
   /**
    * Load and parse the message file referenced by the given datatype, or return it from
    * msg_specs_by_datatype
