@@ -23,6 +23,7 @@
 #include <QHostInfo>
 #include <QSslConfiguration>
 #include <QSslSocket>
+#include <QStyleFactory>
 
 #include "PlotJuggler/transform_function.h"
 #include "transforms/binary_filter.h"
@@ -164,7 +165,23 @@ int main(int argc, char* argv[])
     new_argv.push_back(args[i].data());
   }
 
+  // Must be set before QApplication is constructed. Tells Qt to scale
+  // widget metrics and QSS pixel values by the screen's scale factor,
+  // so XWayland (which reports DPI=N*96 with dpr=1) renders identically
+  // to native Wayland (DPI=96 dpr=N). Without this, Fusion metrics
+  // auto-scale by DPI but QSS hardcoded `px` values don't, causing
+  // inconsistent widget sizing in the AppImage.
+  QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+
   QApplication app(new_argc, new_argv.data());
+
+  // Pin the Qt base style so the app's QSS paints on top of a known
+  // palette. Without this, the AppImage inherits the host's Qt platform
+  // theme (e.g. GTK3 dark on Ubuntu), causing unstyled widgets like the
+  // menu bar to render with system-dark colors while QSS-covered widgets
+  // stay light — the mixed-theme look users report.
+  QApplication::setStyle(QStyleFactory::create("Fusion"));
 
   //-------------------------
 

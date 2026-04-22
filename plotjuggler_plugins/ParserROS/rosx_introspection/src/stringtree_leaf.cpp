@@ -23,14 +23,11 @@
 
 #include "rosx_introspection/stringtree_leaf.hpp"
 
-namespace RosMsgParser
-{
+namespace RosMsgParser {
 
-FieldsVector::FieldsVector(const FieldLeaf& leaf)
-{
+FieldsVector::FieldsVector(const FieldLeaf& leaf) {
   auto node = leaf.node;
-  while (node && node->value())
-  {
+  while (node && node->value()) {
     fields.push_back(node->value());
     node = node->parent();
   }
@@ -38,14 +35,11 @@ FieldsVector::FieldsVector(const FieldLeaf& leaf)
   index_array = leaf.index_array;
 }
 
-void FieldsVector::toStr(std::string& out) const
-{
+void FieldsVector::toStr(std::string& out) const {
   size_t total_size = 0;
-  for (const ROSField* field : fields)
-  {
+  for (const ROSField* field : fields) {
     total_size += field->name().size() + 1;
-    if (field->isArray())
-    {
+    if (field->isArray()) {
       total_size += (2 + 4);  // super conservative (9999)
     }
   }
@@ -56,22 +50,18 @@ void FieldsVector::toStr(std::string& out) const
   size_t array_count = 0;
   size_t offset = 0;
 
-  for (const ROSField* field : fields)
-  {
+  for (const ROSField* field : fields) {
     const std::string& str = field->name();
     bool is_root = (field == fields.front());
-    if (!is_root)
-    {
+    if (!is_root) {
       buffer[offset++] = '/';
     }
     std::memcpy(&buffer[offset], str.data(), str.size());
     offset += str.size();
 
-    if (!is_root && field->isArray())
-    {
+    if (!is_root && field->isArray()) {
       buffer[offset++] = '[';
-      if (array_count < index_array.size())
-      {
+      if (array_count < index_array.size()) {
         offset += print_number(&buffer[offset], index_array[array_count++]);
       }
       buffer[offset++] = ']';

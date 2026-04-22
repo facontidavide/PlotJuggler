@@ -21,24 +21,23 @@
  *   SOFTWARE.
  */
 
+#include "rosx_introspection/ros_field.hpp"
+
 #include <algorithm>
 #include <regex>
-#include "rosx_introspection/ros_field.hpp"
+
 #include "rosx_introspection/ros_message.hpp"
 
-namespace RosMsgParser
-{
+namespace RosMsgParser {
 
 ROSField::ROSField(const ROSType& type, const std::string& name)
-  : _fieldname(name), _type(type), _is_array(false), _array_size(1)
-{
-}
+    : _fieldname(name), _type(type), _is_array(false), _array_size(1) {}
 
-ROSField::ROSField(const std::string& definition) : _is_array(false), _array_size(1)
-{
-  static const std::regex type_regex("[a-zA-Z][a-zA-Z0-9_]*"
-                                     "(/[a-zA-Z][a-zA-Z0-9_]*){0,1}"
-                                     "(\\[[0-9]*\\]){0,1}");
+ROSField::ROSField(const std::string& definition) : _is_array(false), _array_size(1) {
+  static const std::regex type_regex(
+      "[a-zA-Z][a-zA-Z0-9_]*"
+      "(/[a-zA-Z][a-zA-Z0-9_]*){0,1}"
+      "(\\[[0-9]*\\]){0,1}");
 
   static const std::regex field_regex("[a-zA-Z][a-zA-Z0-9_]*");
 
@@ -54,44 +53,32 @@ ROSField::ROSField(const std::string& definition) : _is_array(false), _array_siz
 
   //-------------------------------
   // Find type, field and array size
-  if (std::regex_search(begin, end, what, type_regex))
-  {
+  if (std::regex_search(begin, end, what, type_regex)) {
     type = what[0];
     begin = what[0].second;
-  }
-  else
-  {
+  } else {
     throw std::runtime_error("Bad type when parsing field: " + definition);
   }
 
-  if (regex_search(begin, end, what, field_regex))
-  {
+  if (regex_search(begin, end, what, field_regex)) {
     _fieldname = what[0];
     begin = what[0].second;
-  }
-  else
-  {
+  } else {
     throw std::runtime_error("Bad field when parsing field: " + definition);
   }
 
   std::string temp_type = type;
-  if (regex_search(temp_type, what, array_regex))
-  {
+  if (regex_search(temp_type, what, array_regex)) {
     type = what[1];
 
-    if (what.size() == 3)
-    {
+    if (what.size() == 3) {
       _array_size = -1;
       _is_array = true;
-    }
-    else if (what.size() == 4)
-    {
+    } else if (what.size() == 4) {
       std::string size(what[3].first, what[3].second);
       _array_size = size.empty() ? -1 : atoi(size.c_str());
       _is_array = true;
-    }
-    else
-    {
+    } else {
       throw std::runtime_error("Bad array size when parsing field:  " + definition);
     }
   }
@@ -101,43 +88,29 @@ ROSField::ROSField(const std::string& definition) : _is_array(false), _array_siz
 
   // Determine next character
   // if '=' -> constant, if '#' -> done, if nothing -> done, otherwise error
-  if (regex_search(begin, end, what, std::regex("\\S")))
-  {
-    if (what[0] == "=")
-    {
+  if (regex_search(begin, end, what, std::regex("\\S"))) {
+    if (what[0] == "=") {
       begin = what[0].second;
       // Copy constant
-      if (type == "string")
-      {
+      if (type == "string") {
         value.assign(begin, end);
-      }
-      else
-      {
-        if (regex_search(begin, end, what, std::regex("\\s*#")))
-        {
+      } else {
+        if (regex_search(begin, end, what, std::regex("\\s*#"))) {
           value.assign(begin, what[0].first);
-        }
-        else
-        {
+        } else {
           value.assign(begin, end);
         }
       }
 
       TrimString(value);
       _is_constant = true;
-    }
-    else if (what[0] == "#")
-    {
+    } else if (what[0] == "#") {
       // Ignore comment
-    }
-    else  // default value, not constant ?
+    } else  // default value, not constant ?
     {
-      if (regex_search(begin, end, what, std::regex("\\s*#")))
-      {
+      if (regex_search(begin, end, what, std::regex("\\s*#"))) {
         value.assign(begin, what[0].first);
-      }
-      else
-      {
+      } else {
         value.assign(begin, end);
       }
     }
@@ -147,20 +120,15 @@ ROSField::ROSField(const std::string& definition) : _is_array(false), _array_siz
   _value = value;
 }
 
-std::shared_ptr<ROSMessage>
-ROSField::getMessagePtr(const RosMessageLibrary& library) const
-{
-  if (_type.typeID() != BuiltinType::OTHER)
-  {
+std::shared_ptr<ROSMessage> ROSField::getMessagePtr(const RosMessageLibrary& library) const {
+  if (_type.typeID() != BuiltinType::OTHER) {
     return {};
   }
-  if (&library == _cache_library && _cache_message)
-  {
+  if (&library == _cache_library && _cache_message) {
     return _cache_message;
   }
   auto it = library.find(_type.baseName());
-  if (it == library.end())
-  {
+  if (it == library.end()) {
     return nullptr;
   }
   _cache_library = &library;
@@ -168,22 +136,15 @@ ROSField::getMessagePtr(const RosMessageLibrary& library) const
   return _cache_message;
 }
 
-void TrimStringLeft(std::string& s)
-{
-  s.erase(s.begin(), std::find_if(s.begin(), s.end(),
-                                  [](unsigned char ch) { return !std::isspace(ch); }));
+void TrimStringLeft(std::string& s) {
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
 }
 
-void TrimStringRight(std::string& s)
-{
-  s.erase(std::find_if(s.rbegin(), s.rend(),
-                       [](unsigned char ch) { return !std::isspace(ch); })
-              .base(),
-          s.end());
+void TrimStringRight(std::string& s) {
+  s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
 }
 
-void TrimString(std::string& s)
-{
+void TrimString(std::string& s) {
   TrimStringLeft(s);
   TrimStringRight(s);
 }

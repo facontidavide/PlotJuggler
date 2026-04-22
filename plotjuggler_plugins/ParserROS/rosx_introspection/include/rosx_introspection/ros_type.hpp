@@ -24,34 +24,29 @@
 #ifndef ROS_INTROSPECTION_ROSTYPE_H
 #define ROS_INTROSPECTION_ROSTYPE_H
 
-#include <vector>
-#include <map>
-#include <iostream>
 #include <functional>
+#include <iostream>
+#include <map>
+#include <vector>
+
 #include "rosx_introspection/variant.hpp"
 
-namespace RosMsgParser
-{
+namespace RosMsgParser {
 
 /**
  * @brief ROSType
  */
-class ROSType
-{
-public:
-  ROSType()
-  {
-  }
+class ROSType {
+ public:
+  ROSType() {}
 
   ROSType(const std::string& name);
 
-  ROSType(const ROSType& other)
-  {
+  ROSType(const ROSType& other) {
     *this = other;
   }
 
-  ROSType(ROSType&& other)
-  {
+  ROSType(ROSType&& other) {
     *this = other;
   }
 
@@ -80,27 +75,23 @@ public:
   /// If type is builtin, returns the id.  BuiltinType::OTHER otherwise.
   BuiltinType typeID() const;
 
-  bool operator==(const ROSType& other) const
-  {
+  bool operator==(const ROSType& other) const {
     return _hash == other._hash;
   }
 
-  bool operator!=(const ROSType& other) const
-  {
+  bool operator!=(const ROSType& other) const {
     return (_hash != other._hash);
   }
 
-  bool operator<(const ROSType& other) const
-  {
+  bool operator<(const ROSType& other) const {
     return this->baseName() < other.baseName();
   }
 
-  size_t hash() const
-  {
+  size_t hash() const {
     return _hash;
   }
 
-protected:
+ protected:
   BuiltinType _id = OTHER;
   std::string _base_name;
   std::string_view _msg_name;
@@ -110,53 +101,67 @@ protected:
 
 //----------- definitions -------------
 
-inline const std::string& ROSType::baseName() const
-{
+inline const std::string& ROSType::baseName() const {
   return _base_name;
 }
 
-inline const std::string_view& ROSType::msgName() const
-{
+inline const std::string_view& ROSType::msgName() const {
   return _msg_name;
 }
 
-inline const std::string_view& ROSType::pkgName() const
-{
+inline const std::string_view& ROSType::pkgName() const {
   return _pkg_name;
 }
 
-inline bool ROSType::isBuiltin() const
-{
+inline bool ROSType::isBuiltin() const {
   return _id != RosMsgParser::OTHER;
 }
 
-inline int ROSType::typeSize() const
-{
+inline int ROSType::typeSize() const {
   return builtinSize(_id);
 }
 
-inline BuiltinType ROSType::typeID() const
-{
+inline BuiltinType ROSType::typeID() const {
   return _id;
 }
 
 //--------- helper functions --------------
 
-inline std::ostream& operator<<(std::ostream& os, const ROSType& t)
-{
+inline std::ostream& operator<<(std::ostream& os, const ROSType& t) {
   os << t.baseName();
   return os;
 }
 
-inline BuiltinType toBuiltinType(const std::string_view& s)
-{
+inline BuiltinType toBuiltinType(const std::string_view& s) {
   static std::map<std::string_view, BuiltinType> string_to_builtin_map{
-    { "bool", BOOL },       { "byte", BYTE },     { "char", CHAR },
-    { "uint8", UINT8 },     { "uint16", UINT16 }, { "uint32", UINT32 },
-    { "uint64", UINT64 },   { "int8", INT8 },     { "int16", INT16 },
-    { "int32", INT32 },     { "int64", INT64 },   { "float32", FLOAT32 },
-    { "float64", FLOAT64 }, { "time", TIME },     { "duration", DURATION },
-    { "string", STRING },
+      // ROS type names
+      {"bool", BOOL},
+      {"byte", BYTE},
+      {"char", CHAR},
+      {"uint8", UINT8},
+      {"uint16", UINT16},
+      {"uint32", UINT32},
+      {"uint64", UINT64},
+      {"int8", INT8},
+      {"int16", INT16},
+      {"int32", INT32},
+      {"int64", INT64},
+      {"float32", FLOAT32},
+      {"float64", FLOAT64},
+      {"time", TIME},
+      {"duration", DURATION},
+      {"string", STRING},
+      // DDS/IDL type names
+      {"boolean", BOOL},
+      {"octet", UINT8},
+      {"short", INT16},
+      {"long", INT32},
+      {"long long", INT64},
+      {"unsigned short", UINT16},
+      {"unsigned long", UINT32},
+      {"unsigned long long", UINT64},
+      {"float", FLOAT32},
+      {"double", FLOAT64},
   };
   const auto it = string_to_builtin_map.find(s);
   return (it != string_to_builtin_map.cend()) ? it->second : OTHER;
@@ -164,16 +169,13 @@ inline BuiltinType toBuiltinType(const std::string_view& s)
 
 }  // namespace RosMsgParser
 
-namespace std
-{
+namespace std {
 template <>
-struct hash<RosMsgParser::ROSType>
-{
+struct hash<RosMsgParser::ROSType> {
   typedef RosMsgParser::ROSType argument_type;
   typedef std::size_t result_type;
 
-  result_type operator()(RosMsgParser::ROSType const& type) const
-  {
+  result_type operator()(RosMsgParser::ROSType const& type) const {
     return type.hash();
   }
 };
