@@ -28,3 +28,10 @@ target_include_directories(rosx_introspection PUBLIC
     $<INSTALL_INTERFACE:include>)
 
 target_compile_features(rosx_introspection PUBLIC cxx_std_17)
+
+# peglib.h (used by idl_parser.cpp) checks __cplusplus >= 201703L, but MSVC
+# keeps __cplusplus at 199711L for ABI back-compat unless /Zc:__cplusplus
+# is passed explicitly.
+if(MSVC)
+    target_compile_options(rosx_introspection PRIVATE /Zc:__cplusplus)
+endif()
