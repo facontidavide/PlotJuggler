@@ -18,6 +18,8 @@ THE SOFTWARE.
 
 #include <QUdpSocket>
 #include <QtPlugin>
+#include <map>
+#include <string>
 #include <thread>
 #include "PlotJuggler/datastreamer_base.h"
 #include "PlotJuggler/messageparser_base.h"
@@ -57,7 +59,21 @@ public:
 private:
   bool _running;
   QUdpSocket* _udp_socket;
-  PJ::MessageParserPtr _parser;
+
+  // Parser factory kept around so we can lazily build per-ID parsers when
+  // Multi-type dispatch is enabled and a new discriminator value arrives.
+  PJ::ParserFactoryPlugin::Ptr _parser_creator;
+
+  // Key is the decoded ID string ("" when dispatch is disabled, so the single
+  // parser lives at _parsers[""]).
+  std::map<std::string, PJ::MessageParserPtr> _parsers;
+
+  // Transport-level discriminator config. All zero / false when disabled.
+  bool _dispatch_enabled = false;
+  int _dispatch_offset = 0;  // bytes from start of datagram
+  int _dispatch_length = 1;  // 1 / 2 / 4 / 8
+  bool _dispatch_little_endian = true;
+  bool _dispatch_display_hex = false;
 
 private slots:
 

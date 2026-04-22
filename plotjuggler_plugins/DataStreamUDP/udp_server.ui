@@ -120,6 +120,85 @@
     </widget>
    </item>
    <item>
+    <widget class="QGroupBox" name="groupBoxDispatch">
+     <property name="title">
+      <string>Multi-type dispatch</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <property name="toolTip">
+      <string>Strip a fixed-size type ID from the start of every datagram and pass it as topic name to the parser. Enables multi-type protobuf/JSON/etc. on a single UDP port when the publisher prepends a type identifier.</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayoutDispatch">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelOffset">
+        <property name="text">
+         <string>Offset (bytes):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="spinBoxOffset">
+        <property name="minimum">
+         <number>0</number>
+        </property>
+        <property name="maximum">
+         <number>64</number>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="labelLength">
+        <property name="text">
+         <string>ID size:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="QComboBox" name="comboBoxLength">
+        <item><property name="text"><string>1 byte</string></property></item>
+        <item><property name="text"><string>2 bytes</string></property></item>
+        <item><property name="text"><string>4 bytes</string></property></item>
+        <item><property name="text"><string>8 bytes</string></property></item>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelEndian">
+        <property name="text">
+         <string>Endian:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="comboBoxEndian">
+        <item><property name="text"><string>Little</string></property></item>
+        <item><property name="text"><string>Big</string></property></item>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="labelDisplay">
+        <property name="text">
+         <string>Format:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QComboBox" name="comboBoxDisplay">
+        <item><property name="text"><string>Decimal</string></property></item>
+        <item><property name="text"><string>Hex</string></property></item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
