@@ -38,8 +38,15 @@ bool DataLoadULog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
   {
     throw std::runtime_error("ULog: Failed to open file");
   }
-  QByteArray file_array = file.readAll();
-  ULogParser::DataStream datastream(file_array.data(), file_array.size());
+  const qint64 file_size = file.size();
+  uchar* mapped = file.map(0, file_size);
+  if (!mapped)
+  {
+    throw std::runtime_error(std::string("ULog: failed to memory-map file: ") +
+                             file.errorString().toStdString());
+  }
+  ULogParser::DataStream datastream(reinterpret_cast<char*>(mapped),
+                                    static_cast<size_t>(file_size));
 
   ULogParser parser(datastream);
 
