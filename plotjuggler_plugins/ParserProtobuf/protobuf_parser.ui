@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>423</width>
-    <height>374</height>
+    <width>640</width>
+    <height>520</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>560</width>
+    <height>480</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Form</string>
@@ -33,13 +39,13 @@
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
-       <string>Proto File</string>
+       <string>Proto Files</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>To parse a protobuf message, you need to load its definition from file and specify its type explicitly.</string>
+          <string>Load one or more .proto files. The &quot;Default message type&quot; is used for streams with no topic (e.g. UDP) or for topics not listed in the Topic Mapping tab.</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
@@ -62,18 +68,28 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="loadedProto">
-           <property name="readOnly">
-            <bool>true</bool>
+          <widget class="QPushButton" name="pushButtonRemoveFile">
+           <property name="text">
+            <string>Remove selected</string>
            </property>
           </widget>
          </item>
         </layout>
        </item>
        <item>
+        <widget class="QListWidget" name="listLoadedFiles">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>80</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="label_3">
          <property name="text">
-          <string>Select your message type:</string>
+          <string>Default message type:</string>
          </property>
         </widget>
        </item>
@@ -93,12 +109,80 @@
        <item>
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>File text:</string>
+          <string>File text (selected file):</string>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QTextBrowser" name="protoPreview"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_3">
+      <attribute name="title">
+       <string>Topic Mapping</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <widget class="QLabel" name="label_5">
+         <property name="text">
+          <string>Map specific topics to specific message types. Works for MQTT/ZMQ streamers (each topic gets its own parser). Topics not listed here fall back to the Default message type. UDP streamers pass an empty topic — use the Default type.</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <property name="topMargin">
+          <number>10</number>
+         </property>
+         <item>
+          <widget class="QPushButton" name="pushButtonAddMapping">
+           <property name="text">
+            <string>Add mapping</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButtonRemoveMapping">
+           <property name="text">
+            <string>Remove selected</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTableWidget" name="tableTopicMapping">
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <column>
+          <property name="text">
+           <string>Topic</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Message Type</string>
+          </property>
+         </column>
+        </widget>
        </item>
       </layout>
      </widget>
