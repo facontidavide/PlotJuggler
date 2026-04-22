@@ -1,9 +1,6 @@
 #ifndef PROTOBUF_FACTORY_H
 #define PROTOBUF_FACTORY_H
 
-#include <mutex>
-#include <set>
-
 #include "PlotJuggler/messageparser_base.h"
 
 #include "protobuf_parser.h"
@@ -55,12 +52,6 @@ protected:
 
   // Multiple proto files can be loaded simultaneously. Keyed by basename.
   std::map<QString, FileInfo> _loaded_files;
-
-  // Topic names observed in createParser() calls. Used to populate the Topic
-  // column's ComboBox so users can pick known topics instead of retyping them.
-  // Written from the streamer thread, read from the UI thread.
-  std::set<QString> _seen_topics;
-  mutable std::mutex _seen_topics_mutex;
 
   bool importFile(const QString& filename);
 
