@@ -11,8 +11,8 @@ description: |
     $ plotjuggler
 
 
-issues: https://github.com/facontidavide/plotjuggler/issues
-source-code: https://github.com/facontidavide/plotjuggler
+issues: https://github.com/PlotJuggler/plotjuggler/issues
+source-code: https://github.com/PlotJuggler/plotjuggler
 license: MPL-2.0
 version: git
 confinement: strict

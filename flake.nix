@@ -107,7 +107,7 @@
 
           meta = with pkgs.lib; {
             description = "A tool to plot streaming data, fast and easy";
-            homepage = "https://github.com/facontidavide/PlotJuggler";
+            homepage = "https://github.com/PlotJuggler/PlotJuggler";
             license = licenses.mpl20;
             platforms = platforms.linux ++ platforms.darwin;
           };

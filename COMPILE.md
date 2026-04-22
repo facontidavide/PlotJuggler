@@ -18,7 +18,7 @@ sudo dnf install qt5-qtbase-devel qt5-qtsvg-devel qt5-qtwebsockets-devel \
 Clone the repository into **~/plotjuggler_ws**:
 
 ```shell
-git clone https://github.com/facontidavide/PlotJuggler.git ~/plotjuggler_ws/src/PlotJuggler
+git clone https://github.com/PlotJuggler/PlotJuggler.git ~/plotjuggler_ws/src/PlotJuggler
 cd ~/plotjuggler_ws
 ```
 
@@ -119,7 +119,7 @@ export LDFLAGS="-L$QT_HOME/lib"
 Clone the repository into **~/plotjuggler_ws**:
 
 ```shell
-git clone https://github.com/facontidavide/PlotJuggler.git ~/plotjuggler_ws/src/PlotJuggler
+git clone https://github.com/PlotJuggler/PlotJuggler.git ~/plotjuggler_ws/src/PlotJuggler
 cd ~/plotjuggler_ws
 ```
 
@@ -148,7 +148,7 @@ Start creating a folder called **plotjuggler_ws** and cloning the repo:
 cd \
 mkdir plotjuggler_ws
 cd plotjuggler_ws
-git clone https://github.com/facontidavide/PlotJuggler.git src/PlotJuggler
+git clone https://github.com/PlotJuggler/PlotJuggler.git src/PlotJuggler
 ```
 
 ## Build with Conan

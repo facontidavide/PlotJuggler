@@ -434,7 +434,7 @@ int main(int argc, char* argv[])
 
   QNetworkRequest request_new_release;
   request_new_release.setUrl(
-      QUrl("https://api.github.com/repos/facontidavide/PlotJuggler/releases/latest"));
+      QUrl("https://api.github.com/repos/PlotJuggler/PlotJuggler/releases/latest"));
 
   // Disable SSL peer verification for GitHub API (workaround for Qt5/OpenSSL 3.0 incompatibility)
   QSslConfiguration sslConfig_release = request_new_release.sslConfiguration();
