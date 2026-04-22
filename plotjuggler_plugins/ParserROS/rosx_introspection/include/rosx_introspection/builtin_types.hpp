@@ -25,14 +25,14 @@
 #define ROS_BUILTIN_TYPES_HPP
 
 #include <stdint.h>
-#include <string>
+
 #include <iostream>
+#include <string>
 
-#include "rosx_introspection/contrib/span.hpp"
 #include "rosx_introspection/contrib/SmallVector.h"
+#include "rosx_introspection/contrib/span.hpp"
 
-namespace RosMsgParser
-{
+namespace RosMsgParser {
 
 template <class T>
 using Span = nonstd::span<T>;
@@ -40,8 +40,7 @@ using Span = nonstd::span<T>;
 template <class T, size_t N>
 using SmallVector = llvm_vecsmall::SmallVector<T, N>;
 
-enum BuiltinType
-{
+enum BuiltinType {
   BOOL,
   BYTE,
   CHAR,
@@ -63,10 +62,8 @@ enum BuiltinType
 
 //---------------------------------------------------------
 
-inline int builtinSize(const BuiltinType c)
-{
-  switch (c)
-  {
+inline int builtinSize(const BuiltinType c) {
+  switch (c) {
     case BOOL:
     case BYTE:
     case INT8:
@@ -93,10 +90,8 @@ inline int builtinSize(const BuiltinType c)
   throw std::runtime_error("unsupported builtin type value");
 }
 
-inline const char* toStr(const BuiltinType& c)
-{
-  switch (c)
-  {
+inline const char* toStr(const BuiltinType& c) {
+  switch (c) {
     case BOOL:
       return "BOOL";
     case BYTE:
@@ -135,103 +130,85 @@ inline const char* toStr(const BuiltinType& c)
   throw std::runtime_error("unsupported builtin type value");
 }
 
-inline std::ostream& operator<<(std::ostream& os, const BuiltinType& c)
-{
+inline std::ostream& operator<<(std::ostream& os, const BuiltinType& c) {
   os << toStr(c);
   return os;
 }
 
 template <typename T>
-BuiltinType getType()
-{
+BuiltinType getType() {
   return OTHER;
 }
 
-struct Time
-{
+struct Time {
   uint32_t sec;
   uint32_t nsec;
 
-  double toSec()
-  {
+  double toSec() {
     return double(sec) + double(nsec) * 1e-9;
   }
 };
 
 template <>
-inline BuiltinType getType<bool>()
-{
+inline BuiltinType getType<bool>() {
   return BOOL;
 }
 
 template <>
-inline BuiltinType getType<char>()
-{
+inline BuiltinType getType<char>() {
   return CHAR;
 }
 
 template <>
-inline BuiltinType getType<int8_t>()
-{
+inline BuiltinType getType<int8_t>() {
   return INT8;
 }
 template <>
-inline BuiltinType getType<int16_t>()
-{
+inline BuiltinType getType<int16_t>() {
   return INT16;
 }
 template <>
-inline BuiltinType getType<int32_t>()
-{
+inline BuiltinType getType<int32_t>() {
   return INT32;
 }
 template <>
-inline BuiltinType getType<int64_t>()
-{
+inline BuiltinType getType<int64_t>() {
   return INT64;
 }
 
 template <>
-inline BuiltinType getType<uint8_t>()
-{
+inline BuiltinType getType<uint8_t>() {
   return UINT8;
 }
 template <>
-inline BuiltinType getType<uint16_t>()
-{
+inline BuiltinType getType<uint16_t>() {
   return UINT16;
 }
 template <>
-inline BuiltinType getType<uint32_t>()
-{
+inline BuiltinType getType<uint32_t>() {
   return UINT32;
 }
 template <>
-inline BuiltinType getType<uint64_t>()
-{
+inline BuiltinType getType<uint64_t>() {
   return UINT64;
 }
 
 template <>
-inline BuiltinType getType<float>()
-{
+inline BuiltinType getType<float>() {
   return FLOAT32;
 }
 template <>
-inline BuiltinType getType<double>()
-{
+inline BuiltinType getType<double>() {
   return FLOAT64;
 }
 
 template <>
-inline BuiltinType getType<std::string>()
-{
+inline BuiltinType getType<std::string>() {
   return STRING;
 }
 
 template <>
-inline BuiltinType getType<RosMsgParser::Time>()
-{
+inline BuiltinType getType<RosMsgParser::Time>() {
   return TIME;
 }
 

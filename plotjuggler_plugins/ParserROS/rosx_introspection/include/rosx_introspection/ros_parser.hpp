@@ -24,14 +24,15 @@
 
 #include <unordered_set>
 
-#include "rosx_introspection/stringtree_leaf.hpp"
 #include "rosx_introspection/deserializer.hpp"
+#include "rosx_introspection/idl_parser.hpp"
 #include "rosx_introspection/serializer.hpp"
+#include "rosx_introspection/stringtree_leaf.hpp"
 
-namespace RosMsgParser
-{
-struct FlatMessage
-{
+namespace RosMsgParser {
+enum SchemaFormat { ROS_MSG, DDS_IDL };
+
+struct FlatMessage {
   std::shared_ptr<MessageSchema> schema;
 
   /// List of all those parsed fields that can be represented by a
@@ -48,66 +49,51 @@ struct FlatMessage
   std::vector<std::vector<uint8_t>> blob_storage;
 };
 
-class Parser
-{
-public:
+class Parser {
+ public:
   /**
    *
    * @param topic_name   name of the topic to be used as node of the StringTree
    * @param msg_type     message type of the topic.
-   * @param msg_definition text obtained by either:
-   *                       - topic_tools::ShapeShifter::getMessageDefinition()
-   *                       - rosbag::MessageInstance::getMessageDefinition()
-   *                       - ros::message_traits::Definition< __your_type__ >::value()
-   * */
-  Parser(const std::string& topic_name, const ROSType& msg_type,
-         const std::string& definition);
+   * @param definition   schema text; either a ROS .msg definition (ROS_MSG)
+   *                     or a complete DDS IDL schema (DDS_IDL).
+   * @param format       how to interpret @p definition; defaults to ROS_MSG.
+   */
+  Parser(
+      const std::string& topic_name, const ROSType& msg_type, const std::string& definition,
+      SchemaFormat format = ROS_MSG);
 
-  enum MaxArrayPolicy : bool
-  {
-    DISCARD_LARGE_ARRAYS = true,
-    KEEP_LARGE_ARRAYS = false
-  };
+  enum MaxArrayPolicy : bool { DISCARD_LARGE_ARRAYS = true, KEEP_LARGE_ARRAYS = false };
 
   /// Default values are DISCARD_LARGE_ARRAYS and 100.
   /// The maximum permissible value of max_array_size is 10.000 (but don't)
-  void setMaxArrayPolicy(MaxArrayPolicy discard_entire_array, size_t max_array_size)
-  {
+  void setMaxArrayPolicy(MaxArrayPolicy discard_entire_array, size_t max_array_size) {
     _discard_large_array = discard_entire_array;
     _max_array_size = max_array_size;
-    if (_max_array_size > 10000)
-    {
+    if (_max_array_size > 10000) {
       throw std::runtime_error("max_array_size limited to 10000 at most");
     }
   }
 
-  MaxArrayPolicy maxArrayPolicy() const
-  {
+  MaxArrayPolicy maxArrayPolicy() const {
     return _discard_large_array;
   }
 
-  size_t maxArraySize() const
-  {
+  size_t maxArraySize() const {
     return _max_array_size;
   }
 
-  enum BlobPolicy
-  {
-    STORE_BLOB_AS_COPY,
-    STORE_BLOB_AS_REFERENCE
-  };
+  enum BlobPolicy { STORE_BLOB_AS_COPY, STORE_BLOB_AS_REFERENCE };
 
   // If set to STORE_BLOB_AS_COPY, a copy of the original vector will be stored in the
   // FlatMessage. This may have a large impact on performance. if STORE_BLOB_AS_REFERENCE
   // is used instead, it is dramatically faster, but you must be careful with dangling
   // pointers.
-  void setBlobPolicy(BlobPolicy policy)
-  {
+  void setBlobPolicy(BlobPolicy policy) {
     _blob_policy = policy;
   }
 
-  BlobPolicy blobPolicy() const
-  {
+  BlobPolicy blobPolicy() const {
     return _blob_policy;
   }
 
@@ -139,17 +125,15 @@ public:
    * @return true if the entire message was parsed or false if parts of the message were
    *         skipped because an array has (size > max_array_size)
    */
-  bool deserialize(Span<const uint8_t> buffer, FlatMessage* flat_output,
-                   Deserializer* deserializer) const;
+  bool deserialize(Span<const uint8_t> buffer, FlatMessage* flat_output, Deserializer* deserializer) const;
 
 #ifdef ROSX_JSON_PARSER
 
-  bool deserializeIntoJson(Span<const uint8_t> buffer, std::string* json_txt,
-                           Deserializer* deserializer, int indent = 0,
-                           bool ignore_constants = false) const;
+  bool deserializeIntoJson(
+      Span<const uint8_t> buffer, std::string* json_txt, Deserializer* deserializer, int indent = 0,
+      bool ignore_constants = false) const;
 
-  bool serializeFromJson(const std::string_view json_string,
-                         Serializer* serializer) const;
+  bool serializeFromJson(const std::string_view json_string, Serializer* serializer) const;
 #endif
 
   typedef std::function<void(const ROSType&, Span<uint8_t>&)> VisitingCallback;
@@ -169,16 +153,14 @@ public:
    * modified.
    * @param callback          The callback.
    */
-  void applyVisitorToBuffer(const ROSType& msg_type, Span<uint8_t>& buffer,
-                            VisitingCallback callback) const;
+  void applyVisitorToBuffer(const ROSType& msg_type, Span<uint8_t>& buffer, VisitingCallback callback) const;
 
   /// Change where the warning messages are displayed.
-  void setWarningsStream(std::ostream* output)
-  {
+  void setWarningsStream(std::ostream* output) {
     _global_warnings = output;
   }
 
-private:
+ private:
   std::shared_ptr<MessageSchema> _schema;
 
   std::ostream* _global_warnings;
@@ -201,41 +183,31 @@ private:
 typedef std::vector<std::pair<std::string, double>> RenamedValues;
 
 template <class DeserializerT>
-class ParsersCollection
-{
-public:
-  ParsersCollection()
-  {
+class ParsersCollection {
+ public:
+  ParsersCollection() {
     _deserializer = std::make_unique<DeserializerT>();
   }
 
-  void registerParser(const std::string& topic_name, const ROSType& msg_type,
-                      const std::string& definition)
-  {
-    if (_pack.count(topic_name) == 0)
-    {
+  void registerParser(const std::string& topic_name, const ROSType& msg_type, const std::string& definition) {
+    if (_pack.count(topic_name) == 0) {
       Parser parser(topic_name, msg_type, definition);
-      CachedPack pack = { std::move(parser), {} };
-      _pack.insert({ topic_name, std::move(pack) });
+      CachedPack pack = {std::move(parser), {}};
+      _pack.insert({topic_name, std::move(pack)});
     }
   }
 
-  const Parser* getParser(const std::string& topic_name) const
-  {
+  const Parser* getParser(const std::string& topic_name) const {
     auto it = _pack.find(topic_name);
-    if (it != _pack.end())
-    {
+    if (it != _pack.end()) {
       return &it->second.parser;
     }
     return nullptr;
   }
 
-  const FlatMessage* deserialize(const std::string& topic_name,
-                                 Span<const uint8_t> buffer)
-  {
+  const FlatMessage* deserialize(const std::string& topic_name, Span<const uint8_t> buffer) {
     auto it = _pack.find(topic_name);
-    if (it != _pack.end())
-    {
+    if (it != _pack.end()) {
       CachedPack& pack = it->second;
       Parser& parser = pack.parser;
 
@@ -245,9 +217,8 @@ public:
     return nullptr;
   }
 
-private:
-  struct CachedPack
-  {
+ private:
+  struct CachedPack {
     Parser parser;
     FlatMessage msg;
   };

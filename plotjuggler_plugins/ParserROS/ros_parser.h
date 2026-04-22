@@ -10,7 +10,8 @@ class ParserROS : public PJ::MessageParser
 {
 public:
   ParserROS(const std::string& topic_name, const std::string& type_name, const std::string& schema,
-            RosMsgParser::Deserializer* deserializer, PJ::PlotDataMapRef& data);
+            RosMsgParser::Deserializer* deserializer, PJ::PlotDataMapRef& data,
+            RosMsgParser::SchemaFormat schema_format = RosMsgParser::ROS_MSG);
 
   bool parseMessage(const PJ::MessageRef serialized_msg, double& timestamp) override;
 

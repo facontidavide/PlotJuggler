@@ -19,9 +19,9 @@ static std::unordered_map<uint64_t, DataTamerParser::Schema> _global_data_tamer_
 
 ParserROS::ParserROS(const std::string& topic_name, const std::string& type_name,
                      const std::string& schema, RosMsgParser::Deserializer* deserializer,
-                     PlotDataMapRef& data)
+                     PlotDataMapRef& data, RosMsgParser::SchemaFormat schema_format)
   : MessageParser(topic_name, data)
-  , _parser(topic_name, type_name, schema)
+  , _parser(topic_name, type_name, schema, schema_format)
   , _deserializer(deserializer)
   , _topic(topic_name)
 {

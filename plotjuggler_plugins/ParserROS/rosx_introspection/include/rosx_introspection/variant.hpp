@@ -36,69 +36,56 @@
 #define VARIANT_H
 
 #include <string.h>
-#include <type_traits>
+
 #include <limits>
 #include <string_view>
+#include <type_traits>
+
 #include "rosx_introspection/builtin_types.hpp"
-#include "rosx_introspection/details/exceptions.hpp"
 #include "rosx_introspection/details/conversion_impl.hpp"
+#include "rosx_introspection/details/exceptions.hpp"
 
-namespace RosMsgParser
-{
+namespace RosMsgParser {
 
-class Variant
-{
-public:
-  Variant()
-  {
+class Variant {
+ public:
+  Variant() {
     _type = OTHER;
     _storage.raw_string = nullptr;
   }
 
   ~Variant();
 
-  Variant(const Variant& other) : _type(OTHER)
-  {
-    if (other._type == STRING)
-    {
+  Variant(const Variant& other) : _type(OTHER) {
+    if (other._type == STRING) {
       const char* raw = other._storage.raw_string;
       const uint32_t size = *(reinterpret_cast<const uint32_t*>(&raw[0]));
       const char* data = (&raw[4]);
       assign(data, size);
-    }
-    else
-    {
+    } else {
       _type = other._type;
       _storage.raw_data = other._storage.raw_data;
     }
   }
 
-  Variant(Variant&& other) : _type(OTHER)
-  {
-    if (other._type == STRING)
-    {
+  Variant(Variant&& other) : _type(OTHER) {
+    if (other._type == STRING) {
       _storage.raw_string = nullptr;
       std::swap(_storage.raw_string, other._storage.raw_string);
       std::swap(_type, other._type);
-    }
-    else
-    {
+    } else {
       _type = other._type;
       _storage.raw_data = other._storage.raw_data;
     }
   }
 
-  Variant& operator=(const Variant& other)
-  {
-    if (other._type == STRING)
-    {
+  Variant& operator=(const Variant& other) {
+    if (other._type == STRING) {
       const char* raw = other._storage.raw_string;
       const uint32_t size = *(reinterpret_cast<const uint32_t*>(&raw[0]));
       const char* data = (&raw[4]);
       assign(data, size);
-    }
-    else
-    {
+    } else {
       _type = other._type;
       _storage.raw_data = other._storage.raw_data;
     }
@@ -127,9 +114,8 @@ public:
   // Direct access to raw data. Undefined behavior if this variant holds a STRING
   const uint8_t* getRawStorage() const;
 
-private:
-  union
-  {
+ private:
+  union {
     std::array<uint8_t, 8> raw_data;
     char* raw_string;
   } _storage;
@@ -142,60 +128,49 @@ private:
 //----------------------- Implementation ----------------------------------------------
 
 template <typename T>
-inline Variant::Variant(const T& value) : _type(OTHER)
-{
-  static_assert(std::numeric_limits<T>::is_specialized ||
-                    std::is_same<T, RosMsgParser::Time>::value ||
-                    std::is_same<T, std::string_view>::value ||
-                    std::is_same<T, std::string>::value,
-                "not a valid type");
+inline Variant::Variant(const T& value) : _type(OTHER) {
+  static_assert(
+      std::numeric_limits<T>::is_specialized || std::is_same<T, RosMsgParser::Time>::value ||
+          std::is_same<T, std::string_view>::value || std::is_same<T, std::string>::value,
+      "not a valid type");
 
   _storage.raw_string = (nullptr);
   assign(value);
 }
 
-inline Variant::Variant(const char* buffer, size_t length) : _type(OTHER)
-{
+inline Variant::Variant(const char* buffer, size_t length) : _type(OTHER) {
   _storage.raw_string = (nullptr);
   assign(buffer, length);
 }
 
-inline Variant::~Variant()
-{
+inline Variant::~Variant() {
   clearStringIfNecessary();
 }
 
 //-------------------------------------
 
-inline BuiltinType Variant::getTypeID() const
-{
+inline BuiltinType Variant::getTypeID() const {
   return _type;
 }
 
-inline const uint8_t* Variant::getRawStorage() const
-{
+inline const uint8_t* Variant::getRawStorage() const {
   return _storage.raw_data.data();
 }
 
 template <typename T>
-inline T Variant::extract() const
-{
-  static_assert(std::numeric_limits<T>::is_specialized ||
-                    std::is_same<T, RosMsgParser::Time>::value,
-                "not a valid type");
+inline T Variant::extract() const {
+  static_assert(
+      std::numeric_limits<T>::is_specialized || std::is_same<T, RosMsgParser::Time>::value, "not a valid type");
 
-  if (_type != RosMsgParser::getType<T>())
-  {
+  if (_type != RosMsgParser::getType<T>()) {
     throw TypeException("Variant::extract -> wrong type");
   }
   return *reinterpret_cast<const T*>(&_storage.raw_data[0]);
 }
 
 template <>
-inline std::string_view Variant::extract() const
-{
-  if (_type != STRING)
-  {
+inline std::string_view Variant::extract() const {
+  if (_type != STRING) {
     throw TypeException("Variant::extract -> wrong type");
   }
   const uint32_t size = *(reinterpret_cast<const uint32_t*>(&_storage.raw_string[0]));
@@ -204,10 +179,8 @@ inline std::string_view Variant::extract() const
 }
 
 template <>
-inline std::string Variant::extract() const
-{
-  if (_type != STRING)
-  {
+inline std::string Variant::extract() const {
+  if (_type != STRING) {
     throw TypeException("Variant::extract -> wrong type");
   }
   const uint32_t size = *(reinterpret_cast<const uint32_t*>(&_storage.raw_string[0]));
@@ -218,28 +191,23 @@ inline std::string Variant::extract() const
 //-------------------------------------
 
 template <typename T>
-inline void Variant::assign(const T& value)
-{
-  static_assert(std::numeric_limits<T>::is_specialized ||
-                    std::is_same<T, RosMsgParser::Time>::value,
-                "not a valid type");
+inline void Variant::assign(const T& value) {
+  static_assert(
+      std::numeric_limits<T>::is_specialized || std::is_same<T, RosMsgParser::Time>::value, "not a valid type");
 
   clearStringIfNecessary();
   _type = RosMsgParser::getType<T>();
   *reinterpret_cast<T*>(&_storage.raw_data[0]) = value;
 }
 
-inline void Variant::clearStringIfNecessary()
-{
-  if (_storage.raw_string && _type == STRING)
-  {
+inline void Variant::clearStringIfNecessary() {
+  if (_storage.raw_string && _type == STRING) {
     delete[] _storage.raw_string;
     _storage.raw_string = nullptr;
   }
 }
 
-inline void Variant::assign(const char* buffer, size_t size)
-{
+inline void Variant::assign(const char* buffer, size_t size) {
   clearStringIfNecessary();
   _type = STRING;
 
@@ -250,33 +218,28 @@ inline void Variant::assign(const char* buffer, size_t size)
 }
 
 template <>
-inline void Variant::assign(const std::string_view& value)
-{
+inline void Variant::assign(const std::string_view& value) {
   assign(value.data(), value.size());
 }
 
 template <>
-inline void Variant::assign(const std::string& value)
-{
+inline void Variant::assign(const std::string& value) {
   assign(value.data(), value.size());
 }
 
 //-------------------------------------
 
 template <typename DST>
-inline DST Variant::convert() const
-{
-  static_assert(std::numeric_limits<DST>::is_specialized ||
-                    std::is_same<DST, RosMsgParser::Time>::value,
-                "not a valid type");
+inline DST Variant::convert() const {
+  static_assert(
+      std::numeric_limits<DST>::is_specialized || std::is_same<DST, RosMsgParser::Time>::value, "not a valid type");
 
   using namespace RosMsgParser::details;
   DST target;
 
   const auto& raw_data = &_storage.raw_data[0];
   //----------
-  switch (_type)
-  {
+  switch (_type) {
     case CHAR:
     case INT8:
       convert_impl<int8_t, DST>(*reinterpret_cast<const int8_t*>(raw_data), target);
@@ -317,33 +280,29 @@ inline DST Variant::convert() const
 
     case STRING: {
       throw TypeException("String will not be converted to a numerical value implicitly");
-    }
-    break;
+    } break;
 
     case DURATION:
     case TIME: {
-      throw TypeException("ros::Duration and ros::Time can be converted only to double "
-                          "(will be seconds)");
-    }
-    break;
+      throw TypeException(
+          "ros::Duration and ros::Time can be converted only to double "
+          "(will be seconds)");
+    } break;
 
     default:
-      throw TypeException("Variant::convert -> cannot convert type" +
-                          std::to_string(_type));
+      throw TypeException("Variant::convert -> cannot convert type" + std::to_string(_type));
       break;
   }
   return target;
 }
 
 template <>
-inline double Variant::convert() const
-{
+inline double Variant::convert() const {
   using namespace RosMsgParser::details;
   double target = 0;
   const auto& raw_data = &_storage.raw_data[0];
   //----------
-  switch (_type)
-  {
+  switch (_type) {
     case CHAR:
     case INT8:
       convert_impl<int8_t, double>(*reinterpret_cast<const int8_t*>(raw_data), target);
@@ -366,16 +325,13 @@ inline double Variant::convert() const
       break;
 
     case UINT16:
-      convert_impl<uint16_t, double>(*reinterpret_cast<const uint16_t*>(raw_data),
-                                     target);
+      convert_impl<uint16_t, double>(*reinterpret_cast<const uint16_t*>(raw_data), target);
       break;
     case UINT32:
-      convert_impl<uint32_t, double>(*reinterpret_cast<const uint32_t*>(raw_data),
-                                     target);
+      convert_impl<uint32_t, double>(*reinterpret_cast<const uint32_t*>(raw_data), target);
       break;
     case UINT64:
-      convert_impl<uint64_t, double>(*reinterpret_cast<const uint64_t*>(raw_data),
-                                     target);
+      convert_impl<uint64_t, double>(*reinterpret_cast<const uint64_t*>(raw_data), target);
       break;
 
     case FLOAT32:
@@ -386,38 +342,31 @@ inline double Variant::convert() const
 
     case STRING: {
       throw TypeException("String will not be converted to a double implicitly");
-    }
-    break;
+    } break;
 
     case DURATION:
     case TIME: {
       RosMsgParser::Time tmp = extract<RosMsgParser::Time>();
       target = tmp.toSec();
-    }
-    break;
+    } break;
 
     default:
-      throw TypeException("Variant::convert -> cannot convert type" +
-                          std::to_string(_type));
+      throw TypeException("Variant::convert -> cannot convert type" + std::to_string(_type));
   }
   return target;
 }
 
 template <>
-inline RosMsgParser::Time Variant::convert() const
-{
-  if (_type != TIME)
-  {
+inline RosMsgParser::Time Variant::convert() const {
+  if (_type != TIME) {
     throw TypeException("Variant::convert -> cannot convert RosMsgParser::Time");
   }
   return extract<RosMsgParser::Time>();
 }
 
 template <>
-inline std::string Variant::convert() const
-{
-  if (_type != STRING)
-  {
+inline std::string Variant::convert() const {
+  if (_type != STRING) {
     throw TypeException("Variant::convert -> cannot convert to std::string");
   }
   return extract<std::string>();

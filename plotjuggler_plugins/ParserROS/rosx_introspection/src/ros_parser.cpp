@@ -21,52 +21,51 @@
  *   SOFTWARE.
  */
 
+#include "rosx_introspection/ros_parser.hpp"
+
 #include <functional>
 
-#include "rosx_introspection/ros_parser.hpp"
 #include "rosx_introspection/deserializer.hpp"
 
 #ifdef ROSX_JSON_PARSER
 
 #include "rapidjson/document.h"
+#include "rapidjson/memorystream.h"
+#include "rapidjson/prettywriter.h"
+#include "rapidjson/reader.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "rapidjson/reader.h"
-#include "rapidjson/prettywriter.h"
-#include "rapidjson/memorystream.h"
 
 #endif
-namespace RosMsgParser
-{
-inline bool operator==(const std::string& a, const std::string_view& b)
-{
+namespace RosMsgParser {
+inline bool operator==(const std::string& a, const std::string_view& b) {
   return (a.size() == b.size() && std::strncmp(a.data(), b.data(), a.size()) == 0);
 }
 
-Parser::Parser(const std::string& topic_name, const ROSType& msg_type,
-               const std::string& definition)
-  : _global_warnings(&std::cerr)
-  , _topic_name(topic_name)
-  , _discard_large_array(DISCARD_LARGE_ARRAYS)
-  , _max_array_size(100)
-  , _blob_policy(STORE_BLOB_AS_COPY)
-  , _dummy_root_field(new ROSField(msg_type, topic_name))
-{
-  auto parsed_msgs = ParseMessageDefinitions(definition, msg_type);
-  _schema = BuildMessageSchema(topic_name, parsed_msgs);
+Parser::Parser(
+    const std::string& topic_name, const ROSType& msg_type, const std::string& definition, SchemaFormat format)
+    : _global_warnings(&std::cerr),
+      _topic_name(topic_name),
+      _discard_large_array(DISCARD_LARGE_ARRAYS),
+      _max_array_size(100),
+      _blob_policy(STORE_BLOB_AS_COPY),
+      _dummy_root_field(new ROSField(msg_type, topic_name)) {
+  if (format == DDS_IDL) {
+    _schema = ParseIDL(topic_name, msg_type, definition);
+  } else {
+    auto parsed_msgs = ParseMessageDefinitions(definition, msg_type);
+    _schema = BuildMessageSchema(topic_name, parsed_msgs);
+  }
 }
 
-const std::shared_ptr<MessageSchema>& Parser::getSchema() const
-{
+const std::shared_ptr<MessageSchema>& Parser::getSchema() const {
   return _schema;
 }
 
-ROSMessage::Ptr Parser::getMessageByType(const ROSType& type) const
-{
+ROSMessage::Ptr Parser::getMessageByType(const ROSType& type) const {
   for (const auto& [msg_type, msg] : _schema->msg_library)  // find in the list
   {
-    if (msg_type == type)
-    {
+    if (msg_type == type) {
       return msg;
     }
   }
@@ -74,18 +73,14 @@ ROSMessage::Ptr Parser::getMessageByType(const ROSType& type) const
 }
 
 template <typename Container>
-inline void ExpandVectorIfNecessary(Container& container, size_t new_size)
-{
-  if (container.size() <= new_size)
-  {
+inline void ExpandVectorIfNecessary(Container& container, size_t new_size) {
+  if (container.size() <= new_size) {
     const size_t increased_size = std::max(size_t(32), container.size() * 2);
     container.resize(increased_size);
   }
 }
 
-bool Parser::deserialize(Span<const uint8_t> buffer, FlatMessage* flat_container,
-                         Deserializer* deserializer) const
-{
+bool Parser::deserialize(Span<const uint8_t> buffer, FlatMessage* flat_container, Deserializer* deserializer) const {
   deserializer->init(buffer);
 
   bool entire_message_parse = true;
@@ -101,11 +96,9 @@ bool Parser::deserialize(Span<const uint8_t> buffer, FlatMessage* flat_container
     size_t index_s = 0;
     size_t index_m = 0;
 
-    for (const ROSField& field : msg->fields())
-    {
+    for (const ROSField& field : msg->fields()) {
       bool DO_STORE = store;
-      if (field.isConstant())
-      {
+      if (field.isConstant()) {
         continue;
       }
 
@@ -115,20 +108,16 @@ bool Parser::deserialize(Span<const uint8_t> buffer, FlatMessage* flat_container
       new_tree_leaf.node = tree_leaf.node->child(index_s);
 
       int32_t array_size = field.arraySize();
-      if (array_size == -1)
-      {
+      if (array_size == -1) {
         array_size = deserializer->deserializeUInt32();
       }
-      if (field.isArray())
-      {
+      if (field.isArray()) {
         new_tree_leaf.index_array.push_back(0);
       }
 
       // Large uint8/byte arrays are always skipped (blobs: images, pointclouds, etc.)
       if (field.isArray() && array_size > static_cast<int32_t>(_max_array_size) &&
-          (field_type.typeID() == BuiltinType::UINT8 ||
-           field_type.typeID() == BuiltinType::BYTE))
-      {
+          (field_type.typeID() == BuiltinType::UINT8 || field_type.typeID() == BuiltinType::BYTE)) {
         entire_message_parse = false;
         deserializer->jump(array_size);
         index_s++;
@@ -138,40 +127,31 @@ bool Parser::deserialize(Span<const uint8_t> buffer, FlatMessage* flat_container
       bool IS_BLOB = false;
 
       // Stop storing it if is NOT a blob and a very large array.
-      if (array_size > static_cast<int32_t>(_max_array_size) &&
-          field_type.typeID() == BuiltinType::OTHER)
-      {
-        if (builtinSize(field_type.typeID()) == 1)
-        {
+      if (array_size > static_cast<int32_t>(_max_array_size) && field_type.typeID() == BuiltinType::OTHER) {
+        if (builtinSize(field_type.typeID()) == 1) {
           IS_BLOB = true;
-        }
-        else
-        {
-          if (_discard_large_array)
-          {
+        } else {
+          if (_discard_large_array) {
             DO_STORE = false;
           }
           entire_message_parse = false;
         }
       }
       // special case. This is a "blob", typically an image, a map, pointcloud, etc.
-      if (IS_BLOB)
-      {
+      if (IS_BLOB) {
         ExpandVectorIfNecessary(flat_container->blob, blob_index);
 
-        if (array_size > deserializer->bytesLeft())
-        {
-          throw std::runtime_error("Buffer overrun in deserializeIntoFlatContainer "
-                                   "(blob)");
+        if (array_size > deserializer->bytesLeft()) {
+          throw std::runtime_error(
+              "Buffer overrun in deserializeIntoFlatContainer "
+              "(blob)");
         }
-        if (DO_STORE)
-        {
+        if (DO_STORE) {
           flat_container->blob[blob_index].first = FieldsVector(new_tree_leaf);
           auto& blob = flat_container->blob[blob_index].second;
           blob_index++;
 
-          if (_blob_policy == STORE_BLOB_AS_COPY)
-          {
+          if (_blob_policy == STORE_BLOB_AS_COPY) {
             ExpandVectorIfNecessary(flat_container->blob_storage, blob_storage_index);
 
             auto& storage = flat_container->blob_storage[blob_storage_index];
@@ -180,65 +160,57 @@ bool Parser::deserialize(Span<const uint8_t> buffer, FlatMessage* flat_container
             blob_storage_index++;
 
             blob = Span<const uint8_t>(storage.data(), storage.size());
-          }
-          else
-          {
+          } else {
             blob = Span<const uint8_t>(deserializer->getCurrentPtr(), array_size);
           }
         }
         deserializer->jump(array_size);
-      }
-      else  // NOT a BLOB
+      } else  // NOT a BLOB
       {
         bool DO_STORE_ARRAY = DO_STORE;
-        for (int i = 0; i < array_size; i++)
-        {
-          if (DO_STORE_ARRAY && i >= static_cast<int32_t>(_max_array_size))
-          {
+        for (int i = 0; i < array_size; i++) {
+          if (DO_STORE_ARRAY && i >= static_cast<int32_t>(_max_array_size)) {
             DO_STORE_ARRAY = false;
           }
 
-          if (field.isArray() && DO_STORE_ARRAY)
-          {
+          if (field.isArray() && DO_STORE_ARRAY) {
             new_tree_leaf.index_array.back() = i;
           }
 
-          if (field_type.typeID() == STRING)
-          {
+          if (field_type.typeID() == STRING) {
             ExpandVectorIfNecessary(flat_container->name, name_index);
 
             std::string str;
             deserializer->deserializeString(str);
 
-            if (DO_STORE_ARRAY)
-            {
+            if (DO_STORE_ARRAY) {
               flat_container->name[name_index].first = FieldsVector(new_tree_leaf);
               flat_container->name[name_index].second = str;
               name_index++;
             }
-          }
-          else if (field_type.isBuiltin())
-          {
+          } else if (field_type.isBuiltin()) {
             ExpandVectorIfNecessary(flat_container->value, value_index);
 
             Variant var = deserializer->deserialize(field_type.typeID());
-            if (DO_STORE_ARRAY)
-            {
-              flat_container->value[value_index] =
-                  std::make_pair(new_tree_leaf, std::move(var));
+            if (DO_STORE_ARRAY) {
+              flat_container->value[value_index] = std::make_pair(new_tree_leaf, std::move(var));
               value_index++;
             }
-          }
-          else
-          {  // field_type.typeID() == OTHER
+          } else {  // field_type.typeID() == OTHER
             auto msg_node = field.getMessagePtr(_schema->msg_library);
+            if (!msg_node) {
+              throw std::runtime_error(
+                  "Unresolved field type '" + field_type.baseName() + "' for field '" + field.name() +
+                  "'. Unions in IDL schemas are not supported by "
+                  "the "
+                  "introspection walker.");
+            }
             deserializeImpl(msg_node.get(), new_tree_leaf, DO_STORE_ARRAY);
           }
         }  // end for array_size
       }
 
-      if (field_type.typeID() == OTHER)
-      {
+      if (field_type.typeID() == OTHER) {
         index_m++;
       }
       index_s++;
@@ -250,8 +222,7 @@ bool Parser::deserialize(Span<const uint8_t> buffer, FlatMessage* flat_container
 
   FieldLeaf rootnode;
   rootnode.node = _schema->field_tree.croot();
-  auto root_msg =
-      _schema->field_tree.croot()->value()->getMessagePtr(_schema->msg_library);
+  auto root_msg = _schema->field_tree.croot()->value()->getMessagePtr(_schema->msg_library);
 
   deserializeImpl(root_msg.get(), rootnode, true);
 
@@ -265,10 +236,9 @@ bool Parser::deserialize(Span<const uint8_t> buffer, FlatMessage* flat_container
 
 #ifdef ROSX_JSON_PARSER
 
-bool Parser::deserializeIntoJson(Span<const uint8_t> buffer, std::string* json_txt,
-                                 Deserializer* deserializer, int indent,
-                                 bool ignore_constants) const
-{
+bool Parser::deserializeIntoJson(
+    Span<const uint8_t> buffer, std::string* json_txt, Deserializer* deserializer, int indent,
+    bool ignore_constants) const {
   deserializer->init(buffer);
 
   rapidjson::Document json_document;
@@ -282,10 +252,8 @@ bool Parser::deserializeIntoJson(Span<const uint8_t> buffer, std::string* json_t
     size_t index_s = 0;
     size_t index_m = 0;
 
-    for (const ROSField& field : msg_node->fields())
-    {
-      if (field.isConstant() && ignore_constants)
-      {
+    for (const ROSField& field : msg_node->fields()) {
+      if (field.isConstant() && ignore_constants) {
         continue;
       }
 
@@ -293,68 +261,54 @@ bool Parser::deserializeIntoJson(Span<const uint8_t> buffer, std::string* json_t
       auto field_name = rapidjson::StringRef(field.name().data(), field.name().size());
 
       int32_t array_size = field.arraySize();
-      if (array_size == -1)
-      {
+      if (array_size == -1) {
         array_size = deserializer->deserializeUInt32();
       }
 
       // Stop storing if it is a blob.
-      if (array_size > static_cast<int32_t>(_max_array_size))
-      {
-        if (buffer_offset + array_size > static_cast<std::size_t>(buffer.size()))
-        {
+      if (array_size > static_cast<int32_t>(_max_array_size)) {
+        if (buffer_offset + array_size > static_cast<std::size_t>(buffer.size())) {
           throw std::runtime_error("Buffer overrun in blob");
         }
         buffer_offset += array_size;
-      }
-      else  // NOT a BLOB
+      } else  // NOT a BLOB
       {
         rapidjson::Value array_value(rapidjson::kArrayType);
 
-        for (int i = 0; i < array_size; i++)
-        {
+        for (int i = 0; i < array_size; i++) {
           rapidjson::Value new_value;
           new_value.SetObject();
 
-          switch (field_type.typeID())
-          {
+          switch (field_type.typeID()) {
             case BOOL:
-              new_value.SetBool(
-                  deserializer->deserialize(field_type.typeID()).convert<uint8_t>());
+              new_value.SetBool(deserializer->deserialize(field_type.typeID()).convert<uint8_t>());
               break;
             case CHAR: {
               char c = deserializer->deserialize(field_type.typeID()).convert<int8_t>();
               new_value.SetString(&c, 1, alloc);
-            }
-            break;
+            } break;
             case BYTE:
             case UINT8:
             case UINT16:
             case UINT32:
-              new_value.SetUint(
-                  (deserializer->deserialize(field_type.typeID()).convert<uint32_t>()));
+              new_value.SetUint((deserializer->deserialize(field_type.typeID()).convert<uint32_t>()));
               break;
             case UINT64:
-              new_value.SetUint64(
-                  (deserializer->deserialize(field_type.typeID()).convert<uint64_t>()));
+              new_value.SetUint64((deserializer->deserialize(field_type.typeID()).convert<uint64_t>()));
               break;
             case INT8:
             case INT16:
             case INT32:
-              new_value.SetInt(
-                  (deserializer->deserialize(field_type.typeID()).convert<int32_t>()));
+              new_value.SetInt((deserializer->deserialize(field_type.typeID()).convert<int32_t>()));
               break;
             case INT64:
-              new_value.SetInt64(
-                  (deserializer->deserialize(field_type.typeID()).convert<int64_t>()));
+              new_value.SetInt64((deserializer->deserialize(field_type.typeID()).convert<int64_t>()));
               break;
             case FLOAT32:
-              new_value.SetFloat(
-                  (deserializer->deserialize(field_type.typeID()).convert<float>()));
+              new_value.SetFloat((deserializer->deserialize(field_type.typeID()).convert<float>()));
               break;
             case FLOAT64:
-              new_value.SetDouble(
-                  (deserializer->deserialize(field_type.typeID()).convert<double>()));
+              new_value.SetDouble((deserializer->deserialize(field_type.typeID()).convert<double>()));
               break;
             case TIME: {
               int sec = deserializer->deserialize(INT32).convert<int32_t>();
@@ -368,8 +322,7 @@ bool Parser::deserializeIntoJson(Span<const uint8_t> buffer, std::string* json_t
               nsec_value.SetObject();
               nsec_value.SetInt(nsec);
               new_value.AddMember("nsecs", nsec_value, alloc);
-            }
-            break;
+            } break;
             case DURATION: {
               int sec = deserializer->deserialize(INT32).convert<int32_t>();
               int nsec = deserializer->deserialize(INT32).convert<int32_t>();
@@ -382,40 +335,32 @@ bool Parser::deserializeIntoJson(Span<const uint8_t> buffer, std::string* json_t
               nsec_value.SetObject();
               nsec_value.SetInt(nsec);
               new_value.AddMember("nsecs", nsec_value, alloc);
-            }
-            break;
+            } break;
 
             case STRING: {
               std::string s;
               deserializer->deserializeString(s);
               new_value.SetString(s.c_str(), s.length(), alloc);
-            }
-            break;
+            } break;
             case OTHER: {
               auto msg_node_child = field.getMessagePtr(_schema->msg_library);
               deserializeImpl(msg_node_child.get(), new_value);
-            }
-            break;
+            } break;
           }  // end switch
 
-          if (field.isArray())
-          {
+          if (field.isArray()) {
             array_value.PushBack(new_value, alloc);
-          }
-          else
-          {
+          } else {
             json_value.AddMember(field_name, new_value, alloc);
           }
         }  // end for array
 
-        if (field.isArray())
-        {
+        if (field.isArray()) {
           json_value.AddMember(field_name, array_value, alloc);
         }
       }  // end for array_size
 
-      if (field_type.typeID() == OTHER)
-      {
+      if (field_type.typeID() == OTHER) {
         index_m++;
       }
       index_s++;
@@ -424,8 +369,7 @@ bool Parser::deserializeIntoJson(Span<const uint8_t> buffer, std::string* json_t
 
   FieldLeaf rootnode;
   rootnode.node = _schema->field_tree.croot();
-  auto root_msg =
-      _schema->field_tree.croot()->value()->getMessagePtr(_schema->msg_library);
+  auto root_msg = _schema->field_tree.croot()->value()->getMessagePtr(_schema->msg_library);
 
   rapidjson::Value& json_node = json_document.SetObject();
   deserializeImpl(root_msg.get(), json_node);
@@ -434,18 +378,15 @@ bool Parser::deserializeIntoJson(Span<const uint8_t> buffer, std::string* json_t
   json_buffer.Reserve(65536);
   json_buffer.Clear();
 
-  if (indent == 0)
-  {
-    rapidjson::Writer<rapidjson::StringBuffer, rapidjson::UTF8<>, rapidjson::UTF8<>,
-                      rapidjson::CrtAllocator,
-                      rapidjson::kWriteDefaultFlags | rapidjson::kWriteNanAndInfFlag>
+  if (indent == 0) {
+    rapidjson::Writer<
+        rapidjson::StringBuffer, rapidjson::UTF8<>, rapidjson::UTF8<>, rapidjson::CrtAllocator,
+        rapidjson::kWriteDefaultFlags | rapidjson::kWriteNanAndInfFlag>
         json_writer(json_buffer);
     json_document.Accept(json_writer);
 
     *json_txt = json_buffer.GetString();
-  }
-  else
-  {
+  } else {
     rapidjson::PrettyWriter<rapidjson::StringBuffer> json_writer(json_buffer);
     json_writer.SetIndent(' ', indent);
     json_document.Accept(json_writer);
@@ -455,9 +396,7 @@ bool Parser::deserializeIntoJson(Span<const uint8_t> buffer, std::string* json_t
   return true;
 }
 
-bool Parser::serializeFromJson(const std::string_view json_string,
-                               Serializer* serializer) const
-{
+bool Parser::serializeFromJson(const std::string_view json_string, Serializer* serializer) const {
   rapidjson::Document json_document;
   json_document.Parse(json_string.data(), json_string.size());
   serializer->reset();
@@ -468,15 +407,12 @@ bool Parser::serializeFromJson(const std::string_view json_string,
     size_t index_s = 0;
     size_t index_m = 0;
 
-    for (const ROSField& field : msg_node->fields())
-    {
-      if (field.isConstant())
-      {
+    for (const ROSField& field : msg_node->fields()) {
+      if (field.isConstant()) {
         continue;
       }
       const ROSType& field_type = field.type();
-      const auto field_name =
-          rapidjson::StringRef(field.name().data(), field.name().size());
+      const auto field_name = rapidjson::StringRef(field.name().data(), field.name().size());
 
       const bool has_json_value = json_value && json_value->HasMember(field_name.s);
       const bool is_array = field.isArray();
@@ -484,45 +420,35 @@ bool Parser::serializeFromJson(const std::string_view json_string,
       const bool is_fixed_array = is_array && field.arraySize() != -1;
 
       // both must be array or not array
-      if (has_json_value && (is_array != (*json_value)[field_name.s].IsArray()))
-      {
-        throw std::runtime_error(std::string("IsArray() mismatch in field: ") +
-                                 field.name());
+      if (has_json_value && (is_array != (*json_value)[field_name.s].IsArray())) {
+        throw std::runtime_error(std::string("IsArray() mismatch in field: ") + field.name());
       }
 
       uint32_t array_size = field.arraySize();
-      if (is_dynamic_array)
-      {
+      if (is_dynamic_array) {
         // if not present in the JSON, we will add an array size of 0
         array_size = has_json_value ? (*json_value)[field_name.s].GetArray().Size() : 0;
         serializer->serializeUInt32(array_size);
       }
-      if (has_json_value && is_fixed_array)
-      {
+      if (has_json_value && is_fixed_array) {
         int actual_size = (*json_value)[field_name.s].GetArray().Size();
-        if (array_size != actual_size)
-        {
-          throw std::runtime_error(std::string("Fixed array size mismatch in field: ") +
-                                   field.name());
+        if (array_size != actual_size) {
+          throw std::runtime_error(std::string("Fixed array size mismatch in field: ") + field.name());
         }
       }
 
       const auto type_id = field_type.typeID();
 
-      for (int i = 0; i < array_size; i++)
-      {
+      for (int i = 0; i < array_size; i++) {
         // is !has_json_value , we will serialize a zero value
         rapidjson::Value zero_value = rapidjson::Value(0);
         rapidjson::Value* value_field = &zero_value;
 
-        if (has_json_value)
-        {
-          value_field = is_array ? &((*json_value)[field_name.s].GetArray()[i]) :
-                                   &((*json_value)[field_name.s]);
+        if (has_json_value) {
+          value_field = is_array ? &((*json_value)[field_name.s].GetArray()[i]) : &((*json_value)[field_name.s]);
         }
 
-        switch (type_id)
-        {
+        switch (type_id) {
           case BOOL:
             serializer->serialize(type_id, value_field->GetBool());
             break;
@@ -572,47 +498,36 @@ bool Parser::serializeFromJson(const std::string_view json_string,
 
             uint32_t nsecs = value_field->GetObject()["nsecs"].GetInt();
             serializer->serializeUInt32(secs);
-          }
-          break;
+          } break;
 
           case STRING: {
-            if (has_json_value)
-            {
+            if (has_json_value) {
               const char* str = value_field->GetString();
               uint32_t len = value_field->GetStringLength();
               serializer->serializeString(std::string(str, len));
-            }
-            else
-            {
+            } else {
               serializer->serializeString("");
             }
-          }
-          break;
+          } break;
           case OTHER: {
             auto msg_node_child = field.getMessagePtr(_schema->msg_library);
-            if (!has_json_value)
-            {
+            if (!has_json_value) {
               serializeImpl(msg_node_child.get(), nullptr);
-            }
-            else
-            {
+            } else {
               serializeImpl(msg_node_child.get(), value_field);
             }
-          }
-          break;
+          } break;
         }  // end switch
       }    // end for array
 
-      if (field_type.typeID() == OTHER)
-      {
+      if (field_type.typeID() == OTHER) {
         index_m++;
       }
       index_s++;
     }  // end for fields
   };   // end of lambda
 
-  auto root_msg =
-      _schema->field_tree.croot()->value()->getMessagePtr(_schema->msg_library);
+  auto root_msg = _schema->field_tree.croot()->value()->getMessagePtr(_schema->msg_library);
 
   rapidjson::Value& json_root = json_document;
   serializeImpl(root_msg.get(), &json_root);
