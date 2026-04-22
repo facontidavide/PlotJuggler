@@ -253,15 +253,11 @@ void ParserFactoryProtobuf::loadSettings()
 
   // Restore topic mappings: QStringList where each entry is "topic||qualified_type".
   auto saved_mappings = settings.value("ProtobufParserCreator.topicMappings").toStringList();
-  // Restore the set of previously-seen topic names.
-  {
-    std::lock_guard<std::mutex> lock(_seen_topics_mutex);
-    _seen_topics.clear();
-    for (const auto& t : settings.value("ProtobufParserCreator.seenTopics").toStringList())
-    {
-      _seen_topics.insert(t);
-    }
-  }
+
+  // Purge any legacy cross-session topic cache from earlier versions — topic
+  // suggestions now come exclusively from the live sibling-widget scan at
+  // addMappingRow() time, so we never want stale historic topics appearing.
+  settings.remove("ProtobufParserCreator.seenTopics");
 
   ui->tableTopicMapping->blockSignals(true);
   ui->tableTopicMapping->setRowCount(0);
@@ -316,16 +312,6 @@ void ParserFactoryProtobuf::saveSettings()
     mappings << QString("%1||%2").arg(topic, type);
   }
   settings.setValue("ProtobufParserCreator.topicMappings", mappings);
-
-  QStringList seen_list;
-  {
-    std::lock_guard<std::mutex> lock(_seen_topics_mutex);
-    for (const auto& t : _seen_topics)
-    {
-      seen_list << t;
-    }
-  }
-  settings.setValue("ProtobufParserCreator.seenTopics", seen_list);
 }
 
 ParserFactoryProtobuf::~ParserFactoryProtobuf()
@@ -338,31 +324,6 @@ MessageParserPtr ParserFactoryProtobuf::createParser(const std::string& topic_na
                                                      const std::string& schema,
                                                      PlotDataMapRef& data)
 {
-  // Remember this topic so future Topic-Mapping ComboBox rows can offer it as
-  // a pick. Persist once on first observation; QSettings writes are thread-safe.
-  if (!topic_name.empty())
-  {
-    QString topic_q = QString::fromStdString(topic_name);
-    bool added = false;
-    QStringList snapshot;
-    {
-      std::lock_guard<std::mutex> lock(_seen_topics_mutex);
-      added = _seen_topics.insert(topic_q).second;
-      if (added)
-      {
-        for (const auto& t : _seen_topics)
-        {
-          snapshot << t;
-        }
-      }
-    }
-    if (added)
-    {
-      QSettings settings;
-      settings.setValue("ProtobufParserCreator.seenTopics", snapshot);
-    }
-  }
-
   if (schema.empty())
   {
     QString chosen;
@@ -548,23 +509,16 @@ void ParserFactoryProtobuf::addMappingRow(const QString& topic, const QString& s
   int row = ui->tableTopicMapping->rowCount();
   ui->tableTopicMapping->insertRow(row);
 
-  // Column 0: QLineEdit with a QCompleter. Suggestions come from two sources:
-  //   1. Topics observed via createParser() in past sessions (persisted).
-  //   2. Items in any sibling QListWidget of the parent dialog — the MQTT/ZMQ
-  //      connection dialog typically shows its discovered topic list there,
-  //      so this also catches topics in the CURRENT (not-yet-OK'd) session.
+  // Column 0: QLineEdit with a QCompleter. Suggestions come ONLY from topic
+  // lists currently visible in the host dialog — we walk the parent-widget
+  // tree and harvest items from any QListWidget we're not responsible for
+  // (typically the MQTT/ZMQ "Select a specific topic" list). No cross-session
+  // persistence, no hidden history. If no such list is populated (e.g. UDP,
+  // or MQTT before Connect), the completer is empty and the user types the
+  // topic / ID directly.
   auto* topic_edit = new QLineEdit();
-  topic_edit->setPlaceholderText(tr("Type a topic (autocomplete from connection / past sessions)"));
-  QStringList seen_list;
-  {
-    std::lock_guard<std::mutex> lock(_seen_topics_mutex);
-    for (const auto& t : _seen_topics)
-    {
-      seen_list << t;
-    }
-  }
-  // Walk up to the top-level window and scan every QListWidget we're not
-  // responsible for. Items become suggestion candidates.
+  topic_edit->setPlaceholderText(tr("Type a topic or type ID"));
+  QStringList suggestions;
   QWidget* top = _widget;
   while (top->parentWidget())
   {
@@ -579,13 +533,13 @@ void ParserFactoryProtobuf::addMappingRow(const QString& topic, const QString& s
     for (int i = 0; i < lw->count(); i++)
     {
       QString item_text = lw->item(i)->text();
-      if (!item_text.isEmpty() && !seen_list.contains(item_text))
+      if (!item_text.isEmpty() && !suggestions.contains(item_text))
       {
-        seen_list << item_text;
+        suggestions << item_text;
       }
     }
   }
-  auto* completer = new QCompleter(seen_list, topic_edit);
+  auto* completer = new QCompleter(suggestions, topic_edit);
   completer->setCaseSensitivity(Qt::CaseInsensitive);
   completer->setFilterMode(Qt::MatchContains);
   completer->setCompletionMode(QCompleter::PopupCompletion);
