@@ -22,6 +22,8 @@ THE SOFTWARE.
 #include <QDebug>
 #include <QSettings>
 #include <QDialog>
+#include <cstdint>
+#include <cstring>
 #include <mutex>
 #include <QWebSocket>
 #include <QIntValidator>
@@ -60,6 +62,56 @@ public:
 UDP_Server::UDP_Server() : _running(false)
 {
 }
+
+namespace
+{
+// Decode a fixed-width unsigned integer out of a byte range.
+uint64_t decodeUnsigned(const uint8_t* bytes, int length, bool little_endian)
+{
+  uint64_t value = 0;
+  if (little_endian)
+  {
+    for (int i = 0; i < length; i++)
+    {
+      value |= static_cast<uint64_t>(bytes[i]) << (8 * i);
+    }
+  }
+  else
+  {
+    for (int i = 0; i < length; i++)
+    {
+      value = (value << 8) | bytes[i];
+    }
+  }
+  return value;
+}
+
+int lengthFromCombo(int combo_index)
+{
+  // ComboBox items 0..3 map to 1, 2, 4, 8 bytes.
+  static constexpr int kLengths[] = { 1, 2, 4, 8 };
+  if (combo_index < 0 || combo_index >= 4)
+  {
+    return 1;
+  }
+  return kLengths[combo_index];
+}
+
+int comboFromLength(int length)
+{
+  switch (length)
+  {
+    case 2:
+      return 1;
+    case 4:
+      return 2;
+    case 8:
+      return 3;
+    default:
+      return 0;
+  }
+}
+}  // namespace
 
 UDP_Server::~UDP_Server()
 {
@@ -109,6 +161,17 @@ bool UDP_Server::start(QStringList*)
   dialog.ui->lineEditAddress->setText(address_str);
   dialog.ui->lineEditPort->setText(QString::number(port));
 
+  // Restore multi-type dispatch config.
+  dialog.ui->groupBoxDispatch->setChecked(
+      settings.value("UDP_Server::dispatch_enabled", false).toBool());
+  dialog.ui->spinBoxOffset->setValue(settings.value("UDP_Server::dispatch_offset", 0).toInt());
+  dialog.ui->comboBoxLength->setCurrentIndex(
+      comboFromLength(settings.value("UDP_Server::dispatch_length", 1).toInt()));
+  dialog.ui->comboBoxEndian->setCurrentIndex(
+      settings.value("UDP_Server::dispatch_little_endian", true).toBool() ? 0 : 1);
+  dialog.ui->comboBoxDisplay->setCurrentIndex(
+      settings.value("UDP_Server::dispatch_display_hex", false).toBool() ? 1 : 0);
+
   ParserFactoryPlugin::Ptr parser_creator;
 
   auto onComboChanged = [this, &dialog, &parser_creator](const QString& selected_protocol) {
@@ -141,12 +204,30 @@ bool UDP_Server::start(QStringList*)
   port = dialog.ui->lineEditPort->text().toUShort(&ok);
   protocol = dialog.ui->comboBoxProtocol->currentText();
 
-  _parser = parser_creator->createParser({}, {}, {}, dataMap());
+  _parser_creator = parser_creator;
+  _parsers.clear();
+
+  _dispatch_enabled = dialog.ui->groupBoxDispatch->isChecked();
+  _dispatch_offset = dialog.ui->spinBoxOffset->value();
+  _dispatch_length = lengthFromCombo(dialog.ui->comboBoxLength->currentIndex());
+  _dispatch_little_endian = (dialog.ui->comboBoxEndian->currentIndex() == 0);
+  _dispatch_display_hex = (dialog.ui->comboBoxDisplay->currentIndex() == 1);
+
+  if (!_dispatch_enabled)
+  {
+    // Single parser for every datagram, empty topic — legacy behaviour.
+    _parsers[""] = _parser_creator->createParser({}, {}, {}, dataMap());
+  }
 
   // save back to service
   settings.setValue("UDP_Server::protocol", protocol);
   settings.setValue("UDP_Server::address", address_str);
   settings.setValue("UDP_Server::port", port);
+  settings.setValue("UDP_Server::dispatch_enabled", _dispatch_enabled);
+  settings.setValue("UDP_Server::dispatch_offset", _dispatch_offset);
+  settings.setValue("UDP_Server::dispatch_length", _dispatch_length);
+  settings.setValue("UDP_Server::dispatch_little_endian", _dispatch_little_endian);
+  settings.setValue("UDP_Server::dispatch_display_hex", _dispatch_display_hex);
 
   QHostAddress address(address_str);
 
@@ -249,13 +330,46 @@ void UDP_Server::processMessage()
     double timestamp = 1e-6 * double(duration_cast<microseconds>(ts).count());
 
     QByteArray m = datagram.data();
-    MessageRef msg(reinterpret_cast<uint8_t*>(m.data()), m.count());
+    auto* bytes = reinterpret_cast<uint8_t*>(m.data());
+    int size = m.size();
+
+    std::string topic;
+    int payload_offset = 0;
+
+    if (_dispatch_enabled)
+    {
+      const int header_end = _dispatch_offset + _dispatch_length;
+      if (size < header_end)
+      {
+        // Packet too short to carry the declared discriminator — skip.
+        continue;
+      }
+      uint64_t id =
+          decodeUnsigned(bytes + _dispatch_offset, _dispatch_length, _dispatch_little_endian);
+      char buf[32];
+      std::snprintf(buf, sizeof(buf), _dispatch_display_hex ? "0x%llx" : "%llu",
+                    static_cast<unsigned long long>(id));
+      topic = buf;
+      // Strip the header region (offset+length) from the front of the payload.
+      // Keep it simple: assume the header is always at the start, so strip
+      // from byte 0 through header_end. Datagrams with offset > 0 still work
+      // — the parser sees the pre-header bytes as leading payload — but the
+      // common case (offset=0) matches "header then payload".
+      payload_offset = header_end;
+    }
+
+    MessageRef msg(bytes + payload_offset, size - payload_offset);
 
     try
     {
       std::lock_guard<std::mutex> lock(mutex());
       // important use the mutex to protect any access to the data
-      _parser->parseMessage(msg, timestamp);
+      auto it = _parsers.find(topic);
+      if (it == _parsers.end())
+      {
+        it = _parsers.emplace(topic, _parser_creator->createParser(topic, {}, {}, dataMap())).first;
+      }
+      it->second->parseMessage(msg, timestamp);
     }
     catch (std::exception& err)
     {
