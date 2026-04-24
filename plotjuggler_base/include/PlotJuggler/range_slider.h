@@ -5,6 +5,8 @@
 #include <QPainter>
 #include <QMouseEvent>
 
+#include <functional>
+
 class RangeSlider : public QWidget
 {
   Q_OBJECT
@@ -25,6 +27,20 @@ public:
 
   QSize minimumSizeHint() const override;
 
+  int GetMinimun() const;
+  void SetMinimum(int aMinimum);
+
+  int GetMaximun() const;
+  void SetMaximum(int aMaximum);
+
+  int GetLowerValue() const;
+  void SetLowerValue(int aLowerValue);
+
+  int GetUpperValue() const;
+  void SetUpperValue(int aUpperValue);
+
+  void SetRange(int aMinimum, int aMaximum);
+
   void setOptions(Options t);
 
   void setMinTickPixelSpacing(int px);
@@ -34,6 +50,16 @@ public:
 
   void setShowHandleValueTooltip(bool on);
   bool showHandleValueTooltip() const;
+
+  // Floating labels — painted above handles during drag.
+  void setFloatingLabelsVisible(bool on);
+  bool floatingLabelsVisible() const;
+
+  // Custom formatters for floating labels (default: decimal number).
+  // Handle formatter receives the real value for one handle.
+  void setLabelFormatter(std::function<QString(double)> formatter);
+  // Center formatter receives (lower, upper) real values. Return empty to hide.
+  void setCenterLabelFormatter(std::function<QString(double, double)> formatter);
 
   bool showTicks() const;
 
@@ -73,23 +99,27 @@ private:
   Q_DISABLE_COPY(RangeSlider)
   int validLength() const;
 
-  int mMinimum;
-  int mMaximum;
-  int mLowerValue;
-  int mUpperValue;
-  bool mFirstHandlePressed;
-  bool mSecondHandlePressed;
-  int mInterval;
-  int mDelta;
-  QColor mBackgroudColorEnabled;
-  QColor mBackgroudColorDisabled;
-  QColor mBackgroudColor;
-  Qt::Orientation orientation;
-  Options type;
+  int mMinimum = 0;
+  int mMaximum = 100;
+  int mLowerValue = 0;
+  int mUpperValue = 100;
+  bool mFirstHandlePressed = false;
+  bool mSecondHandlePressed = false;
+  bool mRangeDragActive = false;
+  int mRangeDragStartPos = 0;
+  int mRangeDragLowerStart = 0;
+  int mRangeDragUpperStart = 0;
+  int mInterval = 100;
+  int mDelta = 0;
+  QColor mBackgroudColorEnabled{ 0x1E, 0x90, 0xFF };
+  QColor mBackgroudColorDisabled{ Qt::darkGray };
+  QColor mBackgroudColor{ mBackgroudColorEnabled };
+  Qt::Orientation orientation = Qt::Horizontal;
+  Options type = DoubleHandles;
 
-  int mMinTickPx;
-  bool mShowTicks;
-  bool mShowTickLabels;
+  int mMinTickPx = 45;
+  bool mShowTicks = true;
+  bool mShowTickLabels = true;
 
   void drawTicks(QPainter& painter, const QRectF& backgroundRect);
   int niceStep(int raw) const;
@@ -98,13 +128,28 @@ private:
   bool mShowHandleValueTooltip = true;
   bool mTooltipVisible = false;
 
+  bool mFloatingLabels = false;
+  std::function<QString(double)> mLabelFormatter;
+  std::function<QString(double, double)> mCenterLabelFormatter;
+
+  // Hit-test rects for floating labels, refreshed each paint. When
+  // mFloatingLabels is true these let the user grab a handle (or the
+  // range) by clicking its label, not just the small handle rect.
+  // Empty QRect means "label not currently drawn".
+  QRect mLowerLabelRect;
+  QRect mUpperLabelRect;
+  QRect mCenterLabelRect;
+
+  void drawFloatingLabels(QPainter& painter);
+  QString formatHandleValue(double value) const;
+
   void maybeShowHandleTooltip(const QPoint& globalPos, const QPoint& localPos);
   QString handleValueText(bool left) const;
 
-  double mMinReal;
-  double mMaxReal;
-  int mDecimals;
-  int mScale;
+  double mMinReal = 0.0;
+  double mMaxReal = 1.0;
+  int mDecimals = 3;
+  int mScale = 1000;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(RangeSlider::Options)

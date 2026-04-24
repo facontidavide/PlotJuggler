@@ -369,7 +369,7 @@ Suffix will be the group name.</string>
   <customwidget>
    <class>RangeSlider</class>
    <extends>QWidget</extends>
-   <header>RangeSlider.h</header>
+   <header>PlotJuggler/range_slider.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
