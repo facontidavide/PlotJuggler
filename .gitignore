@@ -1,4 +1,15 @@
 /.directory
+
+# Local-only assistant scratch tree (specs/plans drafted alongside work).
+docs/superpowers/
+
+# Diagnostic capture logs (e.g. from plotjuggler_plugins/ToolboxMosaico/scripts).
+*.log
+
+# ToolboxMosaico ad-hoc diagnostic / mirror scripts. Useful locally but
+# not part of the shipped plugin.
+plotjuggler_plugins/ToolboxMosaico/scripts/
+
 # Compiled Object files
 *.slo
 *.lo

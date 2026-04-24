@@ -56,7 +56,7 @@ jobs:
           wget https://packages.apache.org/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
           apt install -y -V ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
           apt update
-          apt install -y -V libarrow-dev # For C++
+          apt install -y -V libarrow-dev libarrow-flight-dev # For C++
           apt install -y -V libparquet-dev # For Apache Parquet C++
 
       - name: Prepare ccache

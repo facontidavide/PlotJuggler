@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="/mosaico">
+    <file>certificate.svg</file>
+  </qresource>
+</RCC>
