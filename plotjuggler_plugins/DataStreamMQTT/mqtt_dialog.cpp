@@ -165,10 +165,7 @@ void MQTT_Dialog::onButtonConnect()
   config.host = ui->lineEditHost->text().toStdString();
   config.port = ui->lineEditPort->text().toInt();
   config.topics.clear();
-  // Guard against empty Topics filter: MQTT 3.1.1 / 5 §3.8.3 forbid zero-length
-  // topic filters, and brokers drop the connection on a malformed SUBSCRIBE
-  // (the root cause of #876 half 1 and #1148). Fall back to the "#" wildcard
-  // that matches the field's placeholder when the user leaves it blank.
+  // MQTT §3.8.3 forbids zero-length topic filters; default to "#".
   QString topic_filter = ui->lineEditTopicFilter->text();
   if (topic_filter.isEmpty())
   {
