@@ -206,8 +206,7 @@ if(COMPILING_WITH_CATKIN)
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 elseif(COMPILING_WITH_AMENT)
 
-  target_link_libraries(plotjuggler PRIVATE ament_index_cpp::ament_index_cpp
-                                            rclcpp::rclcpp)
+  target_link_libraries(plotjuggler PRIVATE ament_index_cpp::ament_index_cpp)
 
   install(TARGETS plotjuggler DESTINATION lib/${PROJECT_NAME})
 else()

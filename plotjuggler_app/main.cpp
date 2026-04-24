@@ -42,7 +42,35 @@
 #include <ros/ros.h>
 #endif
 #ifdef COMPILED_WITH_AMENT
-#include <rclcpp/rclcpp.hpp>
+#include <string_view>
+
+// Strip ROS 2 CLI arguments ("--ros-args ... [--]") from argv.
+// Equivalent to rclcpp::remove_ros_arguments, but without pulling the rclcpp /
+// rosidl typesupport stack into PlotJuggler just for one call.
+static std::vector<std::string> RemoveRos2Arguments(int argc, char* argv[])
+{
+  std::vector<std::string> out;
+  out.reserve(argc);
+  bool in_ros_block = false;
+  for (int i = 0; i < argc; ++i)
+  {
+    const std::string_view tok(argv[i]);
+    if (!in_ros_block)
+    {
+      if (tok == "--ros-args")
+      {
+        in_ros_block = true;
+        continue;
+      }
+      out.emplace_back(argv[i]);
+    }
+    else if (tok == "--")
+    {
+      in_ros_block = false;
+    }
+  }
+  return out;
+}
 #endif
 
 static QString VERSION_STRING =
@@ -153,7 +181,7 @@ int main(int argc, char* argv[])
 #elif defined(COMPILED_WITH_CATKIN)
   ros::removeROSArgs(argc, argv, args);
 #elif defined(COMPILED_WITH_AMENT)
-  args = rclcpp::remove_ros_arguments(argc, argv);
+  args = RemoveRos2Arguments(argc, argv);
 #endif
 
   args = MergeArguments(args);

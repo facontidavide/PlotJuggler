@@ -72,7 +72,6 @@ elseif(ament_cmake_FOUND)
 
   find_package(ament_cmake REQUIRED)
   find_package(ament_index_cpp REQUIRED)
-  find_package(rclcpp REQUIRED)
 
   include_directories(${ament_index_cpp_INCLUDE_DIRS})
 
