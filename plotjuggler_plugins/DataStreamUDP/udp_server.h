@@ -60,18 +60,15 @@ private:
   bool _running;
   QUdpSocket* _udp_socket;
 
-  // Parser factory kept around so we can lazily build per-ID parsers when
-  // Multi-type dispatch is enabled and a new discriminator value arrives.
+  // Kept so we can lazily create parsers per discriminator ID.
   PJ::ParserFactoryPlugin::Ptr _parser_creator;
 
-  // Key is the decoded ID string ("" when dispatch is disabled, so the single
-  // parser lives at _parsers[""]).
+  // Key is the decoded ID string; "" when dispatch is disabled.
   std::map<std::string, PJ::MessageParserPtr> _parsers;
 
-  // Transport-level discriminator config. All zero / false when disabled.
   bool _dispatch_enabled = false;
-  int _dispatch_offset = 0;  // bytes from start of datagram
-  int _dispatch_length = 1;  // 1 / 2 / 4 / 8
+  int _dispatch_offset = 0;
+  int _dispatch_length = 1;
   bool _dispatch_little_endian = true;
   bool _dispatch_display_hex = false;
 
