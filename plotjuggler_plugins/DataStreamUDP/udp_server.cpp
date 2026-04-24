@@ -65,7 +65,6 @@ UDP_Server::UDP_Server() : _running(false)
 
 namespace
 {
-// Decode a fixed-width unsigned integer out of a byte range.
 uint64_t decodeUnsigned(const uint8_t* bytes, int length, bool little_endian)
 {
   uint64_t value = 0;
@@ -88,7 +87,6 @@ uint64_t decodeUnsigned(const uint8_t* bytes, int length, bool little_endian)
 
 int lengthFromCombo(int combo_index)
 {
-  // ComboBox items 0..3 map to 1, 2, 4, 8 bytes.
   static constexpr int kLengths[] = { 1, 2, 4, 8 };
   if (combo_index < 0 || combo_index >= 4)
   {
@@ -161,7 +159,6 @@ bool UDP_Server::start(QStringList*)
   dialog.ui->lineEditAddress->setText(address_str);
   dialog.ui->lineEditPort->setText(QString::number(port));
 
-  // Restore multi-type dispatch config.
   dialog.ui->groupBoxDispatch->setChecked(
       settings.value("UDP_Server::dispatch_enabled", false).toBool());
   dialog.ui->spinBoxOffset->setValue(settings.value("UDP_Server::dispatch_offset", 0).toInt());
@@ -215,7 +212,6 @@ bool UDP_Server::start(QStringList*)
 
   if (!_dispatch_enabled)
   {
-    // Single parser for every datagram, empty topic — legacy behaviour.
     _parsers[""] = _parser_creator->createParser({}, {}, {}, dataMap());
   }
 
@@ -341,7 +337,7 @@ void UDP_Server::processMessage()
       const int header_end = _dispatch_offset + _dispatch_length;
       if (size < header_end)
       {
-        // Packet too short to carry the declared discriminator — skip.
+        // Packet too short for the declared discriminator; drop.
         continue;
       }
       uint64_t id =
@@ -350,11 +346,6 @@ void UDP_Server::processMessage()
       std::snprintf(buf, sizeof(buf), _dispatch_display_hex ? "0x%llx" : "%llu",
                     static_cast<unsigned long long>(id));
       topic = buf;
-      // Strip the header region (offset+length) from the front of the payload.
-      // Keep it simple: assume the header is always at the start, so strip
-      // from byte 0 through header_end. Datagrams with offset > 0 still work
-      // — the parser sees the pre-header bytes as leading payload — but the
-      // common case (offset=0) matches "header then payload".
       payload_offset = header_end;
     }
 

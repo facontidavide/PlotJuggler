@@ -29,7 +29,6 @@ ParserFactoryProtobuf::ParserFactoryProtobuf()
   _source_tree.MapPath("", "");
   _source_tree.MapPath("/", "/");
 
-  // Column sizing for the topic-mapping table.
   ui->tableTopicMapping->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
   ui->tableTopicMapping->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
 
@@ -123,7 +122,6 @@ bool ParserFactoryProtobuf::importFile(const QString& filename)
 
   _loaded_files[info.file_basename] = std::move(info);
 
-  // Refresh the list widget + the default combo + any per-row combos.
   ui->listLoadedFiles->blockSignals(true);
   ui->listLoadedFiles->clear();
   for (const auto& [basename, fi] : _loaded_files)
@@ -138,7 +136,6 @@ bool ParserFactoryProtobuf::importFile(const QString& filename)
 
 void ParserFactoryProtobuf::rebuildTypeComboBox()
 {
-  // Default combo
   QString prev_default = ui->comboBox->currentText();
   ui->comboBox->blockSignals(true);
   ui->comboBox->clear();
@@ -156,7 +153,6 @@ void ParserFactoryProtobuf::rebuildTypeComboBox()
   }
   ui->comboBox->blockSignals(false);
 
-  // Per-row combos in the mapping table
   for (int row = 0; row < ui->tableTopicMapping->rowCount(); row++)
   {
     auto* combo = qobject_cast<QComboBox*>(ui->tableTopicMapping->cellWidget(row, 1));
@@ -235,8 +231,7 @@ void ParserFactoryProtobuf::loadSettings()
   }
   ui->listWidget->sortItems();
 
-  // Preferred new key: plural list of proto files. Fall back to legacy single
-  // "ProtobufParserCreator.protofile" so existing user settings keep working.
+  // Plural key with fallback to the legacy single-file key.
   QStringList proto_files = settings.value("ProtobufParserCreator.protofiles").toStringList();
   if (proto_files.isEmpty())
   {
@@ -251,12 +246,9 @@ void ParserFactoryProtobuf::loadSettings()
     importFile(f);
   }
 
-  // Restore topic mappings: QStringList where each entry is "topic||qualified_type".
+  // Each entry is "topic||qualified_type".
   auto saved_mappings = settings.value("ProtobufParserCreator.topicMappings").toStringList();
 
-  // Purge any legacy cross-session topic cache from earlier versions — topic
-  // suggestions now come exclusively from the live sibling-widget scan at
-  // addMappingRow() time, so we never want stale historic topics appearing.
   settings.remove("ProtobufParserCreator.seenTopics");
 
   ui->tableTopicMapping->blockSignals(true);
@@ -453,7 +445,6 @@ void ParserFactoryProtobuf::onRemoveFile()
     _loaded_files.erase(item->text());
   }
 
-  // Re-import the remaining files into a fresh Importer.
   FileErrorCollector error_collector;
   _importer.reset(new gp::compiler::Importer(&_source_tree, &error_collector));
   for (auto& [basename, fi] : _loaded_files)
@@ -509,13 +500,7 @@ void ParserFactoryProtobuf::addMappingRow(const QString& topic, const QString& s
   int row = ui->tableTopicMapping->rowCount();
   ui->tableTopicMapping->insertRow(row);
 
-  // Column 0: QLineEdit with a QCompleter. Suggestions come ONLY from topic
-  // lists currently visible in the host dialog — we walk the parent-widget
-  // tree and harvest items from any QListWidget we're not responsible for
-  // (typically the MQTT/ZMQ "Select a specific topic" list). No cross-session
-  // persistence, no hidden history. If no such list is populated (e.g. UDP,
-  // or MQTT before Connect), the completer is empty and the user types the
-  // topic / ID directly.
+  // Topic completer: live suggestions from sibling QListWidgets only.
   auto* topic_edit = new QLineEdit();
   topic_edit->setPlaceholderText(tr("Type a topic or type ID"));
   QStringList suggestions;
@@ -551,7 +536,6 @@ void ParserFactoryProtobuf::addMappingRow(const QString& topic, const QString& s
   connect(topic_edit, &QLineEdit::textChanged, this, &ParserFactoryProtobuf::onTopicMappingChanged);
   ui->tableTopicMapping->setCellWidget(row, 0, topic_edit);
 
-  // Column 1: non-editable ComboBox of all qualified types from loaded files.
   auto* type_combo = new QComboBox();
   for (const auto& [basename, fi] : _loaded_files)
   {
