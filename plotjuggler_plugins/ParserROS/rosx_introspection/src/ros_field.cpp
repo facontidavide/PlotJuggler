@@ -37,11 +37,11 @@ ROSField::ROSField(const std::string& definition) : _is_array(false), _array_siz
   static const std::regex type_regex(
       "[a-zA-Z][a-zA-Z0-9_]*"
       "(/[a-zA-Z][a-zA-Z0-9_]*){0,1}"
-      "(\\[[0-9]*\\]){0,1}");
+      "(\\[(?:<=)?[0-9]*\\]){0,1}");
 
   static const std::regex field_regex("[a-zA-Z][a-zA-Z0-9_]*");
 
-  static const std::regex array_regex("(.+)(\\[([0-9]*)\\])");
+  static const std::regex array_regex("(.+)(\\[(<=)?([0-9]*)\\])");
 
   using std::regex;
   std::string::const_iterator begin = definition.begin();
@@ -70,14 +70,23 @@ ROSField::ROSField(const std::string& definition) : _is_array(false), _array_siz
   std::string temp_type = type;
   if (regex_search(temp_type, what, array_regex)) {
     type = what[1];
+    _is_array = true;
 
-    if (what.size() == 3) {
-      _array_size = -1;
-      _is_array = true;
-    } else if (what.size() == 4) {
-      std::string size(what[3].first, what[3].second);
-      _array_size = size.empty() ? -1 : atoi(size.c_str());
-      _is_array = true;
+    // array_regex groups: 1=type, 2=bracket, 3="<=" or "", 4=digits or ""
+    if (what.size() == 5) {
+      const std::string upper_bound(what[3].first, what[3].second);
+      const std::string size(what[4].first, what[4].second);
+
+      if (!upper_bound.empty() && !size.empty()) {
+        // Bounded sequence: same wire format as unbounded (length prefix + N
+        // elements), so we keep _array_size == -1 to reuse the dynamic-array
+        // deserialization path. The declared bound is preserved separately.
+        _is_bounded = true;
+        _max_size = atoi(size.c_str());
+        _array_size = -1;
+      } else {
+        _array_size = size.empty() ? -1 : atoi(size.c_str());
+      }
     } else {
       throw std::runtime_error("Bad array size when parsing field:  " + definition);
     }
