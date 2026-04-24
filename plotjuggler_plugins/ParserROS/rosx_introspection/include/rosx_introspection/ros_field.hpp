@@ -131,6 +131,18 @@ class ROSField {
     _union_ptr = ptr;
   }
 
+  /// True if the field is a bounded sequence (e.g. `int32[<=5]`).
+  /// Bounded sequences carry a CDR length prefix on the wire just like
+  /// unbounded ones, so arraySize() returns -1 in that case.
+  bool isUpperBound() const {
+    return _is_bounded;
+  }
+
+  /// Declared upper bound for a bounded sequence, or -1 if not bounded.
+  int maxSize() const {
+    return _max_size;
+  }
+
   friend class ROSMessage;
 
   std::shared_ptr<ROSMessage> getMessagePtr(const RosMessageLibrary& library) const;
@@ -141,7 +153,9 @@ class ROSField {
   std::string _value;
   bool _is_array;
   bool _is_constant = false;
+  bool _is_bounded = false;
   int _array_size;
+  int _max_size = -1;
   SmallVector<int, 2> _array_dims;
   bool _is_optional = false;
   bool _is_key = false;
