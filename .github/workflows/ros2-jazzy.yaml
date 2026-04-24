@@ -27,6 +27,11 @@ jobs:
         with:
           required-ros-distributions: jazzy
 
+      # jazzy's ros-base does not always pull in typesupport implementations,
+      # causing "No 'rosidl_typesupport_c' found" at CMake configure time.
+      - name: Install missing jazzy typesupport
+        run: sudo apt-get install -y ros-jazzy-rosidl-typesupport-introspection-c ros-jazzy-rosidl-typesupport-introspection-cpp
+
       # Run ROS CI
       - uses: ros-tooling/action-ros-ci@v0.4
         with:
