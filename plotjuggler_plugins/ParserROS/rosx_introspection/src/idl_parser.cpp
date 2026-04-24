@@ -303,7 +303,7 @@ class IDLAstWalker {
     }
 
     auto full_name = makeFullName(module_path, struct_name);
-    msg->setType(ROSType(normalizeTypeName(full_name)));
+    msg->setType(ROSType(full_name));
 
     // Store base type info for later resolution
     if (!base_type.empty()) {
@@ -399,7 +399,7 @@ class IDLAstWalker {
       }
       int arr_size = is_sequence ? -1 : (decl.array_dims.empty() ? 1 : total_size);
 
-      ROSField field(ROSType(normalizeTypeName(resolved_type_name)), decl.field_name);
+      ROSField field(ROSType(resolved_type_name), decl.field_name);
       field.setArray(arr_size != 1, arr_size);
       if (decl.array_dims.size() > 1) {
         field.setArrayDimensions(decl.array_dims);
@@ -416,6 +416,7 @@ class IDLAstWalker {
     EnumDefinition def;
 
     int32_t next_value = 0;
+    int32_t next_dds_compat_value = 0;
     for (const auto& child : ast->nodes) {
       auto role = roleName(child);
       if (role == "IDENTIFIER" && enum_name.empty()) {
@@ -423,6 +424,7 @@ class IDLAstWalker {
       } else if (role == "ENUMERATOR") {
         std::string name;
         std::optional<int32_t> explicit_value;
+        bool explicit_value_from_annotation = false;
 
         // After optimization, ENUMERATOR may be a leaf (ENUMERATOR[IDENTIFIER])
         if (child->is_token) {
@@ -444,28 +446,31 @@ class IDLAstWalker {
                       param.erase(param.begin());
                     }
                     explicit_value = static_cast<int32_t>(std::stoll(param, nullptr, 0));
+                    explicit_value_from_annotation = true;
                   } catch (...) {}
                 }
               }
             } else {
               // Anything else is a constant expression (e.g., = value)
               explicit_value = static_cast<int32_t>(evaluateConstExpr(ec, result.constants));
+              explicit_value_from_annotation = false;
             }
           }
         }
-        if (explicit_value.has_value()) {
-          next_value = *explicit_value;
-        }
-        def.values.push_back({name, next_value});
+        const int32_t enum_value = explicit_value.value_or(next_value);
+        const int32_t dds_compat_value =
+            explicit_value.has_value() && !explicit_value_from_annotation ? *explicit_value : next_dds_compat_value;
+        def.values.push_back({name, enum_value, dds_compat_value});
         auto full_enum_name = makeFullName(module_path, name);
-        result.constants[full_enum_name] = next_value;
-        result.constants[name] = next_value;
-        next_value++;
+        result.constants[full_enum_name] = enum_value;
+        result.constants[name] = enum_value;
+        next_value = enum_value + 1;
+        next_dds_compat_value = dds_compat_value + 1;
       }
     }
 
     auto full_name = makeFullName(module_path, enum_name);
-    def.id = ROSType(normalizeTypeName(full_name));
+    def.id = ROSType(full_name);
     result.enums.push_back(std::move(def));
   }
 
@@ -491,7 +496,7 @@ class IDLAstWalker {
     }
 
     auto full_name = makeFullName(module_path, union_name);
-    def.id = ROSType(normalizeTypeName(full_name));
+    def.id = ROSType(full_name);
     result.unions.push_back(std::move(def));
   }
 
@@ -561,7 +566,7 @@ class IDLAstWalker {
 
     auto resolved_type_name = resolveTypeName(type_name, module_path);
     UnionCaseField case_field;
-    case_field.type = ROSType(normalizeTypeName(resolved_type_name));
+    case_field.type = ROSType(resolved_type_name);
     case_field.field_name = field_name;
     case_field.is_array = (array_size != 1);
     case_field.array_size = array_size;
@@ -609,7 +614,7 @@ class IDLAstWalker {
 
     auto full_name = makeFullName(module_path, alias_name);
     TypedefAlias alias;
-    alias.id = ROSType(normalizeTypeName(full_name));
+    alias.id = ROSType(full_name);
     alias.base_type = base_type;
     alias.resolved_type = toBuiltinType(base_type);
     result.typedefs.push_back(std::move(alias));
@@ -720,10 +725,10 @@ MessageSchema::Ptr ParseIDL(const std::string& topic_name, const ROSType& root_t
 
   // Resolve struct inheritance: prepend base struct fields
   for (auto& [derived_name, base_name] : walker._inheritance_map) {
-    auto derived_type = ROSType(normalizeTypeName(derived_name));
+    auto derived_type = ROSType(derived_name);
 
     // Try to find base type — first as-is, then qualified with derived's module
-    auto base_type = ROSType(normalizeTypeName(base_name));
+    auto base_type = ROSType(base_name);
     auto derived_it = msg_map.find(derived_type);
     auto base_it = msg_map.find(base_type);
     if (base_it == msg_map.end()) {
@@ -731,7 +736,7 @@ MessageSchema::Ptr ParseIDL(const std::string& topic_name, const ROSType& root_t
       auto pos = derived_name.rfind("::");
       if (pos != std::string::npos) {
         auto module = derived_name.substr(0, pos);
-        base_type = ROSType(normalizeTypeName(module + "::" + base_name));
+        base_type = ROSType(module + "::" + base_name);
         base_it = msg_map.find(base_type);
       }
     }
@@ -793,8 +798,20 @@ MessageSchema::Ptr ParseIDL(const std::string& topic_name, const ROSType& root_t
   auto schema = std::make_shared<MessageSchema>();
   schema->topic_name = topic_name;
 
-  // Find root message
+  // Find root message.
+  // IDL type names are canonically stored with "::" (e.g. "ims_msgs::RoboticsInputs").
+  // Callers may still hand us a ROS-style "pkg/Type" name; translate the last '/'
+  // to '::' and retry before falling back to a msg-name only match.
   auto root_it = msg_map.find(root_type);
+  if (root_it == msg_map.end()) {
+    const std::string& base = root_type.baseName();
+    auto slash = base.rfind('/');
+    if (slash != std::string::npos) {
+      std::string idl_style = base;
+      idl_style.replace(slash, 1, "::");
+      root_it = msg_map.find(ROSType(idl_style));
+    }
+  }
   if (root_it == msg_map.end()) {
     for (auto& [type, msg] : msg_map) {
       if (type.msgName() == root_type.msgName()) {
@@ -823,12 +840,6 @@ MessageSchema::Ptr ParseIDL(const std::string& topic_name, const ROSType& root_t
   }
 
   // NOW set enum/union/struct pointers on struct fields (pointing into schema's maps)
-  //
-  // Vendored adaptation: the PlotJuggler-side walker in ros_parser.cpp only
-  // understands builtin scalars and nested structs (entries in msg_library).
-  // To keep enum fields parseable without teaching the walker about enum_ptr,
-  // we also rewrite the field's type to INT32 (enums are encoded as int32 on
-  // the wire in CDR). The enum pointer is still set for callers that care.
   for (auto* field : all_fields) {
     if (field->type().isBuiltin()) {
       continue;
@@ -837,7 +848,6 @@ MessageSchema::Ptr ParseIDL(const std::string& topic_name, const ROSType& root_t
     auto enum_it = schema->enum_library.find(field->type());
     if (enum_it != schema->enum_library.end()) {
       field->setEnumPtr(&enum_it->second);
-      field->changeType(ROSType("int32"));
       continue;
     }
 
@@ -849,8 +859,9 @@ MessageSchema::Ptr ParseIDL(const std::string& topic_name, const ROSType& root_t
   }
 
   // Build field tree (reusing the existing BuildMessageSchema pattern)
-  // Create synthetic root field
-  schema->root_field = std::make_unique<ROSField>(root_type, topic_name);
+  // Create synthetic root field. Use the type that matched the library (canonical
+  // "::" form) so downstream lookups by baseName() hit.
+  schema->root_field = std::make_unique<ROSField>(schema->root_msg->type(), topic_name);
   schema->field_tree.root()->setValue(schema->root_field.get());
 
   std::function<void(const ROSMessage&, details::TreeNode<const ROSField*>*)> recursiveTreeCreator;

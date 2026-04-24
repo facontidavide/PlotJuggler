@@ -21,8 +21,7 @@
  *   SOFTWARE.
  */
 
-#ifndef ROS_INTROSPECTION_ROSTYPE_H
-#define ROS_INTROSPECTION_ROSTYPE_H
+#pragma once
 
 #include <functional>
 #include <iostream>
@@ -180,5 +179,3 @@ struct hash<RosMsgParser::ROSType> {
   }
 };
 }  // namespace std
-
-#endif  // ROSTYPE_H

@@ -37,7 +37,8 @@ ROSMessage::ROSMessage(const std::string& msg_def) {
     std::string::const_iterator begin = line.begin(), end = line.end();
 
     // Skip empty line or one that is a comment
-    if (std::regex_search(begin, end, what, std::regex("(^\\s*$|^\\s*#)"))) {
+    static const std::regex empty_or_comment_regex("(^\\s*$|^\\s*#)");
+    if (std::regex_search(begin, end, what, empty_or_comment_regex)) {
       continue;
     }
 
@@ -178,18 +179,46 @@ MessageSchema::Ptr BuildMessageSchema(const std::string& topic_name, const std::
   };   // end of recursiveTreeCreator
 
   // build root and start recursion
-  auto root_field = new ROSField(schema->root_msg->type(), topic_name);
-  schema->field_tree.root()->setValue(root_field);
+  schema->root_field = std::make_unique<ROSField>(schema->root_msg->type(), topic_name);
+  schema->field_tree.root()->setValue(schema->root_field.get());
 
   recursiveTreeCreator(schema->root_msg, schema->field_tree.root());
+
+  CacheFieldTreePaths(schema->field_tree);
 
   return schema;
 }
 
-void CacheFieldTreePaths(FieldTree& /*tree*/) {
-  // No-op in the vendored build. Upstream uses this to precompute string
-  // buffers used by its optimized walker; the PlotJuggler-side walker in
-  // ros_parser.cpp builds paths on-the-fly via FieldLeaf::toStr.
+static void cachePathsImpl(FieldTreeNode* node, const std::string& parent_path, bool is_root) {
+  const ROSField* field = node->value();
+  std::string path;
+  if (field) {
+    if (is_root) {
+      path = field->name();
+    } else {
+      path.reserve(parent_path.size() + 1 + field->name().size() + 12);
+      path.append(parent_path);
+      path += '/';
+      path += field->name();
+      if (field->isArray()) {
+        size_t num_brackets = field->arrayDimensions().size();
+        if (num_brackets < 2) {
+          num_brackets = 1;
+        }
+        for (size_t b = 0; b < num_brackets; b++) {
+          path += "[]";
+        }
+      }
+    }
+  }
+  node->setCachedPath(path);
+  for (auto& child : node->children()) {
+    cachePathsImpl(&child, path, false);
+  }
+}
+
+void CacheFieldTreePaths(FieldTree& tree) {
+  cachePathsImpl(tree.root(), "", true);
 }
 
 }  // namespace RosMsgParser

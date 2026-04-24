@@ -21,9 +21,9 @@
  *   SOFTWARE.
  */
 
-#ifndef ROS_INTROSPECTION_ROSMESSAGE_H
-#define ROS_INTROSPECTION_ROSMESSAGE_H
+#pragma once
 
+#include <memory>
 #include <unordered_map>
 
 #include "rosx_introspection/idl_types.hpp"
@@ -108,5 +108,3 @@ MessageSchema::Ptr BuildMessageSchema(const std::string& topic_name, const std::
 void CacheFieldTreePaths(FieldTree& tree);
 
 }  // namespace RosMsgParser
-
-#endif

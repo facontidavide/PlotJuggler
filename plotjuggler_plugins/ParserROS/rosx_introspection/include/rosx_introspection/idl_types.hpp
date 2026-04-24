@@ -12,6 +12,11 @@ namespace RosMsgParser {
 struct EnumValue {
   std::string name;
   int32_t value = 0;
+  std::optional<int32_t> dds_compat_value;
+
+  int32_t ddsCompatValue() const {
+    return dds_compat_value.value_or(value);
+  }
 };
 
 struct EnumDefinition {

@@ -19,6 +19,7 @@ add_library(rosx_introspection STATIC
     src/deserializer.cpp
     src/serializer.cpp
     src/idl_parser.cpp
+    src/flat_message_writer.cpp
     )
 
 set_target_properties(rosx_introspection PROPERTIES POSITION_INDEPENDENT_CODE ON)

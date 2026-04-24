@@ -25,108 +25,161 @@
 
 namespace RosMsgParser {
 
-FieldsVector::FieldsVector(const FieldLeaf& leaf) {
-  auto node = leaf.node;
-  while (node && node->value()) {
-    fields.push_back(node->value());
-    node = node->parent();
+// Helper: fill bracket placeholders in a cached path template using segment memcpy.
+static size_t fillBrackets(
+    char* buf, const char* tmpl, size_t tmpl_size, const uint16_t* offsets, uint8_t num_brackets,
+    const SmallVector<uint16_t, 4>& index_array) {
+  size_t out_off = 0;
+  size_t src_off = 0;
+
+  for (uint8_t i = 0; i < num_brackets; i++) {
+    size_t seg_len = offsets[i] - src_off;
+    std::memcpy(buf + out_off, tmpl + src_off, seg_len);
+    out_off += seg_len;
+
+    buf[out_off++] = '[';
+    if (i < index_array.size()) {
+      out_off += print_number(buf + out_off, index_array[i]);
+    }
+    buf[out_off++] = ']';
+    src_off = offsets[i] + 2;
   }
-  std::reverse(fields.begin(), fields.end());
-  index_array = leaf.index_array;
+
+  size_t tail_len = tmpl_size - src_off;
+  if (tail_len > 0) {
+    std::memcpy(buf + out_off, tmpl + src_off, tail_len);
+    out_off += tail_len;
+  }
+
+  return out_off;
 }
 
-void FieldsVector::toStr(std::string& out) const {
-  size_t total_size = 0;
-  for (const ROSField* field : fields) {
-    total_size += field->name().size() + 1;
-    if (field->isArray()) {
-      total_size += (2 + 4);  // super conservative (9999)
-    }
+template <typename KeySuffixes>
+static size_t keySuffixBytes(const KeySuffixes& key_suffixes) {
+  size_t total = 0;
+  for (const auto& entry : key_suffixes) {
+    total += entry.suffix.len;
+  }
+  return total;
+}
+
+template <typename KeySuffixes>
+static void renderPathByDepth(
+    const FieldTreeNode* node, const SmallVector<uint16_t, 4>& index_array,
+    const SmallVector<uint16_t, 4>& index_depth_array, const KeySuffixes& key_suffixes,
+    const KeySuffix& legacy_key_suffix, std::string& out) {
+  SmallVector<const FieldTreeNode*, 8> nodes;
+  for (const auto* current = node; current != nullptr; current = current->parent()) {
+    nodes.push_back(current);
   }
 
-  out.resize(total_size);
-  char* buffer = static_cast<char*>(&out[0]);
-
-  size_t array_count = 0;
-  size_t offset = 0;
-
-  for (const ROSField* field : fields) {
-    const std::string& str = field->name();
-    bool is_root = (field == fields.front());
-    if (!is_root) {
-      buffer[offset++] = '/';
+  size_t reserve_size = nodes.size() > 1 ? nodes.size() - 1 : 0;
+  for (const auto* current : nodes) {
+    if (current->value()) {
+      reserve_size += current->value()->name().size();
     }
-    std::memcpy(&buffer[offset], str.data(), str.size());
-    offset += str.size();
+  }
+  reserve_size += index_array.size() * 5 + keySuffixBytes(key_suffixes) + legacy_key_suffix.len;
 
-    if (!is_root && field->isArray()) {
-      buffer[offset++] = '[';
-      if (array_count < index_array.size()) {
-        offset += print_number(&buffer[offset], index_array[array_count++]);
+  out.clear();
+  out.reserve(reserve_size);
+
+  for (size_t reverse_index = nodes.size(); reverse_index > 0; reverse_index--) {
+    const auto* current = nodes[reverse_index - 1];
+    const auto depth = static_cast<uint16_t>(nodes.size() - reverse_index);
+
+    if (depth > 0) {
+      out.push_back('/');
+    }
+    if (const auto* field = current->value()) {
+      out += field->name();
+    }
+
+    for (size_t i = 0; i < index_array.size(); i++) {
+      if (i >= index_depth_array.size() || index_depth_array[i] != depth) {
+        continue;
       }
-      buffer[offset++] = ']';
+      char num_buf[16];
+      out.push_back('[');
+      out.append(num_buf, print_number(num_buf, index_array[i]));
+      out.push_back(']');
+    }
+
+    for (const auto& entry : key_suffixes) {
+      if (entry.depth == depth && !entry.suffix.empty()) {
+        out.append(entry.suffix.data, entry.suffix.len);
+      }
     }
   }
-  buffer[offset] = '\0';
+
+  if (!legacy_key_suffix.empty()) {
+    out.append(legacy_key_suffix.data, legacy_key_suffix.len);
+  }
+}
+
+static void renderCachedPath(
+    const FieldTreeNode* node, const SmallVector<uint16_t, 4>& index_array, const KeySuffix& key_suffix,
+    std::string& out) {
+  if (!node) {
+    out.clear();
+    return;
+  }
+  const auto& tmpl = node->cachedPath();
+  const uint8_t num_brackets = node->bracketCount();
+
+  if (num_brackets == 0 && key_suffix.empty()) {
+    out = tmpl;
+    return;
+  }
+
+  size_t extra = num_brackets * 5 + key_suffix.len;
+  out.resize(tmpl.size() + extra);
+
+  size_t offset = fillBrackets(out.data(), tmpl.data(), tmpl.size(), node->bracketOffsets(), num_brackets, index_array);
+
+  if (!key_suffix.empty()) {
+    std::memcpy(out.data() + offset, key_suffix.data, key_suffix.len);
+    offset += key_suffix.len;
+  }
+
   out.resize(offset);
 }
 
-// void CreateStringFromTreeLeaf(const FieldTreeLeaf &leaf, bool skip_root, std::string&
-// out)
-//{
-//   const FieldTreeNode* leaf_node = leaf.node_ptr;
-//   if( !leaf_node ){
-//       out.clear();
-//       return ;
-//   }
+// FieldLeaf::toStr — renders array indices and key suffixes at their path segment depth.
+void FieldLeaf::toStr(std::string& out) const {
+  if (!node) {
+    out.clear();
+    return;
+  }
 
-//  SmallVector<const std::string*, 16> strings_chain;
+  if (index_depth_array.size() != index_array.size()) {
+    renderCachedPath(node, index_array, key_suffix, out);
+    return;
+  }
 
-//  size_t total_size = 0;
+  renderPathByDepth(node, index_array, index_depth_array, key_suffixes, key_suffix, out);
+}
 
-//  while(leaf_node)
-//  {
-//    const auto& str = leaf_node->value()->name();
-//    leaf_node = leaf_node->parent();
-//    if( !( leaf_node == nullptr && skip_root) )
-//    {
-//        strings_chain.emplace_back( &str );
-//        const size_t S = str.size();
-//        if( S == 1 && str[0] == '#' )
-//        {
-//            total_size += 5; // super conservative
-//        }
-//        else{
-//          total_size += S+1;
-//        }
-//    }
-//  };
+// FieldsVector — kept for backward compatibility
+FieldsVector::FieldsVector(const FieldLeaf& leaf) : _node(leaf.node) {
+  index_array = leaf.index_array;
+  index_depth_array = leaf.index_depth_array;
+  key_suffixes = leaf.key_suffixes;
+  key_suffix = leaf.key_suffix;
+}
 
-//  out.resize(total_size);
-//  char* buffer = &out[0];
+void FieldsVector::toStr(std::string& out) const {
+  if (!_node) {
+    out.clear();
+    return;
+  }
 
-//  std::reverse(strings_chain.begin(),  strings_chain.end() );
+  if (index_depth_array.size() != index_array.size()) {
+    renderCachedPath(_node, index_array, key_suffix, out);
+    return;
+  }
 
-//  size_t array_count = 0;
-//  size_t offset = 0;
-
-//  for( const auto& str: strings_chain)
-//  {
-//    const size_t S = str->size();
-//    if( S == 1 && (*str)[0] == '#' )
-//    {
-//      buffer[offset++] = '.';
-//      offset += print_number(&buffer[offset], leaf.index_array[ array_count++ ] );
-//    }
-//    else{
-//      if( str !=  strings_chain.front() ){
-//        buffer[offset++] = '/';
-//      }
-//      std::memcpy( &buffer[offset], str->data(), S );
-//      offset += S;
-//    }
-//  }
-//  out.resize(offset);
-//}
+  renderPathByDepth(_node, index_array, index_depth_array, key_suffixes, key_suffix, out);
+}
 
 }  // namespace RosMsgParser

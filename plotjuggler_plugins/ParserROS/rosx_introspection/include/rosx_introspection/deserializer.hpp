@@ -1,5 +1,4 @@
-#ifndef DESERIALIZER_HPP
-#define DESERIALIZER_HPP
+#pragma once
 
 // API adapted to FastCDR
 
@@ -40,6 +39,12 @@ class Deserializer {
 
   [[nodiscard]] virtual size_t bytesLeft() const {
     return _buffer.size() - (getCurrentPtr() - _buffer.data());
+  }
+
+  /// Check if an optional member is present in the CDR stream.
+  /// Default: always present (for ROS messages which don't have optional fields).
+  [[nodiscard]] virtual bool hasOptionalMember() {
+    return true;
   }
 
   // reset the pointer to beginning of buffer
@@ -113,6 +118,10 @@ class NanoCDR_Deserializer : public Deserializer {
     return true;
   }
 
+  bool hasOptionalMember() override {
+    return _cdr_decoder->hasMember();
+  }
+
  protected:
   std::optional<nanocdr::Decoder> _cdr_decoder;
 };
@@ -120,5 +129,3 @@ class NanoCDR_Deserializer : public Deserializer {
 using ROS2_Deserializer = NanoCDR_Deserializer;
 
 }  // namespace RosMsgParser
-
-#endif  // DESERIALIZER_HPP
