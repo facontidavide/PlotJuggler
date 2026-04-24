@@ -59,6 +59,13 @@ protected:
 
   void saveSettings();
 
+  // Rebuild _importer against _source_tree and re-import every file currently
+  // in _loaded_files. If last_error is non-null, it is set to the first
+  // compiler error observed (empty string if none).
+  void rebuildImporter(QString* last_error = nullptr);
+
+  void refreshLoadedFilesList();
+
   void rebuildTypeComboBox();
 
   // Parse a qualified type string "<basename>::<type>" or unqualified "<type>";

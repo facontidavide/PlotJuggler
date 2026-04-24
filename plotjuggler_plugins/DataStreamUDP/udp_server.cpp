@@ -210,11 +210,6 @@ bool UDP_Server::start(QStringList*)
   _dispatch_little_endian = (dialog.ui->comboBoxEndian->currentIndex() == 0);
   _dispatch_display_hex = (dialog.ui->comboBoxDisplay->currentIndex() == 1);
 
-  if (!_dispatch_enabled)
-  {
-    _parsers[""] = _parser_creator->createParser({}, {}, {}, dataMap());
-  }
-
   // save back to service
   settings.setValue("UDP_Server::protocol", protocol);
   settings.setValue("UDP_Server::address", address_str);
