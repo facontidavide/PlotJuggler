@@ -7,8 +7,6 @@
 #include <QListWidget>
 #include <QMessageBox>
 #include <QSettings>
-#include <QStringListModel>
-#include <QTableWidgetItem>
 
 #include "fmt/format.h"
 #include "PlotJuggler/svg_util.h"
@@ -85,43 +83,56 @@ bool ParserFactoryProtobuf::importFile(const QString& filename)
   _source_tree.MapPath("", info.file_basename.toStdString());
   _source_tree.MapPath("", fileinfo.absolutePath().toStdString());
 
-  // Rebuild a fresh Importer holding every currently-loaded file plus this one;
-  // DescriptorPool doesn't support removal, so we pay this cost on every add/remove.
+  const QString basename = info.file_basename;
+  _loaded_files[basename] = std::move(info);
+
+  QString last_error;
+  rebuildImporter(&last_error);
+
+  if (!_loaded_files[basename].file_descriptor)
+  {
+    _loaded_files.erase(basename);
+    rebuildImporter();
+    QMessageBox::warning(nullptr, "Error parsing Proto file",
+                         last_error.isEmpty() ? tr("Failed to import %1").arg(filename) :
+                                                last_error,
+                         QMessageBox::Cancel);
+    return false;
+  }
+
+  refreshLoadedFilesList();
+  rebuildTypeComboBox();
+  return true;
+}
+
+void ParserFactoryProtobuf::rebuildImporter(QString* last_error)
+{
+  // DescriptorPool has no removal; every add/remove rebuilds from scratch.
   FileErrorCollector error_collector;
   _importer.reset(new gp::compiler::Importer(&_source_tree, &error_collector));
 
-  for (auto& [basename, existing] : _loaded_files)
+  for (auto& [basename, fi] : _loaded_files)
   {
-    existing.file_descriptor = _importer->Import(existing.file_basename.toStdString());
-    existing.descriptors.clear();
-    if (existing.file_descriptor)
+    fi.file_descriptor = _importer->Import(fi.file_basename.toStdString());
+    fi.descriptors.clear();
+    if (fi.file_descriptor)
     {
-      for (int i = 0; i < existing.file_descriptor->message_type_count(); i++)
+      for (int i = 0; i < fi.file_descriptor->message_type_count(); i++)
       {
-        const auto* d = existing.file_descriptor->message_type(i);
-        existing.descriptors.insert({ QString::fromStdString(std::string(d->name())), d });
+        const auto* d = fi.file_descriptor->message_type(i);
+        fi.descriptors.insert({ QString::fromStdString(std::string(d->name())), d });
       }
     }
   }
 
-  info.file_descriptor = _importer->Import(info.file_basename.toStdString());
-  if (!info.file_descriptor)
+  if (last_error)
   {
-    if (!error_collector.errors().empty())
-    {
-      QMessageBox::warning(nullptr, "Error parsing Proto file", error_collector.errors().front(),
-                           QMessageBox::Cancel);
-    }
-    return false;
+    *last_error = error_collector.errors().empty() ? QString() : error_collector.errors().front();
   }
-  for (int i = 0; i < info.file_descriptor->message_type_count(); i++)
-  {
-    const auto* d = info.file_descriptor->message_type(i);
-    info.descriptors.insert({ QString::fromStdString(std::string(d->name())), d });
-  }
+}
 
-  _loaded_files[info.file_basename] = std::move(info);
-
+void ParserFactoryProtobuf::refreshLoadedFilesList()
+{
   ui->listLoadedFiles->blockSignals(true);
   ui->listLoadedFiles->clear();
   for (const auto& [basename, fi] : _loaded_files)
@@ -129,9 +140,6 @@ bool ParserFactoryProtobuf::importFile(const QString& filename)
     ui->listLoadedFiles->addItem(fi.file_basename);
   }
   ui->listLoadedFiles->blockSignals(false);
-
-  rebuildTypeComboBox();
-  return true;
 }
 
 void ParserFactoryProtobuf::rebuildTypeComboBox()
@@ -248,8 +256,6 @@ void ParserFactoryProtobuf::loadSettings()
 
   // Each entry is "topic||qualified_type".
   auto saved_mappings = settings.value("ProtobufParserCreator.topicMappings").toStringList();
-
-  settings.remove("ProtobufParserCreator.seenTopics");
 
   ui->tableTopicMapping->blockSignals(true);
   ui->tableTopicMapping->setRowCount(0);
@@ -430,6 +436,9 @@ void ParserFactoryProtobuf::onRemoveInclude()
     selected.pop_front();
   }
   saveSettings();
+  // Re-import every loaded .proto under the reduced include set so files that
+  // depended on the removed directory fail fast instead of silently going stale.
+  loadSettings();
 }
 
 void ParserFactoryProtobuf::onRemoveFile()
@@ -445,30 +454,8 @@ void ParserFactoryProtobuf::onRemoveFile()
     _loaded_files.erase(item->text());
   }
 
-  FileErrorCollector error_collector;
-  _importer.reset(new gp::compiler::Importer(&_source_tree, &error_collector));
-  for (auto& [basename, fi] : _loaded_files)
-  {
-    fi.file_descriptor = _importer->Import(fi.file_basename.toStdString());
-    fi.descriptors.clear();
-    if (fi.file_descriptor)
-    {
-      for (int i = 0; i < fi.file_descriptor->message_type_count(); i++)
-      {
-        const auto* d = fi.file_descriptor->message_type(i);
-        fi.descriptors.insert({ QString::fromStdString(std::string(d->name())), d });
-      }
-    }
-  }
-
-  ui->listLoadedFiles->blockSignals(true);
-  ui->listLoadedFiles->clear();
-  for (const auto& [basename, fi] : _loaded_files)
-  {
-    ui->listLoadedFiles->addItem(fi.file_basename);
-  }
-  ui->listLoadedFiles->blockSignals(false);
-
+  rebuildImporter();
+  refreshLoadedFilesList();
   ui->protoPreview->clear();
   rebuildTypeComboBox();
   saveSettings();
@@ -500,28 +487,24 @@ void ParserFactoryProtobuf::addMappingRow(const QString& topic, const QString& s
   int row = ui->tableTopicMapping->rowCount();
   ui->tableTopicMapping->insertRow(row);
 
-  // Topic completer: live suggestions from sibling QListWidgets only.
   auto* topic_edit = new QLineEdit();
   topic_edit->setPlaceholderText(tr("Type a topic or type ID"));
+
+  // Seed completer from topics already present in other rows of this table.
+  // Snapshot-at-creation is enough: users typically fill rows top-to-bottom,
+  // and the completer's usefulness is mostly re-typing an existing topic.
   QStringList suggestions;
-  QWidget* top = _widget;
-  while (top->parentWidget())
+  for (int r = 0; r < row; r++)
   {
-    top = top->parentWidget();
-  }
-  for (QListWidget* lw : top->findChildren<QListWidget*>())
-  {
-    if (lw == ui->listLoadedFiles || lw == ui->listWidget)
+    auto* other = qobject_cast<QLineEdit*>(ui->tableTopicMapping->cellWidget(r, 0));
+    if (!other)
     {
       continue;
     }
-    for (int i = 0; i < lw->count(); i++)
+    const QString text = other->text();
+    if (!text.isEmpty() && !suggestions.contains(text))
     {
-      QString item_text = lw->item(i)->text();
-      if (!item_text.isEmpty() && !suggestions.contains(item_text))
-      {
-        suggestions << item_text;
-      }
+      suggestions << text;
     }
   }
   auto* completer = new QCompleter(suggestions, topic_edit);
@@ -529,11 +512,13 @@ void ParserFactoryProtobuf::addMappingRow(const QString& topic, const QString& s
   completer->setFilterMode(Qt::MatchContains);
   completer->setCompletionMode(QCompleter::PopupCompletion);
   topic_edit->setCompleter(completer);
+
   if (!topic.isEmpty())
   {
     topic_edit->setText(topic);
   }
-  connect(topic_edit, &QLineEdit::textChanged, this, &ParserFactoryProtobuf::onTopicMappingChanged);
+  connect(topic_edit, &QLineEdit::editingFinished, this,
+          &ParserFactoryProtobuf::onTopicMappingChanged);
   ui->tableTopicMapping->setCellWidget(row, 0, topic_edit);
 
   auto* type_combo = new QComboBox();
