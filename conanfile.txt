@@ -4,9 +4,10 @@
  fmt/11.2.0
  zeromq/4.3.5
  arrow/21.0.0
+ grpc/1.54.3
  lz4/1.9.4
  zstd/1.5.7
- abseil/20250814.0
+ abseil/20230802.1
 
  [options]
  zeromq*:shared=False
@@ -19,6 +20,9 @@
  arrow/*:with_zlib=True
  arrow/*:with_zstd=True
  arrow/*:with_protobuf=True
+ arrow/*:with_flight_rpc=True
+ arrow/*:with_re2=True
+ arrow/*:with_grpc=True
 
  [generators]
  CMakeDeps
