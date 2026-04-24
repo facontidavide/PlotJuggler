@@ -21,9 +21,9 @@
  *   SOFTWARE.
  */
 
-#ifndef ROS_INTROSPECTION_FieldTreeLeaf_H
-#define ROS_INTROSPECTION_FieldTreeLeaf_H
+#pragma once
 
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <vector>
@@ -52,45 +52,53 @@ inline int print_number(char* buffer, uint16_t value) {
     buffer[1] = DIGITS[value + 1];
     return 2;
   } else {
-    return sprintf(buffer, "%d", value);
+    return snprintf(buffer, 16, "%d", value);
   }
 }
 
 namespace RosMsgParser {
+
+/// Fixed-size buffer for @key suffixes (e.g., "[ArmID:3]").
+/// Avoids heap allocation — typical key suffixes are < 48 chars.
+struct KeySuffix {
+  char data[48] = {};
+  uint8_t len = 0;
+
+  void clear() {
+    len = 0;
+  }
+
+  bool empty() const {
+    return len == 0;
+  }
+
+  void assign(const char* src, size_t n) {
+    len = static_cast<uint8_t>(n < sizeof(data) ? n : sizeof(data) - 1);
+    std::memcpy(data, src, len);
+    data[len] = '\0';
+  }
+};
+
+struct KeySuffixAtDepth {
+  uint16_t depth = 0;
+  KeySuffix suffix;
+};
 
 /**
  * @brief The FieldTreeLeaf is, as the name suggests, a leaf (terminal node)
  * of a StringTree.
  * It provides the pointer to the node and a list of numbers that represent
  * the index that corresponds to the placeholder "#".
- *
- * For example if you want to represent the string
- *
- *      foo/2/bar/3/hello/world
- *
- * This would correspond to a branch of the tree (from root to the leaf) equal to these 6
- * nodes, where "foo" is the root and "world" is the leaf
- *
- * foo -> # -> bar -> # ->hello -> world
- *
- * array_size will be equal to two and index_array will contain these numbers {2,3}
- *
  */
 struct FieldLeaf {
-  const FieldTreeNode* node;
+  const FieldTreeNode* node = nullptr;
   SmallVector<uint16_t, 4> index_array;
-};
+  SmallVector<uint16_t, 4> index_depth_array;
+  SmallVector<KeySuffixAtDepth, 4> key_suffixes;
+  KeySuffix key_suffix;
 
-struct FieldsVector {
-  FieldsVector() = default;
-
-  FieldsVector(const FieldLeaf& leaf);
-
-  SmallVector<const ROSField*, 8> fields;
-  SmallVector<uint16_t, 4> index_array;
-
-  /// Utility functions to print the entire branch
-  void toStr(std::string& destination) const;
+  /// Convert to human-readable path string (e.g., "topic[ArmID:3]/field[J1]/value")
+  void toStr(std::string& out) const;
 
   std::string toStdString() const {
     std::string out;
@@ -99,7 +107,37 @@ struct FieldsVector {
   }
 };
 
+// Keep FieldsVector for backward compatibility
+struct FieldsVector {
+  FieldsVector() = default;
+
+  FieldsVector(const FieldLeaf& leaf);
+
+  SmallVector<uint16_t, 4> index_array;
+  SmallVector<uint16_t, 4> index_depth_array;
+  SmallVector<KeySuffixAtDepth, 4> key_suffixes;
+  KeySuffix key_suffix;
+
+  void toStr(std::string& destination) const;
+
+  std::string toStdString() const {
+    std::string out;
+    toStr(out);
+    return out;
+  }
+
+ private:
+  const FieldTreeNode* _node = nullptr;
+};
+
 //---------------------------------
+
+inline std::ostream& operator<<(std::ostream& os, const FieldLeaf& leaf) {
+  std::string dest;
+  leaf.toStr(dest);
+  os << dest;
+  return os;
+}
 
 inline std::ostream& operator<<(std::ostream& os, const FieldsVector& leaf) {
   std::string dest;
@@ -109,5 +147,3 @@ inline std::ostream& operator<<(std::ostream& os, const FieldsVector& leaf) {
 }
 
 }  // namespace RosMsgParser
-
-#endif  // ROSTYPE_H

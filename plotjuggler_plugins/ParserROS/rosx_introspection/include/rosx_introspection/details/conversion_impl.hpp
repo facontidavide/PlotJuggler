@@ -32,8 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  * *******************************************************************/
 
-#ifndef VARIANT_IMPL_H
-#define VARIANT_IMPL_H
+#pragma once
 
 #include <cmath>
 #include <iostream>
@@ -277,5 +276,3 @@ inline void convert_impl(const SRC& from, DST& target) {
 }  // end namespace details
 
 }  // namespace RosMsgParser
-
-#endif  // VARIANT_H

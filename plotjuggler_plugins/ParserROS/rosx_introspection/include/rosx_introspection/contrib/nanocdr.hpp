@@ -22,6 +22,8 @@
 #include <type_traits>
 #include <vector>
 
+#include "rosx_introspection/contrib/SmallVector.h"
+
 namespace nanocdr
 {
 
@@ -205,7 +207,45 @@ public:
   // specializations for std::string
   void decode(std::string& out);
 
-  // Move forwardthe pointer of the buffer
+  /// Check if an optional member is present in the CDR stream.
+  /// Consumes the presence indicator from the buffer.
+  bool hasMember()
+  {
+    if (header_.version == CdrVersion::XCDRv1 || header_.version == CdrVersion::DDS_CDR)
+    {
+      // XCDRv1/DDS_CDR: 2 bytes member ID + 2 bytes size.
+      // The 4-byte PL_CDR member header itself must be 4-byte aligned relative
+      // to the CDR origin (a uint16 decode would only align to 2).
+      const size_t pad = alignment(4);
+      if (pad > 0)
+      {
+        buffer_.trim_front(pad);
+      }
+      uint16_t member_id = 0;
+      uint16_t size = 0;
+      decode(member_id);
+      decode(size);
+      if (size == 0)
+      {
+        return false;
+      }
+      if (buffer_.size() < size)
+      {
+        throw std::runtime_error("Decode: optional member size exceeds remaining buffer");
+      }
+      member_scopes_.push_back(MemberScope{buffer_.data(), buffer_.data() + size});
+      return true;
+    }
+    else
+    {
+      // XCDR2 PLAIN_CDR2: 1 byte boolean is_present
+      bool is_present = false;
+      decode(is_present);
+      return is_present;
+    }
+  }
+
+  // Move forward the pointer of the buffer
   void jump(size_t offset)
   {
     buffer_.trim_front(offset);
@@ -222,10 +262,24 @@ private:
   const uint8_t* origin_ = nullptr;
   CdrHeader header_;
 
-  size_t alignment(size_t data_size) const
+  struct MemberScope
   {
+    const uint8_t* origin = nullptr;
+    const uint8_t* end = nullptr;
+  };
+
+  llvm_vecsmall::SmallVector<MemberScope, 8> member_scopes_;
+
+  size_t alignment(size_t data_size)
+  {
+    while (!member_scopes_.empty() && buffer_.data() >= member_scopes_.back().end)
+    {
+      member_scopes_.pop_back();
+    }
+
     data_size = (data_size == 8) ? align64_ : data_size;
-    return (data_size - ((buffer_.data() - origin_) % data_size)) & (data_size - 1);
+    const auto* origin = member_scopes_.empty() ? origin_ : member_scopes_.back().origin;
+    return (data_size - ((buffer_.data() - origin) % data_size)) & (data_size - 1);
   }
   size_t align64_ = 8;
 };

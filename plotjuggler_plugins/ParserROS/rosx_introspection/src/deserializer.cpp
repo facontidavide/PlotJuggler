@@ -167,10 +167,6 @@ uint32_t NanoCDR_Deserializer::deserializeUInt32() {
 }
 
 Span<const uint8_t> NanoCDR_Deserializer::deserializeByteSequence() {
-  //  thread_local std::vector<uint8_t> tmp;
-  //  _cdr->deserialize(tmp);
-  //  return {tmp.data(), tmp.size()};
-
   uint32_t seqLength = 0;
   _cdr_decoder->decode(seqLength);
 
@@ -192,11 +188,6 @@ void NanoCDR_Deserializer::jump(size_t bytes) {
 }
 
 void NanoCDR_Deserializer::reset() {
-  if (_buffer.data() == nullptr || _buffer.size() < 4) {
-    throw std::runtime_error(
-        "NanoCDR_Deserializer: buffer is null or too small for CDR "
-        "header");
-  }
   nanocdr::ConstBuffer nano_buffer(_buffer.data(), _buffer.size());
   _cdr_decoder.emplace(nano_buffer);
 }

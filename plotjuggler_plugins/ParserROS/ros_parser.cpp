@@ -133,16 +133,17 @@ bool ParserROS::parseMessage(const PJ::MessageRef serialized_msg, double& timest
 
   std::string series_name;
 
-  for (const auto& [key, str] : _flat_msg.name)
-  {
-    key.toStr(series_name);
-    StringSeries& data = getStringSeries(series_name);
-    data.pushBack({ timestamp, str });
-  }
-
   for (const auto& [key, value] : _flat_msg.value)
   {
     key.toStr(series_name);
+
+    if (value.getTypeID() == RosMsgParser::BuiltinType::STRING)
+    {
+      StringSeries& sdata = getStringSeries(series_name);
+      sdata.pushBack({ timestamp, value.extract<std::string>() });
+      continue;
+    }
+
     PlotData& data = getSeries(series_name);
 
     if (!_strict_truncation_check)

@@ -1,8 +1,10 @@
 #pragma once
 
+#include <rclcpp/version.h>
+
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/typesupport_helpers.hpp>
 #include <rosbag2_cpp/types/introspection_message.hpp>
-#include <rosbag2_cpp/typesupport_helpers.hpp>
 #include <rosidl_typesupport_cpp/identifier.hpp>
 #include <rosidl_typesupport_introspection_cpp/identifier.hpp>
 
@@ -51,8 +53,15 @@ std::string GetMessageDefinition(const std::string& datatype);
 template <typename T>
 inline std::vector<uint8_t> BuildMessageBuffer(const T& msg, const std::string& topic_type) {
   const auto& ts_identifier = rosidl_typesupport_cpp::typesupport_identifier;
-  auto ts_library = rosbag2_cpp::get_typesupport_library(topic_type, ts_identifier);
-  auto typesupport = rosbag2_cpp::get_typesupport_handle(topic_type, ts_identifier, ts_library);
+  auto ts_library = rclcpp::get_typesupport_library(topic_type, ts_identifier);
+  if (!ts_library) {
+    throw std::runtime_error("Failed to load typesupport library");
+  }
+#if RCLCPP_VERSION_GTE(25, 0, 0)
+  auto typesupport = rclcpp::get_message_typesupport_handle(topic_type, ts_identifier, *ts_library);
+#else
+  auto typesupport = rclcpp::get_typesupport_handle(topic_type, ts_identifier, *ts_library);
+#endif
 
   RmwInterface rmw;
   auto serialized_msg = rmw.serialize_message(msg, typesupport);
@@ -66,8 +75,15 @@ inline T BufferToMessage(const void* bufferPtr, size_t bufferSize) {
   // get the type name of the ROS message with traits
   const std::string topic_type = rosidl_generator_traits::name<T>();
   const auto& ts_identifier = rosidl_typesupport_cpp::typesupport_identifier;
-  auto ts_library = rosbag2_cpp::get_typesupport_library(topic_type, ts_identifier);
-  auto type_support = rosbag2_cpp::get_typesupport_handle(topic_type, ts_identifier, ts_library);
+  auto ts_library = rclcpp::get_typesupport_library(topic_type, ts_identifier);
+  if (!ts_library) {
+    throw std::runtime_error("Failed to load typesupport library");
+  }
+#if RCLCPP_VERSION_GTE(25, 0, 0)
+  auto type_support = rclcpp::get_message_typesupport_handle(topic_type, ts_identifier, *ts_library);
+#else
+  auto type_support = rclcpp::get_typesupport_handle(topic_type, ts_identifier, *ts_library);
+#endif
 
   rmw_serialized_message_t serialized_msg;
   serialized_msg.buffer_capacity = bufferSize;
@@ -75,7 +91,10 @@ inline T BufferToMessage(const void* bufferPtr, size_t bufferSize) {
   serialized_msg.buffer = const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(bufferPtr));
 
   T message;
-  auto res = rmw_deserialize(&serialized_msg, type_support, &message);
+  auto ret = rmw_deserialize(&serialized_msg, type_support, &message);
+  if (ret != RMW_RET_OK) {
+    throw std::runtime_error("rmw_deserialize failed");
+  }
   return message;
 }
 

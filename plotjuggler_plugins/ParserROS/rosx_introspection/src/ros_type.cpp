@@ -27,48 +27,50 @@
 
 namespace RosMsgParser {
 
-ROSType::ROSType(const std::string& name) : _base_name(name) {
-  int pos = -1;
-  for (size_t i = 0; i < name.size(); i++) {
-    if (name[i] == '/') {
-      pos = i;
-      break;
-    }
+namespace {
+// Locate the package/message boundary in a type name.
+// Accepts both ROS-style "pkg/Type" and IDL-style "pkg::Type" (and nested
+// modules like "a::b::Type"). IDL takes priority: if "::" is present the last
+// occurrence is the separator, otherwise the first "/" is used.
+// Returns {pkg_len, msg_start}; when no separator is found both are 0 and the
+// whole name is treated as the message name.
+std::pair<size_t, size_t> splitTypeName(const std::string& name) {
+  auto colon = name.rfind("::");
+  if (colon != std::string::npos) {
+    return {colon, colon + 2};
   }
+  auto slash = name.find('/');
+  if (slash != std::string::npos) {
+    return {slash, slash + 1};
+  }
+  return {0, 0};
+}
+}  // namespace
 
-  if (pos == -1) {
-    _msg_name = _base_name;
-  } else {
-    _pkg_name = std::string_view(_base_name.data(), pos);
-    pos++;
-    _msg_name = std::string_view(_base_name.data() + pos, _base_name.size() - pos);
-  }
+ROSType::ROSType(const std::string& name) : _base_name(name) {
+  auto [pkg_len, msg_start] = splitTypeName(_base_name);
+  _pkg_name = std::string_view(_base_name.data(), pkg_len);
+  _msg_name = std::string_view(_base_name.data() + msg_start, _base_name.size() - msg_start);
 
   _id = toBuiltinType(_msg_name);
   _hash = std::hash<std::string>{}(_base_name);
 }
 
 ROSType& ROSType::operator=(const ROSType& other) {
-  int pos = other._pkg_name.size();
   _base_name = other._base_name;
-  _pkg_name = std::string_view(_base_name.data(), pos);
-  if (pos > 0) {
-    pos++;
-  }
-  _msg_name = std::string_view(_base_name.data() + pos, _base_name.size() - pos);
+  auto [pkg_len, msg_start] = splitTypeName(_base_name);
+  _pkg_name = std::string_view(_base_name.data(), pkg_len);
+  _msg_name = std::string_view(_base_name.data() + msg_start, _base_name.size() - msg_start);
   _id = other._id;
   _hash = other._hash;
   return *this;
 }
 
 ROSType& ROSType::operator=(ROSType&& other) {
-  int pos = other._pkg_name.size();
   _base_name = std::move(other._base_name);
-  _pkg_name = std::string_view(_base_name.data(), pos);
-  if (pos > 0) {
-    pos++;
-  }
-  _msg_name = std::string_view(_base_name.data() + pos, _base_name.size() - pos);
+  auto [pkg_len, msg_start] = splitTypeName(_base_name);
+  _pkg_name = std::string_view(_base_name.data(), pkg_len);
+  _msg_name = std::string_view(_base_name.data() + msg_start, _base_name.size() - msg_start);
   _id = other._id;
   _hash = other._hash;
   return *this;

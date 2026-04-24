@@ -21,8 +21,7 @@
  *   SOFTWARE.
  */
 
-#ifndef ROS_BUILTIN_TYPES_HPP
-#define ROS_BUILTIN_TYPES_HPP
+#pragma once
 
 #include <stdint.h>
 
@@ -62,7 +61,7 @@ enum BuiltinType {
 
 //---------------------------------------------------------
 
-inline int builtinSize(const BuiltinType c) {
+constexpr int builtinSize(const BuiltinType c) {
   switch (c) {
     case BOOL:
     case BYTE:
@@ -90,7 +89,7 @@ inline int builtinSize(const BuiltinType c) {
   throw std::runtime_error("unsupported builtin type value");
 }
 
-inline const char* toStr(const BuiltinType& c) {
+constexpr const char* toStr(const BuiltinType& c) {
   switch (c) {
     case BOOL:
       return "BOOL";
@@ -213,5 +212,3 @@ inline BuiltinType getType<RosMsgParser::Time>() {
 }
 
 }  // namespace RosMsgParser
-
-#endif  // ROS_BUILTIN_TYPES_HPP

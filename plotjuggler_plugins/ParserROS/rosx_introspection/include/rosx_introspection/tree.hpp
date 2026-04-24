@@ -32,8 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  * *******************************************************************/
 
-#ifndef STRINGTREE_H
-#define STRINGTREE_H
+#pragma once
 
 #include <deque>
 #include <iostream>
@@ -88,10 +87,47 @@ class TreeNode {
     return _children.empty();
   }
 
+  uint32_t nodeId() const {
+    return _node_id;
+  }
+  void setNodeId(uint32_t id) {
+    _node_id = id;
+  }
+
+  const std::string& cachedPath() const {
+    return _cached_path;
+  }
+
+  const uint16_t* bracketOffsets() const {
+    return _bracket_offsets;
+  }
+  uint8_t bracketCount() const {
+    return _bracket_count;
+  }
+
+  void setCachedPath(std::string path) {
+    _cached_path = std::move(path);
+    _bracket_count = 0;
+    for (size_t i = 0; i + 1 < _cached_path.size(); i++) {
+      if (_cached_path[i] == '[' && _cached_path[i + 1] == ']') {
+        if (_bracket_count >= max_brackets) {
+          throw std::runtime_error("Cached path exceeds maximum bracket count");
+        }
+        _bracket_offsets[_bracket_count++] = static_cast<uint16_t>(i);
+      }
+    }
+  }
+
  private:
+  static constexpr uint8_t max_brackets = 8;
+
   const TreeNode* _parent = nullptr;
   T _value;
   ChildrenVector _children;
+  uint32_t _node_id = 0;
+  std::string _cached_path;
+  uint16_t _bracket_offsets[max_brackets] = {};
+  uint8_t _bracket_count = 0;
 };
 
 template <typename T>
@@ -221,5 +257,3 @@ inline const TreeNode<T>* Tree<T>::find(const Vect& concatenated_values, bool pa
 }  // namespace details
 
 }  // namespace RosMsgParser
-
-#endif  // STRINGTREE_H
