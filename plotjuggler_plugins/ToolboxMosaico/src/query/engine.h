@@ -187,9 +187,16 @@ private:
     {
       return std::nullopt;
     }
+    // strtod requires a null-terminated input. std::string_view doesn't
+    // guarantee that — calling strtod directly on s.data() would read past
+    // s.size() into neighboring memory, and the end-pointer check would
+    // inconsistently reject legitimate numbers. Copy into a string so the
+    // parse is bounded.
+    const std::string str(s);
     char* end = nullptr;
-    double val = std::strtod(s.data(), &end);
-    if (end == s.data() + s.size())
+    const char* begin = str.c_str();
+    const double val = std::strtod(begin, &end);
+    if (end == begin + str.size())
     {
       return val;
     }
