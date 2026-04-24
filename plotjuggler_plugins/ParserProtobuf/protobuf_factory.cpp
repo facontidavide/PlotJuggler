@@ -1,12 +1,24 @@
 #include "protobuf_factory.h"
 
-#include <QSettings>
+#include <QComboBox>
+#include <QCompleter>
+#include <QHeaderView>
+#include <QLineEdit>
+#include <QListWidget>
 #include <QMessageBox>
+#include <QSettings>
+#include <QStringListModel>
+#include <QTableWidgetItem>
 
 #include "fmt/format.h"
 #include "PlotJuggler/svg_util.h"
 
 namespace gp = google::protobuf;
+
+static QString qualifiedName(const QString& basename, const QString& type_name)
+{
+  return QString("%1::%2").arg(basename, type_name);
+}
 
 ParserFactoryProtobuf::ParserFactoryProtobuf()
 {
@@ -16,6 +28,9 @@ ParserFactoryProtobuf::ParserFactoryProtobuf()
 
   _source_tree.MapPath("", "");
   _source_tree.MapPath("/", "/");
+
+  ui->tableTopicMapping->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+  ui->tableTopicMapping->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
 
   loadSettings();
 
@@ -28,72 +43,175 @@ ParserFactoryProtobuf::ParserFactoryProtobuf()
   connect(ui->pushButtonLoad, &QPushButton::clicked, this, &ParserFactoryProtobuf::onLoadFile);
   connect(ui->pushButtonRemove, &QPushButton::clicked, this,
           &ParserFactoryProtobuf::onRemoveInclude);
+  connect(ui->pushButtonRemoveFile, &QPushButton::clicked, this,
+          &ParserFactoryProtobuf::onRemoveFile);
+  connect(ui->listLoadedFiles, &QListWidget::itemSelectionChanged, this,
+          &ParserFactoryProtobuf::onLoadedFilesSelectionChanged);
+
+  connect(ui->pushButtonAddMapping, &QPushButton::clicked, this,
+          &ParserFactoryProtobuf::onAddMapping);
+  connect(ui->pushButtonRemoveMapping, &QPushButton::clicked, this,
+          &ParserFactoryProtobuf::onRemoveMapping);
 
   QString last_type = settings.value("ProtobufParserCreator.lastType").toString();
   int combo_index = ui->comboBox->findText(last_type, Qt::MatchExactly);
   if (!last_type.isEmpty() && combo_index != -1)
   {
     ui->comboBox->setCurrentIndex(combo_index);
-    onComboChanged(last_type);
   }
 
   connect(ui->comboBox, qOverload<const QString&>(&QComboBox::currentIndexChanged), this,
           &ParserFactoryProtobuf::onComboChanged);
 }
 
-void ParserFactoryProtobuf::importFile(QString filename)
+bool ParserFactoryProtobuf::importFile(const QString& filename)
 {
   QFile file(filename);
   if (!file.exists())
   {
     QMessageBox::warning(nullptr, tr("Error loading file"),
                          tr("File %1 does not exist").arg(filename), QMessageBox::Cancel);
-    return;
+    return false;
   }
   file.open(QIODevice::ReadOnly);
+
   FileInfo info;
   QFileInfo fileinfo(filename);
-  QString file_basename = fileinfo.fileName();
   info.file_path = filename;
+  info.file_basename = fileinfo.fileName();
   info.proto_text = file.readAll();
 
   _source_tree.MapPath("", filename.toStdString());
-  _source_tree.MapPath("", file_basename.toStdString());
+  _source_tree.MapPath("", info.file_basename.toStdString());
   _source_tree.MapPath("", fileinfo.absolutePath().toStdString());
 
+  // Rebuild a fresh Importer holding every currently-loaded file plus this one;
+  // DescriptorPool doesn't support removal, so we pay this cost on every add/remove.
   FileErrorCollector error_collector;
-
   _importer.reset(new gp::compiler::Importer(&_source_tree, &error_collector));
-  info.file_descriptor = _importer->Import(file_basename.toStdString());
 
+  for (auto& [basename, existing] : _loaded_files)
+  {
+    existing.file_descriptor = _importer->Import(existing.file_basename.toStdString());
+    existing.descriptors.clear();
+    if (existing.file_descriptor)
+    {
+      for (int i = 0; i < existing.file_descriptor->message_type_count(); i++)
+      {
+        const auto* d = existing.file_descriptor->message_type(i);
+        existing.descriptors.insert({ QString::fromStdString(std::string(d->name())), d });
+      }
+    }
+  }
+
+  info.file_descriptor = _importer->Import(info.file_basename.toStdString());
   if (!info.file_descriptor)
   {
-    if (error_collector.errors().size() > 0)
+    if (!error_collector.errors().empty())
     {
       QMessageBox::warning(nullptr, "Error parsing Proto file", error_collector.errors().front(),
                            QMessageBox::Cancel);
     }
-    return;
+    return false;
   }
-
-  ui->loadedProto->setText(file_basename);
-  ui->protoPreview->setText(info.proto_text);
-  ui->comboBox->clear();
-
   for (int i = 0; i < info.file_descriptor->message_type_count(); i++)
   {
-    std::string type_name = std::string(info.file_descriptor->message_type(i)->name());
-    auto descriptor = info.file_descriptor->FindMessageTypeByName(type_name);
-    QString type_qname = QString::fromStdString(type_name);
-    info.descriptors.insert({ type_qname, descriptor });
-    ui->comboBox->addItem(type_qname);
+    const auto* d = info.file_descriptor->message_type(i);
+    info.descriptors.insert({ QString::fromStdString(std::string(d->name())), d });
   }
-  _loaded_file = std::move(info);
+
+  _loaded_files[info.file_basename] = std::move(info);
+
+  ui->listLoadedFiles->blockSignals(true);
+  ui->listLoadedFiles->clear();
+  for (const auto& [basename, fi] : _loaded_files)
+  {
+    ui->listLoadedFiles->addItem(fi.file_basename);
+  }
+  ui->listLoadedFiles->blockSignals(false);
+
+  rebuildTypeComboBox();
+  return true;
+}
+
+void ParserFactoryProtobuf::rebuildTypeComboBox()
+{
+  QString prev_default = ui->comboBox->currentText();
+  ui->comboBox->blockSignals(true);
+  ui->comboBox->clear();
+  for (const auto& [basename, fi] : _loaded_files)
+  {
+    for (const auto& [type_name, descr] : fi.descriptors)
+    {
+      ui->comboBox->addItem(qualifiedName(basename, type_name));
+    }
+  }
+  int idx = ui->comboBox->findText(prev_default);
+  if (idx >= 0)
+  {
+    ui->comboBox->setCurrentIndex(idx);
+  }
+  ui->comboBox->blockSignals(false);
+
+  for (int row = 0; row < ui->tableTopicMapping->rowCount(); row++)
+  {
+    auto* combo = qobject_cast<QComboBox*>(ui->tableTopicMapping->cellWidget(row, 1));
+    if (!combo)
+    {
+      continue;
+    }
+    QString prev = combo->currentText();
+    combo->blockSignals(true);
+    combo->clear();
+    for (const auto& [basename, fi] : _loaded_files)
+    {
+      for (const auto& [type_name, descr] : fi.descriptors)
+      {
+        combo->addItem(qualifiedName(basename, type_name));
+      }
+    }
+    int pidx = combo->findText(prev);
+    combo->setCurrentIndex(pidx >= 0 ? pidx : -1);
+    combo->blockSignals(false);
+  }
+}
+
+const gp::Descriptor* ParserFactoryProtobuf::findDescriptor(const QString& qualified_type) const
+{
+  if (qualified_type.isEmpty())
+  {
+    return nullptr;
+  }
+  // Qualified form: "<basename>::<type>"
+  int sep = qualified_type.indexOf("::");
+  if (sep >= 0)
+  {
+    QString basename = qualified_type.left(sep);
+    QString type_name = qualified_type.mid(sep + 2);
+    auto file_it = _loaded_files.find(basename);
+    if (file_it == _loaded_files.end())
+    {
+      return nullptr;
+    }
+    auto descr_it = file_it->second.descriptors.find(type_name);
+    return descr_it != file_it->second.descriptors.end() ? descr_it->second : nullptr;
+  }
+  // Unqualified: search every loaded file (first match wins).
+  for (const auto& [basename, fi] : _loaded_files)
+  {
+    auto descr_it = fi.descriptors.find(qualified_type);
+    if (descr_it != fi.descriptors.end())
+    {
+      return descr_it->second;
+    }
+  }
+  return nullptr;
 }
 
 void ParserFactoryProtobuf::loadSettings()
 {
   ui->listWidget->clear();
+  ui->listLoadedFiles->clear();
   ui->protoPreview->clear();
 
   QSettings settings;
@@ -113,24 +231,79 @@ void ParserFactoryProtobuf::loadSettings()
   }
   ui->listWidget->sortItems();
 
-  auto filename = settings.value("ProtobufParserCreator.protofile").toString();
-  if (!filename.isEmpty())
+  // Plural key with fallback to the legacy single-file key.
+  QStringList proto_files = settings.value("ProtobufParserCreator.protofiles").toStringList();
+  if (proto_files.isEmpty())
   {
-    importFile(filename);
+    QString legacy = settings.value("ProtobufParserCreator.protofile").toString();
+    if (!legacy.isEmpty())
+    {
+      proto_files << legacy;
+    }
   }
+  for (const auto& f : proto_files)
+  {
+    importFile(f);
+  }
+
+  // Each entry is "topic||qualified_type".
+  auto saved_mappings = settings.value("ProtobufParserCreator.topicMappings").toStringList();
+
+  settings.remove("ProtobufParserCreator.seenTopics");
+
+  ui->tableTopicMapping->blockSignals(true);
+  ui->tableTopicMapping->setRowCount(0);
+  for (const auto& entry : saved_mappings)
+  {
+    int sep = entry.indexOf("||");
+    if (sep < 0)
+    {
+      continue;
+    }
+    addMappingRow(entry.left(sep), entry.mid(sep + 2));
+  }
+  ui->tableTopicMapping->blockSignals(false);
 }
 
 void ParserFactoryProtobuf::saveSettings()
 {
   QSettings settings;
+
   QStringList include_list;
   for (int row = 0; row < ui->listWidget->count(); row++)
   {
     include_list += ui->listWidget->item(row)->text();
   }
   settings.setValue("ProtobufParserCreator.include_dirs", include_list);
-  settings.setValue("ProtobufParserCreator.protofile", _loaded_file.file_path);
+
+  QStringList proto_files;
+  for (const auto& [basename, fi] : _loaded_files)
+  {
+    proto_files << fi.file_path;
+  }
+  settings.setValue("ProtobufParserCreator.protofiles", proto_files);
+  settings.remove("ProtobufParserCreator.protofile");  // legacy key
+
   settings.setValue("ProtobufParserCreator.useTimestamp", ui->checkBoxTimestamp->isChecked());
+
+  QStringList mappings;
+  for (int row = 0; row < ui->tableTopicMapping->rowCount(); row++)
+  {
+    auto* topic_edit = qobject_cast<QLineEdit*>(ui->tableTopicMapping->cellWidget(row, 0));
+    auto* type_combo = qobject_cast<QComboBox*>(ui->tableTopicMapping->cellWidget(row, 1));
+    if (!topic_edit || !type_combo)
+    {
+      continue;
+    }
+    QString topic = topic_edit->text();
+    QString type = type_combo->currentText();
+    if (topic.isEmpty() || type.isEmpty())
+    {
+      continue;
+    }
+    mappings << QString("%1||%2").arg(topic, type);
+  }
+  settings.setValue("ProtobufParserCreator.topicMappings", mappings);
 }
 
 ParserFactoryProtobuf::~ParserFactoryProtobuf()
@@ -143,17 +316,46 @@ MessageParserPtr ParserFactoryProtobuf::createParser(const std::string& topic_na
                                                      const std::string& schema,
                                                      PlotDataMapRef& data)
 {
-  QString descriptor_name =
-      type_name.empty() ? ui->comboBox->currentText() : QString::fromStdString(type_name);
   if (schema.empty())
   {
-    auto descr_it = _loaded_file.descriptors.find(descriptor_name);
-    if (descr_it == _loaded_file.descriptors.end())
+    QString chosen;
+    // 1. explicit override from the streamer (e.g. MCAP/Foxglove)
+    if (!type_name.empty())
     {
-      throw std::runtime_error("ParserFactoryProtobuf: can't find the descriptor");
+      chosen = QString::fromStdString(type_name);
     }
-    auto selected_descriptor = descr_it->second;
-    auto parser = std::make_shared<ProtobufParser>(topic_name, selected_descriptor, data);
+    // 2. topic-mapping table
+    if (chosen.isEmpty() && !topic_name.empty())
+    {
+      QString topic_q = QString::fromStdString(topic_name);
+      for (int row = 0; row < ui->tableTopicMapping->rowCount(); row++)
+      {
+        auto* topic_edit = qobject_cast<QLineEdit*>(ui->tableTopicMapping->cellWidget(row, 0));
+        auto* type_combo = qobject_cast<QComboBox*>(ui->tableTopicMapping->cellWidget(row, 1));
+        if (!topic_edit || !type_combo)
+        {
+          continue;
+        }
+        if (topic_edit->text() == topic_q)
+        {
+          chosen = type_combo->currentText();
+          break;
+        }
+      }
+    }
+    // 3. fall back to the default combo-box selection
+    if (chosen.isEmpty())
+    {
+      chosen = ui->comboBox->currentText();
+    }
+
+    auto descriptor = findDescriptor(chosen);
+    if (!descriptor)
+    {
+      throw std::runtime_error(
+          fmt::format("ParserFactoryProtobuf: can't find descriptor '{}'", chosen.toStdString()));
+    }
+    auto parser = std::make_shared<ProtobufParser>(topic_name, descriptor, data);
     parser->enableEmbeddedTimestamp(ui->checkBoxTimestamp->isChecked());
     return parser;
   }
@@ -178,7 +380,7 @@ void ParserFactoryProtobuf::onIncludeDirectory()
       settings.value("ProtobufParserCreator.loadDirectory", QDir::currentPath()).toString();
 
   QString dirname =
-      QFileDialog::getExistingDirectory(_widget, tr("Load StyleSheet"), directory_path);
+      QFileDialog::getExistingDirectory(_widget, tr("Add Include Folder"), directory_path);
   if (dirname.isEmpty())
   {
     return;
@@ -188,6 +390,7 @@ void ParserFactoryProtobuf::onIncludeDirectory()
   {
     ui->listWidget->addItem(dirname);
     ui->listWidget->sortItems();
+    saveSettings();
   }
 }
 
@@ -198,14 +401,17 @@ void ParserFactoryProtobuf::onLoadFile()
   QString directory_path =
       settings.value("ProtobufParserCreator.loadDirectory", QDir::currentPath()).toString();
 
-  QString filename =
-      QFileDialog::getOpenFileName(_widget, tr("Load StyleSheet"), directory_path, tr("(*.proto)"));
+  QString filename = QFileDialog::getOpenFileName(_widget, tr("Load .proto file"), directory_path,
+                                                  tr("(*.proto)"));
   if (filename.isEmpty())
   {
     return;
   }
 
-  importFile(filename);
+  if (!importFile(filename))
+  {
+    return;
+  }
 
   directory_path = QFileInfo(filename).absolutePath();
   settings.setValue("ProtobufParserCreator.loadDirectory", directory_path);
@@ -224,15 +430,157 @@ void ParserFactoryProtobuf::onRemoveInclude()
     selected.pop_front();
   }
   saveSettings();
-  loadSettings();
+}
+
+void ParserFactoryProtobuf::onRemoveFile()
+{
+  auto selected = ui->listLoadedFiles->selectedItems();
+  if (selected.isEmpty())
+  {
+    return;
+  }
+
+  for (auto* item : selected)
+  {
+    _loaded_files.erase(item->text());
+  }
+
+  FileErrorCollector error_collector;
+  _importer.reset(new gp::compiler::Importer(&_source_tree, &error_collector));
+  for (auto& [basename, fi] : _loaded_files)
+  {
+    fi.file_descriptor = _importer->Import(fi.file_basename.toStdString());
+    fi.descriptors.clear();
+    if (fi.file_descriptor)
+    {
+      for (int i = 0; i < fi.file_descriptor->message_type_count(); i++)
+      {
+        const auto* d = fi.file_descriptor->message_type(i);
+        fi.descriptors.insert({ QString::fromStdString(std::string(d->name())), d });
+      }
+    }
+  }
+
+  ui->listLoadedFiles->blockSignals(true);
+  ui->listLoadedFiles->clear();
+  for (const auto& [basename, fi] : _loaded_files)
+  {
+    ui->listLoadedFiles->addItem(fi.file_basename);
+  }
+  ui->listLoadedFiles->blockSignals(false);
+
+  ui->protoPreview->clear();
+  rebuildTypeComboBox();
+  saveSettings();
+}
+
+void ParserFactoryProtobuf::onLoadedFilesSelectionChanged()
+{
+  auto selected = ui->listLoadedFiles->selectedItems();
+  if (selected.isEmpty())
+  {
+    ui->protoPreview->clear();
+    return;
+  }
+  auto it = _loaded_files.find(selected.front()->text());
+  if (it != _loaded_files.end())
+  {
+    ui->protoPreview->setText(QString::fromUtf8(it->second.proto_text));
+  }
 }
 
 void ParserFactoryProtobuf::onComboChanged(const QString& text)
 {
-  auto descr_it = _loaded_file.descriptors.find(text);
-  if (descr_it != _loaded_file.descriptors.end())
+  QSettings settings;
+  settings.setValue("ProtobufParserCreator.lastType", text);
+}
+
+void ParserFactoryProtobuf::addMappingRow(const QString& topic, const QString& selected_type)
+{
+  int row = ui->tableTopicMapping->rowCount();
+  ui->tableTopicMapping->insertRow(row);
+
+  // Topic completer: live suggestions from sibling QListWidgets only.
+  auto* topic_edit = new QLineEdit();
+  topic_edit->setPlaceholderText(tr("Type a topic or type ID"));
+  QStringList suggestions;
+  QWidget* top = _widget;
+  while (top->parentWidget())
   {
-    QSettings settings;
-    settings.setValue("ProtobufParserCreator.lastType", text);
+    top = top->parentWidget();
   }
+  for (QListWidget* lw : top->findChildren<QListWidget*>())
+  {
+    if (lw == ui->listLoadedFiles || lw == ui->listWidget)
+    {
+      continue;
+    }
+    for (int i = 0; i < lw->count(); i++)
+    {
+      QString item_text = lw->item(i)->text();
+      if (!item_text.isEmpty() && !suggestions.contains(item_text))
+      {
+        suggestions << item_text;
+      }
+    }
+  }
+  auto* completer = new QCompleter(suggestions, topic_edit);
+  completer->setCaseSensitivity(Qt::CaseInsensitive);
+  completer->setFilterMode(Qt::MatchContains);
+  completer->setCompletionMode(QCompleter::PopupCompletion);
+  topic_edit->setCompleter(completer);
+  if (!topic.isEmpty())
+  {
+    topic_edit->setText(topic);
+  }
+  connect(topic_edit, &QLineEdit::textChanged, this, &ParserFactoryProtobuf::onTopicMappingChanged);
+  ui->tableTopicMapping->setCellWidget(row, 0, topic_edit);
+
+  auto* type_combo = new QComboBox();
+  for (const auto& [basename, fi] : _loaded_files)
+  {
+    for (const auto& [type_name, descr] : fi.descriptors)
+    {
+      type_combo->addItem(qualifiedName(basename, type_name));
+    }
+  }
+  if (!selected_type.isEmpty())
+  {
+    int idx = type_combo->findText(selected_type);
+    if (idx >= 0)
+    {
+      type_combo->setCurrentIndex(idx);
+    }
+  }
+  connect(type_combo, qOverload<int>(&QComboBox::currentIndexChanged), this,
+          &ParserFactoryProtobuf::onTopicMappingChanged);
+  ui->tableTopicMapping->setCellWidget(row, 1, type_combo);
+}
+
+void ParserFactoryProtobuf::onAddMapping()
+{
+  addMappingRow();
+  saveSettings();
+}
+
+void ParserFactoryProtobuf::onRemoveMapping()
+{
+  auto selected_rows = ui->tableTopicMapping->selectionModel()->selectedRows();
+  std::vector<int> rows;
+  rows.reserve(selected_rows.size());
+  for (const auto& idx : selected_rows)
+  {
+    rows.push_back(idx.row());
+  }
+  std::sort(rows.begin(), rows.end(), std::greater<int>());
+  for (int r : rows)
+  {
+    ui->tableTopicMapping->removeRow(r);
+  }
+  saveSettings();
+}
+
+void ParserFactoryProtobuf::onTopicMappingChanged()
+{
+  saveSettings();
 }
