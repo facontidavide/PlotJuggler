@@ -18,7 +18,6 @@ add_subdirectory(ToolboxQuaternion)
 add_subdirectory(ToolboxFFT)
 add_subdirectory(ToolboxLuaEditor)
 add_subdirectory(ToolboxCSV)
-add_subdirectory(ToolboxMosaico)
 
 add_subdirectory(ParserProtobuf)
 add_subdirectory(ParserROS)

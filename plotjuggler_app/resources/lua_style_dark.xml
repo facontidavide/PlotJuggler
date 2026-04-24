@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <style-scheme version="1.0" name="Dracula">
-    <style name="Text" foreground="#f8f8f2" background="#2a2a2a"/>
+    <style name="Text" foreground="#f8f8f2" background="#282a36"/>
     <style name="Link" foreground="#8be9fd" underlineStyle="SingleUnderline"/>
     <style name="Selection" background="#44475a"/>
     <style name="LineNumber" foreground="#6272a4"/>
