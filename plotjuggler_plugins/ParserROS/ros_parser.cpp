@@ -214,11 +214,12 @@ void ParserROS::parseHeader(const std::string& prefix, double& timestamp)
 {
   const auto header = readHeader(timestamp);
 
-  getSeries(prefix + "/header/stamp").pushBack({ timestamp, header.stamp.toSec() });
-  getStringSeries(prefix + "/header/frame_id").pushBack({ timestamp, header.frame_id });
+  getSeries(prefix + "/stamp/sec").pushBack({ timestamp, double(header.stamp.sec) });
+  getSeries(prefix + "/stamp/nanosec").pushBack({ timestamp, double(header.stamp.nanosec) });
+  getStringSeries(prefix + "/frame_id").pushBack({ timestamp, header.frame_id });
   if (dynamic_cast<ROS_Deserializer*>(_deserializer.get()) != nullptr)
   {
-    getSeries(prefix + "/header/seq").pushBack({ timestamp, double(header.seq) });
+    getSeries(prefix + "/seq").pushBack({ timestamp, double(header.seq) });
   }
 }
 
@@ -415,7 +416,7 @@ void ParserROS::parseJointStateMsg(const std::string& prefix, double& timestamp)
   msg.velocity.clear();
   msg.effort.clear();
 
-  parseHeader(prefix, timestamp);
+  parseHeader(prefix + "/header", timestamp);
 
   size_t name_size = _deserializer->deserializeUInt32();
   if (name_size > 0)
