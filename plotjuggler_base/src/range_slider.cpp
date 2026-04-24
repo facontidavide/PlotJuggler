@@ -1,5 +1,5 @@
 
-#include "RangeSlider.h"
+#include "PlotJuggler/range_slider.h"
 #include <QDebug>
 
 namespace
@@ -11,46 +11,13 @@ const int scLeftRightMargin = 1;
 
 }  // namespace
 
-RangeSlider::RangeSlider(QWidget* aParent)
-  : QWidget(aParent)
-  , mMinimum(0)
-  , mMaximum(100)
-  , mLowerValue(0)
-  , mUpperValue(100)
-  , mMinReal(0.0)
-  , mMaxReal(1.0)
-  , mDecimals(3)
-  , mScale(1000)
-  , mMinTickPx(45)
-  , mShowTicks(true)
-  , mShowTickLabels(true)
-  , mTooltipVisible(true)
-  , mFirstHandlePressed(false)
-  , mSecondHandlePressed(false)
-  , mInterval(mMaximum - mMinimum)
-  , mBackgroudColorEnabled(QColor(0x1E, 0x90, 0xFF))
-  , mBackgroudColorDisabled(Qt::darkGray)
-  , mBackgroudColor(mBackgroudColorEnabled)
-  , orientation(Qt::Horizontal)
-  , type(DoubleHandles)
+RangeSlider::RangeSlider(QWidget* aParent) : QWidget(aParent)
 {
   setMouseTracking(true);
 }
 
 RangeSlider::RangeSlider(Qt::Orientation ori, Options t, QWidget* aParent)
-  : QWidget(aParent)
-  , mMinimum(0)
-  , mMaximum(100)
-  , mLowerValue(0)
-  , mUpperValue(100)
-  , mFirstHandlePressed(false)
-  , mSecondHandlePressed(false)
-  , mInterval(mMaximum - mMinimum)
-  , mBackgroudColorEnabled(QColor(0x1E, 0x90, 0xFF))
-  , mBackgroudColorDisabled(Qt::darkGray)
-  , mBackgroudColor(mBackgroudColorEnabled)
-  , orientation(ori)
-  , type(t)
+  : QWidget(aParent), orientation(ori), type(t)
 {
   setMouseTracking(true);
 }
@@ -73,11 +40,11 @@ void RangeSlider::paintEvent(QPaintEvent* aEvent)
                             height() - scLeftRightMargin * 2);
   }
 
-  QPen pen(Qt::gray, 0.8);
+  const QPalette& pal = palette();
+  QPen pen(pal.color(QPalette::Mid), 0.8);
   painter.setPen(pen);
-  painter.setRenderHint(QPainter::Qt4CompatiblePainting);
-  QBrush backgroundBrush(QColor(0xD0, 0xD0, 0xD0));
-  painter.setBrush(backgroundBrush);
+  // Qt4CompatiblePainting removed in Qt6; Antialiasing is sufficient.
+  painter.setBrush(pal.color(QPalette::Dark));
   painter.drawRoundedRect(backgroundRect, 1, 1);
 
   if (mShowTicks)
@@ -86,12 +53,11 @@ void RangeSlider::paintEvent(QPaintEvent* aEvent)
   }
 
   // First value handle rect
-  pen.setColor(Qt::darkGray);
+  pen.setColor(pal.color(QPalette::Mid));
   pen.setWidth(0.5);
   painter.setPen(pen);
   painter.setRenderHint(QPainter::Antialiasing);
-  QBrush handleBrush(QColor(0xFA, 0xFA, 0xFA));
-  painter.setBrush(handleBrush);
+  painter.setBrush(QColor(0x3e, 0x47, 0x50));
   QRectF leftHandleRect = firstHandleRect();
   if (type.testFlag(LeftHandle))
   {
@@ -125,6 +91,11 @@ void RangeSlider::paintEvent(QPaintEvent* aEvent)
   QBrush selectedBrush(mBackgroudColor);
   painter.setBrush(selectedBrush);
   painter.drawRect(selectedRect);
+
+  if (mFloatingLabels)
+  {
+    drawFloatingLabels(painter);
+  }
 }
 
 QRectF RangeSlider::firstHandleRect() const
@@ -167,8 +138,23 @@ void RangeSlider::mousePressEvent(QMouseEvent* aEvent)
     secondHandleRectPosValue =
         (orientation == Qt::Horizontal) ? secondHandleRect().x() : secondHandleRect().y();
 
-    mSecondHandlePressed = secondHandleRect().contains(aEvent->pos());
-    mFirstHandlePressed = !mSecondHandlePressed && firstHandleRect().contains(aEvent->pos());
+    // Floating labels double as hit-test targets. When visible, a click
+    // on a handle's label behaves like a click on the handle itself, and
+    // a click on the center label starts a range drag. Label rects are
+    // published by drawFloatingLabels on each paint.
+    const bool on_lower_label =
+        mFloatingLabels && !mLowerLabelRect.isNull() && mLowerLabelRect.contains(aEvent->pos());
+    const bool on_upper_label =
+        mFloatingLabels && !mUpperLabelRect.isNull() && mUpperLabelRect.contains(aEvent->pos());
+    const bool on_center_label =
+        mFloatingLabels && !mCenterLabelRect.isNull() && mCenterLabelRect.contains(aEvent->pos());
+
+    mSecondHandlePressed = on_upper_label || (!on_lower_label && !on_center_label &&
+                                              secondHandleRect().contains(aEvent->pos()));
+    mFirstHandlePressed = on_lower_label || (!mSecondHandlePressed && !on_center_label &&
+                                             firstHandleRect().contains(aEvent->pos()));
+    mRangeDragActive = false;
+
     if (mFirstHandlePressed)
     {
       mDelta = posValue - (firstHandleRectPosValue + scHandleSideLength / 2);
@@ -177,38 +163,31 @@ void RangeSlider::mousePressEvent(QMouseEvent* aEvent)
     {
       mDelta = posValue - (secondHandleRectPosValue + scHandleSideLength / 2);
     }
-
-    if (posCheck >= 2 && posCheck <= posMax - 2)
+    else if (on_center_label && type.testFlag(DoubleHandles))
+    {
+      // Grab the span by its center label — same drag behavior as clicking
+      // the track between the two handles.
+      mRangeDragActive = true;
+      mRangeDragStartPos = posValue;
+      mRangeDragLowerStart = mLowerValue;
+      mRangeDragUpperStart = mUpperValue;
+    }
+    else if (type.testFlag(DoubleHandles) &&
+             posValue > firstHandleRectPosValue + scHandleSideLength &&
+             posValue < secondHandleRectPosValue && posCheck >= 2 && posCheck <= posMax - 2)
+    {
+      // Clicked between the two handles — start range drag.
+      mRangeDragActive = true;
+      mRangeDragStartPos = posValue;
+      mRangeDragLowerStart = mLowerValue;
+      mRangeDragUpperStart = mUpperValue;
+    }
+    else if (posCheck >= 2 && posCheck <= posMax - 2)
     {
       int step = mInterval / 10 < 1 ? 1 : mInterval / 10;
       if (posValue < firstHandleRectPosValue)
       {
         setLowerValue(mLowerValue - step);
-      }
-      else if (((posValue > firstHandleRectPosValue + scHandleSideLength) ||
-                !type.testFlag(LeftHandle)) &&
-               ((posValue < secondHandleRectPosValue) || !type.testFlag(RightHandle)))
-      {
-        if (type.testFlag(DoubleHandles))
-        {
-          if (posValue - (firstHandleRectPosValue + scHandleSideLength) <
-              (secondHandleRectPosValue - (firstHandleRectPosValue + scHandleSideLength)) / 2)
-          {
-            setLowerValue((mLowerValue + step < mUpperValue) ? mLowerValue + step : mUpperValue);
-          }
-          else
-          {
-            setUpperValue((mUpperValue - step > mLowerValue) ? mUpperValue - step : mLowerValue);
-          }
-        }
-        else if (type.testFlag(LeftHandle))
-        {
-          setLowerValue((mLowerValue + step < mUpperValue) ? mLowerValue + step : mUpperValue);
-        }
-        else if (type.testFlag(RightHandle))
-        {
-          setUpperValue((mUpperValue - step > mLowerValue) ? mUpperValue - step : mLowerValue);
-        }
       }
       else if (posValue > secondHandleRectPosValue + scHandleSideLength)
       {
@@ -231,7 +210,32 @@ void RangeSlider::mouseMoveEvent(QMouseEvent* aEvent)
     secondHandleRectPosValue =
         (orientation == Qt::Horizontal) ? secondHandleRect().x() : secondHandleRect().y();
 
-    if (mFirstHandlePressed && type.testFlag(LeftHandle))
+    if (mRangeDragActive)
+    {
+      // Drag both handles together, preserving the span.
+      int pixelDelta = posValue - mRangeDragStartPos;
+      int valueDelta = static_cast<int>(pixelDelta * 1.0 / validLength() * mInterval);
+      int newLower = mRangeDragLowerStart + valueDelta;
+      int newUpper = mRangeDragUpperStart + valueDelta;
+
+      // Clamp to [mMinimum, mMaximum].
+      if (newLower < mMinimum)
+      {
+        newUpper += (mMinimum - newLower);
+        newLower = mMinimum;
+      }
+      if (newUpper > mMaximum)
+      {
+        newLower -= (newUpper - mMaximum);
+        newUpper = mMaximum;
+      }
+      newLower = std::max(newLower, mMinimum);
+      newUpper = std::min(newUpper, mMaximum);
+
+      setLowerValue(newLower);
+      setUpperValue(newUpper);
+    }
+    else if (mFirstHandlePressed && type.testFlag(LeftHandle))
     {
       if (posValue - mDelta + scHandleSideLength / 2 <= secondHandleRectPosValue)
       {
@@ -262,6 +266,7 @@ void RangeSlider::mouseMoveEvent(QMouseEvent* aEvent)
     }
   }
 
+  update();
   maybeShowHandleTooltip(aEvent->globalPos(), aEvent->pos());
 }
 
@@ -271,6 +276,8 @@ void RangeSlider::mouseReleaseEvent(QMouseEvent* aEvent)
 
   mFirstHandlePressed = false;
   mSecondHandlePressed = false;
+  mRangeDragActive = false;
+  update();
 
   if (mShowHandleValueTooltip)
   {
@@ -304,7 +311,55 @@ void RangeSlider::leaveEvent(QEvent* e)
 
 QSize RangeSlider::minimumSizeHint() const
 {
-  return QSize(scHandleSideLength * 2 + scLeftRightMargin * 2, scHandleSideLength);
+  int h = scHandleSideLength;
+  if (mFloatingLabels)
+  {
+    // One label row above (handle labels) + one below (center duration).
+    QFontMetrics fm(font());
+    int label_row = fm.height() + 6 + 4;  // label_height + gap
+    h += label_row * 2;
+  }
+  return QSize(scHandleSideLength * 2 + scLeftRightMargin * 2, h);
+}
+
+int RangeSlider::GetMinimun() const
+{
+  return mMinimum;
+}
+
+void RangeSlider::SetMinimum(int aMinimum)
+{
+  setMinimum(aMinimum);
+}
+
+int RangeSlider::GetMaximun() const
+{
+  return mMaximum;
+}
+
+void RangeSlider::SetMaximum(int aMaximum)
+{
+  setMaximum(aMaximum);
+}
+
+int RangeSlider::GetLowerValue() const
+{
+  return mLowerValue;
+}
+
+void RangeSlider::SetLowerValue(int aLowerValue)
+{
+  setLowerValue(aLowerValue);
+}
+
+int RangeSlider::GetUpperValue() const
+{
+  return mUpperValue;
+}
+
+void RangeSlider::SetUpperValue(int aUpperValue)
+{
+  setUpperValue(aUpperValue);
 }
 
 void RangeSlider::setLowerValue(int aLowerValue)
@@ -389,6 +444,13 @@ int RangeSlider::validLength() const
 {
   int len = (orientation == Qt::Horizontal) ? width() : height();
   return len - scLeftRightMargin * 2 - scHandleSideLength * (type.testFlag(DoubleHandles) ? 2 : 1);
+}
+
+void RangeSlider::SetRange(int aMinimum, int mMaximum)
+{
+  setMinimum(aMinimum);
+  setMaximum(mMaximum);
+  mDecimals = 0;
 }
 
 void RangeSlider::setOptions(Options t)
@@ -632,14 +694,17 @@ void RangeSlider::setRangeReal(double minV, double maxV, int decimals)
   }
 
   int d = std::max(0, decimals);
-  long long s = 1;
-  for (int i = 0; i < d; i++)
+  while (d > 0)
   {
-    s *= 10;
-  }
-  while (d > 0 && span * double(s) > double(std::numeric_limits<int>::max()))
-  {
-    s /= 10;
+    long long s = 1;
+    for (int i = 0; i < d; i++)
+    {
+      s *= 10;
+    }
+    if (span * double(s) <= double(std::numeric_limits<int>::max()))
+    {
+      break;
+    }
     d--;
   }
 
@@ -680,4 +745,123 @@ double RangeSlider::upperValueReal() const
 int RangeSlider::decimals() const
 {
   return mDecimals;
+}
+
+void RangeSlider::setFloatingLabelsVisible(bool on)
+{
+  mFloatingLabels = on;
+  update();
+}
+
+bool RangeSlider::floatingLabelsVisible() const
+{
+  return mFloatingLabels;
+}
+
+void RangeSlider::setLabelFormatter(std::function<QString(double)> formatter)
+{
+  mLabelFormatter = std::move(formatter);
+  update();
+}
+
+void RangeSlider::setCenterLabelFormatter(std::function<QString(double, double)> formatter)
+{
+  mCenterLabelFormatter = std::move(formatter);
+  update();
+}
+
+QString RangeSlider::formatHandleValue(double value) const
+{
+  if (mLabelFormatter)
+  {
+    return mLabelFormatter(value);
+  }
+  return handleValueText(value == lowerValueReal());
+}
+
+void RangeSlider::drawFloatingLabels(QPainter& painter)
+{
+  // Reset hit-test rects — repopulated below if the corresponding label
+  // actually gets drawn. Empty rect means "no label there, ignore clicks."
+  mLowerLabelRect = QRect();
+  mUpperLabelRect = QRect();
+  mCenterLabelRect = QRect();
+
+  if (orientation != Qt::Horizontal)
+  {
+    return;  // Only horizontal for now.
+  }
+
+  painter.setRenderHint(QPainter::Antialiasing);
+  QFont label_font = font();
+  painter.setFont(label_font);
+  QFontMetrics fm(label_font);
+
+  const int label_height = fm.height() + 6;  // padding
+  // Position labels from the top of the widget, above the handle area.
+  const int handle_top = (height() - scHandleSideLength) / 2;
+  const int label_y = handle_top - label_height - 2;
+
+  auto drawLabel = [&](const QRectF& handle_rect, const QString& text) -> QRect {
+    if (text.isEmpty())
+    {
+      return QRect();
+    }
+    int text_width = fm.horizontalAdvance(text) + 8;
+    int label_x = static_cast<int>(handle_rect.center().x()) - text_width / 2;
+
+    // Clamp to widget bounds.
+    label_x = std::max(0, std::min(label_x, width() - text_width));
+
+    QRect rect(label_x, label_y, text_width, label_height);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(50, 50, 50, 220));
+    painter.drawRoundedRect(rect, 4, 4);
+
+    painter.setPen(Qt::white);
+    painter.drawText(rect, Qt::AlignCenter, text);
+    return rect;
+  };
+
+  // Left handle label.
+  if (type.testFlag(LeftHandle))
+  {
+    mLowerLabelRect =
+        drawLabel(firstHandleRect(), formatHandleValue(static_cast<double>(mLowerValue)));
+  }
+
+  // Right handle label.
+  if (type.testFlag(RightHandle))
+  {
+    mUpperLabelRect =
+        drawLabel(secondHandleRect(), formatHandleValue(static_cast<double>(mUpperValue)));
+  }
+
+  // Center label (duration).
+  if (mCenterLabelFormatter)
+  {
+    QString center_text =
+        mCenterLabelFormatter(static_cast<double>(mLowerValue), static_cast<double>(mUpperValue));
+    if (!center_text.isEmpty())
+    {
+      QRectF left_rect = firstHandleRect();
+      QRectF right_rect = secondHandleRect();
+      double center_x = (left_rect.center().x() + right_rect.center().x()) / 2.0;
+      int text_width = fm.horizontalAdvance(center_text) + 8;
+      int cx = static_cast<int>(center_x) - text_width / 2;
+      cx = std::max(0, std::min(cx, width() - text_width));
+
+      // Paint below the slider bar.
+      const int handle_bottom = (height() + scHandleSideLength) / 2;
+      int center_label_y = handle_bottom + 2;
+      QRect rect(cx, center_label_y, text_width, label_height);
+      painter.setPen(Qt::NoPen);
+      painter.setBrush(QColor(30, 80, 160, 220));
+      painter.drawRoundedRect(rect, 4, 4);
+
+      painter.setPen(Qt::white);
+      painter.drawText(rect, Qt::AlignCenter, center_text);
+      mCenterLabelRect = rect;
+    }
+  }
 }

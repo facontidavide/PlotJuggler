@@ -4,7 +4,6 @@ qt5_wrap_ui(UI_SRC toolbox_csv.ui)
 
 add_library(ToolboxCSV SHARED
   toolbox_csv.cpp
-  RangeSlider.cpp
   ${UI_SRC}
   toolbox_ui.cpp
 )
