@@ -145,9 +145,7 @@ bool CurveListPanel::addCurve(const std::string& plot_name)
 
 void CurveListPanel::addCustom(const QString& item_name)
 {
-  // If a placeholder for this name was previously inserted in the main
-  // Timeseries list (e.g. from a layout load), remove it now that the curve
-  // is owned by a custom/transform function.
+  // Remove a same-name placeholder from the main list if one exists.
   std::string name_str = item_name.toStdString();
   if (_tree_view_items.count(name_str) > 0)
   {

@@ -1038,9 +1038,8 @@ QDomDocument MainWindow::xmlSaveState() const
   return doc;
 }
 
-// Collect every curve name referenced in the layout XML (numeric, XY
-// endpoints, and string curves). Shared by checkAllCurvesFromLayout and the
-// eager placeholder-creation block in loadLayoutFromFile.
+// Collect all curve names from a layout XML (numeric, XY endpoints, string).
+// Shared by checkAllCurvesFromLayout() and loadLayoutFromFile().
 static std::set<std::string> collectCurvesFromLayoutXML(const QDomElement& root)
 {
   std::set<std::string> curves;
@@ -2156,21 +2155,15 @@ bool MainWindow::loadLayoutFromFile(QString filename, bool load_datafiles)
     }
   }
 
-  // Eagerly create placeholders for every curve referenced by the layout that
-  // hasn't been loaded yet (numeric, string, and XY endpoints). This makes
-  // those topics visible in the Timeseries list immediately, so they can be
-  // selected and reused even before live data arrives. Doing this here also
-  // short-circuits the "missing curves" dialog raised later by
-  // checkAllCurvesFromLayout(), regardless of whether the layout has a
-  // streamer or how the user answers the "Start Streaming?" prompt.
+  // Create placeholders for layout curves not yet in _mapped_plot_data,
+  // so they appear in the Timeseries list before live data arrives.
   {
     auto layout_curves = collectCurvesFromLayoutXML(root);
 
     bool any_added = false;
     for (const auto& curve_name : layout_curves)
     {
-      // Skip curves already known anywhere (numeric, strings, or as a
-      // registered transform/custom function).
+      // Skip curves already known as data or as a transform/custom function.
       if (_mapped_plot_data.numeric.count(curve_name) > 0 ||
           _mapped_plot_data.strings.count(curve_name) > 0 ||
           _transform_functions.count(curve_name) > 0)
