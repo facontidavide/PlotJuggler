@@ -374,6 +374,7 @@ struct FloatingDockContainerPrivate
 	QPoint DragStartPos;
 	bool Hiding = false;
 	bool AutoHideChildren = true;
+	bool HideContentOnNextHide = false;
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
     QWidget* MouseEventHandler = nullptr;
     CFloatingWidgetTitleBar* TitleBar = nullptr;
@@ -459,7 +460,7 @@ struct FloatingDockContainerPrivate
 		}
 		else
 		{
-			_this->setWindowIcon(QApplication::windowIcon());
+			_this->setWindowIcon(CurrentWidget->windowIcon());
 		}
 	}
 
@@ -499,6 +500,9 @@ void FloatingDockContainerPrivate::titleMouseReleaseEvent()
 		return;
 	}
 
+	// DockManager will be unlinked from this within DropContainer->dropFloatingWidget
+	const auto OriginalDockManager = this->DockManager.data();
+
 	if (DockManager->dockAreaOverlay()->dropAreaUnderCursor() != InvalidDockWidgetArea
 	 || DockManager->containerOverlay()->dropAreaUnderCursor() != InvalidDockWidgetArea)
 	{
@@ -532,8 +536,8 @@ void FloatingDockContainerPrivate::titleMouseReleaseEvent()
 		DropContainer->dropFloatingWidget(_this, QCursor::pos());
 	}
 
-	DockManager->containerOverlay()->hideOverlay();
-	DockManager->dockAreaOverlay()->hideOverlay();
+	OriginalDockManager->containerOverlay()->hideOverlay();
+	OriginalDockManager->dockAreaOverlay()->hideOverlay();
 }
 
 
@@ -728,6 +732,11 @@ CFloatingDockContainer::CFloatingDockContainer(CDockManager *DockManager) :
 	l->addWidget(d->DockContainer);
 #endif
 
+	if (CDockManager::testConfigFlag(CDockManager::UseNativeWindows))
+	{
+		winId();
+	}
+
 	DockManager->registerFloatingWidget(this);
 }
 
@@ -845,6 +854,12 @@ void CFloatingDockContainer::changeEvent(QEvent *event)
 				this->showMaximized();
 			}
 		}
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
+        if (d->TitleBar)
+        {
+            d->TitleBar->setVisible(!(isFloating() && isFullScreen()));
+        }
+#endif
 		break;
 
 	default:
@@ -948,6 +963,15 @@ void CFloatingDockContainer::closeEvent(QCloseEvent *event)
 		return;
 	}
 
+	// New bug (QWebEngineView reload side effect):
+	// when a WebEngine-based dock is tabified into a floating container, the
+	// embedded native/web process can trigger delayed hide/show cycles on the
+	// floating window. If every non-spontaneous hide propagates to
+	// DockWidget->toggleView(false), unrelated tabs are marked closed and seem
+	// to "disappear". We therefore arm HideContentOnNextHide only for the 
+	// explicit close path.
+	d->HideContentOnNextHide = true;
+
 	// In Qt version after 5.9.2 there seems to be a bug that causes the
 	// QWidget::event() function to not receive any NonClientArea mouse
 	// events anymore after a close/show cycle. The bug is reported here:
@@ -974,6 +998,15 @@ void CFloatingDockContainer::hideEvent(QHideEvent *event)
     {
         return;
     }
+
+	// Only a close operation should propagate hide->toggleView(false) to
+	// child dock widgets. Generic hide/show cycles (e.g. from platform or
+	// embedded native content) must not change dock open/closed state.
+	if (!d->HideContentOnNextHide)
+	{
+		return;
+	}
+	d->HideContentOnNextHide = false;
 
 	if ( d->AutoHideChildren )
 	{
@@ -1190,8 +1223,9 @@ void CFloatingDockContainer::finishDropOperation()
 	if (d->DockManager)
 	{
 		d->DockManager->removeFloatingWidget(this);
-		d->DockManager->removeDockContainer(this->dockContainer());
+		d->DockManager.clear();
 	}
+	this->dockContainer()->removeFromDockManager();
 }
 
 //============================================================================

@@ -64,8 +64,13 @@ struct AutoHideTabPrivate;
  * of the docking system. The dock manager uses an internal stylesheet to
  * style its components like splitters, tabs and buttons. If you want to
  * disable this stylesheet because your application uses its own,
- * just call the function for settings the stylesheet with an empty
- * string.
+ * you can either set the DisableStylesheet config flag before creating
+ * the dock manager:
+ * \code
+ * CDockManager::setConfigFlag(CDockManager::DisableStylesheet, true);
+ * \endcode
+ * Or call the function for settings the stylesheet with an empty string
+ * after creating the dock manager:
  * \code
  * DockManager->setStyleSheet("");
  * \endcode
@@ -217,6 +222,8 @@ public:
 		ShowTabTextOnlyForActiveTab =0x8000000, //! Set this flag to show label texts in dock area tabs only for active tabs
 		DoubleClickUndocksWidget = 0x10000000, //!< If the flag is set, a double click on a tab undocks the widget
 		TabsAtBottom = 0x20000000, //!< If the flag is set, tabs will be shown at the bottom instead of in the title bar.
+		UseNativeWindows = 0x40000000, //!< If the flag is set, windows for the dock and area widgets will be native.
+		DisableStylesheet = 0x80000000, //!< If the flag is set, the dock manager will not apply the default stylesheet
 
 
         DefaultDockAreaButtons = DockAreaHasCloseButton

@@ -86,6 +86,9 @@ private:
 	friend AutoHideDockContainerPrivate;
 	friend CAutoHideSideBar;
 
+private Q_SLOTS:
+	void removeFromDockManager();
+
 protected:
 	/**
 	 * Handles activation events to update zOrderIndex

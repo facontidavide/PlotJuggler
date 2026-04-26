@@ -96,7 +96,8 @@ struct DockWidgetPrivate
 	WidgetFactory* Factory = nullptr;
 	QPointer<CAutoHideTab> SideTabWidget;
 	CDockWidget::eToolBarStyleSource ToolBarStyleSource = CDockWidget::ToolBarStyleFromDockManager;
-	
+	SideBarLocation PreferredAutoHideSideBarLocation = SideBarNone;
+
 	/**
 	 * Private data constructor
 	 */
@@ -396,6 +397,11 @@ CDockWidget::CDockWidget(CDockManager *manager, const QString &title, QWidget* p
 	{
 		setFocusPolicy(Qt::ClickFocus);
 	}
+
+	if (CDockManager::testConfigFlag(CDockManager::UseNativeWindows))
+	{
+		winId();
+	}
 }
 
 
@@ -650,6 +656,20 @@ SideBarLocation CDockWidget::autoHideLocation() const
 
 
 //============================================================================
+void CDockWidget::setPreferredAutoHideSideBarLocation(SideBarLocation Location)
+{
+	d->PreferredAutoHideSideBarLocation = Location;
+}
+
+
+//============================================================================
+SideBarLocation CDockWidget::preferredAutoHideSideBarLocation() const
+{
+	return d->PreferredAutoHideSideBarLocation;
+}
+
+
+//============================================================================
 bool CDockWidget::isFloating() const
 {
 	if (!isInFloatingContainer())
@@ -878,7 +898,7 @@ bool CDockWidget::event(QEvent *e)
 			}
 			if (d->DockArea)
 			{
-				d->DockArea->markTitleBarMenuOutdated();//update tabs menu
+				d->DockArea->updateWindowTitle();
 			}
 
 			auto FloatingWidget = floatingDockContainer();
@@ -1332,7 +1352,15 @@ void CDockWidget::setAutoHide(bool Enable, SideBarLocation Location, int TabInde
 	}
 	else
 	{
-		auto area = (SideBarNone == Location) ? DockArea->calculateSideTabBarArea() : Location;
+		auto area = Location;
+		if (SideBarNone == area && d->PreferredAutoHideSideBarLocation != SideBarNone)
+		{
+			area = d->PreferredAutoHideSideBarLocation;
+		}
+		else if (SideBarNone == area)
+		{
+			area = DockArea->calculateSideTabBarArea();
+		}
 		dockContainer()->createAndSetupAutoHideContainer(area, this, TabIndex);
 	}
 }
