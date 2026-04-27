@@ -38,6 +38,7 @@ class MosaicoClient;
 using mosaico::MosaicoClient;
 
 class DataViewPanel;
+class DownloadStatsDialog;
 class FetchWorker;
 class QueryBar;
 class SequencePanel;
@@ -72,6 +73,11 @@ public:
 signals:
   void mosaicoDataReady(const QString& sequence_name, const QString& topic_name,
                         const PullResult& result);
+  void mosaicoTopicStarted(const QString& sequence_name, const QString& topic_name,
+                           const std::shared_ptr<arrow::Schema>& schema);
+  void mosaicoTopicBatchReady(const QString& sequence_name, const QString& topic_name,
+                              const std::shared_ptr<arrow::RecordBatch>& batch);
+  void mosaicoTopicFinished(const QString& sequence_name, const QString& topic_name);
   void allFetchesComplete();
   // Emitted when a user-initiated cancel has finished draining the worker's
   // queue. The plugin wrapper uses this to discard any partial imported data.
@@ -85,8 +91,15 @@ private slots:
   void onTopicsSelected(const QString& sequence_name, const QStringList& topic_names);
   void onDataReady(const QString& sequence_name, const QString& topic_name,
                    const PullResult& result);
+  void onTopicStreamStarted(const QString& sequence_name, const QString& topic_name,
+                            const std::shared_ptr<arrow::Schema>& schema);
+  void onTopicBatchReady(const QString& sequence_name, const QString& topic_name,
+                         const std::shared_ptr<arrow::RecordBatch>& batch);
+  void onTopicStreamFinished(const QString& sequence_name, const QString& topic_name);
   void onFetchError(const QString& message);
-  void onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes);
+  void onTopicFetchError(const QString& topic_name, const QString& message);
+  void onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes,
+                       bool from_network);
   void onSequencesReady(const std::vector<SequenceInfo>& sequences);
   void onTopicsReady(const QStringList& names, const std::vector<TopicInfo>& infos);
   void onTopicMetadataReady(const QString& sequence_name, const QString& topic_name,
@@ -101,6 +114,9 @@ private:
   void buildLayout();
   void connectSignals();
   void ensureWorkerThread();
+  void requestFetchCancel();
+  void finishFetchTopic(const QString& topic_name, bool success);
+  void finishFetchBatch();
 
   // Returns the current edit text of the server combo — replaces the
   // old server_uri_input_->text() reads.
@@ -194,6 +210,7 @@ private:
 
   FetchWorker* worker_ = nullptr;
   QThread* worker_thread_ = nullptr;
+  DownloadStatsDialog* download_stats_dialog_ = nullptr;
 
   // Tracks error context so we only show popups for explicit Connect clicks.
   enum class ErrorContext

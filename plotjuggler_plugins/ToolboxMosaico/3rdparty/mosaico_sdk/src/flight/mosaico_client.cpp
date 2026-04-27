@@ -729,7 +729,10 @@ arrow::Result<PullResult> MosaicoClient::pullTopic(
     const std::string& topic_name,
     const TimeRange& range,
     ProgressCallback progress_cb,
-    std::atomic<bool>* interrupted) {
+    std::atomic<bool>* interrupted,
+    BatchCallback batch_cb,
+    SchemaCallback schema_cb,
+    bool retain_batches) {
     auto is_cancelled = [interrupted]() {
         return interrupted && interrupted->load(std::memory_order_relaxed);
     };
@@ -800,6 +803,7 @@ arrow::Result<PullResult> MosaicoClient::pullTopic(
     const auto t_schema = sdkNow();
     ARROW_ASSIGN_OR_RAISE(result.schema, reader->GetSchema());
     const auto ms_schema = sdkElapsedMs(t_schema);
+    if (schema_cb) schema_cb(result.schema);
 
     int64_t total_rows = 0;
     int64_t total_bytes = 0;
@@ -848,7 +852,8 @@ arrow::Result<PullResult> MosaicoClient::pullTopic(
         // RecordBatch.get_total_buffer_size() reports.
         total_bytes += arrow::util::TotalBufferSize(*chunk.data);
 
-        result.batches.push_back(chunk.data);
+        if (batch_cb) batch_cb(chunk.data);
+        if (retain_batches) result.batches.push_back(chunk.data);
 
         if (progress_cb) progress_cb(total_rows, total_bytes, /*total=*/0);
     }
@@ -876,7 +881,10 @@ arrow::Status MosaicoClient::pullTopics(
     const TimeRange& range,
     TopicCompleteCallback on_topic_done,
     MultiTopicProgressCallback progress_cb,
-    std::atomic<bool>* interrupted) {
+    std::atomic<bool>* interrupted,
+    MultiTopicBatchCallback batch_cb,
+    MultiTopicSchemaCallback schema_cb,
+    bool retain_batches) {
     const auto t_begin = sdkNow();
     const size_t parallelism = std::min<size_t>(topic_names.size(), pool_.poolSize());
     {
@@ -927,9 +935,25 @@ arrow::Status MosaicoClient::pullTopics(
                 progress_cb(topic, rows, bytes, total);
             };
         }
+        BatchCallback per_topic_batch;
+        if (batch_cb) {
+            per_topic_batch = [&batch_cb, &topic](
+                                  const std::shared_ptr<arrow::RecordBatch>& batch) {
+                batch_cb(topic, batch);
+            };
+        }
+        SchemaCallback per_topic_schema;
+        if (schema_cb) {
+            per_topic_schema = [&schema_cb, &topic](
+                                   const std::shared_ptr<arrow::Schema>& schema) {
+                schema_cb(topic, schema);
+            };
+        }
 
         auto result = pullTopic(sequence_name, topic, range,
-                                std::move(per_topic_progress), interrupted);
+                                std::move(per_topic_progress), interrupted,
+                                std::move(per_topic_batch), std::move(per_topic_schema),
+                                retain_batches);
 
         std::fprintf(stderr,
                      "[Mosaico SDK] pullTopics %s: tid=%s released topic[%zu]=%s "

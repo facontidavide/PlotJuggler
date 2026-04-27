@@ -9,14 +9,19 @@
 
 #include "fetch_worker.h"
 
+#include <arrow/util/byte_size.h>
+
 #include <QDebug>
 #include <QStringList>
 #include <QThread>
 #include <chrono>
 #include <exception>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
+#include <utility>
 
 namespace
 {
@@ -29,6 +34,20 @@ inline qint64 elapsedMs(std::chrono::steady_clock::time_point start)
                                                                start)
       .count();
 }
+
+mosaico_cache::CacheKey makeCacheKey(const QString& cache_namespace, const QString& sequence_name,
+                                     const QString& topic_name, qint64 start_ns, qint64 end_ns)
+{
+  mosaico_cache::CacheKey key;
+  const QString ns =
+      cache_namespace.isEmpty() ? QStringLiteral("unknown-server") : cache_namespace;
+  key.dataset_id = ns + QStringLiteral("/") + sequence_name;
+  key.dataset_version = QStringLiteral("unversioned");
+  key.topic = topic_name;
+  key.chunk_start_ns = start_ns;
+  key.chunk_end_ns = end_ns;
+  return key;
+}
 }  // namespace
 
 FetchWorker::FetchWorker(QObject* parent) : QObject(parent)
@@ -39,6 +58,11 @@ FetchWorker::FetchWorker(QObject* parent) : QObject(parent)
 void FetchWorker::setClient(MosaicoClient* client)
 {
   client_ = client;
+}
+
+void FetchWorker::setCacheNamespace(const QString& namespace_key)
+{
+  cache_namespace_ = namespace_key;
 }
 
 void FetchWorker::requestCancel()
@@ -185,8 +209,7 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
       // Surface one error per topic so pending_fetches_ drains cleanly.
       for (const auto& topic : topic_names)
       {
-        Q_UNUSED(topic);
-        emit errorOccurred("Not connected");
+        emit topicErrorOccurred(topic, QStringLiteral("Not connected"));
       }
       return;
     }
@@ -197,8 +220,7 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
     {
       for (const auto& topic : topic_names)
       {
-        Q_UNUSED(topic);
-        emit errorOccurred(QStringLiteral("cancelled"));
+        emit topicErrorOccurred(topic, QStringLiteral("cancelled"));
       }
       return;
     }
@@ -213,9 +235,67 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
       range.end_ns = end_ns;
     }
 
+    const QString cache_ns = cache_namespace_;
+    QStringList miss_topics;
+    miss_topics.reserve(topic_names.size());
+    for (const auto& topic : topic_names)
+    {
+      auto key = makeCacheKey(cache_ns, sequence_name, topic, start_ns, end_ns);
+      qint64 cached_bytes = 0;
+      bool cache_cancelled = false;
+      auto cached = cache_.readStreaming(
+          key,
+          [this, sequence_name, topic](const std::shared_ptr<arrow::Schema>& schema) {
+            emit topicStreamStarted(sequence_name, topic, schema);
+          },
+          [this, sequence_name, topic, &cached_bytes, &cache_cancelled](
+              const std::shared_ptr<arrow::RecordBatch>& batch) {
+            if (cancel_flag_.load(std::memory_order_relaxed))
+            {
+              cache_cancelled = true;
+              return false;
+            }
+            if (batch)
+            {
+              cached_bytes += static_cast<qint64>(arrow::util::TotalBufferSize(*batch));
+            }
+            emit topicBatchReady(sequence_name, topic, batch);
+            emit fetchProgress(topic, cached_bytes, 0, false);
+            return true;
+          });
+      if (cache_cancelled)
+      {
+        emit topicErrorOccurred(topic, QStringLiteral("cancelled"));
+        continue;
+      }
+      if (cached.hit)
+      {
+        qDebug().noquote() << QString("[Mosaico cache] HIT %1/%2 range=[%3, %4]")
+                                  .arg(sequence_name)
+                                  .arg(topic)
+                                  .arg(start_ns)
+                                  .arg(end_ns);
+        emit topicStreamFinished(sequence_name, topic);
+        continue;
+      }
+      if (!cached.error.isEmpty())
+      {
+        qDebug().noquote() << QString("[Mosaico cache] lookup skipped for %1/%2: %3")
+                                  .arg(sequence_name, topic, cached.error);
+      }
+      miss_topics.append(topic);
+    }
+
+    if (miss_topics.isEmpty())
+    {
+      qDebug().noquote() << QString("[Mosaico cache] all %1 topic(s) served from cache")
+                                .arg(topic_names.size());
+      return;
+    }
+
     std::vector<std::string> topics_std;
-    topics_std.reserve(topic_names.size());
-    for (const auto& t : topic_names)
+    topics_std.reserve(miss_topics.size());
+    for (const auto& t : miss_topics)
     {
       topics_std.emplace_back(t.toStdString());
     }
@@ -263,48 +343,166 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
       if (emit_now)
       {
         emit fetchProgress(QString::fromStdString(topic), static_cast<qint64>(bytes),
-                           static_cast<qint64>(total_bytes));
+                           static_cast<qint64>(total_bytes), true);
       }
     };
 
-    auto on_done = [this, sequence_name](const std::string& topic,
-                                         arrow::Result<PullResult> result) {
+    QString stream_cache_open_error;
+    const bool stream_cache_enabled = cache_.open(&stream_cache_open_error);
+    if (!stream_cache_enabled && !stream_cache_open_error.isEmpty())
+    {
+      qDebug().noquote() << QString("[Mosaico cache] stream store disabled: %1")
+                                .arg(stream_cache_open_error);
+    }
+
+    std::mutex cache_writer_mu;
+    std::unordered_map<std::string, std::shared_ptr<mosaico_cache::LocalCache::Writer>>
+        cache_writers;
+    std::unordered_map<std::string, QString> cache_stream_errors;
+    auto note_cache_stream_error =
+        [&cache_writer_mu, &cache_stream_errors](const std::string& topic, const QString& error) {
+          if (error.isEmpty())
+          {
+            return;
+          }
+          std::lock_guard<std::mutex> lg(cache_writer_mu);
+          if (cache_stream_errors.find(topic) == cache_stream_errors.end())
+          {
+            cache_stream_errors.emplace(topic, error);
+          }
+        };
+
+    auto cache_schema =
+        [this, cache_ns, sequence_name, start_ns, end_ns, stream_cache_enabled,
+         &cache_writer_mu, &cache_writers, &note_cache_stream_error](
+            const std::string& topic, const std::shared_ptr<arrow::Schema>& schema) {
+          if (!stream_cache_enabled)
+          {
+            emit topicStreamStarted(sequence_name, QString::fromStdString(topic), schema);
+            return;
+          }
+          const QString topic_q = QString::fromStdString(topic);
+          emit topicStreamStarted(sequence_name, topic_q, schema);
+          const auto key = makeCacheKey(cache_ns, sequence_name, topic_q, start_ns, end_ns);
+          QString cache_error;
+          auto pending = cache_.beginWrite(key, schema, &cache_error);
+          if (!pending.isOpen())
+          {
+            note_cache_stream_error(topic, cache_error);
+            return;
+          }
+
+          auto writer =
+              std::make_shared<mosaico_cache::LocalCache::Writer>(std::move(pending));
+          std::lock_guard<std::mutex> lg(cache_writer_mu);
+          cache_writers[topic] = std::move(writer);
+        };
+
+    auto cache_batch =
+        [this, sequence_name, &cache_writer_mu, &cache_writers, &note_cache_stream_error](
+            const std::string& topic, const std::shared_ptr<arrow::RecordBatch>& batch) {
+          std::shared_ptr<mosaico_cache::LocalCache::Writer> writer;
+          {
+            std::lock_guard<std::mutex> lg(cache_writer_mu);
+            auto it = cache_writers.find(topic);
+            if (it != cache_writers.end())
+            {
+              writer = it->second;
+            }
+          }
+
+          if (writer)
+          {
+            QString cache_error;
+            if (!writer->writeBatch(batch, &cache_error))
+            {
+              note_cache_stream_error(topic, cache_error);
+            }
+          }
+          emit topicBatchReady(sequence_name, QString::fromStdString(topic), batch);
+        };
+
+    auto take_cache_writer =
+        [&cache_writer_mu, &cache_writers, &cache_stream_errors](
+            const std::string& topic, QString* stream_error) {
+          std::shared_ptr<mosaico_cache::LocalCache::Writer> writer;
+          std::lock_guard<std::mutex> lg(cache_writer_mu);
+          auto writer_it = cache_writers.find(topic);
+          if (writer_it != cache_writers.end())
+          {
+            writer = writer_it->second;
+            cache_writers.erase(writer_it);
+          }
+          auto error_it = cache_stream_errors.find(topic);
+          if (error_it != cache_stream_errors.end())
+          {
+            if (stream_error)
+            {
+              *stream_error = error_it->second;
+            }
+            cache_stream_errors.erase(error_it);
+          }
+          return writer;
+        };
+
+    auto on_done = [this, sequence_name, start_ns, end_ns, &take_cache_writer](
+                       const std::string& topic, arrow::Result<PullResult> result) {
       const QString topic_q = QString::fromStdString(topic);
       if (!result.ok())
       {
+        QString stream_error;
+        if (auto writer = take_cache_writer(topic, &stream_error))
+        {
+          writer->abort();
+        }
         qWarning() << "[Mosaico fetch] pullTopic" << sequence_name << "/" << topic_q << ": FAILED —"
                    << QString::fromStdString(result.status().ToString());
-        emit errorOccurred(QString::fromStdString(result.status().ToString()));
+        emit topicErrorOccurred(topic_q, QString::fromStdString(result.status().ToString()));
         return;
       }
-      int64_t batches = static_cast<int64_t>(result->batches.size());
-      int64_t rows = 0;
-      for (const auto& b : result->batches)
+
+      QString cache_error;
+      QString stream_error;
+      auto writer = take_cache_writer(topic, &stream_error);
+      if (!stream_error.isEmpty())
       {
-        if (b)
+        if (writer)
         {
-          rows += b->num_rows();
+          writer->abort();
         }
+        qDebug().noquote() << QString("[Mosaico cache] stream store skipped for %1/%2: %3")
+                                  .arg(sequence_name, topic_q, stream_error);
       }
-      qDebug().noquote() << QString("[Mosaico fetch] pullTopic %1/%2: OK, %3 batches, %4 rows")
-                                .arg(sequence_name)
-                                .arg(topic_q)
-                                .arg(batches)
-                                .arg(rows);
-      emit dataReady(sequence_name, topic_q, *result);
+      else if (writer && writer->commit(&cache_error))
+      {
+        qDebug().noquote() << QString("[Mosaico cache] stored %1/%2 range=[%3, %4]")
+                                  .arg(sequence_name)
+                                  .arg(topic_q)
+                                  .arg(start_ns)
+                                  .arg(end_ns);
+      }
+      else if (!cache_error.isEmpty())
+      {
+        qDebug().noquote() << QString("[Mosaico cache] store skipped for %1/%2: %3")
+                                  .arg(sequence_name, topic_q, cache_error);
+      }
+
+      emit topicStreamFinished(sequence_name, topic_q);
     };
 
     qDebug().noquote() << QString("[Mosaico fetch] pullTopics %1: dispatching %2 topics "
-                                  "(worker_thread=%3), range=[%4, %5], topics=[%6]")
+                                  "(%3 cache miss, worker_thread=%4), range=[%5, %6], topics=[%7]")
                               .arg(sequence_name)
                               .arg(topic_names.size())
+                              .arg(miss_topics.size())
                               .arg(reinterpret_cast<quintptr>(QThread::currentThreadId()))
                               .arg(start_ns)
                               .arg(end_ns)
-                              .arg(topic_names.join(", "));
+                              .arg(miss_topics.join(", "));
     const auto t0 = std::chrono::steady_clock::now();
     auto status = client_->pullTopics(sequence_name.toStdString(), topics_std, range, on_done,
-                                      progress, &cancel_flag_);
+                                      progress, &cancel_flag_, cache_batch, cache_schema,
+                                      /*retain_batches=*/false);
     const auto ms = elapsedMs(t0);
     if (!status.ok())
     {
@@ -314,32 +512,30 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
       qWarning() << "[Mosaico fetch] pullTopics" << sequence_name << ": dispatch FAILED after" << ms
                  << "ms —" << QString::fromStdString(status.ToString());
       const QString msg = QString::fromStdString(status.ToString());
-      for (const auto& topic : topic_names)
+      for (const auto& topic : miss_topics)
       {
-        Q_UNUSED(topic);
-        emit errorOccurred(msg);
+        emit topicErrorOccurred(topic, msg);
       }
       return;
     }
     qDebug().noquote() << QString("[Mosaico fetch] pullTopics %1: done in %2 ms")
                               .arg(sequence_name)
                               .arg(ms);
+
   }
   catch (const std::exception& e)
   {
     const QString msg = QStringLiteral("pullTopics failed: ") + QString::fromUtf8(e.what());
     for (const auto& topic : topic_names)
     {
-      Q_UNUSED(topic);
-      emit errorOccurred(msg);
+      emit topicErrorOccurred(topic, msg);
     }
   }
   catch (...)
   {
     for (const auto& topic : topic_names)
     {
-      Q_UNUSED(topic);
-      emit errorOccurred("pullTopics failed: unknown error");
+      emit topicErrorOccurred(topic, QStringLiteral("pullTopics failed: unknown error"));
     }
   }
 }

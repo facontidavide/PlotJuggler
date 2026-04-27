@@ -71,7 +71,10 @@ class MosaicoClient {
         const std::string& topic_name,
         const TimeRange& range = {},
         ProgressCallback progress_cb = nullptr,
-        std::atomic<bool>* interrupted = nullptr);
+        std::atomic<bool>* interrupted = nullptr,
+        BatchCallback batch_cb = nullptr,
+        SchemaCallback schema_cb = nullptr,
+        bool retain_batches = true);
 
     // Callback types used by pullTopics.
     //
@@ -87,6 +90,12 @@ class MosaicoClient {
     using MultiTopicProgressCallback = std::function<void(
         const std::string& topic_name, int64_t rows, int64_t bytes,
         int64_t total_bytes)>;
+    using MultiTopicBatchCallback = std::function<void(
+        const std::string& topic_name,
+        const std::shared_ptr<arrow::RecordBatch>& batch)>;
+    using MultiTopicSchemaCallback = std::function<void(
+        const std::string& topic_name,
+        const std::shared_ptr<arrow::Schema>& schema)>;
 
     // Pull multiple topics of the same sequence in parallel (bounded by the
     // connection pool size). Blocks until every topic has completed or been
@@ -99,7 +108,10 @@ class MosaicoClient {
         const TimeRange& range = {},
         TopicCompleteCallback on_topic_done = nullptr,
         MultiTopicProgressCallback progress_cb = nullptr,
-        std::atomic<bool>* interrupted = nullptr);
+        std::atomic<bool>* interrupted = nullptr,
+        MultiTopicBatchCallback batch_cb = nullptr,
+        MultiTopicSchemaCallback schema_cb = nullptr,
+        bool retain_batches = true);
 
     // Notifications (server-side error trail).
     arrow::Status reportSequenceNotification(const std::string& sequence_name,

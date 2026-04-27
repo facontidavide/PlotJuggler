@@ -1,17 +1,41 @@
 find_package(Arrow QUIET CONFIG)
-find_package(ArrowFlight QUIET CONFIG)
-if(NOT Arrow_FOUND OR NOT ArrowFlight_FOUND)
+if(NOT TARGET ArrowFlight::arrow_flight_static AND NOT TARGET ArrowFlight::arrow_flight_shared)
+    find_package(ArrowFlight QUIET CONFIG)
+endif()
+
+set(MOSAICO_ARROW_FLIGHT_TARGET "")
+foreach(candidate ArrowFlight::arrow_flight_static ArrowFlight::arrow_flight_shared)
+    if(TARGET ${candidate})
+        set(MOSAICO_ARROW_FLIGHT_TARGET ${candidate})
+        break()
+    endif()
+endforeach()
+
+if(NOT Arrow_FOUND OR NOT MOSAICO_ARROW_FLIGHT_TARGET)
     message("[ToolboxMosaico] Arrow/Flight not found. Skipping plugin.")
     return()
 endif()
+find_package(Qt5 REQUIRED COMPONENTS Sql)
 
-# The SDK links arrow::arrow (Conan convention). PlotJuggler provides
-# Arrow::arrow_shared + ArrowFlight::arrow_flight_shared. Bridge them.
+# The SDK links arrow::arrow. Conan provides that aggregate target directly,
+# while some system installs expose Arrow and Flight as separate targets.
 if(NOT TARGET arrow::arrow)
+    set(MOSAICO_ARROW_TARGET "")
+    foreach(candidate Arrow::arrow_static Arrow::arrow_shared)
+        if(TARGET ${candidate})
+            set(MOSAICO_ARROW_TARGET ${candidate})
+            break()
+        endif()
+    endforeach()
+    if(NOT MOSAICO_ARROW_TARGET)
+        message("[ToolboxMosaico] Arrow target not found. Skipping plugin.")
+        return()
+    endif()
+
     add_library(arrow_combined INTERFACE)
     target_link_libraries(arrow_combined INTERFACE
-        Arrow::arrow_shared
-        ArrowFlight::arrow_flight_shared)
+        ${MOSAICO_ARROW_TARGET}
+        ${MOSAICO_ARROW_FLIGHT_TARGET})
     add_library(arrow::arrow ALIAS arrow_combined)
 endif()
 
@@ -25,7 +49,9 @@ set(BUILD_TESTING ${BUILD_TESTING_SAVED} CACHE BOOL "" FORCE)
 include_directories(../)
 
 set(MOSAICO_SOURCES
+    src/cache/local_cache.cpp
     src/core/time_format.cpp
+    src/ui/download_stats_dialog.cpp
     src/ui/main_window.cpp
     src/ui/fetch_worker.cpp
     src/ui/server_history.cpp
@@ -48,6 +74,7 @@ add_library(ToolboxMosaico SHARED ${MOSAICO_SOURCES} ${MOSAICO_RESOURCES})
 
 target_include_directories(ToolboxMosaico PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/cache
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core
     ${CMAKE_CURRENT_SOURCE_DIR}/src/query
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ui
@@ -55,6 +82,7 @@ target_include_directories(ToolboxMosaico PRIVATE
 
 target_link_libraries(ToolboxMosaico PRIVATE
     Qt5::Widgets
+    Qt5::Sql
     Qt5::Xml
     plotjuggler_base
     mosaico_sdk

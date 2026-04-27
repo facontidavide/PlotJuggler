@@ -72,6 +72,15 @@ struct PullResult {
 using ProgressCallback =
     std::function<void(int64_t rows, int64_t bytes, int64_t total_bytes)>;
 
+// Optional hooks for consumers that want to observe a streaming pull without
+// waiting for the final PullResult. The SDK still owns the batches and returns
+// the usual PullResult; callbacks must be cheap because they run on the pull
+// worker thread.
+using SchemaCallback =
+    std::function<void(const std::shared_ptr<arrow::Schema>& schema)>;
+using BatchCallback =
+    std::function<void(const std::shared_ptr<arrow::RecordBatch>& batch)>;
+
 struct ServerVersion {
     std::string version;   // canonical string, e.g. "0.3.0"
     uint64_t major = 0;
