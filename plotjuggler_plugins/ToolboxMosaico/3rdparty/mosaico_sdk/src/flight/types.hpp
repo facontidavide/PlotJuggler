@@ -73,8 +73,9 @@ struct PullResult
 // Progress hook for streaming reads (both Flight pullTopic and MCAP reads).
 //   rows         — cumulative rows read so far.
 //   bytes        — cumulative uncompressed bytes read so far.
-//   total_bytes  — total size the source advertised up front, or 0 when the
-//                  source doesn't expose a total (e.g. arbitrary MCAP file).
+//   total_bytes  — comparable total in the same units as bytes, or 0 when the
+//                  source does not expose one. Mosaico's physical topic size
+//                  is exposed separately via TopicInfo::total_size_bytes.
 using ProgressCallback = std::function<void(int64_t rows, int64_t bytes, int64_t total_bytes)>;
 
 // Optional hooks for consumers that want to observe a streaming pull without

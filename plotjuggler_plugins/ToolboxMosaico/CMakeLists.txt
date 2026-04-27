@@ -16,8 +16,8 @@ if(NOT Arrow_FOUND OR NOT MOSAICO_ARROW_FLIGHT_TARGET)
     return()
 endif()
 
-# The SDK links arrow::arrow. Conan provides that aggregate target directly,
-# while some system installs expose Arrow and Flight as separate targets.
+# The SDK uses Arrow Flight symbols. Keep Arrow and Flight as explicit
+# targets so the final plugin link line includes both static libraries.
 if(NOT TARGET arrow::arrow)
     set(MOSAICO_ARROW_TARGET "")
     foreach(candidate Arrow::arrow_static Arrow::arrow_shared)
@@ -82,6 +82,7 @@ target_link_libraries(ToolboxMosaico PRIVATE
     Qt5::Xml
     plotjuggler_base
     mosaico_sdk
+    ${MOSAICO_ARROW_FLIGHT_TARGET}
     lua::lua
     QCodeEditor
 )

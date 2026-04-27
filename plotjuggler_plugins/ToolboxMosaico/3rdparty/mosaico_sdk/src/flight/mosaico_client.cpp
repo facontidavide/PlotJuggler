@@ -2,6 +2,7 @@
 #include "flight/mosaico_client.hpp"
 
 #include "flight/json_utils.hpp"
+#include "flight/logging.hpp"
 #include "flight/metadata.hpp"
 #include "flight/utils.hpp"
 
@@ -29,8 +30,7 @@ namespace mosaico
 
 namespace
 {
-// Cheap stderr-level timing log. No Qt dependency, so this works whether
-// the SDK is linked into the Qt plugin or a headless tool.
+// Timing helpers used by the optional SDK trace log.
 inline std::chrono::steady_clock::time_point sdkNow()
 {
   return std::chrono::steady_clock::now();
@@ -700,8 +700,8 @@ arrow::Result<std::vector<SequenceInfo>> MosaicoClient::listSequences()
     }
     ms_list = sdkElapsedMs(t_list);
   }
-  std::fprintf(stderr, "[Mosaico SDK] listSequences: ListFlights=%lld ms, %lld names\n",
-               (long long)ms_list, (long long)names.size());
+  MOSAICO_SDK_LOG("[Mosaico SDK] listSequences: ListFlights=%lld ms, %lld names\n",
+                  (long long)ms_list, (long long)names.size());
 
   // Pre-size the output so worker threads can write without locks. Each
   // slot is touched by exactly one worker — no sharing, no data race.
@@ -721,10 +721,9 @@ arrow::Result<std::vector<SequenceInfo>> MosaicoClient::listSequences()
     if (!conn_result.ok())
     {
       getinfo_fail.fetch_add(1, std::memory_order_relaxed);
-      std::fprintf(stderr,
-                   "[Mosaico SDK] listSequences: tid=%s seq[%zu]=%s "
-                   "checkout FAILED\n",
-                   tidStr().c_str(), i, names[i].c_str());
+      MOSAICO_SDK_LOG("[Mosaico SDK] listSequences: tid=%s seq[%zu]=%s "
+                      "checkout FAILED\n",
+                      tidStr().c_str(), i, names[i].c_str());
       return;
     }
     auto& local_conn = *conn_result;
@@ -737,20 +736,18 @@ arrow::Result<std::vector<SequenceInfo>> MosaicoClient::listSequences()
     if (!info_result.ok())
     {
       getinfo_fail.fetch_add(1, std::memory_order_relaxed);
-      std::fprintf(stderr,
-                   "[Mosaico SDK] listSequences: tid=%s seq[%zu]=%s "
-                   "GetFlightInfo FAILED (%lld ms): %s\n",
-                   tidStr().c_str(), i, names[i].c_str(), (long long)ms_info,
-                   info_result.status().ToString().c_str());
+      MOSAICO_SDK_LOG("[Mosaico SDK] listSequences: tid=%s seq[%zu]=%s "
+                      "GetFlightInfo FAILED (%lld ms): %s\n",
+                      tidStr().c_str(), i, names[i].c_str(), (long long)ms_info,
+                      info_result.status().ToString().c_str());
       return;
     }
     getinfo_ok.fetch_add(1, std::memory_order_relaxed);
     auto& info = *info_result;
-    std::fprintf(stderr,
-                 "[Mosaico SDK] listSequences: tid=%s seq[%zu]=%s "
-                 "GetFlightInfo=%lld ms (held=%lld ms)\n",
-                 tidStr().c_str(), i, names[i].c_str(), (long long)ms_info,
-                 (long long)sdkElapsedMs(t_pick));
+    MOSAICO_SDK_LOG("[Mosaico SDK] listSequences: tid=%s seq[%zu]=%s "
+                    "GetFlightInfo=%lld ms (held=%lld ms)\n",
+                    tidStr().c_str(), i, names[i].c_str(), (long long)ms_info,
+                    (long long)sdkElapsedMs(t_pick));
 
     SequenceInfo& seq = sequences[i];
     for (const auto& ep : info->endpoints())
@@ -784,13 +781,13 @@ arrow::Result<std::vector<SequenceInfo>> MosaicoClient::listSequences()
   });
   const auto ms_getinfo_all = sdkElapsedMs(t_getinfo_all);
   const auto ms_total = sdkElapsedMs(t_begin);
-  std::fprintf(stderr,
-               "[Mosaico SDK] listSequences: per-seq GetFlightInfo=%lld ms "
-               "(%lld ok, %lld fail, avg %.1f ms, parallelism=%zu), total=%lld ms\n",
-               (long long)ms_getinfo_all, (long long)getinfo_ok.load(),
-               (long long)getinfo_fail.load(),
-               names.empty() ? 0.0 : static_cast<double>(ms_getinfo_all) / names.size(),
-               pool_.poolSize(), (long long)ms_total);
+  MOSAICO_SDK_LOG(
+      "[Mosaico SDK] listSequences: per-seq GetFlightInfo=%lld ms "
+      "(%lld ok, %lld fail, avg %.1f ms, parallelism=%zu), total=%lld ms\n",
+      (long long)ms_getinfo_all, (long long)getinfo_ok.load(),
+      (long long)getinfo_fail.load(),
+      names.empty() ? 0.0 : static_cast<double>(ms_getinfo_all) / names.size(), pool_.poolSize(),
+      (long long)ms_total);
 
   return sequences;
 }
@@ -833,11 +830,10 @@ arrow::Result<std::vector<TopicInfo>> MosaicoClient::listTopics(const std::strin
     topics.push_back(std::move(topic));
   }
 
-  std::fprintf(stderr,
-               "[Mosaico SDK] listTopics %s: GetFlightInfo=%lld ms, "
-               "OK in %lld ms, %lld endpoints, %lld topics\n",
-               sequence_name.c_str(), (long long)ms_info, (long long)sdkElapsedMs(t_begin),
-               (long long)endpoint_count, (long long)topics.size());
+  MOSAICO_SDK_LOG("[Mosaico SDK] listTopics %s: GetFlightInfo=%lld ms, "
+                  "OK in %lld ms, %lld endpoints, %lld topics\n",
+                  sequence_name.c_str(), (long long)ms_info, (long long)sdkElapsedMs(t_begin),
+                  (long long)endpoint_count, (long long)topics.size());
   return topics;
 }
 
@@ -881,11 +877,10 @@ arrow::Result<TopicInfo> MosaicoClient::getTopicMetadata(const std::string& sequ
     topic.user_metadata = extractUserMetadata(metadata);
   }
 
-  std::fprintf(stderr,
-               "[Mosaico SDK] getTopicMetadata %s/%s: GetFlightInfo=%lld ms, "
-               "OK in %lld ms\n",
-               sequence_name.c_str(), topic_name.c_str(), (long long)ms_info,
-               (long long)sdkElapsedMs(t_begin));
+  MOSAICO_SDK_LOG("[Mosaico SDK] getTopicMetadata %s/%s: GetFlightInfo=%lld ms, "
+                  "OK in %lld ms\n",
+                  sequence_name.c_str(), topic_name.c_str(), (long long)ms_info,
+                  (long long)sdkElapsedMs(t_begin));
   return topic;
 }
 
@@ -903,8 +898,8 @@ arrow::Result<PullResult> MosaicoClient::pullTopic(
   };
   const auto t_begin = sdkNow();
   const std::string tid = tidStr();
-  std::fprintf(stderr, "[Mosaico SDK] pullTopic %s/%s: tid=%s begin\n", sequence_name.c_str(),
-               topic_name.c_str(), tid.c_str());
+  MOSAICO_SDK_LOG("[Mosaico SDK] pullTopic %s/%s: tid=%s begin\n", sequence_name.c_str(),
+                  topic_name.c_str(), tid.c_str());
 
   const auto t_checkout = sdkNow();
   ARROW_ASSIGN_OR_RAISE(auto conn, pool_.checkout());
@@ -948,11 +943,10 @@ arrow::Result<PullResult> MosaicoClient::pullTopic(
   // bytes-only progress line (no fraction, no percentage). Restore a real
   // denominator only once the server advertises a slice-aware,
   // wire-format-aware byte total.
-  std::fprintf(stderr,
-               "[Mosaico SDK] pullTopic %s/%s: tid=%s checkout=%lld ms, "
-               "GetFlightInfo=%lld ms\n",
-               sequence_name.c_str(), topic_name.c_str(), tid.c_str(), (long long)ms_checkout,
-               (long long)ms_info);
+  MOSAICO_SDK_LOG("[Mosaico SDK] pullTopic %s/%s: tid=%s checkout=%lld ms, "
+                  "GetFlightInfo=%lld ms\n",
+                  sequence_name.c_str(), topic_name.c_str(), tid.c_str(),
+                  (long long)ms_checkout, (long long)ms_info);
 
   // DoGet is a stream of unknown size — a gRPC deadline is an absolute
   // wall-clock bound on the whole call, so applying `timeout_` here aborts
@@ -987,12 +981,11 @@ arrow::Result<PullResult> MosaicoClient::pullTopic(
     if (is_cancelled())
     {
       reader->Cancel();
-      std::fprintf(stderr,
-                   "[Mosaico SDK] pullTopic %s/%s: tid=%s CANCELLED after %lld ms, "
-                   "%lld chunks, %lld bytes\n",
-                   sequence_name.c_str(), topic_name.c_str(), tid.c_str(),
-                   (long long)sdkElapsedMs(t_begin), (long long)chunk_count,
-                   (long long)total_bytes);
+      MOSAICO_SDK_LOG("[Mosaico SDK] pullTopic %s/%s: tid=%s CANCELLED after %lld ms, "
+                      "%lld chunks, %lld bytes\n",
+                      sequence_name.c_str(), topic_name.c_str(), tid.c_str(),
+                      (long long)sdkElapsedMs(t_begin), (long long)chunk_count,
+                      (long long)total_bytes);
       return arrow::Status::Cancelled("pull cancelled by caller");
     }
     const auto t_next = sdkNow();
@@ -1054,14 +1047,14 @@ arrow::Result<PullResult> MosaicoClient::pullTopic(
   const auto ms_total = sdkElapsedMs(t_begin);
   const double mb = static_cast<double>(total_bytes) / (1024.0 * 1024.0);
   const double mb_per_sec = ms_stream > 0 ? (mb * 1000.0 / ms_stream) : 0.0;
-  std::fprintf(stderr,
-               "[Mosaico SDK] pullTopic %s/%s: tid=%s DoGet=%lld ms, GetSchema=%lld ms, "
-               "stream=%lld ms (%lld chunks, %lld rows, %.2f MB, %.2f MB/s), "
-               "first-chunk=%lld ms, max-gap=%lld ms, total=%lld ms\n",
-               sequence_name.c_str(), topic_name.c_str(), tid.c_str(), (long long)ms_doget,
-               (long long)ms_schema, (long long)ms_stream, (long long)chunk_count,
-               (long long)total_rows, mb, mb_per_sec, (long long)ms_first_chunk,
-               (long long)max_gap_ms, (long long)ms_total);
+  MOSAICO_SDK_LOG(
+      "[Mosaico SDK] pullTopic %s/%s: tid=%s DoGet=%lld ms, GetSchema=%lld ms, "
+      "stream=%lld ms (%lld chunks, %lld rows, %.2f MB, %.2f MB/s), "
+      "first-chunk=%lld ms, max-gap=%lld ms, total=%lld ms\n",
+      sequence_name.c_str(), topic_name.c_str(), tid.c_str(), (long long)ms_doget,
+      (long long)ms_schema, (long long)ms_stream, (long long)chunk_count,
+      (long long)total_rows, mb, mb_per_sec, (long long)ms_first_chunk,
+      (long long)max_gap_ms, (long long)ms_total);
 
   return result;
 }
@@ -1086,12 +1079,11 @@ arrow::Status MosaicoClient::pullTopics(const std::string& sequence_name,
       }
       topics_csv += topic_names[i];
     }
-    std::fprintf(stderr,
-                 "[Mosaico SDK] pullTopics %s: dispatch %lld topics, "
-                 "parallelism=%zu (pool_size=%zu), dispatch_tid=%s, "
-                 "topics=[%s]\n",
-                 sequence_name.c_str(), (long long)topic_names.size(), parallelism,
-                 pool_.poolSize(), tidStr().c_str(), topics_csv.c_str());
+    MOSAICO_SDK_LOG("[Mosaico SDK] pullTopics %s: dispatch %lld topics, "
+                    "parallelism=%zu (pool_size=%zu), dispatch_tid=%s, "
+                    "topics=[%s]\n",
+                    sequence_name.c_str(), (long long)topic_names.size(), parallelism,
+                    pool_.poolSize(), tidStr().c_str(), topics_csv.c_str());
   }
 
   // on_topic_done is invoked from worker threads; serialize so the
@@ -1110,11 +1102,10 @@ arrow::Status MosaicoClient::pullTopics(const std::string& sequence_name,
     const std::string& topic = topic_names[i];
     const auto t_pick = sdkNow();
     const size_t my_pick = picked_count.fetch_add(1, std::memory_order_relaxed) + 1;
-    std::fprintf(stderr,
-                 "[Mosaico SDK] pullTopics %s: tid=%s picked topic[%zu]=%s "
-                 "(pick #%zu of %lld) at +%lld ms\n",
-                 sequence_name.c_str(), tidStr().c_str(), i, topic.c_str(), my_pick,
-                 (long long)topic_names.size(), (long long)sdkElapsedMs(t_begin));
+    MOSAICO_SDK_LOG("[Mosaico SDK] pullTopics %s: tid=%s picked topic[%zu]=%s "
+                    "(pick #%zu of %lld) at +%lld ms\n",
+                    sequence_name.c_str(), tidStr().c_str(), i, topic.c_str(), my_pick,
+                    (long long)topic_names.size(), (long long)sdkElapsedMs(t_begin));
 
     // Wrap the multi-topic progress callback so pullTopic's per-call
     // signature doesn't need to know about topic names.
@@ -1144,12 +1135,11 @@ arrow::Status MosaicoClient::pullTopics(const std::string& sequence_name,
         pullTopic(sequence_name, topic, range, std::move(per_topic_progress), interrupted,
                   std::move(per_topic_batch), std::move(per_topic_schema), retain_batches);
 
-    std::fprintf(stderr,
-                 "[Mosaico SDK] pullTopics %s: tid=%s released topic[%zu]=%s "
-                 "after %lld ms (status=%s)\n",
-                 sequence_name.c_str(), tidStr().c_str(), i, topic.c_str(),
-                 (long long)sdkElapsedMs(t_pick),
-                 result.ok() ? "ok" : result.status().ToString().c_str());
+    MOSAICO_SDK_LOG("[Mosaico SDK] pullTopics %s: tid=%s released topic[%zu]=%s "
+                    "after %lld ms (status=%s)\n",
+                    sequence_name.c_str(), tidStr().c_str(), i, topic.c_str(),
+                    (long long)sdkElapsedMs(t_pick),
+                    result.ok() ? "ok" : result.status().ToString().c_str());
 
     if (on_topic_done)
     {
@@ -1158,9 +1148,9 @@ arrow::Status MosaicoClient::pullTopics(const std::string& sequence_name,
     }
   });
 
-  std::fprintf(stderr, "[Mosaico SDK] pullTopics %s: OK in %lld ms (dispatched %lld topics)\n",
-               sequence_name.c_str(), (long long)sdkElapsedMs(t_begin),
-               (long long)topic_names.size());
+  MOSAICO_SDK_LOG("[Mosaico SDK] pullTopics %s: OK in %lld ms (dispatched %lld topics)\n",
+                  sequence_name.c_str(), (long long)sdkElapsedMs(t_begin),
+                  (long long)topic_names.size());
 
   return arrow::Status::OK();
 }

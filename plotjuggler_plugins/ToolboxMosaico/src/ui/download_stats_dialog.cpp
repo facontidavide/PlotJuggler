@@ -11,12 +11,35 @@
 #include <QDialogButtonBox>
 #include <QGridLayout>
 #include <QLabel>
-#include <QProgressBar>
 #include <QPushButton>
 #include <QTimer>
 #include <QVBoxLayout>
 
 #include <algorithm>
+
+namespace
+{
+constexpr qint64 kSpeedWindowMs = 5000;
+
+QString formatByteCount(qint64 bytes)
+{
+  return bytes > 0 ? formatBytes(bytes) : QStringLiteral("0 B");
+}
+
+QString formatSpeed(qint64 bytes_per_second)
+{
+  return QStringLiteral("%1/s").arg(formatByteCount(bytes_per_second));
+}
+
+QLabel* makeHeaderLabel(const QString& text, QWidget* parent)
+{
+  auto* label = new QLabel(text, parent);
+  auto font = label->font();
+  font.setBold(true);
+  label->setFont(font);
+  return label;
+}
+}  // namespace
 
 DownloadStatsDialog::DownloadStatsDialog(QWidget* parent) : QDialog(parent)
 {
@@ -31,15 +54,13 @@ DownloadStatsDialog::DownloadStatsDialog(QWidget* parent) : QDialog(parent)
 
   grid_ = new QGridLayout();
   grid_->setColumnStretch(0, 2);
-  grid_->setColumnStretch(1, 3);
+  grid_->setColumnStretch(1, 1);
   grid_->setColumnStretch(2, 1);
   grid_->setColumnStretch(3, 1);
-  grid_->setColumnStretch(4, 1);
-  grid_->addWidget(new QLabel(QStringLiteral("Topic"), this), 0, 0);
-  grid_->addWidget(new QLabel(QStringLiteral("Progress"), this), 0, 1);
-  grid_->addWidget(new QLabel(QStringLiteral("Bytes"), this), 0, 2);
-  grid_->addWidget(new QLabel(QStringLiteral("Speed"), this), 0, 3);
-  grid_->addWidget(new QLabel(QStringLiteral("Status"), this), 0, 4);
+  grid_->addWidget(makeHeaderLabel(QStringLiteral("Topic"), this), 0, 0);
+  grid_->addWidget(makeHeaderLabel(QStringLiteral("Bytes"), this), 0, 1);
+  grid_->addWidget(makeHeaderLabel(QStringLiteral("Speed"), this), 0, 2);
+  grid_->addWidget(makeHeaderLabel(QStringLiteral("Status"), this), 0, 3);
   root->addLayout(grid_);
 
   auto* buttons = new QDialogButtonBox(this);
@@ -57,7 +78,7 @@ void DownloadStatsDialog::start(const QStringList& topics)
   clearRows();
   active_ = true;
   cancelling_ = false;
-  previous_total_bytes_ = 0;
+  total_speed_samples_.clear();
   elapsed_.restart();
   cancel_button_->setText(QStringLiteral("Cancel"));
   cancel_button_->setEnabled(true);
@@ -68,24 +89,20 @@ void DownloadStatsDialog::start(const QStringList& topics)
     Row item;
     item.topic = new QLabel(topic, this);
     item.topic->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    item.progress = new QProgressBar(this);
-    item.progress->setRange(0, 0);
     item.bytes = new QLabel(QStringLiteral("0 B"), this);
     item.speed = new QLabel(QStringLiteral("0 B/s"), this);
-    item.status = new QLabel(QStringLiteral("Waiting"), this);
+    item.status = new QLabel(this);
+    setRowStatus(item, QStringLiteral("Waiting"));
 
     grid_->addWidget(item.topic, row, 0);
-    grid_->addWidget(item.progress, row, 1);
-    grid_->addWidget(item.bytes, row, 2);
-    grid_->addWidget(item.speed, row, 3);
-    grid_->addWidget(item.status, row, 4);
+    grid_->addWidget(item.bytes, row, 1);
+    grid_->addWidget(item.speed, row, 2);
+    grid_->addWidget(item.status, row, 3);
     rows_.insert(topic, item);
     ++row;
   }
 
-  summary_label_->setText(QStringLiteral(
-      "Network bytes and speed are decoded Arrow Flight payload bytes. The current Arrow Flight "
-      "reader does not expose exact wire traffic."));
+  summary_label_->clear();
   timer_->start();
   refreshStats();
 }
@@ -102,6 +119,13 @@ void DownloadStatsDialog::updateProgress(const QString& topic, qint64 bytes, qin
   if (from_network)
   {
     row->network_bytes = bytes;
+    if (!row->finished)
+    {
+      const qint64 now = elapsed_.elapsed();
+      addSpeedSample(row->speed_samples, now, row->network_bytes);
+      addSpeedSample(total_speed_samples_, now, networkTotal());
+      row->speed->setText(formatSpeed(rollingSpeed(row->speed_samples)));
+    }
   }
   else
   {
@@ -112,8 +136,6 @@ void DownloadStatsDialog::updateProgress(const QString& topic, qint64 bytes, qin
   {
     row->bytes->setText(
         QStringLiteral("%1 / %2").arg(formatBytes(bytes), formatBytes(total_bytes)));
-    row->progress->setRange(0, 1000);
-    row->progress->setValue(static_cast<int>((1000 * bytes) / total_bytes));
   }
   else
   {
@@ -122,8 +144,7 @@ void DownloadStatsDialog::updateProgress(const QString& topic, qint64 bytes, qin
   }
   if (!row->finished)
   {
-    row->status->setText(from_network ? QStringLiteral("Downloading") :
-                                        QStringLiteral("Cache hit"));
+    setRowStatus(*row, from_network ? QStringLiteral("Downloading") : QStringLiteral("Cache hit"));
   }
 }
 
@@ -138,12 +159,9 @@ void DownloadStatsDialog::markFinished(const QString& topic, const QString& stat
   const QString display_status =
       status == QStringLiteral("Done") && cache_only ? QStringLiteral("Cached") : status;
   row->finished = true;
-  row->status->setText(display_status);
-  row->progress->setRange(0, 1000);
-  row->progress->setValue(
-      (display_status == QStringLiteral("Done") || display_status == QStringLiteral("Cached")) ?
-          1000 :
-          0);
+  row->speed_samples.clear();
+  row->speed->setText(formatSpeed(0));
+  setRowStatus(*row, display_status);
   refreshStats();
 }
 
@@ -156,7 +174,7 @@ void DownloadStatsDialog::markCancelling()
   {
     if (!it->finished)
     {
-      it->status->setText(QStringLiteral("Cancelling"));
+      setRowStatus(*it, QStringLiteral("Cancelling"));
     }
   }
 }
@@ -185,24 +203,25 @@ void DownloadStatsDialog::reject()
 void DownloadStatsDialog::refreshStats()
 {
   qint64 network_total = 0;
+  const qint64 now = elapsed_.elapsed();
   for (auto it = rows_.begin(); it != rows_.end(); ++it)
   {
     network_total += it->network_bytes;
-    const qint64 delta = it->network_bytes - it->previous_network_bytes;
-    it->speed->setText(formatBytes(std::max<qint64>(0, delta)) + QStringLiteral("/s"));
-    it->previous_network_bytes = it->network_bytes;
+    if (!it->finished)
+    {
+      addSpeedSample(it->speed_samples, now, it->network_bytes);
+      it->speed->setText(formatSpeed(rollingSpeed(it->speed_samples)));
+    }
   }
 
-  const qint64 total_delta = network_total - previous_total_bytes_;
-  previous_total_bytes_ = network_total;
+  addSpeedSample(total_speed_samples_, now, network_total);
+  const qint64 total_speed = active_ ? rollingSpeed(total_speed_samples_) : 0;
   const QString state = cancelling_ ? QStringLiteral("Cancelling") :
                         active_     ? QStringLiteral("Downloading") :
                                       QStringLiteral("Complete");
   summary_label_->setText(
-      QStringLiteral("%1 - network payload %2, current network speed %3/s. "
-                     "Exact wire traffic is not exposed by the current Arrow "
-                     "Flight reader.")
-          .arg(state, formatBytes(network_total), formatBytes(std::max<qint64>(0, total_delta))));
+      QStringLiteral("%1 - downloaded %2, speed %3")
+          .arg(state, formatByteCount(network_total), formatSpeed(total_speed)));
 }
 
 DownloadStatsDialog::Row* DownloadStatsDialog::rowForTopic(const QString& topic)
@@ -215,15 +234,81 @@ DownloadStatsDialog::Row* DownloadStatsDialog::rowForTopic(const QString& topic)
   return &(*it);
 }
 
+qint64 DownloadStatsDialog::networkTotal() const
+{
+  qint64 total = 0;
+  for (auto it = rows_.constBegin(); it != rows_.constEnd(); ++it)
+  {
+    total += it->network_bytes;
+  }
+  return total;
+}
+
 void DownloadStatsDialog::clearRows()
 {
   for (auto it = rows_.begin(); it != rows_.end(); ++it)
   {
     delete it->topic;
-    delete it->progress;
     delete it->bytes;
     delete it->speed;
     delete it->status;
   }
   rows_.clear();
+}
+
+void DownloadStatsDialog::setRowStatus(Row& row, const QString& status)
+{
+  row.status->setText(status);
+
+  QString color = QStringLiteral("#57606a");
+  if (status == QStringLiteral("Downloading"))
+  {
+    color = QStringLiteral("#0969da");
+  }
+  else if (status == QStringLiteral("Done"))
+  {
+    color = QStringLiteral("#1a7f37");
+  }
+  else if (status == QStringLiteral("Cached") || status == QStringLiteral("Cache hit"))
+  {
+    color = QStringLiteral("#0a7f83");
+  }
+  else if (status == QStringLiteral("Failed"))
+  {
+    color = QStringLiteral("#cf222e");
+  }
+  else if (status == QStringLiteral("Cancelling") || status == QStringLiteral("Cancelled"))
+  {
+    color = QStringLiteral("#9a6700");
+  }
+
+  row.status->setStyleSheet(QStringLiteral("color: %1; font-weight: 600;").arg(color));
+}
+
+void DownloadStatsDialog::addSpeedSample(QVector<SpeedSample>& samples, qint64 elapsed_ms,
+                                         qint64 bytes)
+{
+  samples.push_back({ elapsed_ms, bytes });
+  const qint64 oldest_kept = elapsed_ms - kSpeedWindowMs;
+  while (samples.size() > 1 && samples.front().elapsed_ms < oldest_kept)
+  {
+    samples.removeFirst();
+  }
+}
+
+qint64 DownloadStatsDialog::rollingSpeed(const QVector<SpeedSample>& samples)
+{
+  if (samples.size() < 2)
+  {
+    return 0;
+  }
+
+  const auto& first = samples.front();
+  const auto& last = samples.back();
+  const qint64 elapsed_ms = last.elapsed_ms - first.elapsed_ms;
+  if (elapsed_ms <= 0)
+  {
+    return 0;
+  }
+  return std::max<qint64>(0, last.bytes - first.bytes) * 1000 / elapsed_ms;
 }
