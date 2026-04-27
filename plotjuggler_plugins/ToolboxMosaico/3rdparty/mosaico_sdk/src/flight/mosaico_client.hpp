@@ -43,7 +43,14 @@ public:
   arrow::Result<QueryResponse> query(const std::vector<QueryFilter>& filters);
 
   // Discovery
-  arrow::Result<std::vector<SequenceInfo>> listSequences();
+  using SequenceListStartedCallback =
+      std::function<void(const std::vector<SequenceInfo>& sequences)>;
+  using SequenceInfoCallback =
+      std::function<void(const SequenceInfo& sequence, int64_t completed, int64_t total)>;
+
+  arrow::Result<std::vector<SequenceInfo>>
+  listSequences(SequenceListStartedCallback on_list_started = nullptr,
+                SequenceInfoCallback on_sequence_info = nullptr);
 
   // Lists topics in a sequence with one GetFlightInfo call. The returned
   // TopicInfo entries have `topic_name`, `min_ts_ns`, `max_ts_ns`, and

@@ -100,6 +100,8 @@ private slots:
   void onFetchError(const QString& message);
   void onTopicFetchError(const QString& topic_name, const QString& message);
   void onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes);
+  void onSequenceListStarted(const std::vector<SequenceInfo>& sequences);
+  void onSequenceInfoReady(const SequenceInfo& sequence, qint64 completed, qint64 total);
   void onSequencesReady(const std::vector<SequenceInfo>& sequences);
   void onTopicsReady(const QStringList& names, const std::vector<TopicInfo>& infos);
   void onTopicMetadataReady(const QString& sequence_name, const QString& topic_name,

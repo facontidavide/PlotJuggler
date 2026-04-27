@@ -177,6 +177,7 @@ ToolboxMosaico::ToolboxMosaico()
   qRegisterMetaType<PullResult>("PullResult");
   qRegisterMetaType<std::shared_ptr<arrow::Schema>>("std::shared_ptr<arrow::Schema>");
   qRegisterMetaType<std::shared_ptr<arrow::RecordBatch>>("std::shared_ptr<arrow::RecordBatch>");
+  qRegisterMetaType<SequenceInfo>("SequenceInfo");
   qRegisterMetaType<TopicInfo>("TopicInfo");
   qRegisterMetaType<std::vector<SequenceInfo>>("std::vector<SequenceInfo>");
   qRegisterMetaType<std::vector<TopicInfo>>("std::vector<TopicInfo>");

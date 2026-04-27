@@ -60,6 +60,8 @@ public slots:
                       qint64 end_ns);
 
 signals:
+  void sequenceListStarted(const std::vector<SequenceInfo>& sequences);
+  void sequenceInfoReady(const SequenceInfo& sequence, qint64 completed, qint64 total);
   void sequencesReady(const std::vector<SequenceInfo>& sequences);
   void topicsReady(const QStringList& names, const std::vector<TopicInfo>& infos);
   // Emitted after fetchTopicMetadata completes successfully. Failures are

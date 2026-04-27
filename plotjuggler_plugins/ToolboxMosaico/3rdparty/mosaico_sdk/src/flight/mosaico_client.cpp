@@ -675,7 +675,9 @@ arrow::Result<QueryResponse> MosaicoClient::query(const std::vector<QueryFilter>
 // Discovery
 // ---------------------------------------------------------------------------
 
-arrow::Result<std::vector<SequenceInfo>> MosaicoClient::listSequences()
+arrow::Result<std::vector<SequenceInfo>>
+MosaicoClient::listSequences(SequenceListStartedCallback on_list_started,
+                             SequenceInfoCallback on_sequence_info)
 {
   const auto t_begin = sdkNow();
   auto opts = callOpts();
@@ -720,9 +722,22 @@ arrow::Result<std::vector<SequenceInfo>> MosaicoClient::listSequences()
   {
     sequences[i].name = names[i];
   }
+  if (on_list_started)
+  {
+    on_list_started(sequences);
+  }
 
   std::atomic<int64_t> getinfo_ok(0);
   std::atomic<int64_t> getinfo_fail(0);
+  std::atomic<int64_t> getinfo_done(0);
+  const auto emit_sequence_info = [&](const SequenceInfo& sequence) {
+    if (!on_sequence_info)
+    {
+      return;
+    }
+    const int64_t completed = getinfo_done.fetch_add(1, std::memory_order_relaxed) + 1;
+    on_sequence_info(sequence, completed, static_cast<int64_t>(names.size()));
+  };
 
   const auto t_getinfo_all = sdkNow();
   parallelIndexed(names.size(), pool_.poolSize(), [&](size_t i) {
@@ -734,6 +749,7 @@ arrow::Result<std::vector<SequenceInfo>> MosaicoClient::listSequences()
       MOSAICO_SDK_LOG("[Mosaico SDK] listSequences: tid=%s seq[%zu]=%s "
                       "checkout FAILED\n",
                       tidStr().c_str(), i, names[i].c_str());
+      emit_sequence_info(sequences[i]);
       return;
     }
     auto& local_conn = *conn_result;
@@ -750,6 +766,7 @@ arrow::Result<std::vector<SequenceInfo>> MosaicoClient::listSequences()
                       "GetFlightInfo FAILED (%lld ms): %s\n",
                       tidStr().c_str(), i, names[i].c_str(), (long long)ms_info,
                       info_result.status().ToString().c_str());
+      emit_sequence_info(sequences[i]);
       return;
     }
     getinfo_ok.fetch_add(1, std::memory_order_relaxed);
@@ -788,6 +805,7 @@ arrow::Result<std::vector<SequenceInfo>> MosaicoClient::listSequences()
     // Top-level FlightInfo.app_metadata is SequenceAppMetadata (created_at,
     // sessions list). Captured for future use; no consumer today.
     parseSequenceAppMetadata(info->app_metadata(), seq);
+    emit_sequence_info(seq);
   });
   const auto ms_getinfo_all = sdkElapsedMs(t_getinfo_all);
   const auto ms_total = sdkElapsedMs(t_begin);

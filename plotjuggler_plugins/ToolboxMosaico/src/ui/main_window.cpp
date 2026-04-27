@@ -40,6 +40,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include <algorithm>
 #include <exception>
 #include <set>
 #include <utility>
@@ -283,6 +284,8 @@ void MainWindow::ensureWorkerThread()
   worker_ = new FetchWorker();
   worker_->moveToThread(worker_thread_);
 
+  connect(worker_, &FetchWorker::sequenceListStarted, this, &MainWindow::onSequenceListStarted);
+  connect(worker_, &FetchWorker::sequenceInfoReady, this, &MainWindow::onSequenceInfoReady);
   connect(worker_, &FetchWorker::sequencesReady, this, &MainWindow::onSequencesReady);
   connect(worker_, &FetchWorker::topicsReady, this, &MainWindow::onTopicsReady);
   connect(worker_, &FetchWorker::topicMetadataReady, this, &MainWindow::onTopicMetadataReady);
@@ -336,6 +339,49 @@ int64_t MainWindow::sliderToNs(int pos) const
 {
   double fraction = static_cast<double>(pos) / kSliderSteps;
   return seq_min_ns_ + static_cast<int64_t>(fraction * (seq_max_ns_ - seq_min_ns_));
+}
+
+// ---------------------------------------------------------------------------
+void MainWindow::onSequenceListStarted(const std::vector<SequenceInfo>& sequences)
+{
+  guardedSlot(status_label_, "onSequenceListStarted", [&]() {
+    if (error_context_ != ErrorContext::ExplicitConnect &&
+        error_context_ != ErrorContext::AutoConnect)
+    {
+      return;
+    }
+
+    all_sequences_ = sequences;
+    sequence_panel_->populateSequences(sequences);
+    sequence_panel_->setMetadataLoadingProgress(0, static_cast<qint64>(sequences.size()));
+    setStatus(QString("Connected - loading details for %1 sequence(s)").arg(sequences.size()));
+  });
+}
+
+void MainWindow::onSequenceInfoReady(const SequenceInfo& sequence, qint64 completed, qint64 total)
+{
+  guardedSlot(status_label_, "onSequenceInfoReady", [&]() {
+    if (error_context_ != ErrorContext::ExplicitConnect &&
+        error_context_ != ErrorContext::AutoConnect)
+    {
+      return;
+    }
+
+    auto it = std::find_if(all_sequences_.begin(), all_sequences_.end(),
+                           [&](const SequenceInfo& seq) { return seq.name == sequence.name; });
+    if (it == all_sequences_.end())
+    {
+      all_sequences_.push_back(sequence);
+    }
+    else
+    {
+      *it = sequence;
+    }
+
+    sequence_panel_->updateSequence(sequence);
+    sequence_panel_->setMetadataLoadingProgress(completed, total);
+    setStatus(QString("Loading sequence details %1/%2").arg(completed).arg(total));
+  });
 }
 
 // ---------------------------------------------------------------------------

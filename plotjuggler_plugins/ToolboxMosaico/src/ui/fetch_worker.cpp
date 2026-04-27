@@ -36,6 +36,8 @@ inline qint64 elapsedMs(std::chrono::steady_clock::time_point start)
 FetchWorker::FetchWorker(QObject* parent) : QObject(parent)
 {
   qRegisterMetaType<MosaicoClient*>("MosaicoClient*");
+  qRegisterMetaType<SequenceInfo>("SequenceInfo");
+  qRegisterMetaType<std::vector<SequenceInfo>>("std::vector<SequenceInfo>");
 }
 
 void FetchWorker::setClient(MosaicoClient* client)
@@ -74,7 +76,14 @@ void FetchWorker::fetchSequences()
     }
     qDebug() << "[Mosaico fetch] listSequences: start";
     const auto t0 = std::chrono::steady_clock::now();
-    auto result = client_->listSequences();
+    auto result = client_->listSequences(
+        [this](const std::vector<SequenceInfo>& sequences) {
+          emit sequenceListStarted(sequences);
+        },
+        [this](const SequenceInfo& sequence, int64_t completed, int64_t total) {
+          emit sequenceInfoReady(sequence, static_cast<qint64>(completed),
+                                 static_cast<qint64>(total));
+        });
     const auto ms = elapsedMs(t0);
     if (!result.ok())
     {
