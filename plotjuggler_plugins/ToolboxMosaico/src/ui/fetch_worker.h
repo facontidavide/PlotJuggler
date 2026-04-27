@@ -17,6 +17,7 @@ using mosaico::TopicInfo;
 #include <QStringList>
 
 #include <atomic>
+#include <memory>
 #include <vector>
 
 namespace mosaico
@@ -66,9 +67,19 @@ signals:
   void topicMetadataReady(const QString& sequence_name, const QString& topic_name,
                           const TopicInfo& info);
   void dataReady(const QString& sequence_name, const QString& topic_name, const PullResult& result);
-  // Emitted periodically during a pull. bytes = cumulative bytes received,
-  // total_bytes = server-advertised total (0 when unknown).
-  void fetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes);
+  void topicStreamStarted(const QString& sequence_name, const QString& topic_name,
+                          const std::shared_ptr<arrow::Schema>& schema);
+  void topicBatchReady(const QString& sequence_name, const QString& topic_name,
+                       const std::shared_ptr<arrow::RecordBatch>& batch);
+  void topicStreamFinished(const QString& sequence_name, const QString& topic_name);
+  // Emitted periodically during a pull or cache read. bytes = cumulative
+  // decoded Arrow payload bytes for the source; total_bytes = advertised total
+  // (0 when unknown). from_network is false for cache hits so the stats dialog
+  // does not report cache reads as network traffic. The public Flight reader
+  // does not expose exact wire bytes.
+  void fetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes,
+                     bool from_network);
+  void topicErrorOccurred(const QString& topic_name, const QString& message);
   void errorOccurred(const QString& message);
 
 private:

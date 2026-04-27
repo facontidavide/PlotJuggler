@@ -286,7 +286,13 @@ void MainWindow::ensureWorkerThread()
   connect(worker_, &FetchWorker::topicsReady, this, &MainWindow::onTopicsReady);
   connect(worker_, &FetchWorker::topicMetadataReady, this, &MainWindow::onTopicMetadataReady);
   connect(worker_, &FetchWorker::dataReady, this, &MainWindow::onDataReady);
+  connect(worker_, &FetchWorker::topicStreamStarted, this, &MainWindow::onTopicStreamStarted,
+          Qt::BlockingQueuedConnection);
+  connect(worker_, &FetchWorker::topicBatchReady, this, &MainWindow::onTopicBatchReady,
+          Qt::BlockingQueuedConnection);
+  connect(worker_, &FetchWorker::topicStreamFinished, this, &MainWindow::onTopicStreamFinished);
   connect(worker_, &FetchWorker::fetchProgress, this, &MainWindow::onFetchProgress);
+  connect(worker_, &FetchWorker::topicErrorOccurred, this, &MainWindow::onTopicFetchError);
   connect(worker_, &FetchWorker::errorOccurred, this, &MainWindow::onFetchError);
 
   connect(worker_thread_, &QThread::finished, worker_, &QObject::deleteLater);
@@ -544,49 +550,127 @@ void MainWindow::onDataReady(const QString& sequence_name, const QString& topic_
                              const PullResult& result)
 {
   guardedSlot(status_label_, "onDataReady", [&]() {
-    // Cancel in progress: discard any chunk that arrives after the user
-    // clicked Cancel. The toolbox wrapper accumulates state per topic, so
-    // the safe thing is to not forward it at all.
     if (!cancelling_fetch_)
     {
-      emit mosaicoDataReady(sequence_name, topic_name, result);
+      emit mosaicoTopicStarted(sequence_name, topic_name, result.schema);
+      for (const auto& batch : result.batches)
+      {
+        emit mosaicoTopicBatchReady(sequence_name, topic_name, batch);
+      }
+      emit mosaicoTopicFinished(sequence_name, topic_name);
     }
-    --pending_fetches_;
-    if (pending_fetches_ <= 0)
+    finishFetchTopic(topic_name, true);
+  });
+}
+
+void MainWindow::onTopicStreamStarted(const QString& sequence_name, const QString& topic_name,
+                                      const std::shared_ptr<arrow::Schema>& schema)
+{
+  guardedSlot(status_label_, "onTopicStreamStarted", [&]() {
+    if (!cancelling_fetch_)
     {
-      fetch_button_->setText("Download");
-      fetch_button_->setToolTip("Download selected topics");
-      fetch_button_->setEnabled(!selected_topics_.isEmpty());
-
-      // Clear the fetch context so subsequent Connect/Refresh clicks
-      // aren't silently blocked by the error_context_ != None guard.
-      error_context_ = ErrorContext::None;
-      if (client_)
-      {
-        refresh_button_->setEnabled(true);
-      }
-
-      if (cancelling_fetch_)
-      {
-        cancelling_fetch_ = false;
-        if (worker_)
-        {
-          worker_->resetCancel();
-        }
-        setStatus(QStringLiteral("Download cancelled"));
-        emit fetchCancelled();
-      }
-      else
-      {
-        setStatus(QString("Loaded data for %1").arg(topic_name));
-        emit allFetchesComplete();
-      }
+      emit mosaicoTopicStarted(sequence_name, topic_name, schema);
     }
   });
 }
 
-void MainWindow::onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes)
+void MainWindow::onTopicBatchReady(const QString& sequence_name, const QString& topic_name,
+                                   const std::shared_ptr<arrow::RecordBatch>& batch)
 {
+  guardedSlot(status_label_, "onTopicBatchReady", [&]() {
+    if (!cancelling_fetch_)
+    {
+      emit mosaicoTopicBatchReady(sequence_name, topic_name, batch);
+    }
+  });
+}
+
+void MainWindow::onTopicStreamFinished(const QString& sequence_name, const QString& topic_name)
+{
+  guardedSlot(status_label_, "onTopicStreamFinished", [&]() {
+    emit mosaicoTopicFinished(sequence_name, topic_name);
+    finishFetchTopic(topic_name, true);
+  });
+}
+
+void MainWindow::requestFetchCancel()
+{
+  cancelling_fetch_ = true;
+  if (worker_)
+  {
+    worker_->requestCancel();
+  }
+  fetch_button_->setEnabled(false);
+  setStatus(QStringLiteral("Cancelling..."));
+}
+
+void MainWindow::finishFetchTopic(const QString& topic_name, bool success)
+{
+  Q_UNUSED(topic_name)
+  Q_UNUSED(success)
+  if (pending_fetches_ > 0)
+  {
+    --pending_fetches_;
+  }
+  if (pending_fetches_ <= 0)
+  {
+    finishFetchBatch();
+  }
+}
+
+void MainWindow::finishFetchBatch()
+{
+  fetch_button_->setText("Download");
+  fetch_button_->setToolTip("Download selected topics");
+  fetch_button_->setEnabled(!selected_topics_.isEmpty());
+
+  error_context_ = ErrorContext::None;
+  if (client_)
+  {
+    refresh_button_->setEnabled(true);
+  }
+
+  if (cancelling_fetch_)
+  {
+    cancelling_fetch_ = false;
+    if (worker_)
+    {
+      worker_->resetCancel();
+    }
+    setStatus(QStringLiteral("Download cancelled"));
+    emit fetchCancelled();
+  }
+  else
+  {
+    setStatus(QStringLiteral("Loaded selected data"));
+    emit allFetchesComplete();
+  }
+
+  if (!pending_fetch_errors_.isEmpty())
+  {
+    int total = 0;
+    QStringList lines;
+    lines.reserve(pending_fetch_errors_.size());
+    for (auto it = pending_fetch_errors_.constBegin(); it != pending_fetch_errors_.constEnd(); ++it)
+    {
+      total += it.value();
+      lines << (it.value() > 1 ? QStringLiteral("  [%1x] %2").arg(it.value()).arg(it.key()) :
+                                 QStringLiteral("  %1").arg(it.key()));
+    }
+    const QString title = total == 1 ? QStringLiteral("Fetch Error") :
+                                       QStringLiteral("Fetch Errors (%1 topics)").arg(total);
+    const QString body =
+        total == 1 ? lines.first().trimmed() :
+                     QStringLiteral("%1 topic(s) failed:\n\n%2").arg(total).arg(lines.join("\n"));
+    showCopyableWarning(this, title, body);
+    pending_fetch_errors_.clear();
+  }
+}
+
+void MainWindow::onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes,
+                                 bool from_network)
+{
+  Q_UNUSED(from_network)
   // Only reflect progress if a fetch is actually in flight; otherwise a late
   // signal from a just-completed topic could overwrite a more recent status.
   if (error_context_ != ErrorContext::Fetch || selected_topics_.isEmpty())
@@ -615,18 +699,31 @@ void MainWindow::onFetchProgress(const QString& topic_name, qint64 bytes, qint64
       QStringLiteral("Fetching %1 (%2/%3): %4").arg(topic_name).arg(idx).arg(total).arg(body));
 }
 
+void MainWindow::onTopicFetchError(const QString& topic_name, const QString& message)
+{
+  guardedSlot(status_label_, "onTopicFetchError", [&]() {
+    if (error_context_ != ErrorContext::Fetch)
+    {
+      onFetchError(message);
+      return;
+    }
+
+    const bool cancel_drain = cancelling_fetch_;
+    if (!cancel_drain)
+    {
+      setStatus("Error: " + message);
+      pending_fetch_errors_[message]++;
+    }
+    finishFetchTopic(topic_name, false);
+  });
+}
+
 void MainWindow::onFetchClicked()
 {
   // The button doubles as a Cancel when a fetch is in flight.
   if (error_context_ == ErrorContext::Fetch)
   {
-    cancelling_fetch_ = true;
-    if (worker_)
-    {
-      worker_->requestCancel();
-    }
-    fetch_button_->setEnabled(false);
-    setStatus(QStringLiteral("Cancelling…"));
+    requestFetchCancel();
     return;
   }
 
@@ -726,56 +823,13 @@ void MainWindow::onFetchError(const QString& message)
 
     if (error_context_ == ErrorContext::Fetch)
     {
-      --pending_fetches_;
       if (!cancel_drain)
       {
         // Accumulate — flushed as a single popup once the batch settles.
         // Keyed by message so N identical failures collapse to one entry.
         pending_fetch_errors_[message]++;
       }
-      if (pending_fetches_ <= 0)
-      {
-        fetch_button_->setText("Download");
-        fetch_button_->setToolTip("Download selected topics");
-        fetch_button_->setEnabled(!selected_topics_.isEmpty());
-        if (cancelling_fetch_)
-        {
-          cancelling_fetch_ = false;
-          if (worker_)
-          {
-            worker_->resetCancel();
-          }
-          setStatus(QStringLiteral("Download cancelled"));
-          emit fetchCancelled();
-        }
-        else
-        {
-          emit allFetchesComplete();
-        }
-
-        // Flush accumulated errors once, at most one popup per fetch batch.
-        if (!pending_fetch_errors_.isEmpty())
-        {
-          int total = 0;
-          QStringList lines;
-          lines.reserve(pending_fetch_errors_.size());
-          for (auto it = pending_fetch_errors_.constBegin(); it != pending_fetch_errors_.constEnd();
-               ++it)
-          {
-            total += it.value();
-            lines << (it.value() > 1 ? QStringLiteral("  [%1x] %2").arg(it.value()).arg(it.key()) :
-                                       QStringLiteral("  %1").arg(it.key()));
-          }
-          const QString title = total == 1 ? QStringLiteral("Fetch Error") :
-                                             QStringLiteral("Fetch Errors (%1 topics)").arg(total);
-          const QString body =
-              total == 1 ?
-                  lines.first().trimmed() :
-                  QStringLiteral("%1 topic(s) failed:\n\n%2").arg(total).arg(lines.join("\n"));
-          showCopyableWarning(this, title, body);
-          pending_fetch_errors_.clear();
-        }
-      }
+      finishFetchTopic(QString(), false);
     }
 
     if (in_connect)
