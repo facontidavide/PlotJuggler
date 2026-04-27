@@ -9,6 +9,7 @@
 #include "main_window.h"
 
 #include "../core/time_format.h"
+#include "download_stats_dialog.h"
 #include "elided_label.h"
 #include "fetch_worker.h"
 #include "format_utils.h"
@@ -600,17 +601,26 @@ void MainWindow::requestFetchCancel()
   {
     worker_->requestCancel();
   }
+  if (download_stats_dialog_)
+  {
+    download_stats_dialog_->markCancelling();
+  }
   fetch_button_->setEnabled(false);
   setStatus(QStringLiteral("Cancelling..."));
 }
 
 void MainWindow::finishFetchTopic(const QString& topic_name, bool success)
 {
-  Q_UNUSED(topic_name)
-  Q_UNUSED(success)
   if (pending_fetches_ > 0)
   {
     --pending_fetches_;
+  }
+  if (download_stats_dialog_ && !topic_name.isEmpty())
+  {
+    download_stats_dialog_->markFinished(topic_name, cancelling_fetch_ ?
+                                                         QStringLiteral("Cancelled") :
+                                                     success ? QStringLiteral("Done") :
+                                                               QStringLiteral("Failed"));
   }
   if (pending_fetches_ <= 0)
   {
@@ -628,6 +638,10 @@ void MainWindow::finishFetchBatch()
   if (client_)
   {
     refresh_button_->setEnabled(true);
+  }
+  if (download_stats_dialog_)
+  {
+    download_stats_dialog_->markComplete();
   }
 
   if (cancelling_fetch_)
@@ -670,7 +684,10 @@ void MainWindow::finishFetchBatch()
 void MainWindow::onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes,
                                  bool from_network)
 {
-  Q_UNUSED(from_network)
+  if (download_stats_dialog_)
+  {
+    download_stats_dialog_->updateProgress(topic_name, bytes, total_bytes, from_network);
+  }
   // Only reflect progress if a fetch is actually in flight; otherwise a late
   // signal from a just-completed topic could overwrite a more recent status.
   if (error_context_ != ErrorContext::Fetch || selected_topics_.isEmpty())
@@ -685,7 +702,11 @@ void MainWindow::onFetchProgress(const QString& topic_name, qint64 bytes, qint64
   const int idx = total - pending_fetches_ + 1;
 
   QString body;
-  if (total_bytes > 0)
+  if (!from_network)
+  {
+    body = QStringLiteral("cache %1").arg(formatBytes(bytes));
+  }
+  else if (total_bytes > 0)
   {
     const int pct = static_cast<int>((100 * bytes) / total_bytes);
     body =
@@ -750,6 +771,15 @@ void MainWindow::onFetchClicked()
   fetch_button_->setText("Cancel");
   fetch_button_->setToolTip("Cancel the in-flight download");
   setStatus(QString::fromUtf8("Fetching %1 topic(s)…").arg(pending_fetches_));
+  if (!download_stats_dialog_)
+  {
+    download_stats_dialog_ = new DownloadStatsDialog(this);
+    connect(download_stats_dialog_, &DownloadStatsDialog::cancelRequested, this,
+            &MainWindow::requestFetchCancel);
+  }
+  download_stats_dialog_->start(selected_topics_);
+  download_stats_dialog_->show();
+  download_stats_dialog_->raise();
   // One queued call hands the whole batch to the worker, which delegates to
   // the SDK's pullTopics — that runs up to pool_size pulls in parallel
   // (kConnectionPoolSize=4). Queueing N separate fetchData calls would

@@ -49,6 +49,7 @@ include_directories(../)
 
 set(MOSAICO_SOURCES
     src/core/time_format.cpp
+    src/ui/download_stats_dialog.cpp
     src/ui/main_window.cpp
     src/ui/fetch_worker.cpp
     src/ui/server_history.cpp

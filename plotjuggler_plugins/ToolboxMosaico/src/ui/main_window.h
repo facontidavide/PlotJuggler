@@ -38,6 +38,7 @@ class MosaicoClient;
 using mosaico::MosaicoClient;
 
 class DataViewPanel;
+class DownloadStatsDialog;
 class FetchWorker;
 class QueryBar;
 class SequencePanel;
@@ -209,6 +210,7 @@ private:
 
   FetchWorker* worker_ = nullptr;
   QThread* worker_thread_ = nullptr;
+  DownloadStatsDialog* download_stats_dialog_ = nullptr;
 
   // Tracks error context so we only show popups for explicit Connect clicks.
   enum class ErrorContext
