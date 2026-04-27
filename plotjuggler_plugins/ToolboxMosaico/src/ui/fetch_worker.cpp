@@ -9,8 +9,6 @@
 
 #include "fetch_worker.h"
 
-#include <arrow/util/byte_size.h>
-
 #include <QDebug>
 #include <QStringList>
 #include <QThread>
@@ -20,7 +18,6 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 
 namespace
@@ -223,11 +220,6 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
       topics_std.emplace_back(t.toStdString());
     }
 
-    // Per-topic throttle: pullTopics fires the progress callback from
-    // multiple worker threads concurrently, so each topic owns its own
-    // last_emit timestamp under a single mutex. A typical pull bursts a few
-    // hundred chunks/sec; capping at ~10 emits/sec/topic keeps the GUI
-    // event loop relaxed while still feeling responsive.
     struct ProgressState
     {
       std::chrono::steady_clock::time_point last_emit{};
@@ -253,8 +245,7 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
         }
         auto& st = it->second;
         const auto now = std::chrono::steady_clock::now();
-        const bool done = total_bytes > 0 && bytes >= total_bytes;
-        if (!st.ever_emitted || done ||
+        if (!st.ever_emitted ||
             std::chrono::duration_cast<std::chrono::milliseconds>(now - st.last_emit).count() >=
                 100)
         {
@@ -266,7 +257,7 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
       if (emit_now)
       {
         emit fetchProgress(QString::fromStdString(topic), static_cast<qint64>(bytes),
-                           static_cast<qint64>(total_bytes), true);
+                           static_cast<qint64>(total_bytes));
       }
     };
 
@@ -290,7 +281,8 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
         emit topicErrorOccurred(topic_q, QString::fromStdString(result.status().ToString()));
         return;
       }
-      emit topicStreamFinished(sequence_name, topic_q);
+      emit topicStreamFinished(sequence_name, topic_q,
+                               static_cast<qint64>(result->decoded_size_bytes));
     };
 
     qDebug().noquote() << QString("[Mosaico fetch] pullTopics %1: dispatching %2 topics "

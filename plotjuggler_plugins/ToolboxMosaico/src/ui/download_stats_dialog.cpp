@@ -107,44 +107,42 @@ void DownloadStatsDialog::start(const QStringList& topics)
   refreshStats();
 }
 
-void DownloadStatsDialog::updateProgress(const QString& topic, qint64 bytes, qint64 total_bytes,
-                                         bool from_network)
+void DownloadStatsDialog::updateProgress(const QString& topic, qint64 bytes, qint64 total_bytes)
 {
   Row* row = rowForTopic(topic);
   if (!row)
   {
     return;
   }
+  if (bytes < row->decoded_bytes)
+  {
+    return;
+  }
 
-  if (from_network)
+  row->decoded_bytes = bytes;
+  if (!row->finished)
   {
-    row->network_bytes = bytes;
-    if (!row->finished)
-    {
-      const qint64 now = elapsed_.elapsed();
-      addSpeedSample(row->speed_samples, now, row->network_bytes);
-      addSpeedSample(total_speed_samples_, now, networkTotal());
-      row->speed->setText(formatSpeed(rollingSpeed(row->speed_samples)));
-    }
+    const qint64 now = elapsed_.elapsed();
+    addSpeedSample(row->speed_samples, now, row->decoded_bytes);
+    addSpeedSample(total_speed_samples_, now, decodedTotal());
+    row->speed->setText(formatSpeed(rollingSpeed(row->speed_samples)));
   }
-  else
+  if (total_bytes > 0)
   {
-    row->cache_bytes = bytes;
+    row->total_bytes = total_bytes;
   }
-  row->total_bytes = total_bytes;
-  if (from_network && total_bytes > 0)
+  if (row->total_bytes > 0)
   {
     row->bytes->setText(
-        QStringLiteral("%1 / %2").arg(formatBytes(bytes), formatBytes(total_bytes)));
+        QStringLiteral("%1 / %2").arg(formatBytes(bytes), formatBytes(row->total_bytes)));
   }
   else
   {
-    row->bytes->setText(from_network ? formatBytes(bytes) :
-                                       QStringLiteral("cache %1").arg(formatBytes(bytes)));
+    row->bytes->setText(formatBytes(bytes));
   }
   if (!row->finished)
   {
-    setRowStatus(*row, from_network ? QStringLiteral("Downloading") : QStringLiteral("Cache hit"));
+    setRowStatus(*row, QStringLiteral("Downloading"));
   }
 }
 
@@ -155,13 +153,7 @@ void DownloadStatsDialog::markFinished(const QString& topic, const QString& stat
   {
     return;
   }
-  const bool cache_only = row->cache_bytes > 0 && row->network_bytes == 0;
-  const QString display_status =
-      status == QStringLiteral("Done") && cache_only ? QStringLiteral("Cached") : status;
-  row->finished = true;
-  row->speed_samples.clear();
-  row->speed->setText(formatSpeed(0));
-  setRowStatus(*row, display_status);
+  finishRow(*row, status);
   refreshStats();
 }
 
@@ -179,14 +171,28 @@ void DownloadStatsDialog::markCancelling()
   }
 }
 
-void DownloadStatsDialog::markComplete()
+void DownloadStatsDialog::markComplete(const QString& unfinished_status)
 {
+  for (auto it = rows_.begin(); it != rows_.end(); ++it)
+  {
+    if (!it->finished)
+    {
+      finishRow(*it, unfinished_status);
+    }
+  }
   active_ = false;
   cancelling_ = false;
   timer_->stop();
   cancel_button_->setEnabled(true);
   cancel_button_->setText(QStringLiteral("Close"));
   refreshStats();
+  // Force a synchronous repaint. The per-row "Done" / "0 B/s" setText
+  // calls above queue paint events, but those events sit behind the
+  // BlockingQueuedConnection traffic from FetchWorker::topicBatchReady
+  // and only land once the GUI event loop drains the batch backlog —
+  // long enough for the user to see a stale "Downloading" row next to
+  // the already-updated "Close" button.
+  repaint();
 }
 
 void DownloadStatsDialog::reject()
@@ -202,26 +208,26 @@ void DownloadStatsDialog::reject()
 
 void DownloadStatsDialog::refreshStats()
 {
-  qint64 network_total = 0;
+  qint64 decoded_total = 0;
   const qint64 now = elapsed_.elapsed();
   for (auto it = rows_.begin(); it != rows_.end(); ++it)
   {
-    network_total += it->network_bytes;
+    decoded_total += it->decoded_bytes;
     if (!it->finished)
     {
-      addSpeedSample(it->speed_samples, now, it->network_bytes);
+      addSpeedSample(it->speed_samples, now, it->decoded_bytes);
       it->speed->setText(formatSpeed(rollingSpeed(it->speed_samples)));
     }
   }
 
-  addSpeedSample(total_speed_samples_, now, network_total);
+  addSpeedSample(total_speed_samples_, now, decoded_total);
   const qint64 total_speed = active_ ? rollingSpeed(total_speed_samples_) : 0;
   const QString state = cancelling_ ? QStringLiteral("Cancelling") :
                         active_     ? QStringLiteral("Downloading") :
                                       QStringLiteral("Complete");
   summary_label_->setText(
-      QStringLiteral("%1 - downloaded %2, speed %3")
-          .arg(state, formatByteCount(network_total), formatSpeed(total_speed)));
+      QStringLiteral("%1 - decoded %2, speed %3")
+          .arg(state, formatByteCount(decoded_total), formatSpeed(total_speed)));
 }
 
 DownloadStatsDialog::Row* DownloadStatsDialog::rowForTopic(const QString& topic)
@@ -234,12 +240,12 @@ DownloadStatsDialog::Row* DownloadStatsDialog::rowForTopic(const QString& topic)
   return &(*it);
 }
 
-qint64 DownloadStatsDialog::networkTotal() const
+qint64 DownloadStatsDialog::decodedTotal() const
 {
   qint64 total = 0;
   for (auto it = rows_.constBegin(); it != rows_.constEnd(); ++it)
   {
-    total += it->network_bytes;
+    total += it->decoded_bytes;
   }
   return total;
 }
@@ -256,6 +262,14 @@ void DownloadStatsDialog::clearRows()
   rows_.clear();
 }
 
+void DownloadStatsDialog::finishRow(Row& row, const QString& status)
+{
+  row.finished = true;
+  row.speed_samples.clear();
+  row.speed->setText(formatSpeed(0));
+  setRowStatus(row, status);
+}
+
 void DownloadStatsDialog::setRowStatus(Row& row, const QString& status)
 {
   row.status->setText(status);
@@ -268,10 +282,6 @@ void DownloadStatsDialog::setRowStatus(Row& row, const QString& status)
   else if (status == QStringLiteral("Done"))
   {
     color = QStringLiteral("#1a7f37");
-  }
-  else if (status == QStringLiteral("Cached") || status == QStringLiteral("Cache hit"))
-  {
-    color = QStringLiteral("#0a7f83");
   }
   else if (status == QStringLiteral("Failed"))
   {

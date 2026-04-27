@@ -52,6 +52,16 @@ inline std::string tidStr()
   return std::string(buf);
 }
 
+int64_t decodedRecordBatchBytes(const arrow::RecordBatch& batch)
+{
+  auto referenced_size = arrow::util::ReferencedBufferSize(batch);
+  if (referenced_size.ok())
+  {
+    return *referenced_size;
+  }
+  return arrow::util::TotalBufferSize(batch);
+}
+
 // Run `task(i)` for i in [0, count) using exactly min(count, parallelism)
 // worker threads. Work is dispatched via an atomic counter so the threads
 // naturally load-balance regardless of per-item cost. Blocks until every
@@ -936,8 +946,8 @@ arrow::Result<PullResult> MosaicoClient::pullTopic(
 
   // The server's app_metadata `info.total_bytes` is the on-disk Parquet
   // (compressed, columnar) byte size for the WHOLE topic, irrespective of
-  // any time-range filter. The bytes we accumulate below are uncompressed
-  // Arrow IPC buffer sizes for the requested SLICE. The two are not in the
+  // any time-range filter. The bytes we accumulate below are decoded Arrow
+  // RecordBatch buffer bytes for the requested SLICE. The two are not in the
   // same units and cannot be compared, so we don't pass a denominator here:
   // `progress_cb` receives 0 as the total, which the plugin renders as a
   // bytes-only progress line (no fraction, no percentage). Restore a real
@@ -1018,15 +1028,8 @@ arrow::Result<PullResult> MosaicoClient::pullTopic(
     last_chunk_time = t_got;
 
     total_rows += chunk.data->num_rows();
-    // Walk every buffer reachable from the batch — including child
-    // buffers under struct/list/map columns and per-column dictionaries.
-    // The previous flat loop over `column->data()->buffers` only saw
-    // top-level buffers, so nested types (e.g. ROS Odometry's
-    // pose/twist/covariance structs) were under-counted by ~10x and the
-    // download progress numerator was effectively meaningless on those
-    // topics. arrow::util::TotalBufferSize matches what the Python
-    // RecordBatch.get_total_buffer_size() reports.
-    total_bytes += arrow::util::TotalBufferSize(*chunk.data);
+    total_bytes += decodedRecordBatchBytes(*chunk.data);
+    result.decoded_size_bytes = total_bytes;
 
     if (batch_cb)
     {

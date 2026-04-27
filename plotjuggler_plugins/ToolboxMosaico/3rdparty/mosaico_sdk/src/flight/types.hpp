@@ -68,11 +68,12 @@ struct PullResult
 {
   std::shared_ptr<arrow::Schema> schema;
   std::vector<std::shared_ptr<arrow::RecordBatch>> batches;
+  int64_t decoded_size_bytes = 0;
 };
 
 // Progress hook for streaming reads (both Flight pullTopic and MCAP reads).
 //   rows         — cumulative rows read so far.
-//   bytes        — cumulative uncompressed bytes read so far.
+//   bytes        — cumulative decoded Arrow RecordBatch buffer bytes read so far.
 //   total_bytes  — comparable total in the same units as bytes, or 0 when the
 //                  source does not expose one. Mosaico's physical topic size
 //                  is exposed separately via TopicInfo::total_size_bytes.

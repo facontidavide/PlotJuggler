@@ -26,10 +26,10 @@ public:
   explicit DownloadStatsDialog(QWidget* parent = nullptr);
 
   void start(const QStringList& topics);
-  void updateProgress(const QString& topic, qint64 bytes, qint64 total_bytes, bool from_network);
+  void updateProgress(const QString& topic, qint64 bytes, qint64 total_bytes);
   void markFinished(const QString& topic, const QString& status);
   void markCancelling();
-  void markComplete();
+  void markComplete(const QString& unfinished_status);
   void reject() override;
 
 signals:
@@ -51,16 +51,16 @@ private:
     QLabel* bytes = nullptr;
     QLabel* speed = nullptr;
     QLabel* status = nullptr;
-    qint64 network_bytes = 0;
-    qint64 cache_bytes = 0;
+    qint64 decoded_bytes = 0;
     qint64 total_bytes = 0;
     QVector<SpeedSample> speed_samples;
     bool finished = false;
   };
 
   Row* rowForTopic(const QString& topic);
-  qint64 networkTotal() const;
+  qint64 decodedTotal() const;
   void clearRows();
+  void finishRow(Row& row, const QString& status);
   void setRowStatus(Row& row, const QString& status);
   static void addSpeedSample(QVector<SpeedSample>& samples, qint64 elapsed_ms, qint64 bytes);
   static qint64 rollingSpeed(const QVector<SpeedSample>& samples);

@@ -560,6 +560,11 @@ void MainWindow::onDataReady(const QString& sequence_name, const QString& topic_
       }
       emit mosaicoTopicFinished(sequence_name, topic_name);
     }
+    if (download_stats_dialog_)
+    {
+      download_stats_dialog_->updateProgress(topic_name, result.decoded_size_bytes,
+                                             /*total_bytes=*/0);
+    }
     finishFetchTopic(topic_name, true);
   });
 }
@@ -586,9 +591,14 @@ void MainWindow::onTopicBatchReady(const QString& sequence_name, const QString& 
   });
 }
 
-void MainWindow::onTopicStreamFinished(const QString& sequence_name, const QString& topic_name)
+void MainWindow::onTopicStreamFinished(const QString& sequence_name, const QString& topic_name,
+                                       qint64 decoded_size_bytes)
 {
   guardedSlot(status_label_, "onTopicStreamFinished", [&]() {
+    if (download_stats_dialog_)
+    {
+      download_stats_dialog_->updateProgress(topic_name, decoded_size_bytes, /*total_bytes=*/0);
+    }
     emit mosaicoTopicFinished(sequence_name, topic_name);
     finishFetchTopic(topic_name, true);
   });
@@ -611,6 +621,15 @@ void MainWindow::requestFetchCancel()
 
 void MainWindow::finishFetchTopic(const QString& topic_name, bool success)
 {
+  const bool batch_active = error_context_ == ErrorContext::Fetch;
+  if (!topic_name.isEmpty())
+  {
+    if (completed_fetch_topics_.contains(topic_name))
+    {
+      return;
+    }
+    completed_fetch_topics_.insert(topic_name);
+  }
   if (pending_fetches_ > 0)
   {
     --pending_fetches_;
@@ -624,7 +643,10 @@ void MainWindow::finishFetchTopic(const QString& topic_name, bool success)
   }
   if (pending_fetches_ <= 0)
   {
-    finishFetchBatch();
+    if (batch_active)
+    {
+      finishFetchBatch();
+    }
   }
 }
 
@@ -641,7 +663,10 @@ void MainWindow::finishFetchBatch()
   }
   if (download_stats_dialog_)
   {
-    download_stats_dialog_->markComplete();
+    const QString unfinished_status = cancelling_fetch_ ? QStringLiteral("Cancelled") :
+                                      pending_fetch_errors_.isEmpty() ? QStringLiteral("Done") :
+                                                                        QStringLiteral("Failed");
+    download_stats_dialog_->markComplete(unfinished_status);
   }
 
   if (cancelling_fetch_)
@@ -681,32 +706,21 @@ void MainWindow::finishFetchBatch()
   }
 }
 
-void MainWindow::onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes,
-                                 bool from_network)
+void MainWindow::onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes)
 {
   if (download_stats_dialog_)
   {
-    download_stats_dialog_->updateProgress(topic_name, bytes, total_bytes, from_network);
+    download_stats_dialog_->updateProgress(topic_name, bytes, total_bytes);
   }
-  // Only reflect progress if a fetch is actually in flight; otherwise a late
-  // signal from a just-completed topic could overwrite a more recent status.
   if (error_context_ != ErrorContext::Fetch || selected_topics_.isEmpty())
   {
     return;
   }
   const int total = selected_topics_.size();
-  // Topic index is derived from how many fetches are still outstanding:
-  // pending_fetches_ drops from N→0 as dataReady/errorOccurred arrive. The
-  // "currently streaming" topic is the one whose pending slot hasn't been
-  // decremented yet.
   const int idx = total - pending_fetches_ + 1;
 
   QString body;
-  if (!from_network)
-  {
-    body = QStringLiteral("cache %1").arg(formatBytes(bytes));
-  }
-  else if (total_bytes > 0)
+  if (total_bytes > 0)
   {
     const int pct = static_cast<int>((100 * bytes) / total_bytes);
     body =
@@ -714,7 +728,7 @@ void MainWindow::onFetchProgress(const QString& topic_name, qint64 bytes, qint64
   }
   else
   {
-    body = formatBytes(bytes);
+    body = QStringLiteral("%1 decoded").arg(formatBytes(bytes));
   }
   setStatus(
       QStringLiteral("Fetching %1 (%2/%3): %4").arg(topic_name).arg(idx).arg(total).arg(body));
@@ -755,6 +769,7 @@ void MainWindow::onFetchClicked()
 
   error_context_ = ErrorContext::Fetch;
   pending_fetches_ = selected_topics_.size();
+  completed_fetch_topics_.clear();
   pending_fetch_errors_.clear();
   cancelling_fetch_ = false;
   if (worker_)

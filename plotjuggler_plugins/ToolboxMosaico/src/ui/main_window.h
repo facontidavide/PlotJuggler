@@ -95,11 +95,11 @@ private slots:
                             const std::shared_ptr<arrow::Schema>& schema);
   void onTopicBatchReady(const QString& sequence_name, const QString& topic_name,
                          const std::shared_ptr<arrow::RecordBatch>& batch);
-  void onTopicStreamFinished(const QString& sequence_name, const QString& topic_name);
+  void onTopicStreamFinished(const QString& sequence_name, const QString& topic_name,
+                             qint64 decoded_size_bytes);
   void onFetchError(const QString& message);
   void onTopicFetchError(const QString& topic_name, const QString& message);
-  void onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes,
-                       bool from_network);
+  void onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes);
   void onSequencesReady(const std::vector<SequenceInfo>& sequences);
   void onTopicsReady(const QStringList& names, const std::vector<TopicInfo>& infos);
   void onTopicMetadataReady(const QString& sequence_name, const QString& topic_name,
@@ -247,6 +247,7 @@ private:
   QString selected_sequence_;
   QStringList selected_topics_;
   int pending_fetches_ = 0;
+  QSet<QString> completed_fetch_topics_;
 
   // Per-fetch error accumulator. A batch can produce one error per topic,
   // and with dozens of topics the dialog-per-error flow was unusable —
