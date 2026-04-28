@@ -83,19 +83,22 @@ jobs:
             # matching Python stdlib + apprun-hook so the AppImage runs on
             # hosts whose system Python differs from the builder's.
             bash appimage/build_appimage.sh
-            mv PlotJuggler-${{ matrix.arch }}.AppImage PlotJuggler-${{ github.ref_name }}-${{ matrix.arch }}.AppImage
+            # ref_name contains '/' on feature branches; replace with '-' so it's a valid filename
+            SAFE_REF="${GITHUB_REF_NAME//\//-}"
+            mv PlotJuggler-${{ matrix.arch }}.AppImage "PlotJuggler-${SAFE_REF}-${{ matrix.arch }}.AppImage"
+            echo "SAFE_REF=$SAFE_REF" >> "$GITHUB_ENV"
 
       - name: Upload AppImage
         uses: actions/upload-artifact@v7
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
-          name: PlotJuggler-${{ github.ref_name }}-${{ matrix.arch }}.AppImage
-          path: PlotJuggler-${{ github.ref_name }}-${{ matrix.arch }}.AppImage
+          name: PlotJuggler-${{ env.SAFE_REF }}-${{ matrix.arch }}.AppImage
+          path: PlotJuggler-${{ env.SAFE_REF }}-${{ matrix.arch }}.AppImage
 
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
-          files: PlotJuggler-${{ github.ref_name }}-${{ matrix.arch }}.AppImage
+          files: PlotJuggler-${{ env.SAFE_REF }}-${{ matrix.arch }}.AppImage
           generate_release_notes: true
           fail_on_unmatched_files: false
