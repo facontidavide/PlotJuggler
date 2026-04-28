@@ -2101,6 +2101,11 @@
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
+	   <widget class="QMenu" name="menuCloudData">
+	    <property name="title">
+	     <string>Cloud</string>
+	    </property>
+	   </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
      <string>Tools</string>
@@ -2110,6 +2115,7 @@
     <addaction name="actionColorMap_Editor"/>
    </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuCloudData"/>
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>

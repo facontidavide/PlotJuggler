@@ -29,6 +29,7 @@
 #include <QPluginLoader>
 #include <QPushButton>
 #include <QKeySequence>
+#include <QLabel>
 #include <QScrollBar>
 #include <QSettings>
 #include <QStringListModel>
@@ -138,6 +139,11 @@ static void WriteSortedXml(QTextStream& out, const QDomNode& node, int indent = 
     WriteSortedXml(out, children.at(i), indent + 1);
   }
   out << pad << "</" << elem.tagName() << ">\n";
+}
+
+bool isMosaicoToolbox(const QString& plugin_name)
+{
+  return plugin_name.contains(QStringLiteral("mosaico"), Qt::CaseInsensitive);
 }
 
 MainWindow::MainWindow(const QCommandLineParser& commandline_parser, QWidget* parent)
@@ -788,7 +794,16 @@ void MainWindow::initializePlugins()
     toolbox->init(_mapped_plot_data, _transform_functions);
     toolbox->setParserFactories(&_parser_factories);
 
-    auto action = ui->menuTools->addAction(toolbox->name());
+    QAction* action = nullptr;
+    const QString toolbox_name = QString::fromUtf8(toolbox->name());
+    if (isMosaicoToolbox(toolbox_name))
+    {
+      action = ui->menuCloudData->addAction(toolbox_name);
+    }
+    else
+    {
+      action = ui->menuTools->addAction(toolbox_name);
+    }
 
     int new_index = ui->widgetStack->count();
     auto provided = toolbox->providedWidget();
