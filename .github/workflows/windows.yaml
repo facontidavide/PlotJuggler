@@ -267,16 +267,19 @@ jobs:
             exit 1
           }
           $redistRoot = Join-Path $vsRoot "VC\Redist\MSVC"
-          # Pick the highest-version subdir (e.g. 14.42.34433) → x64 → Microsoft.VC*.CRT
-          $crtDir = Get-ChildItem $redistRoot -Directory |
-              Sort-Object Name -Descending |
-              Select-Object -First 1 |
-              ForEach-Object {
-                Get-ChildItem (Join-Path $_.FullName "x64") -Filter "Microsoft.VC*.CRT" |
-                  Select-Object -First 1
-              }
+          # The layout under VC\Redist\MSVC varies between VS versions / runners
+          # (e.g. 14.42.34433\x64\Microsoft.VC143.CRT vs v143\<arch>\...). Walk
+          # the tree and pick the most recent x64 CRT folder rather than
+          # assuming a fixed structure.
+          $crtDir = Get-ChildItem -Path $redistRoot -Recurse -Directory -ErrorAction SilentlyContinue |
+              Where-Object { $_.Name -like 'Microsoft.VC*.CRT' -and $_.FullName -match '\\x64\\' } |
+              Sort-Object FullName -Descending |
+              Select-Object -First 1
           if (-not $crtDir) {
-            Write-Error "Could not locate Microsoft.VC*.CRT redist folder under $redistRoot"
+            Write-Host "Layout under $redistRoot :"
+            Get-ChildItem $redistRoot -Recurse -Directory | Select-Object -First 30 FullName |
+              Format-Table -AutoSize
+            Write-Error "Could not locate Microsoft.VC*.CRT (x64) redist folder under $redistRoot"
             exit 1
           }
           Write-Host "Copying MSVC runtime from $($crtDir.FullName)"
