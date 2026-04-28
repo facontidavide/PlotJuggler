@@ -222,9 +222,7 @@ mcap::Status readTolerantSummary(mcap::McapReader& reader, McapSummaryInfo& info
     statistics.messageCount++;
     statistics.channelMessageCounts[message.channelId]++;
   };
-  typedReader.onChunk = [&](const mcap::Chunk&, mcap::ByteOffset) {
-    statistics.chunkCount++;
-  };
+  typedReader.onChunk = [&](const mcap::Chunk&, mcap::ByteOffset) { statistics.chunkCount++; };
   typedReader.onAttachment = [&](const mcap::Attachment&, mcap::ByteOffset) {
     statistics.attachmentCount++;
   };
@@ -680,9 +678,7 @@ bool DataLoadMCAP::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_dat
         done = true;
       }
     };
-    typedReader.onDataEnd = [&](const mcap::DataEnd&, mcap::ByteOffset) {
-      done = true;
-    };
+    typedReader.onDataEnd = [&](const mcap::DataEnd&, mcap::ByteOffset) { done = true; };
 
     while (!done && typedReader.next())
     {

@@ -175,8 +175,8 @@ void SequencePanel::updateHeader()
 {
   if (list_loading_)
   {
-    header_->setText(QStringLiteral("Sequences (loading%1)")
-                         .arg(QString(loading_frame_ + 1, QLatin1Char('.'))));
+    header_->setText(
+        QStringLiteral("Sequences (loading%1)").arg(QString(loading_frame_ + 1, QLatin1Char('.'))));
     return;
   }
 
