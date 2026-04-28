@@ -13,7 +13,7 @@
 [![Intermodalics](docs/sponsor_intermodalics.png)](https://www.intermodalics.ai/)
 [![Greenzie](docs/sponsor_ark.png)](https://arkelectron.com/)
 
-# PlotJuggler 3.16
+# PlotJuggler 3.17
 
 PlotJuggler is a tool to visualize time series that is **fast**, **powerful** and  **intuitive**.
 

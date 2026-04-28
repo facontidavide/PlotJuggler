@@ -47,7 +47,46 @@ jobs:
           cache_packages: false
 
       - name: Setup oras (OCI Registry As Storage)
+        # Primary install path. continue-on-error so a 5xx on the github.com
+        # release CDN doesn't kill CI — we have a fallback below, and worst
+        # case we degrade to "no cache this run" (build still completes).
+        id: setup_oras
         uses: oras-project/setup-oras@v1
+        continue-on-error: true
+
+      - name: Setup oras (manual download fallback)
+        # Only fires if setup-oras failed. No truly-independent CDN exists
+        # for the oras binary on Windows runners, so we re-download from the
+        # same release URL but with longer exponential backoff (5 retries vs
+        # setup-oras's 2). Helps with brief 5xx blips that exceed the action's
+        # built-in retry budget.
+        id: setup_oras_fallback
+        if: steps.setup_oras.outcome == 'failure'
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $version = "1.3.0"
+          $url = "https://github.com/oras-project/oras/releases/download/v$version/oras_${version}_windows_amd64.zip"
+          $zip = Join-Path $env:RUNNER_TEMP "oras.zip"
+          $installDir = Join-Path $env:RUNNER_TEMP "oras-bin"
+          New-Item -ItemType Directory -Force -Path $installDir | Out-Null
+
+          $attempts = 0
+          while ($attempts -lt 5) {
+            try {
+              Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
+              break
+            } catch {
+              $attempts++
+              if ($attempts -ge 5) { throw }
+              $delay = [math]::Pow(2, $attempts) * 5
+              Write-Host "Download attempt $attempts failed: $_. Retry in ${delay}s..."
+              Start-Sleep -Seconds $delay
+            }
+          }
+          Expand-Archive -Path $zip -DestinationPath $installDir -Force
+          "$installDir" | Out-File -FilePath $env:GITHUB_PATH -Append
+          & "$installDir\oras.exe" version
 
       - name: Compute Conan cache tag
         id: conan_cache
@@ -61,8 +100,9 @@ jobs:
 
       - name: Login to ghcr.io
         # Required for both pull (private packages) and push. GITHUB_TOKEN is
-        # auto-provisioned and scoped to this repo's packages.
-        if: github.repository_owner == 'PlotJuggler'
+        # auto-provisioned and scoped to this repo's packages. Skip if neither
+        # oras install path succeeded — graceful degradation to no-cache build.
+        if: github.repository_owner == 'PlotJuggler' && (steps.setup_oras.outcome == 'success' || steps.setup_oras_fallback.outcome == 'success')
         shell: pwsh
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -70,7 +110,7 @@ jobs:
           $env:GHCR_TOKEN | oras login ghcr.io -u $env:GITHUB_ACTOR --password-stdin
 
       - name: Restore Conan cache from ghcr.io
-        if: github.repository_owner == 'PlotJuggler'
+        if: github.repository_owner == 'PlotJuggler' && (steps.setup_oras.outcome == 'success' || steps.setup_oras_fallback.outcome == 'success')
         shell: pwsh
         run: |
           $tag = "${{ steps.conan_cache.outputs.tag }}"
@@ -113,8 +153,9 @@ jobs:
       - name: Save Conan cache to ghcr.io
         # Only push from the canonical repo on real pushes (forks lack write
         # access to ghcr.io packages). Skip on cache HIT — the tag content is
-        # already up to date, no point re-uploading the same bytes.
-        if: github.event_name == 'push' && github.repository == 'PlotJuggler/PlotJuggler' && env.CONAN_CACHE_HIT != '1'
+        # already up to date, no point re-uploading the same bytes. Skip if
+        # neither oras install path succeeded (graceful degradation).
+        if: github.event_name == 'push' && github.repository == 'PlotJuggler/PlotJuggler' && env.CONAN_CACHE_HIT != '1' && (steps.setup_oras.outcome == 'success' || steps.setup_oras_fallback.outcome == 'success')
         shell: pwsh
         run: |
           $tag = "${{ steps.conan_cache.outputs.tag }}"
@@ -136,14 +177,6 @@ jobs:
           } finally {
             Pop-Location
           }
-
-      - name: Trim Conan cache before save
-        shell: pwsh
-        # Drop build trees, extracted sources and tempdirs to keep the saved
-        # cache small (consumers only need ~/.conan2/p/<id>/p). Without this
-        # the post-job actions/cache save can exceed the 10 GB soft cap.
-        run: |
-          conan cache clean "*" --build --source --temp
 
       - name: Build Plotjuggler
         shell: pwsh

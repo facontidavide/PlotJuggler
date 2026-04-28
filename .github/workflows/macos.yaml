@@ -45,8 +45,19 @@ jobs:
           # repos: unlimited storage and bandwidth; tags survive forever.
           cache_packages: false
 
-      - name: Setup oras (OCI Registry As Storage)
-        uses: oras-project/setup-oras@v1
+      - name: Install oras (via brew)
+        # Brew bottles are hosted on ghcr.io/homebrew, independent of the
+        # github.com release CDN that flakes setup-oras with 502s. Marked
+        # continue-on-error so a brew hiccup degrades to "no cache this run"
+        # instead of failing CI — the build still completes (cache MISS path).
+        id: setup_oras
+        continue-on-error: true
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: "1"
+        run: |
+          brew install oras
+          oras version
 
       - name: Compute Conan cache tag
         id: conan_cache
@@ -60,14 +71,14 @@ jobs:
       - name: Login to ghcr.io
         # Required for both pull (private packages) and push. GITHUB_TOKEN is
         # auto-provisioned and scoped to this repo's packages.
-        if: github.repository_owner == 'PlotJuggler'
+        if: github.repository_owner == 'PlotJuggler' && steps.setup_oras.outcome == 'success'
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "$GHCR_TOKEN" | oras login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
       - name: Restore Conan cache from ghcr.io
-        if: github.repository_owner == 'PlotJuggler'
+        if: github.repository_owner == 'PlotJuggler' && steps.setup_oras.outcome == 'success'
         run: |
           tag="${{ steps.conan_cache.outputs.tag }}"
           pull_dir="${RUNNER_TEMP}/conan-cache-pull"
@@ -94,8 +105,10 @@ jobs:
       - name: Save Conan cache to ghcr.io
         # Only push from the canonical repo on real pushes (forks lack write
         # access to ghcr.io packages). Skip on cache HIT — the tag content is
-        # already up to date, no point re-uploading the same bytes.
-        if: github.event_name == 'push' && github.repository == 'PlotJuggler/PlotJuggler' && env.CONAN_CACHE_HIT != '1'
+        # already up to date, no point re-uploading the same bytes. Skip if
+        # oras install failed (graceful degradation — build proceeds without
+        # populating the cache rather than failing CI).
+        if: github.event_name == 'push' && github.repository == 'PlotJuggler/PlotJuggler' && env.CONAN_CACHE_HIT != '1' && steps.setup_oras.outcome == 'success'
         run: |
           tag="${{ steps.conan_cache.outputs.tag }}"
           tarball="${RUNNER_TEMP}/conan-cache.tar.zst"
@@ -112,13 +125,6 @@ jobs:
 
           cd "${RUNNER_TEMP}"
           oras push "${tag}" "conan-cache.tar.zst:application/vnd.oci.image.layer.v1.tar+zstd"
-
-      - name: Trim Conan cache before save
-        # Drop build trees, extracted sources and tempdirs to keep the saved
-        # cache small (consumers only need ~/.conan2/p/<id>/p). Without this
-        # the post-job actions/cache save can exceed the 10 GB soft cap.
-        run: |
-          conan cache clean "*" --build --source --temp
 
       - name: Install and cache Homebrew tools
         uses: tecolicom/actions-use-homebrew-tools@v1
