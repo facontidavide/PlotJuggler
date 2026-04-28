@@ -11,20 +11,14 @@ target_include_directories(mosaico_sdk PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-set(MOSAICO_SDK_ARROW_FLIGHT_TARGET "")
-foreach(candidate ArrowFlight::arrow_flight_static ArrowFlight::arrow_flight_shared)
-    if(TARGET ${candidate})
-        set(MOSAICO_SDK_ARROW_FLIGHT_TARGET ${candidate})
-        break()
-    endif()
-endforeach()
-if(NOT MOSAICO_SDK_ARROW_FLIGHT_TARGET)
-    message(FATAL_ERROR "[MosaicoSDK] Arrow Flight target not found.")
+# Plugins always link Arrow Flight statically.
+if(NOT TARGET ArrowFlight::arrow_flight_static)
+    message(FATAL_ERROR "[MosaicoSDK] ArrowFlight::arrow_flight_static target not found.")
 endif()
 
 target_link_libraries(mosaico_sdk PUBLIC
     arrow::arrow
-    ${MOSAICO_SDK_ARROW_FLIGHT_TARGET}
+    ArrowFlight::arrow_flight_static
     nlohmann_json::nlohmann_json
 )
 
