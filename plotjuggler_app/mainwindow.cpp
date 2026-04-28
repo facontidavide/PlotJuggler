@@ -1099,11 +1099,8 @@ void MainWindow::checkAllCurvesFromLayout(const QDomElement& root)
 
   for (auto& curve_name : curves)
   {
-    if (_mapped_plot_data.numeric.count(curve_name) == 0)
-    {
-      missing_curves.push_back(curve_name);
-    }
-    if (_mapped_plot_data.strings.count(curve_name) == 0)
+    if (_mapped_plot_data.numeric.count(curve_name) == 0 &&
+        _mapped_plot_data.strings.count(curve_name) == 0)
     {
       missing_curves.push_back(curve_name);
     }
