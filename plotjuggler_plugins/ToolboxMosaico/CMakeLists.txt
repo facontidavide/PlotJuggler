@@ -12,10 +12,10 @@ if(NOT Arrow_FOUND OR NOT TARGET ${MOSAICO_ARROW_FLIGHT_TARGET} OR NOT TARGET ${
     return()
 endif()
 
-# Combine Arrow + Flight as a single propagated target. ARROW_STATIC /
-# ARROW_FLIGHT_STATIC are required so MSVC headers don't decorate symbols
-# with __declspec(dllimport): without them the static archive cannot
-# satisfy implicit members (LNK2019 / LNK4217 on inline ctor/dtor/copy).
+# Combine Arrow + Flight as a single propagated target for non-Conan builds.
+# (Conan's CMakeDeps already creates a lowercase `arrow::arrow` component
+# target, so this branch is skipped under Conan and the static-mode defines
+# are added directly to mosaico_sdk in its CMakeLists instead.)
 if(NOT TARGET arrow::arrow)
     add_library(arrow_combined INTERFACE)
     target_link_libraries(arrow_combined INTERFACE
