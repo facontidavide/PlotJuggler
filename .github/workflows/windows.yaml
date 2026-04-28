@@ -249,8 +249,11 @@ jobs:
       - name: Create installer using QT Installation Framework
         shell: pwsh
         run: |
-          # Sanitize ref_name to replace / with - for valid Windows filename
+          # Sanitize ref_name to replace / with - for valid Windows filename.
+          # Also export to GITHUB_ENV so subsequent upload / release steps reuse
+          # the same name without independently re-sanitizing.
           $ref_name = "${{ github.ref_name }}" -replace '/', '-'
+          "SAFE_REF=$ref_name" | Out-File -FilePath $env:GITHUB_ENV -Append
           $installer_name = "PlotJuggler-$ref_name-Windows-x64.exe"
 
           # Find binarycreator executable
@@ -276,13 +279,13 @@ jobs:
         uses: actions/upload-artifact@v7
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
-          name: PlotJuggler-${{ github.ref_name }}-Windows-x64.exe
-          path: PlotJuggler-${{ github.ref_name }}-Windows-x64.exe
+          name: PlotJuggler-${{ env.SAFE_REF }}-Windows-x64.exe
+          path: PlotJuggler-${{ env.SAFE_REF }}-Windows-x64.exe
 
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
-          files: PlotJuggler-${{ github.ref_name }}-Windows-x64.exe
+          files: PlotJuggler-${{ env.SAFE_REF }}-Windows-x64.exe
           generate_release_notes: false
           fail_on_unmatched_files: false
