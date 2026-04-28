@@ -12,6 +12,34 @@ if(NOT Arrow_FOUND OR NOT TARGET ${MOSAICO_ARROW_FLIGHT_TARGET} OR NOT TARGET ${
     return()
 endif()
 
+# Static Arrow Flight embeds Flight's object code into the plugin .so but
+# does NOT add libgrpc++ as a NEEDED entry — static archives don't carry
+# NEEDED records and Arrow's CMake target doesn't expose gRPC as a usage
+# requirement. At dlopen time the dynamic linker can't resolve gRPC symbols
+# (e.g. grpc::internal::ClientReactor's vtable) and PlotJuggler fails the
+# plugin load with: undefined symbol: _ZN4grpc6g_glipE.
+# Find gRPC++ explicitly so its symbols are resolvable — either as a
+# libgrpc++.so NEEDED entry (apt / AppImage) or pulled in from a static
+# gRPC archive (Conan).
+set(MOSAICO_GRPCPP_TARGET "")
+find_package(gRPC QUIET CONFIG)
+if(TARGET gRPC::grpc++)
+    set(MOSAICO_GRPCPP_TARGET gRPC::grpc++)
+else()
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(MOSAICO_GRPCPP QUIET IMPORTED_TARGET grpc++)
+        if(TARGET PkgConfig::MOSAICO_GRPCPP)
+            set(MOSAICO_GRPCPP_TARGET PkgConfig::MOSAICO_GRPCPP)
+        endif()
+    endif()
+endif()
+if(NOT MOSAICO_GRPCPP_TARGET)
+    message("[ToolboxMosaico] gRPC++ not found — install libgrpc++-dev or "
+            "use a Conan profile that provides it. Skipping plugin.")
+    return()
+endif()
+
 # Combine Arrow + Flight as a single propagated target for non-Conan builds.
 # (Conan's CMakeDeps already creates a lowercase `arrow::arrow` component
 # target, so this branch is skipped under Conan and the static-mode defines
@@ -72,6 +100,7 @@ target_link_libraries(ToolboxMosaico PRIVATE
     plotjuggler_base
     mosaico_sdk
     ${MOSAICO_ARROW_FLIGHT_TARGET}
+    ${MOSAICO_GRPCPP_TARGET}
     lua::lua
     QCodeEditor
 )
