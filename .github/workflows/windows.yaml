@@ -204,47 +204,48 @@ jobs:
           # the user has installed. This mirrors what the Linux AppImage does
           # by bundling /usr/lib/python3.X. See:
           #   https://docs.python.org/3/using/windows.html#the-embeddable-package
+          #
+          # The embeddable distribution is FLATTENED directly into the data
+          # dir (next to plotjuggler.exe), not into a python\ subfolder.
+          # Reason: when CPython initializes, it locates pythonXY._pth (which
+          # tells it where the stdlib zip lives) by looking next to the
+          # LOADED pythonXY.dll. plotjuggler.exe statically imports
+          # pythonXY.dll, so the OS loader resolves it from the EXE
+          # directory — meaning pythonXY._pth must also live there.
           $pyVersion = "${{ env.PJ_PYTHON_EMBED_VERSION }}"
           $pyXY = ($pyVersion -split '\.')[0..1] -join '.'        # "3.12"
           $pyTag = $pyXY -replace '\.', ''                          # "312"
           $url = "https://www.python.org/ftp/python/$pyVersion/python-$pyVersion-embed-amd64.zip"
           $zip = Join-Path $env:RUNNER_TEMP "python-embed.zip"
           $dataDir = "installer\io.plotjuggler.application\data"
-          $pyDir = Join-Path $dataDir "python"
 
           Write-Host "Downloading $url"
           Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
-          Expand-Archive -Path $zip -DestinationPath $pyDir -Force
+          Expand-Archive -Path $zip -DestinationPath $dataDir -Force
 
           # python.exe is the standalone CLI launcher; we only need the
           # embedded interpreter so drop it (saves ~5 MB).
-          Remove-Item (Join-Path $pyDir "python.exe") -ErrorAction Ignore
-          Remove-Item (Join-Path $pyDir "pythonw.exe") -ErrorAction Ignore
+          Remove-Item (Join-Path $dataDir "python.exe") -ErrorAction Ignore
+          Remove-Item (Join-Path $dataDir "pythonw.exe") -ErrorAction Ignore
 
           # python._pth's presence is what enables "isolated mode": Python
           # ignores PYTHONHOME / PYTHONPATH / registry / user site-packages
           # and only walks the paths listed in this file. Default is fine
           # (it lists pythonXY.zip + ".") — ensure `import site` stays off.
-          $pthFile = Join-Path $pyDir "python$pyTag._pth"
+          $pthFile = Join-Path $dataDir "python$pyTag._pth"
           if (Test-Path $pthFile) {
             (Get-Content $pthFile) -replace '^\s*import site', '#import site' |
               Set-Content $pthFile
-          }
-
-          # Copy pythonXX.dll next to plotjuggler.exe so the loader finds it
-          # via the standard DLL search order (EXE directory first), without
-          # needing PATH manipulation or SetDllDirectory at runtime.
-          $pyDll = Join-Path $pyDir "python$pyTag.dll"
-          if (Test-Path $pyDll) {
-            Copy-Item $pyDll -Destination $dataDir -Force
           } else {
-            Write-Error "Expected $pyDll inside the embeddable archive"
+            Write-Error "python$pyTag._pth not found at $pthFile after extraction"
             exit 1
           }
 
-          # Sanity check: list what we shipped
-          Write-Host "Bundled Python contents:"
-          Get-ChildItem $pyDir | Select-Object -First 20 | Format-Table Name, Length
+          # Sanity check: list what we shipped (Python files only)
+          Write-Host "Bundled Python contents in $dataDir :"
+          Get-ChildItem $dataDir |
+            Where-Object { $_.Name -match '^(python|vcruntime|_)|_pth$' } |
+            Format-Table Name, Length
 
       - name: Bundle MSVC C++ runtime
         shell: pwsh

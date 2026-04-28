@@ -83,27 +83,13 @@ void PythonCustomFunction::ensurePythonInitialized()
     config.parse_argv = 0;
     config.isolated = 0;
 
-#ifdef _WIN32
-    // On Windows, the installer ships an embeddable Python alongside the EXE
-    // under ./python/. Point PyConfig.home at it so the interpreter doesn't
-    // fall back to a system / registry / Microsoft Store Python with a
-    // mismatched ABI or stdlib layout. Use the wide-string API so non-ASCII
-    // install paths work.
-    {
-      const std::wstring py_home =
-          (QCoreApplication::applicationDirPath() + "/python").toStdWString();
-      PyStatus s = PyConfig_SetString(&config, &config.home, py_home.c_str());
-      if (PyStatus_Exception(s))
-      {
-        g_py_unavailable_reason = s.err_msg ? s.err_msg : "PyConfig_SetString(home) failed";
-        g_py_unavailable.store(true, std::memory_order_release);
-        PyConfig_Clear(&config);
-        qWarning() << "Embedded Python disabled:"
-                   << QString::fromStdString(g_py_unavailable_reason);
-        return;
-      }
-    }
-#endif
+    // On Windows, the installer ships the python.org "embeddable Python"
+    // distribution flattened next to plotjuggler.exe (pythonXY.dll,
+    // pythonXY.zip, pythonXY._pth, …). The presence of pythonXY._pth puts
+    // CPython into isolated _pth mode, which derives sys.path entirely from
+    // that file relative to the loaded DLL — overriding PYTHONHOME, the
+    // registry, and any PyConfig.home we might set. So we deliberately
+    // don't touch PyConfig.home here.
 
     PyStatus status = Py_InitializeFromConfig(&config);
     PyConfig_Clear(&config);
