@@ -246,6 +246,45 @@ jobs:
           Write-Host "Bundled Python contents:"
           Get-ChildItem $pyDir | Select-Object -First 20 | Format-Table Name, Length
 
+      - name: Bundle MSVC C++ runtime
+        shell: pwsh
+        run: |
+          # plotjuggler.exe and the plugin DLLs are built with MSVC and link
+          # against the Visual C++ runtime (MSVCP140.dll, VCRUNTIME140.dll,
+          # ...). windeployqt only bundles Qt DLLs; the embeddable Python ships
+          # only vcruntime140.dll (the C runtime), not the C++ side. Without
+          # MSVCP140.dll the app fails to start on any machine that doesn't
+          # already have the VC++ Redistributable installed.
+          #
+          # Microsoft's Redist folder ships the runtime DLLs in a
+          # freely-redistributable form. Copy the latest x64 set into the
+          # data dir so they sit next to plotjuggler.exe.
+          $dataDir = "installer\io.plotjuggler.application\data"
+          $vsRoot = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
+              -latest -property installationPath
+          if (-not $vsRoot) {
+            Write-Error "Visual Studio installation not found via vswhere"
+            exit 1
+          }
+          $redistRoot = Join-Path $vsRoot "VC\Redist\MSVC"
+          # Pick the highest-version subdir (e.g. 14.42.34433) → x64 → Microsoft.VC*.CRT
+          $crtDir = Get-ChildItem $redistRoot -Directory |
+              Sort-Object Name -Descending |
+              Select-Object -First 1 |
+              ForEach-Object {
+                Get-ChildItem (Join-Path $_.FullName "x64") -Filter "Microsoft.VC*.CRT" |
+                  Select-Object -First 1
+              }
+          if (-not $crtDir) {
+            Write-Error "Could not locate Microsoft.VC*.CRT redist folder under $redistRoot"
+            exit 1
+          }
+          Write-Host "Copying MSVC runtime from $($crtDir.FullName)"
+          Copy-Item (Join-Path $crtDir.FullName "*.dll") -Destination $dataDir -Force
+          Get-ChildItem $dataDir -Filter "*.dll" | Where-Object {
+            $_.Name -match '^(msvcp|vcruntime|concrt)\d+'
+          } | Format-Table Name, Length
+
       - name: Create installer using QT Installation Framework
         shell: pwsh
         run: |
