@@ -907,6 +907,7 @@ void DockContainerWidgetPrivate::addDockAreasToList(const QList<CDockAreaWidget*
 	{
 		DockArea->titleBarButton(TitleBarButtonClose)->setVisible(true);
 		DockArea->titleBarButton(TitleBarButtonAutoHide)->setVisible(true);
+		DockArea->titleBarButton(TitleBarButtonUndock)->setVisible(true);
 	}
 
 	// We need to ensure, that the dock area title bar is visible. The title bar
@@ -1572,9 +1573,21 @@ void CDockContainerWidget::removeDockArea(CDockAreaWidget* area)
 	d->DockAreas.removeAll(area);
 	auto Splitter = area->parentSplitter();
 
-	// Remove are from parent splitter and recursively hide tree of parent
-	// splitters if it has no visible content
-	area->setParent(nullptr);
+	// Remove area from parent splitter and recursively hide tree of parent
+	// splitters if it has no visible content.
+	// Use internalWinId() rather than testAttribute(WA_NativeWindow) because
+	// WA_NativeWindow is only set when a widget is *explicitly* made native
+	// (e.g. winId() called directly on it). Widgets that became native through
+	// propagation from a child calling winId() (e.g. a VTK/OpenGL widget) also
+	// hold a real native window handle but may not have WA_NativeWindow set.
+	// Setting the parent of such a native window to nullptr would make it an
+	// invisible top-level OS window, causing drawing artifacts. Reparent to
+	// the dock manager instead so the window stays off-screen but within the
+	// application's window hierarchy.
+	if (area->internalWinId())
+		area->setParent(d->DockManager);
+	else
+		area->setParent(nullptr);
 	internal::hideEmptyParentSplitters(Splitter);
 
 	// Remove this area from cached areas
@@ -2201,6 +2214,17 @@ QRect CDockContainerWidget::contentRectGlobal() const
 CDockManager* CDockContainerWidget::dockManager() const
 {
 	return d->DockManager;
+}
+
+
+//===========================================================================
+void CDockContainerWidget::removeFromDockManager()
+{
+	if (d->DockManager)
+	{
+		d->DockManager->removeDockContainer(this);
+		d->DockManager.clear();
+	}
 }
 
 

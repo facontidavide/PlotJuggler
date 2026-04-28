@@ -1,6 +1,8 @@
 // src/flight/connection_pool.cpp
 #include "flight/connection_pool.hpp"
 
+#include "flight/logging.hpp"
+
 #include <arrow/flight/api.h>
 
 #include <cassert>
@@ -151,10 +153,9 @@ arrow::Result<ConnectionPool::Handle> ConnectionPool::checkout() {
                 const auto wait_ms =
                     std::chrono::duration_cast<std::chrono::milliseconds>(
                         std::chrono::steady_clock::now() - t_begin).count();
-                std::fprintf(stderr,
-                             "[Mosaico SDK] pool: tid=%s checkout slot=%zu "
-                             "(reuse, wait=%lld ms)\n",
-                             tid.c_str(), i, (long long)wait_ms);
+                MOSAICO_SDK_LOG("[Mosaico SDK] pool: tid=%s checkout slot=%zu "
+                                "(reuse, wait=%lld ms)\n",
+                                tid.c_str(), i, (long long)wait_ms);
                 return Handle(this, i, clients_[i].get());
             }
         }
@@ -175,11 +176,10 @@ arrow::Result<ConnectionPool::Handle> ConnectionPool::checkout() {
 
                 if (!result.ok()) {
                     slot_state_[i] = SlotState::Free;
-                    std::fprintf(stderr,
-                                 "[Mosaico SDK] pool: tid=%s checkout slot=%zu "
-                                 "FAILED to connect (%lld ms): %s\n",
-                                 tid.c_str(), i, (long long)connect_ms,
-                                 result.status().ToString().c_str());
+                    MOSAICO_SDK_LOG("[Mosaico SDK] pool: tid=%s checkout slot=%zu "
+                                    "FAILED to connect (%lld ms): %s\n",
+                                    tid.c_str(), i, (long long)connect_ms,
+                                    result.status().ToString().c_str());
                     return result.status();
                 }
                 clients_[i] = std::move(*result);
@@ -187,11 +187,10 @@ arrow::Result<ConnectionPool::Handle> ConnectionPool::checkout() {
                 const auto wait_ms =
                     std::chrono::duration_cast<std::chrono::milliseconds>(
                         std::chrono::steady_clock::now() - t_begin).count();
-                std::fprintf(stderr,
-                             "[Mosaico SDK] pool: tid=%s checkout slot=%zu "
-                             "(lazy connect=%lld ms, total wait=%lld ms)\n",
-                             tid.c_str(), i, (long long)connect_ms,
-                             (long long)wait_ms);
+                MOSAICO_SDK_LOG("[Mosaico SDK] pool: tid=%s checkout slot=%zu "
+                                "(lazy connect=%lld ms, total wait=%lld ms)\n",
+                                tid.c_str(), i, (long long)connect_ms,
+                                (long long)wait_ms);
                 return Handle(this, i, clients_[i].get());
             }
         }
@@ -206,17 +205,15 @@ arrow::Result<ConnectionPool::Handle> ConnectionPool::checkout() {
         std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - t_overflow).count();
     if (!overflow_result.ok()) {
-        std::fprintf(stderr,
-                     "[Mosaico SDK] pool: tid=%s OVERFLOW connect FAILED "
-                     "(%lld ms): %s\n",
-                     tid.c_str(), (long long)overflow_ms,
-                     overflow_result.status().ToString().c_str());
+        MOSAICO_SDK_LOG("[Mosaico SDK] pool: tid=%s OVERFLOW connect FAILED "
+                        "(%lld ms): %s\n",
+                        tid.c_str(), (long long)overflow_ms,
+                        overflow_result.status().ToString().c_str());
         return overflow_result.status();
     }
-    std::fprintf(stderr,
-                 "[Mosaico SDK] pool: tid=%s checkout OVERFLOW "
-                 "(connect=%lld ms) — pool of %zu fully in use\n",
-                 tid.c_str(), (long long)overflow_ms, pool_size_);
+    MOSAICO_SDK_LOG("[Mosaico SDK] pool: tid=%s checkout OVERFLOW "
+                    "(connect=%lld ms) — pool of %zu fully in use\n",
+                    tid.c_str(), (long long)overflow_ms, pool_size_);
     return Handle(std::move(*overflow_result));
 }
 
@@ -224,9 +221,8 @@ void ConnectionPool::returnConnection(size_t index) {
     std::lock_guard<std::mutex> lock(mutex_);
     assert(index < pool_size_);
     slot_state_[index] = SlotState::Free;
-    std::fprintf(stderr,
-                 "[Mosaico SDK] pool: tid=%s release slot=%zu\n",
-                 poolTidStr().c_str(), index);
+    MOSAICO_SDK_LOG("[Mosaico SDK] pool: tid=%s release slot=%zu\n",
+                    poolTidStr().c_str(), index);
 }
 
 // ---------------------------------------------------------------------------

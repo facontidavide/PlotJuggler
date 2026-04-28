@@ -38,6 +38,7 @@ class MosaicoClient;
 using mosaico::MosaicoClient;
 
 class DataViewPanel;
+class DownloadStatsDialog;
 class FetchWorker;
 class QueryBar;
 class SequencePanel;
@@ -69,9 +70,19 @@ public:
   void clearVisibleSequences();
   void updateTheme(bool dark);
 
+  // Sole feed for the DownloadStatsDialog "Bytes" column — bypasses the
+  // throttled SDK progress signal so the displayed total is always the
+  // raw Arrow Flight bytes we received, not a queued snapshot.
+  void recordDecodedBytes(const QString& topic_name, qint64 decoded_bytes);
+
 signals:
   void mosaicoDataReady(const QString& sequence_name, const QString& topic_name,
                         const PullResult& result);
+  void mosaicoTopicStarted(const QString& sequence_name, const QString& topic_name,
+                           const std::shared_ptr<arrow::Schema>& schema);
+  void mosaicoTopicBatchReady(const QString& sequence_name, const QString& topic_name,
+                              const std::shared_ptr<arrow::RecordBatch>& batch);
+  void mosaicoTopicFinished(const QString& sequence_name, const QString& topic_name);
   void allFetchesComplete();
   // Emitted when a user-initiated cancel has finished draining the worker's
   // queue. The plugin wrapper uses this to discard any partial imported data.
@@ -85,8 +96,16 @@ private slots:
   void onTopicsSelected(const QString& sequence_name, const QStringList& topic_names);
   void onDataReady(const QString& sequence_name, const QString& topic_name,
                    const PullResult& result);
+  void onTopicStreamStarted(const QString& sequence_name, const QString& topic_name,
+                            const std::shared_ptr<arrow::Schema>& schema);
+  void onTopicBatchReady(const QString& sequence_name, const QString& topic_name,
+                         const std::shared_ptr<arrow::RecordBatch>& batch);
+  void onTopicStreamFinished(const QString& sequence_name, const QString& topic_name);
   void onFetchError(const QString& message);
+  void onTopicFetchError(const QString& topic_name, const QString& message);
   void onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes);
+  void onSequenceListStarted(const std::vector<SequenceInfo>& sequences);
+  void onSequenceInfoReady(const SequenceInfo& sequence, qint64 completed, qint64 total);
   void onSequencesReady(const std::vector<SequenceInfo>& sequences);
   void onTopicsReady(const QStringList& names, const std::vector<TopicInfo>& infos);
   void onTopicMetadataReady(const QString& sequence_name, const QString& topic_name,
@@ -101,6 +120,9 @@ private:
   void buildLayout();
   void connectSignals();
   void ensureWorkerThread();
+  void requestFetchCancel();
+  void finishFetchTopic(const QString& topic_name, bool success);
+  void finishFetchBatch();
 
   // Returns the current edit text of the server combo — replaces the
   // old server_uri_input_->text() reads.
@@ -194,6 +216,7 @@ private:
 
   FetchWorker* worker_ = nullptr;
   QThread* worker_thread_ = nullptr;
+  DownloadStatsDialog* download_stats_dialog_ = nullptr;
 
   // Tracks error context so we only show popups for explicit Connect clicks.
   enum class ErrorContext
@@ -230,6 +253,8 @@ private:
   QString selected_sequence_;
   QStringList selected_topics_;
   int pending_fetches_ = 0;
+  QSet<QString> completed_fetch_topics_;
+  QHash<QString, qint64> decoded_fetch_bytes_;
 
   // Per-fetch error accumulator. A batch can produce one error per topic,
   // and with dozens of topics the dialog-per-error flow was unusable —

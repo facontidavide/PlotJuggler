@@ -176,7 +176,7 @@ public:
 	/**
 	 * Virtual Destructor
 	 */
-	virtual ~CDockAreaTitleBar();
+	~CDockAreaTitleBar() override;
 
 	/**
 	 * Returns the pointer to the tabBar()

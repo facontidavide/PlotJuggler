@@ -415,7 +415,31 @@ void CAutoHideDockContainer::moveContentsToParent()
 	// to the user and he does not have to search where the widget was inserted.
 	d->DockWidget->setDockArea(nullptr);
 	auto DockContainer = dockContainer();
-	DockContainer->addDockWidget(d->getDockWidgetArea(d->SideTabBarArea), d->DockWidget);
+	auto targetArea = d->getDockWidgetArea(d->SideTabBarArea);
+
+	// If the widget has a preferred auto-hide location, try to find an existing
+	// opened dock area that contains a widget with the same preferred location
+	// and merge as a tab instead of creating a new split.
+	auto preferred = d->DockWidget->preferredAutoHideSideBarLocation();
+	if (preferred != SideBarNone)
+	{
+		for (auto area : DockContainer->openedDockAreas())
+		{
+			if (!area || area->isAutoHide()) continue;
+			// Check if any widget in this area has the same preferred location
+			for (auto dw : area->dockWidgets())
+			{
+				if (dw && dw->preferredAutoHideSideBarLocation() == preferred)
+				{
+					DockContainer->addDockWidget(CenterDockWidgetArea,
+						d->DockWidget, area);
+					return;
+				}
+			}
+		}
+	}
+
+	DockContainer->addDockWidget(targetArea, d->DockWidget);
 }
 
 
@@ -482,6 +506,17 @@ void CAutoHideDockContainer::collapseView(bool Enable)
 	{
 		updateSize();
 		d->updateResizeHandleSizeLimitMax();
+		// If the parent dock container has native child windows (e.g. because
+		// an OpenGL or VTK content widget called winId()), this panel is an
+		// alien (non-native) widget and will always be obscured by those native
+		// sibling windows regardless of Qt's paint order. Native OS windows are
+		// rendered above the parent's painted (alien) content by the windowing
+		// system. To allow raise() to use OS-level Z-order and appear on top,
+		// this panel must first be promoted to a native window itself.
+		if (parentWidget() && parentWidget()->internalWinId() && !internalWinId())
+		{
+			winId();
+		}
 		raise();
 		show();
 		d->DockWidget->dockManager()->setDockWidgetFocused(d->DockWidget);

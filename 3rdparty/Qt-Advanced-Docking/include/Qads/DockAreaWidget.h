@@ -166,6 +166,11 @@ protected:
 	void internalSetCurrentDockWidget(CDockWidget* DockWidget);
 
 	/**
+	 * Call this function to update the window title
+	 */
+	void updateWindowTitle();
+
+	/**
 	 * Marks tabs menu to update
 	 */
 	void markTitleBarMenuOutdated();

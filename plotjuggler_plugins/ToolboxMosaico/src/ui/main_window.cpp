@@ -9,6 +9,7 @@
 #include "main_window.h"
 
 #include "../core/time_format.h"
+#include "download_stats_dialog.h"
 #include "elided_label.h"
 #include "fetch_worker.h"
 #include "format_utils.h"
@@ -39,6 +40,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include <algorithm>
 #include <exception>
 #include <set>
 #include <utility>
@@ -282,11 +284,19 @@ void MainWindow::ensureWorkerThread()
   worker_ = new FetchWorker();
   worker_->moveToThread(worker_thread_);
 
+  connect(worker_, &FetchWorker::sequenceListStarted, this, &MainWindow::onSequenceListStarted);
+  connect(worker_, &FetchWorker::sequenceInfoReady, this, &MainWindow::onSequenceInfoReady);
   connect(worker_, &FetchWorker::sequencesReady, this, &MainWindow::onSequencesReady);
   connect(worker_, &FetchWorker::topicsReady, this, &MainWindow::onTopicsReady);
   connect(worker_, &FetchWorker::topicMetadataReady, this, &MainWindow::onTopicMetadataReady);
   connect(worker_, &FetchWorker::dataReady, this, &MainWindow::onDataReady);
+  connect(worker_, &FetchWorker::topicStreamStarted, this, &MainWindow::onTopicStreamStarted,
+          Qt::BlockingQueuedConnection);
+  connect(worker_, &FetchWorker::topicBatchReady, this, &MainWindow::onTopicBatchReady,
+          Qt::BlockingQueuedConnection);
+  connect(worker_, &FetchWorker::topicStreamFinished, this, &MainWindow::onTopicStreamFinished);
   connect(worker_, &FetchWorker::fetchProgress, this, &MainWindow::onFetchProgress);
+  connect(worker_, &FetchWorker::topicErrorOccurred, this, &MainWindow::onTopicFetchError);
   connect(worker_, &FetchWorker::errorOccurred, this, &MainWindow::onFetchError);
 
   connect(worker_thread_, &QThread::finished, worker_, &QObject::deleteLater);
@@ -329,6 +339,49 @@ int64_t MainWindow::sliderToNs(int pos) const
 {
   double fraction = static_cast<double>(pos) / kSliderSteps;
   return seq_min_ns_ + static_cast<int64_t>(fraction * (seq_max_ns_ - seq_min_ns_));
+}
+
+// ---------------------------------------------------------------------------
+void MainWindow::onSequenceListStarted(const std::vector<SequenceInfo>& sequences)
+{
+  guardedSlot(status_label_, "onSequenceListStarted", [&]() {
+    if (error_context_ != ErrorContext::ExplicitConnect &&
+        error_context_ != ErrorContext::AutoConnect)
+    {
+      return;
+    }
+
+    all_sequences_ = sequences;
+    sequence_panel_->populateSequences(sequences);
+    sequence_panel_->setMetadataLoadingProgress(0, static_cast<qint64>(sequences.size()));
+    setStatus(QString("Connected - loading details for %1 sequence(s)").arg(sequences.size()));
+  });
+}
+
+void MainWindow::onSequenceInfoReady(const SequenceInfo& sequence, qint64 completed, qint64 total)
+{
+  guardedSlot(status_label_, "onSequenceInfoReady", [&]() {
+    if (error_context_ != ErrorContext::ExplicitConnect &&
+        error_context_ != ErrorContext::AutoConnect)
+    {
+      return;
+    }
+
+    auto it = std::find_if(all_sequences_.begin(), all_sequences_.end(),
+                           [&](const SequenceInfo& seq) { return seq.name == sequence.name; });
+    if (it == all_sequences_.end())
+    {
+      all_sequences_.push_back(sequence);
+    }
+    else
+    {
+      *it = sequence;
+    }
+
+    sequence_panel_->updateSequence(sequence);
+    sequence_panel_->setMetadataLoadingProgress(completed, total);
+    setStatus(QString("Loading sequence details %1/%2").arg(completed).arg(total));
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -544,60 +597,158 @@ void MainWindow::onDataReady(const QString& sequence_name, const QString& topic_
                              const PullResult& result)
 {
   guardedSlot(status_label_, "onDataReady", [&]() {
-    // Cancel in progress: discard any chunk that arrives after the user
-    // clicked Cancel. The toolbox wrapper accumulates state per topic, so
-    // the safe thing is to not forward it at all.
     if (!cancelling_fetch_)
     {
-      emit mosaicoDataReady(sequence_name, topic_name, result);
+      emit mosaicoTopicStarted(sequence_name, topic_name, result.schema);
+      for (const auto& batch : result.batches)
+      {
+        emit mosaicoTopicBatchReady(sequence_name, topic_name, batch);
+      }
+      emit mosaicoTopicFinished(sequence_name, topic_name);
     }
-    --pending_fetches_;
-    if (pending_fetches_ <= 0)
+    finishFetchTopic(topic_name, true);
+  });
+}
+
+void MainWindow::onTopicStreamStarted(const QString& sequence_name, const QString& topic_name,
+                                      const std::shared_ptr<arrow::Schema>& schema)
+{
+  guardedSlot(status_label_, "onTopicStreamStarted", [&]() {
+    if (!cancelling_fetch_)
     {
-      fetch_button_->setText("Download");
-      fetch_button_->setToolTip("Download selected topics");
-      fetch_button_->setEnabled(!selected_topics_.isEmpty());
-
-      // Clear the fetch context so subsequent Connect/Refresh clicks
-      // aren't silently blocked by the error_context_ != None guard.
-      error_context_ = ErrorContext::None;
-      if (client_)
-      {
-        refresh_button_->setEnabled(true);
-      }
-
-      if (cancelling_fetch_)
-      {
-        cancelling_fetch_ = false;
-        if (worker_)
-        {
-          worker_->resetCancel();
-        }
-        setStatus(QStringLiteral("Download cancelled"));
-        emit fetchCancelled();
-      }
-      else
-      {
-        setStatus(QString("Loaded data for %1").arg(topic_name));
-        emit allFetchesComplete();
-      }
+      emit mosaicoTopicStarted(sequence_name, topic_name, schema);
     }
   });
 }
 
+void MainWindow::onTopicBatchReady(const QString& sequence_name, const QString& topic_name,
+                                   const std::shared_ptr<arrow::RecordBatch>& batch)
+{
+  guardedSlot(status_label_, "onTopicBatchReady", [&]() {
+    if (!cancelling_fetch_)
+    {
+      emit mosaicoTopicBatchReady(sequence_name, topic_name, batch);
+    }
+  });
+}
+
+void MainWindow::onTopicStreamFinished(const QString& sequence_name, const QString& topic_name)
+{
+  guardedSlot(status_label_, "onTopicStreamFinished", [&]() {
+    emit mosaicoTopicFinished(sequence_name, topic_name);
+    finishFetchTopic(topic_name, true);
+  });
+}
+
+void MainWindow::requestFetchCancel()
+{
+  cancelling_fetch_ = true;
+  if (worker_)
+  {
+    worker_->requestCancel();
+  }
+  if (download_stats_dialog_)
+  {
+    download_stats_dialog_->markCancelling();
+  }
+  fetch_button_->setEnabled(false);
+  setStatus(QStringLiteral("Cancelling..."));
+}
+
+void MainWindow::finishFetchTopic(const QString& topic_name, bool success)
+{
+  const bool batch_active = error_context_ == ErrorContext::Fetch;
+  if (!topic_name.isEmpty())
+  {
+    if (completed_fetch_topics_.contains(topic_name))
+    {
+      return;
+    }
+    completed_fetch_topics_.insert(topic_name);
+  }
+  if (pending_fetches_ > 0)
+  {
+    --pending_fetches_;
+  }
+  if (download_stats_dialog_ && !topic_name.isEmpty())
+  {
+    download_stats_dialog_->markFinished(topic_name, cancelling_fetch_ ?
+                                                         QStringLiteral("Cancelled") :
+                                                     success ? QStringLiteral("Done") :
+                                                               QStringLiteral("Failed"));
+  }
+  if (pending_fetches_ <= 0)
+  {
+    if (batch_active)
+    {
+      finishFetchBatch();
+    }
+  }
+}
+
+void MainWindow::finishFetchBatch()
+{
+  fetch_button_->setText("Download");
+  fetch_button_->setToolTip("Download selected topics");
+  fetch_button_->setEnabled(!selected_topics_.isEmpty());
+
+  error_context_ = ErrorContext::None;
+  if (client_)
+  {
+    refresh_button_->setEnabled(true);
+  }
+  if (download_stats_dialog_)
+  {
+    const QString unfinished_status = cancelling_fetch_ ? QStringLiteral("Cancelled") :
+                                      pending_fetch_errors_.isEmpty() ? QStringLiteral("Done") :
+                                                                        QStringLiteral("Failed");
+    download_stats_dialog_->markComplete(unfinished_status);
+  }
+
+  if (cancelling_fetch_)
+  {
+    cancelling_fetch_ = false;
+    if (worker_)
+    {
+      worker_->resetCancel();
+    }
+    setStatus(QStringLiteral("Download cancelled"));
+    emit fetchCancelled();
+  }
+  else
+  {
+    setStatus(QStringLiteral("Loaded selected data"));
+    emit allFetchesComplete();
+  }
+
+  if (!pending_fetch_errors_.isEmpty())
+  {
+    int total = 0;
+    QStringList lines;
+    lines.reserve(pending_fetch_errors_.size());
+    for (auto it = pending_fetch_errors_.constBegin(); it != pending_fetch_errors_.constEnd(); ++it)
+    {
+      total += it.value();
+      lines << (it.value() > 1 ? QStringLiteral("  [%1x] %2").arg(it.value()).arg(it.key()) :
+                                 QStringLiteral("  %1").arg(it.key()));
+    }
+    const QString title = total == 1 ? QStringLiteral("Fetch Error") :
+                                       QStringLiteral("Fetch Errors (%1 topics)").arg(total);
+    const QString body =
+        total == 1 ? lines.first().trimmed() :
+                     QStringLiteral("%1 topic(s) failed:\n\n%2").arg(total).arg(lines.join("\n"));
+    showCopyableWarning(this, title, body);
+    pending_fetch_errors_.clear();
+  }
+}
+
 void MainWindow::onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes)
 {
-  // Only reflect progress if a fetch is actually in flight; otherwise a late
-  // signal from a just-completed topic could overwrite a more recent status.
   if (error_context_ != ErrorContext::Fetch || selected_topics_.isEmpty())
   {
     return;
   }
   const int total = selected_topics_.size();
-  // Topic index is derived from how many fetches are still outstanding:
-  // pending_fetches_ drops from N→0 as dataReady/errorOccurred arrive. The
-  // "currently streaming" topic is the one whose pending slot hasn't been
-  // decremented yet.
   const int idx = total - pending_fetches_ + 1;
 
   QString body;
@@ -609,10 +760,29 @@ void MainWindow::onFetchProgress(const QString& topic_name, qint64 bytes, qint64
   }
   else
   {
-    body = formatBytes(bytes);
+    body = QStringLiteral("%1 decoded").arg(formatBytes(bytes));
   }
   setStatus(
       QStringLiteral("Fetching %1 (%2/%3): %4").arg(topic_name).arg(idx).arg(total).arg(body));
+}
+
+void MainWindow::onTopicFetchError(const QString& topic_name, const QString& message)
+{
+  guardedSlot(status_label_, "onTopicFetchError", [&]() {
+    if (error_context_ != ErrorContext::Fetch)
+    {
+      onFetchError(message);
+      return;
+    }
+
+    const bool cancel_drain = cancelling_fetch_;
+    if (!cancel_drain)
+    {
+      setStatus("Error: " + message);
+      pending_fetch_errors_[message]++;
+    }
+    finishFetchTopic(topic_name, false);
+  });
 }
 
 void MainWindow::onFetchClicked()
@@ -620,13 +790,7 @@ void MainWindow::onFetchClicked()
   // The button doubles as a Cancel when a fetch is in flight.
   if (error_context_ == ErrorContext::Fetch)
   {
-    cancelling_fetch_ = true;
-    if (worker_)
-    {
-      worker_->requestCancel();
-    }
-    fetch_button_->setEnabled(false);
-    setStatus(QStringLiteral("Cancelling…"));
+    requestFetchCancel();
     return;
   }
 
@@ -637,6 +801,8 @@ void MainWindow::onFetchClicked()
 
   error_context_ = ErrorContext::Fetch;
   pending_fetches_ = selected_topics_.size();
+  completed_fetch_topics_.clear();
+  decoded_fetch_bytes_.clear();
   pending_fetch_errors_.clear();
   cancelling_fetch_ = false;
   if (worker_)
@@ -653,6 +819,15 @@ void MainWindow::onFetchClicked()
   fetch_button_->setText("Cancel");
   fetch_button_->setToolTip("Cancel the in-flight download");
   setStatus(QString::fromUtf8("Fetching %1 topic(s)…").arg(pending_fetches_));
+  if (!download_stats_dialog_)
+  {
+    download_stats_dialog_ = new DownloadStatsDialog(this);
+    connect(download_stats_dialog_, &DownloadStatsDialog::cancelRequested, this,
+            &MainWindow::requestFetchCancel);
+  }
+  download_stats_dialog_->start(selected_topics_);
+  download_stats_dialog_->show();
+  download_stats_dialog_->raise();
   // One queued call hands the whole batch to the worker, which delegates to
   // the SDK's pullTopics — that runs up to pool_size pulls in parallel
   // (kConnectionPoolSize=4). Queueing N separate fetchData calls would
@@ -726,56 +901,13 @@ void MainWindow::onFetchError(const QString& message)
 
     if (error_context_ == ErrorContext::Fetch)
     {
-      --pending_fetches_;
       if (!cancel_drain)
       {
         // Accumulate — flushed as a single popup once the batch settles.
         // Keyed by message so N identical failures collapse to one entry.
         pending_fetch_errors_[message]++;
       }
-      if (pending_fetches_ <= 0)
-      {
-        fetch_button_->setText("Download");
-        fetch_button_->setToolTip("Download selected topics");
-        fetch_button_->setEnabled(!selected_topics_.isEmpty());
-        if (cancelling_fetch_)
-        {
-          cancelling_fetch_ = false;
-          if (worker_)
-          {
-            worker_->resetCancel();
-          }
-          setStatus(QStringLiteral("Download cancelled"));
-          emit fetchCancelled();
-        }
-        else
-        {
-          emit allFetchesComplete();
-        }
-
-        // Flush accumulated errors once, at most one popup per fetch batch.
-        if (!pending_fetch_errors_.isEmpty())
-        {
-          int total = 0;
-          QStringList lines;
-          lines.reserve(pending_fetch_errors_.size());
-          for (auto it = pending_fetch_errors_.constBegin(); it != pending_fetch_errors_.constEnd();
-               ++it)
-          {
-            total += it.value();
-            lines << (it.value() > 1 ? QStringLiteral("  [%1x] %2").arg(it.value()).arg(it.key()) :
-                                       QStringLiteral("  %1").arg(it.key()));
-          }
-          const QString title = total == 1 ? QStringLiteral("Fetch Error") :
-                                             QStringLiteral("Fetch Errors (%1 topics)").arg(total);
-          const QString body =
-              total == 1 ?
-                  lines.first().trimmed() :
-                  QStringLiteral("%1 topic(s) failed:\n\n%2").arg(total).arg(lines.join("\n"));
-          showCopyableWarning(this, title, body);
-          pending_fetch_errors_.clear();
-        }
-      }
+      finishFetchTopic(QString(), false);
     }
 
     if (in_connect)
@@ -1046,6 +1178,20 @@ void MainWindow::clearVisibleSequences()
 void MainWindow::updateTheme(bool dark)
 {
   query_bar_->updateTheme(dark);
+}
+
+void MainWindow::recordDecodedBytes(const QString& topic_name, qint64 decoded_bytes)
+{
+  if (decoded_bytes <= 0)
+  {
+    return;
+  }
+  qint64& cumulative = decoded_fetch_bytes_[topic_name];
+  cumulative += decoded_bytes;
+  if (download_stats_dialog_)
+  {
+    download_stats_dialog_->updateProgress(topic_name, cumulative, /*total_bytes=*/0);
+  }
 }
 
 // ---------------------------------------------------------------------------

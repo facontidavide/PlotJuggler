@@ -59,6 +59,7 @@ protected:
 	virtual void mouseReleaseEvent(QMouseEvent *ev) override;
 	virtual void mouseMoveEvent(QMouseEvent *ev) override;
     virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
+    virtual QSize sizeHint() const override;
 
     void setMaximizeIcon(const QIcon& Icon);
     QIcon maximizeIcon() const;

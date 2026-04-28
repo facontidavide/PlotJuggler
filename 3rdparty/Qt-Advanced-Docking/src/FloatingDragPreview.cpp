@@ -276,8 +276,14 @@ void FloatingDragPreviewPrivate::createFloatingWidget()
 
 
 //============================================================================
+// Wayland: in the frameless config, parent the preview to the manager's
+// top-level window so it renders as a translucent child instead of a Qt::Tool
+// top-level. Wayland refuses to honour client-driven move() of top-levels in
+// screen coordinates; child widgets work on every backend.
 CFloatingDragPreview::CFloatingDragPreview(QWidget* Content, QWidget* parent) :
-	QWidget(parent),
+	QWidget((parent && !CDockManager::testConfigFlag(CDockManager::DragPreviewHasWindowFrame))
+	            ? parent->window()
+	            : parent),
 	d(new FloatingDragPreviewPrivate(this))
 {
 	d->Content = Content;
@@ -287,19 +293,20 @@ CFloatingDragPreview::CFloatingDragPreview(QWidget* Content, QWidget* parent) :
 	{
 		setWindowFlags(
 			Qt::Window | Qt::WindowMaximizeButtonHint | Qt::WindowCloseButtonHint);
+
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
+		auto Flags = windowFlags();
+		Flags |= Qt::WindowStaysOnTopHint | Qt::X11BypassWindowManagerHint;
+		setWindowFlags(Flags);
+#endif
 	}
 	else
 	{
-		setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
 		setAttribute(Qt::WA_NoSystemBackground);
 		setAttribute(Qt::WA_TranslucentBackground);
+		// Let releases over visible drop indicators fall through to them.
+		setAttribute(Qt::WA_TransparentForMouseEvents);
 	}
-
-#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
-    auto Flags = windowFlags();
-    Flags |= Qt::WindowStaysOnTopHint | Qt::X11BypassWindowManagerHint;
-    setWindowFlags(Flags);
-#endif
 
 	// Create a static image of the widget that should get undocked
 	// This is like some kind preview image like it is uses in drag and drop
@@ -352,10 +359,20 @@ CFloatingDragPreview::~CFloatingDragPreview()
 //============================================================================
 void CFloatingDragPreview::moveFloating()
 {
-	int BorderSize = (frameSize().width() - size().width()) / 2;
-	const QPoint moveToPos = QCursor::pos() - d->DragStartMousePosition
+	const int BorderSize = (frameSize().width() - size().width()) / 2;
+	const QPoint TargetGlobal = QCursor::pos() - d->DragStartMousePosition
 	    - QPoint(BorderSize, 0);
-	move(moveToPos);
+	// Wayland: when we're a child widget (frameless config), translate
+	// the screen-coord target into parent-local space so move() actually
+	// places us under the cursor.
+	if (isWindow() || !parentWidget())
+	{
+		move(TargetGlobal);
+	}
+	else
+	{
+		move(parentWidget()->mapFromGlobal(TargetGlobal));
+	}
 	d->updateDropOverlays(QCursor::pos());
 }
 
@@ -370,7 +387,7 @@ void CFloatingDragPreview::startFloating(const QPoint &DragStartMousePos,
 	d->DragStartMousePosition = DragStartMousePos;
 	moveFloating();
 	show();
-
+	raise();
 }
 
 

@@ -14,6 +14,7 @@
 #include <arrow/api.h>
 #include <arrow/array/array_nested.h>
 #include <arrow/type.h>
+#include <arrow/util/byte_size.h>
 
 #include "src/query/query.h"
 
@@ -25,6 +26,24 @@
 
 namespace
 {
+
+// Mirrors decodedRecordBatchBytes in mosaico_client.cpp: ReferencedBufferSize
+// is cheaper for nested types and accounts for buffer slicing; TotalBufferSize
+// is the safe fallback. Keeping the same primitive here means the plugin's
+// per-topic total agrees with the SDK's logged X.XX MB by construction.
+qint64 batchDecodedBytes(const std::shared_ptr<arrow::RecordBatch>& batch)
+{
+  if (!batch)
+  {
+    return 0;
+  }
+  auto referenced = arrow::util::ReferencedBufferSize(*batch);
+  if (referenced.ok())
+  {
+    return static_cast<qint64>(*referenced);
+  }
+  return static_cast<qint64>(arrow::util::TotalBufferSize(*batch));
+}
 
 // Plugin-boundary guard. Any exception that reaches a ToolboxPlugin
 // override or queued-connection slot must not propagate into PlotJuggler,
@@ -163,6 +182,11 @@ bool isTimestampFieldName(const std::string& name)
          name == "time" || name == "ts";
 }
 
+std::string topicImportKey(const QString& sequence_name, const QString& topic_name)
+{
+  return sequence_name.toStdString() + '\n' + topic_name.toStdString();
+}
+
 }  // anonymous namespace
 
 ToolboxMosaico::ToolboxMosaico()
@@ -170,6 +194,9 @@ ToolboxMosaico::ToolboxMosaico()
   // Register custom types so queued signal/slot connections can marshal
   // them across the FetchWorker thread boundary.
   qRegisterMetaType<PullResult>("PullResult");
+  qRegisterMetaType<std::shared_ptr<arrow::Schema>>("std::shared_ptr<arrow::Schema>");
+  qRegisterMetaType<std::shared_ptr<arrow::RecordBatch>>("std::shared_ptr<arrow::RecordBatch>");
+  qRegisterMetaType<SequenceInfo>("SequenceInfo");
   qRegisterMetaType<TopicInfo>("TopicInfo");
   qRegisterMetaType<std::vector<SequenceInfo>>("std::vector<SequenceInfo>");
   qRegisterMetaType<std::vector<TopicInfo>>("std::vector<TopicInfo>");
@@ -187,12 +214,20 @@ void ToolboxMosaico::init(PJ::PlotDataMapRef& src_data, PJ::TransformsMap& /*tra
 
         connect(main_window_, &MainWindow::mosaicoDataReady, this,
                 &ToolboxMosaico::onMosaicoDataReady);
+        connect(main_window_, &MainWindow::mosaicoTopicStarted, this,
+                &ToolboxMosaico::onMosaicoTopicStarted);
+        connect(main_window_, &MainWindow::mosaicoTopicBatchReady, this,
+                &ToolboxMosaico::onMosaicoTopicBatchReady);
+        connect(main_window_, &MainWindow::mosaicoTopicFinished, this,
+                &ToolboxMosaico::onMosaicoTopicFinished);
         connect(main_window_, &MainWindow::allFetchesComplete, this,
                 &ToolboxMosaico::onAllFetchesComplete);
         // Drop any partial data that made it in before the user cancelled —
         // otherwise it would leak into the next fetch cycle's import.
-        connect(main_window_, &MainWindow::fetchCancelled, this,
-                [this]() { imported_data_ = PJ::PlotDataMapRef(); });
+        connect(main_window_, &MainWindow::fetchCancelled, this, [this]() {
+          imported_data_ = PJ::PlotDataMapRef();
+          topic_imports_.clear();
+        });
         connect(main_window_, &MainWindow::backRequested, this, [this]() { emit closed(); });
         connect(main_window_, &MainWindow::schemaReady, this, &ToolboxMosaico::onSchemaReady);
         connect(main_window_, &MainWindow::queryChanged, this, &ToolboxMosaico::onQueryChanged);
@@ -242,6 +277,39 @@ void ToolboxMosaico::onMosaicoDataReady(const QString& sequence_name, const QStr
   guardedBoundary(
       "onMosaicoDataReady",
       [&]() { convertRecordBatchToSeries(sequence_name, topic_name, result); },
+      [this]() { emit closed(); });
+}
+
+void ToolboxMosaico::onMosaicoTopicStarted(const QString& sequence_name, const QString& topic_name,
+                                           const std::shared_ptr<arrow::Schema>& schema)
+{
+  guardedBoundary(
+      "onMosaicoTopicStarted", [&]() { beginTopicImport(sequence_name, topic_name, schema); },
+      [this]() { emit closed(); });
+}
+
+void ToolboxMosaico::onMosaicoTopicBatchReady(const QString& sequence_name,
+                                              const QString& topic_name,
+                                              const std::shared_ptr<arrow::RecordBatch>& batch)
+{
+  guardedBoundary(
+      "onMosaicoTopicBatchReady",
+      [&]() {
+        const qint64 decoded_bytes = batchDecodedBytes(batch);
+        appendRecordBatchToSeries(sequence_name, topic_name, batch);
+        if (main_window_)
+        {
+          main_window_->recordDecodedBytes(topic_name, decoded_bytes);
+        }
+      },
+      [this]() { emit closed(); });
+}
+
+void ToolboxMosaico::onMosaicoTopicFinished(const QString& sequence_name, const QString& topic_name)
+{
+  guardedBoundary(
+      "onMosaicoTopicFinished",
+      [&]() { topic_imports_.erase(topicImportKey(sequence_name, topic_name)); },
       [this]() { emit closed(); });
 }
 
@@ -312,13 +380,29 @@ void ToolboxMosaico::flattenArray(const std::shared_ptr<arrow::Array>& array,
 void ToolboxMosaico::convertRecordBatchToSeries(const QString& sequence_name,
                                                 const QString& topic_name, const PullResult& result)
 {
-  if (result.batches.empty() || !result.schema)
+  if (!beginTopicImport(sequence_name, topic_name, result.schema))
   {
     return;
   }
+  for (const auto& batch : result.batches)
+  {
+    const qint64 decoded_bytes = batchDecodedBytes(batch);
+    appendRecordBatchToSeries(sequence_name, topic_name, batch);
+    if (main_window_)
+    {
+      main_window_->recordDecodedBytes(topic_name, decoded_bytes);
+    }
+  }
+  topic_imports_.erase(topicImportKey(sequence_name, topic_name));
+}
 
-  const auto& schema = result.schema;
-
+bool ToolboxMosaico::beginTopicImport(const QString& sequence_name, const QString& topic_name,
+                                      const std::shared_ptr<arrow::Schema>& schema)
+{
+  if (!schema)
+  {
+    return false;
+  }
   // Find timestamp column by Arrow type
   int ts_col = -1;
   for (int i = 0; i < schema->num_fields(); ++i)
@@ -343,7 +427,7 @@ void ToolboxMosaico::convertRecordBatchToSeries(const QString& sequence_name,
   }
   if (ts_col < 0)
   {
-    return;
+    return false;
   }
 
   auto ts_type = schema->field(ts_col)->type()->id();
@@ -367,27 +451,60 @@ void ToolboxMosaico::convertRecordBatchToSeries(const QString& sequence_name,
     }
   }
 
-  std::set<std::string> created_series;
+  TopicImportState state;
+  state.schema = schema;
+  state.ts_col = ts_col;
+  state.ts_type = ts_type;
+  state.ts_is_ns = ts_is_ns;
+  state.prefix = prefix;
+  topic_imports_[topicImportKey(sequence_name, topic_name)] = std::move(state);
+  return true;
+}
 
-  for (const auto& batch : result.batches)
+void ToolboxMosaico::appendRecordBatchToSeries(const QString& sequence_name,
+                                               const QString& topic_name,
+                                               const std::shared_ptr<arrow::RecordBatch>& batch)
+{
+  if (!batch)
   {
-    auto ts_array = batch->column(ts_col);
-
-    for (int col = 0; col < batch->num_columns(); ++col)
+    return;
+  }
+  auto it = topic_imports_.find(topicImportKey(sequence_name, topic_name));
+  if (it == topic_imports_.end())
+  {
+    if (!beginTopicImport(sequence_name, topic_name, batch->schema()))
     {
-      if (col == ts_col)
-      {
-        continue;
-      }
-      auto field = batch->schema()->field(col);
-      if (isTimestampFieldName(field->name()))
-      {
-        continue;
-      }
-      auto col_path = prefix + "/" + field->name();
-      flattenArray(batch->column(col), ts_array, ts_type, ts_is_ns, batch->num_rows(), col_path,
-                   created_series);
+      return;
     }
+    it = topic_imports_.find(topicImportKey(sequence_name, topic_name));
+    if (it == topic_imports_.end())
+    {
+      return;
+    }
+  }
+
+  auto& state = it->second;
+  if (state.ts_col < 0 || state.ts_col >= batch->num_columns())
+  {
+    return;
+  }
+
+  auto ts_array = batch->column(state.ts_col);
+
+  for (int col = 0; col < batch->num_columns(); ++col)
+  {
+    if (col == state.ts_col)
+    {
+      continue;
+    }
+    auto field = batch->schema()->field(col);
+    if (isTimestampFieldName(field->name()))
+    {
+      continue;
+    }
+    auto col_path = state.prefix + "/" + field->name();
+    flattenArray(batch->column(col), ts_array, state.ts_type, state.ts_is_ns, batch->num_rows(),
+                 col_path, state.created_series);
   }
 }
 

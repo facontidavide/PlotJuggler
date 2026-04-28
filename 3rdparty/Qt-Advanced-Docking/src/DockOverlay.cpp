@@ -397,21 +397,20 @@ int DockOverlayPrivate::sideBarMouseZone(SideBarLocation sideBarLocation)
 
 
 //============================================================================
+// Wayland: parent the overlay to the manager's top-level window and drop
+// the Qt::Tool flags. Top-level placement in screen coordinates is unreliable
+// under Wayland, which left the indicators stuck over the wrong dock area.
 CDockOverlay::CDockOverlay(QWidget* parent, eMode Mode) :
-	QFrame(parent),
+	QFrame(parent ? parent->window() : nullptr),
 	d(new DockOverlayPrivate(this))
 {
 	d->Mode = Mode;
 	d->Cross = new CDockOverlayCross(this);
-#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
-	setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::X11BypassWindowManagerHint);
-#else
-	setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
-#endif
 	setWindowOpacity(1);
 	setWindowTitle("DockOverlay");
 	setAttribute(Qt::WA_NoSystemBackground);
 	setAttribute(Qt::WA_TranslucentBackground);
+	setAttribute(Qt::WA_TransparentForMouseEvents);
 
 	d->Cross->setVisible(false);
 	setVisible(false);
@@ -570,9 +569,10 @@ DockWidgetArea CDockOverlay::showOverlay(QWidget* target)
 	// Move it over the target.
 	hide();
 	resize(target->size());
-	QPoint TopLeft = target->mapToGlobal(target->rect().topLeft());
-	move(TopLeft);
+	const QPoint TopLeftGlobal = target->mapToGlobal(target->rect().topLeft());
+	move(parentWidget() ? parentWidget()->mapFromGlobal(TopLeftGlobal) : TopLeftGlobal);
 	show();
+	raise();
 	d->Cross->updatePosition();
 	d->Cross->updateOverlayIcons();
 	return dropAreaUnderCursor();
@@ -733,18 +733,15 @@ QPoint DockOverlayCrossPrivate::areaGridPosition(const DockWidgetArea area)
 
 
 //============================================================================
+// Wayland: see CDockOverlay above for the rationale.
 CDockOverlayCross::CDockOverlayCross(CDockOverlay* overlay) :
-	QWidget(overlay->parentWidget()),
+	QWidget(overlay->parentWidget() ? overlay->parentWidget()->window() : nullptr),
 	d(new DockOverlayCrossPrivate(this))
 {
 	d->DockOverlay = overlay;
-#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
-	setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::X11BypassWindowManagerHint);
-#else
-	setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
-#endif
 	setWindowTitle("DockOverlayCross");
 	setAttribute(Qt::WA_TranslucentBackground);
+	setAttribute(Qt::WA_TransparentForMouseEvents);
 
 	d->GridLayout = new QGridLayout();
 	d->GridLayout->setSpacing(0);
@@ -784,7 +781,10 @@ void CDockOverlayCross::setupOverlayCross(CDockOverlay::eMode Mode)
 //============================================================================
 void CDockOverlayCross::updateOverlayIcons()
 {
-	if (windowHandle()->devicePixelRatio() == d->LastDevicePixelRatio)
+	// Wayland: devicePixelRatioF() walks the parent chain; the original
+	// windowHandle()->devicePixelRatio() segfaults for a child widget.
+	const qreal CurrentRatio = devicePixelRatioF();
+	if (CurrentRatio == d->LastDevicePixelRatio)
 	{
 		return;
 	}
@@ -793,11 +793,7 @@ void CDockOverlayCross::updateOverlayIcons()
 	{
 		d->updateDropIndicatorIcon(Widget);
 	}
-#if QT_VERSION >= 0x050600
-	d->LastDevicePixelRatio = devicePixelRatioF();
-#else
-    d->LastDevicePixelRatio = devicePixelRatio();
-#endif
+	d->LastDevicePixelRatio = CurrentRatio;
 }
 
 
@@ -911,11 +907,10 @@ void CDockOverlayCross::showEvent(QShowEvent*)
 void CDockOverlayCross::updatePosition()
 {
 	resize(d->DockOverlay->size());
-	QPoint TopLeft = d->DockOverlay->pos();
-	QPoint Offest((this->width() - d->DockOverlay->width()) / 2,
+	const QPoint Offset((this->width() - d->DockOverlay->width()) / 2,
 		(this->height() - d->DockOverlay->height()) / 2);
-	QPoint CrossTopLeft = TopLeft - Offest;
-	move(CrossTopLeft);
+	move(d->DockOverlay->pos() - Offset);
+	raise();
 }
 
 

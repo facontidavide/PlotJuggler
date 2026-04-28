@@ -14,9 +14,11 @@
 #include <QThread>
 #include <chrono>
 #include <exception>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 namespace
 {
@@ -34,6 +36,8 @@ inline qint64 elapsedMs(std::chrono::steady_clock::time_point start)
 FetchWorker::FetchWorker(QObject* parent) : QObject(parent)
 {
   qRegisterMetaType<MosaicoClient*>("MosaicoClient*");
+  qRegisterMetaType<SequenceInfo>("SequenceInfo");
+  qRegisterMetaType<std::vector<SequenceInfo>>("std::vector<SequenceInfo>");
 }
 
 void FetchWorker::setClient(MosaicoClient* client)
@@ -72,7 +76,12 @@ void FetchWorker::fetchSequences()
     }
     qDebug() << "[Mosaico fetch] listSequences: start";
     const auto t0 = std::chrono::steady_clock::now();
-    auto result = client_->listSequences();
+    auto result = client_->listSequences(
+        [this](const std::vector<SequenceInfo>& sequences) { emit sequenceListStarted(sequences); },
+        [this](const SequenceInfo& sequence, int64_t completed, int64_t total) {
+          emit sequenceInfoReady(sequence, static_cast<qint64>(completed),
+                                 static_cast<qint64>(total));
+        });
     const auto ms = elapsedMs(t0);
     if (!result.ok())
     {
@@ -185,8 +194,7 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
       // Surface one error per topic so pending_fetches_ drains cleanly.
       for (const auto& topic : topic_names)
       {
-        Q_UNUSED(topic);
-        emit errorOccurred("Not connected");
+        emit topicErrorOccurred(topic, QStringLiteral("Not connected"));
       }
       return;
     }
@@ -197,8 +205,7 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
     {
       for (const auto& topic : topic_names)
       {
-        Q_UNUSED(topic);
-        emit errorOccurred(QStringLiteral("cancelled"));
+        emit topicErrorOccurred(topic, QStringLiteral("cancelled"));
       }
       return;
     }
@@ -220,11 +227,6 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
       topics_std.emplace_back(t.toStdString());
     }
 
-    // Per-topic throttle: pullTopics fires the progress callback from
-    // multiple worker threads concurrently, so each topic owns its own
-    // last_emit timestamp under a single mutex. A typical pull bursts a few
-    // hundred chunks/sec; capping at ~10 emits/sec/topic keeps the GUI
-    // event loop relaxed while still feeling responsive.
     struct ProgressState
     {
       std::chrono::steady_clock::time_point last_emit{};
@@ -250,8 +252,7 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
         }
         auto& st = it->second;
         const auto now = std::chrono::steady_clock::now();
-        const bool done = total_bytes > 0 && bytes >= total_bytes;
-        if (!st.ever_emitted || done ||
+        if (!st.ever_emitted ||
             std::chrono::duration_cast<std::chrono::milliseconds>(now - st.last_emit).count() >=
                 100)
         {
@@ -267,6 +268,16 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
       }
     };
 
+    auto schema_cb = [this, sequence_name](const std::string& topic,
+                                           const std::shared_ptr<arrow::Schema>& schema) {
+      emit topicStreamStarted(sequence_name, QString::fromStdString(topic), schema);
+    };
+
+    auto batch_cb = [this, sequence_name](const std::string& topic,
+                                          const std::shared_ptr<arrow::RecordBatch>& batch) {
+      emit topicBatchReady(sequence_name, QString::fromStdString(topic), batch);
+    };
+
     auto on_done = [this, sequence_name](const std::string& topic,
                                          arrow::Result<PullResult> result) {
       const QString topic_q = QString::fromStdString(topic);
@@ -274,24 +285,10 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
       {
         qWarning() << "[Mosaico fetch] pullTopic" << sequence_name << "/" << topic_q << ": FAILED —"
                    << QString::fromStdString(result.status().ToString());
-        emit errorOccurred(QString::fromStdString(result.status().ToString()));
+        emit topicErrorOccurred(topic_q, QString::fromStdString(result.status().ToString()));
         return;
       }
-      int64_t batches = static_cast<int64_t>(result->batches.size());
-      int64_t rows = 0;
-      for (const auto& b : result->batches)
-      {
-        if (b)
-        {
-          rows += b->num_rows();
-        }
-      }
-      qDebug().noquote() << QString("[Mosaico fetch] pullTopic %1/%2: OK, %3 batches, %4 rows")
-                                .arg(sequence_name)
-                                .arg(topic_q)
-                                .arg(batches)
-                                .arg(rows);
-      emit dataReady(sequence_name, topic_q, *result);
+      emit topicStreamFinished(sequence_name, topic_q);
     };
 
     qDebug().noquote() << QString("[Mosaico fetch] pullTopics %1: dispatching %2 topics "
@@ -304,7 +301,8 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
                               .arg(topic_names.join(", "));
     const auto t0 = std::chrono::steady_clock::now();
     auto status = client_->pullTopics(sequence_name.toStdString(), topics_std, range, on_done,
-                                      progress, &cancel_flag_);
+                                      progress, &cancel_flag_, batch_cb, schema_cb,
+                                      /*retain_batches=*/false);
     const auto ms = elapsedMs(t0);
     if (!status.ok())
     {
@@ -316,8 +314,7 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
       const QString msg = QString::fromStdString(status.ToString());
       for (const auto& topic : topic_names)
       {
-        Q_UNUSED(topic);
-        emit errorOccurred(msg);
+        emit topicErrorOccurred(topic, msg);
       }
       return;
     }
@@ -330,16 +327,14 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
     const QString msg = QStringLiteral("pullTopics failed: ") + QString::fromUtf8(e.what());
     for (const auto& topic : topic_names)
     {
-      Q_UNUSED(topic);
-      emit errorOccurred(msg);
+      emit topicErrorOccurred(topic, msg);
     }
   }
   catch (...)
   {
     for (const auto& topic : topic_names)
     {
-      Q_UNUSED(topic);
-      emit errorOccurred("pullTopics failed: unknown error");
+      emit topicErrorOccurred(topic, QStringLiteral("pullTopics failed: unknown error"));
     }
   }
 }

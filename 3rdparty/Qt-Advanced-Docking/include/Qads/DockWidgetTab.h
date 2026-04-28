@@ -91,7 +91,7 @@ public:
 	/**
 	 * Virtual Destructor
 	 */
-	virtual ~CDockWidgetTab();
+	~CDockWidgetTab() override;
 
 	/**
 	 * Returns true, if this is the active tab

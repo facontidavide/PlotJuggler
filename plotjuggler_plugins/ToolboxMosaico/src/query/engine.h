@@ -60,7 +60,7 @@ public:
   {
     for (const auto& [key, value] : metadata)
     {
-      lua_[key] = sol::nil;
+      lua_[key] = sol::lua_nil;
     }
   }
 
@@ -210,7 +210,7 @@ private:
     {
       return obj.as<bool>();
     }
-    return t != sol::type::nil && t != sol::type::none;
+    return t != sol::type::lua_nil && t != sol::type::none;
   }
 
   [[nodiscard]] static ValidationResult parse_error(const std::string& msg)

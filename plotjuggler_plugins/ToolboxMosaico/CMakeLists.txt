@@ -1,17 +1,40 @@
 find_package(Arrow QUIET CONFIG)
-find_package(ArrowFlight QUIET CONFIG)
-if(NOT Arrow_FOUND OR NOT ArrowFlight_FOUND)
+if(NOT TARGET ArrowFlight::arrow_flight_static AND NOT TARGET ArrowFlight::arrow_flight_shared)
+    find_package(ArrowFlight QUIET CONFIG)
+endif()
+
+set(MOSAICO_ARROW_FLIGHT_TARGET "")
+foreach(candidate ArrowFlight::arrow_flight_static ArrowFlight::arrow_flight_shared)
+    if(TARGET ${candidate})
+        set(MOSAICO_ARROW_FLIGHT_TARGET ${candidate})
+        break()
+    endif()
+endforeach()
+
+if(NOT Arrow_FOUND OR NOT MOSAICO_ARROW_FLIGHT_TARGET)
     message("[ToolboxMosaico] Arrow/Flight not found. Skipping plugin.")
     return()
 endif()
 
-# The SDK links arrow::arrow (Conan convention). PlotJuggler provides
-# Arrow::arrow_shared + ArrowFlight::arrow_flight_shared. Bridge them.
+# The SDK uses Arrow Flight symbols. Keep Arrow and Flight as explicit
+# targets so the final plugin link line includes both static libraries.
 if(NOT TARGET arrow::arrow)
+    set(MOSAICO_ARROW_TARGET "")
+    foreach(candidate Arrow::arrow_static Arrow::arrow_shared)
+        if(TARGET ${candidate})
+            set(MOSAICO_ARROW_TARGET ${candidate})
+            break()
+        endif()
+    endforeach()
+    if(NOT MOSAICO_ARROW_TARGET)
+        message("[ToolboxMosaico] Arrow target not found. Skipping plugin.")
+        return()
+    endif()
+
     add_library(arrow_combined INTERFACE)
     target_link_libraries(arrow_combined INTERFACE
-        Arrow::arrow_shared
-        ArrowFlight::arrow_flight_shared)
+        ${MOSAICO_ARROW_TARGET}
+        ${MOSAICO_ARROW_FLIGHT_TARGET})
     add_library(arrow::arrow ALIAS arrow_combined)
 endif()
 
@@ -26,6 +49,7 @@ include_directories(../)
 
 set(MOSAICO_SOURCES
     src/core/time_format.cpp
+    src/ui/download_stats_dialog.cpp
     src/ui/main_window.cpp
     src/ui/fetch_worker.cpp
     src/ui/server_history.cpp
@@ -58,6 +82,7 @@ target_link_libraries(ToolboxMosaico PRIVATE
     Qt5::Xml
     plotjuggler_base
     mosaico_sdk
+    ${MOSAICO_ARROW_FLIGHT_TARGET}
     lua::lua
     QCodeEditor
 )

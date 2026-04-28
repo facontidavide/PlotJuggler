@@ -29,8 +29,10 @@
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QTimeZone>
+#include <QTimer>
 #include <QVBoxLayout>
 
+#include <algorithm>
 #include <climits>
 #include <limits>
 #include <set>
@@ -59,6 +61,13 @@ SequencePanel::SequencePanel(QWidget* parent) : QWidget(parent)
   auto header_font = header_->font();
   header_font.setBold(true);
   header_->setFont(header_font);
+
+  loading_timer_ = new QTimer(this);
+  loading_timer_->setInterval(300);
+  connect(loading_timer_, &QTimer::timeout, this, [this]() {
+    loading_frame_ = (loading_frame_ + 1) % 4;
+    updateHeader();
+  });
 
   filter_ = new QLineEdit(this);
   filter_->setPlaceholderText("Filter\u2026");
@@ -116,14 +125,38 @@ QString SequencePanel::formatDate(int64_t ts_ns)
   return dt.toString("dd/MM/yyyy");
 }
 
-void SequencePanel::populateSequences(const std::vector<SequenceInfo>& sequences)
+void SequencePanel::setSequenceRow(int row, const SequenceInfo& seq)
 {
-  all_sequences_ = sequences;
+  auto* name_item = new QTableWidgetItem(QString::fromStdString(seq.name));
+  table_->setItem(row, kColName, name_item);
 
-  // Update the picker's "from" placeholder with the earliest available date
-  // across all sequences. Skip entries with unknown timestamps (== 0).
+  auto* date_item = new NumericTableItem(formatDate(seq.max_ts_ns));
+  date_item->setData(Qt::UserRole, static_cast<qlonglong>(seq.max_ts_ns));
+  table_->setItem(row, kColDate, date_item);
+
+  auto* size_item = new NumericTableItem(formatBytes(seq.total_size_bytes));
+  size_item->setData(Qt::UserRole, static_cast<qlonglong>(seq.total_size_bytes));
+  size_item->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+  table_->setItem(row, kColSize, size_item);
+}
+
+int SequencePanel::findRowByName(const QString& name) const
+{
+  for (int row = 0; row < table_->rowCount(); ++row)
+  {
+    auto* item = table_->item(row, kColName);
+    if (item && item->text() == name)
+    {
+      return row;
+    }
+  }
+  return -1;
+}
+
+void SequencePanel::refreshEarliestDate()
+{
   int64_t earliest = 0;
-  for (const auto& seq : sequences)
+  for (const auto& seq : all_sequences_)
   {
     if (seq.min_ts_ns > 0 && (earliest == 0 || seq.min_ts_ns < earliest))
     {
@@ -136,6 +169,42 @@ void SequencePanel::populateSequences(const std::vector<SequenceInfo>& sequences
     earliest_date = QDateTime::fromMSecsSinceEpoch(earliest / 1'000'000LL).date();
   }
   picker_->setEarliestDate(earliest_date);
+}
+
+void SequencePanel::updateHeader()
+{
+  if (list_loading_)
+  {
+    header_->setText(
+        QStringLiteral("Sequences (loading%1)").arg(QString(loading_frame_ + 1, QLatin1Char('.'))));
+    return;
+  }
+
+  if (total_count_ == 0)
+  {
+    header_->setText(sequence_list_populated_ ? QStringLiteral("Sequences (none found)") :
+                                                QStringLiteral("Sequences"));
+    return;
+  }
+
+  QString text = QStringLiteral("Sequences (%1/%2)").arg(visible_count_).arg(total_count_);
+  if (metadata_loading_)
+  {
+    text += QStringLiteral(" - loading details%1 %2/%3")
+                .arg(QString(loading_frame_ + 1, QLatin1Char('.')))
+                .arg(metadata_loaded_)
+                .arg(metadata_total_);
+  }
+  header_->setText(text);
+}
+
+void SequencePanel::populateSequences(const std::vector<SequenceInfo>& sequences)
+{
+  sequence_list_populated_ = true;
+  all_sequences_ = sequences;
+  total_count_ = static_cast<int>(sequences.size());
+  visible_count_ = total_count_;
+  refreshEarliestDate();
 
   // Disable sorting while populating to avoid repeated re-sorts.
   table_->setSortingEnabled(false);
@@ -143,42 +212,96 @@ void SequencePanel::populateSequences(const std::vector<SequenceInfo>& sequences
 
   if (sequences.empty())
   {
-    header_->setText("Sequences (none found)");
     table_->setSortingEnabled(true);
+    updateHeader();
     return;
   }
 
-  header_->setText(QString("Sequences (%1)").arg(sequences.size()));
   table_->setRowCount(static_cast<int>(sequences.size()));
 
   for (int i = 0; i < static_cast<int>(sequences.size()); ++i)
   {
     const auto& seq = sequences[static_cast<size_t>(i)];
-
-    // Name column — plain QTableWidgetItem (sorts alphabetically).
-    auto* name_item = new QTableWidgetItem(QString::fromStdString(seq.name));
-    table_->setItem(i, kColName, name_item);
-
-    // Date column — NumericTableItem (sorts by raw nanoseconds).
-    auto* date_item = new NumericTableItem(formatDate(seq.max_ts_ns));
-    date_item->setData(Qt::UserRole, static_cast<qlonglong>(seq.max_ts_ns));
-    table_->setItem(i, kColDate, date_item);
-
-    // Size column — NumericTableItem (sorts by raw bytes).
-    auto* size_item = new NumericTableItem(formatBytes(seq.total_size_bytes));
-    size_item->setData(Qt::UserRole, static_cast<qlonglong>(seq.total_size_bytes));
-    size_item->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    table_->setItem(i, kColSize, size_item);
+    setSequenceRow(i, seq);
   }
 
   table_->setSortingEnabled(true);
   applyFilter();
 }
 
+void SequencePanel::updateSequence(const SequenceInfo& sequence)
+{
+  const QString name = QString::fromStdString(sequence.name);
+  auto it = std::find_if(all_sequences_.begin(), all_sequences_.end(),
+                         [&](const SequenceInfo& seq) { return seq.name == sequence.name; });
+  if (it == all_sequences_.end())
+  {
+    all_sequences_.push_back(sequence);
+  }
+  else
+  {
+    *it = sequence;
+  }
+
+  const bool was_sorting = table_->isSortingEnabled();
+  table_->setSortingEnabled(false);
+  int row = findRowByName(name);
+  if (row < 0)
+  {
+    row = table_->rowCount();
+    table_->setRowCount(row + 1);
+    total_count_ = table_->rowCount();
+  }
+  setSequenceRow(row, sequence);
+  table_->setSortingEnabled(was_sorting);
+
+  refreshEarliestDate();
+  applyFilter();
+}
+
+void SequencePanel::setMetadataLoadingProgress(qint64 loaded, qint64 total)
+{
+  list_loading_ = false;
+  if (total == metadata_total_ && loaded < metadata_loaded_)
+  {
+    loaded = metadata_loaded_;
+  }
+  metadata_loaded_ = loaded;
+  metadata_total_ = total;
+  metadata_loading_ = total > 0 && loaded < total;
+  table_->setEnabled(true);
+
+  if (metadata_loading_)
+  {
+    loading_timer_->start();
+  }
+  else if (!list_loading_)
+  {
+    loading_timer_->stop();
+    loading_frame_ = 0;
+  }
+  updateHeader();
+}
+
 void SequencePanel::setLoading(bool loading)
 {
-  header_->setText(loading ? "Sequences (loading\u2026)" : "Sequences");
+  list_loading_ = loading;
+  if (loading)
+  {
+    sequence_list_populated_ = false;
+    metadata_loading_ = false;
+    metadata_loaded_ = 0;
+    metadata_total_ = 0;
+    loading_timer_->start();
+  }
+  else
+  {
+    loading_timer_->stop();
+    loading_frame_ = 0;
+    metadata_loading_ = false;
+  }
   table_->setEnabled(!loading);
+  updateHeader();
 }
 
 void SequencePanel::onCellClicked(int row, int /*column*/)
@@ -333,7 +456,9 @@ void SequencePanel::applyFilter()
     }
   }
 
-  header_->setText(QString("Sequences (%1/%2)").arg(visible).arg(table_->rowCount()));
+  visible_count_ = visible;
+  total_count_ = table_->rowCount();
+  updateHeader();
 }
 
 void SequencePanel::setVisibleSequences(const std::set<std::string>& visible_names)
