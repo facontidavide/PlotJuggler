@@ -2,6 +2,40 @@
 Changelog for package plotjuggler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.17.0 (2026-04-27)
+-------------------
+* New plugin: ToolboxMosaico for Mosaico Flight datasets, with streaming pullTopics and per-topic download progress UI (`#1340 <https://github.com/facontidavide/PlotJuggler/issues/1340>`_)
+* New plugin: Serial Port DataStreamer with nested-JSON support and robust port parsing (`#1314 <https://github.com/facontidavide/PlotJuggler/issues/1314>`_)
+* New parser: OMG IDL support for ROS 2 message definitions (`#1345 <https://github.com/facontidavide/PlotJuggler/issues/1345>`_)
+* New ToolboxCSV: rewritten CSV/Parquet export with single-file and multi-file modes, topic filter, time-gap segmentation and NaN/Null/Inf detection (replaces the legacy CSV export)
+* Function Editor: Python custom functions, library dialog, and UX refactor (red highlight on empty name, vertical splitter)
+* UDP DataStreamer: header-byte dispatch for multi-type payloads, with topic→descriptor mapping in the protobuf parser (`#1144 <https://github.com/facontidavide/PlotJuggler/issues/1144>`_)
+* Add common statistics SISO transforms: RMS, MAV, stddev, peak-to-peak (`#1325 <https://github.com/facontidavide/PlotJuggler/issues/1325>`_)
+* Fix CSV loading issues (`#1338 <https://github.com/facontidavide/PlotJuggler/issues/1338>`_, addresses `#850 <https://github.com/facontidavide/PlotJuggler/issues/850>`_, `#987 <https://github.com/facontidavide/PlotJuggler/issues/987>`_, `#1000 <https://github.com/facontidavide/PlotJuggler/issues/1000>`_)
+* Fix curve restoration when loading layout XML files (`#1339 <https://github.com/facontidavide/PlotJuggler/issues/1339>`_)
+* dataload_ulog: support files larger than 2 GB (`#1346 <https://github.com/facontidavide/PlotJuggler/issues/1346>`_)
+* parser_ros: emit Header fields per the schema, drop double-prefix (`#1350 <https://github.com/facontidavide/PlotJuggler/issues/1350>`_)
+* rosx_introspection: parse bounded sequence syntax ``[<=N]`` (`#1349 <https://github.com/facontidavide/PlotJuggler/issues/1349>`_)
+* MCAP: more resilient reading of corrupted files
+* AppImage: HiDPI scaling and theme isolation on GNOME (`#1344 <https://github.com/facontidavide/PlotJuggler/issues/1344>`_)
+* Update Qt Advanced Docking to 4.5 and fix a Wayland issue
+* Fix tree view collisions when a curve path is also a parent node, and stale X-axis ordering / Parquet column list
+* Fix `#749 <https://github.com/facontidavide/PlotJuggler/issues/749>`_: wrap multi-file prefix dialog content in QScrollArea
+* Fix `#464 <https://github.com/facontidavide/PlotJuggler/issues/464>`_: ``-d`` flag data is no longer overwritten when a layout is also passed with ``-l``
+* Fix `#1052 <https://github.com/facontidavide/PlotJuggler/issues/1052>`_: segfault when a dock area is destroyed during mouse events
+* Fix `#1080 <https://github.com/facontidavide/PlotJuggler/issues/1080>`_: vertical zoom no longer stuck at max 0.1
+* Fix `#1291 <https://github.com/facontidavide/PlotJuggler/issues/1291>`_: use UTC when formatting epoch-based time axis labels
+* Fix `#1014 <https://github.com/facontidavide/PlotJuggler/issues/1014>`_: deterministic attribute order in layout XML
+* Fix `#1151 <https://github.com/facontidavide/PlotJuggler/issues/1151>`_: always save colormaps in layout XML
+* Fix `#994 <https://github.com/facontidavide/PlotJuggler/issues/994>`_: save/restore streaming buffer size in layout XML
+* Fix `#1326 <https://github.com/facontidavide/PlotJuggler/issues/1326>`_: standalone time-like CSV columns kept as strings
+* Fix `#1062 <https://github.com/facontidavide/PlotJuggler/issues/1062>`_: bump nlohmann_json to v3.13.0 for clang >= 19 compatibility
+* Fix `#1324 <https://github.com/facontidavide/PlotJuggler/issues/1324>`_: keep internal series names aligned after prefix remap
+* Fix `#967 <https://github.com/facontidavide/PlotJuggler/issues/967>`_, `#528 <https://github.com/facontidavide/PlotJuggler/issues/528>`_: ``--buffer_size`` actually sets the value and the time slider updates on offset toggle
+* omgidl: enable ``/Zc:__cplusplus`` for MSVC to satisfy peglib's C++17 check
+* CI/build hardening: ros2-rolling typesupport, Conan/Homebrew ordering on macOS, dependabot bumps
+* Contributors: Alvvalencia, avalen2022, Davide Faconti, GNERSIS, Gor, Lanove, Per Hedblom, Thies Oelerich, Timo Stienstra, Valentin Platzgummer, dependabot[bot]
+
 3.16.0 (2026-03-10)
 -----------
 * add plotjuggler and foxglove bridge plugins
