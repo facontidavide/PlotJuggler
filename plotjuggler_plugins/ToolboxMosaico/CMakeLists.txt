@@ -1,40 +1,29 @@
 find_package(Arrow QUIET CONFIG)
-if(NOT TARGET ArrowFlight::arrow_flight_static AND NOT TARGET ArrowFlight::arrow_flight_shared)
+if(NOT TARGET ArrowFlight::arrow_flight_static)
     find_package(ArrowFlight QUIET CONFIG)
 endif()
 
-set(MOSAICO_ARROW_FLIGHT_TARGET "")
-foreach(candidate ArrowFlight::arrow_flight_static ArrowFlight::arrow_flight_shared)
-    if(TARGET ${candidate})
-        set(MOSAICO_ARROW_FLIGHT_TARGET ${candidate})
-        break()
-    endif()
-endforeach()
+# Plugins always link Arrow/Flight statically (see CLAUDE / project policy).
+set(MOSAICO_ARROW_FLIGHT_TARGET ArrowFlight::arrow_flight_static)
+set(MOSAICO_ARROW_TARGET Arrow::arrow_static)
 
-if(NOT Arrow_FOUND OR NOT MOSAICO_ARROW_FLIGHT_TARGET)
-    message("[ToolboxMosaico] Arrow/Flight not found. Skipping plugin.")
+if(NOT Arrow_FOUND OR NOT TARGET ${MOSAICO_ARROW_FLIGHT_TARGET} OR NOT TARGET ${MOSAICO_ARROW_TARGET})
+    message("[ToolboxMosaico] Arrow/Flight static targets not found. Skipping plugin.")
     return()
 endif()
 
-# The SDK uses Arrow Flight symbols. Keep Arrow and Flight as explicit
-# targets so the final plugin link line includes both static libraries.
+# Combine Arrow + Flight as a single propagated target for non-Conan builds.
+# (Conan's CMakeDeps already creates a lowercase `arrow::arrow` component
+# target, so this branch is skipped under Conan and the static-mode defines
+# are added directly to mosaico_sdk in its CMakeLists instead.)
 if(NOT TARGET arrow::arrow)
-    set(MOSAICO_ARROW_TARGET "")
-    foreach(candidate Arrow::arrow_static Arrow::arrow_shared)
-        if(TARGET ${candidate})
-            set(MOSAICO_ARROW_TARGET ${candidate})
-            break()
-        endif()
-    endforeach()
-    if(NOT MOSAICO_ARROW_TARGET)
-        message("[ToolboxMosaico] Arrow target not found. Skipping plugin.")
-        return()
-    endif()
-
     add_library(arrow_combined INTERFACE)
     target_link_libraries(arrow_combined INTERFACE
         ${MOSAICO_ARROW_TARGET}
         ${MOSAICO_ARROW_FLIGHT_TARGET})
+    target_compile_definitions(arrow_combined INTERFACE
+        ARROW_STATIC
+        ARROW_FLIGHT_STATIC)
     add_library(arrow::arrow ALIAS arrow_combined)
 endif()
 
