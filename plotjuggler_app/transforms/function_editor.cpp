@@ -182,6 +182,35 @@ FunctionEditorWidget::FunctionEditorWidget(PlotDataMapRef& plotMapData,
   ui->luaButton->setChecked(true);
   ui->luaBatchButton->setChecked(true);
 
+#ifdef PJ_HAS_PYTHON
+  if (!PythonCustomFunction::isAvailable())
+  {
+    const QString tip = tr("Python is unavailable in this build (embedded interpreter could "
+                           "not initialize). Use Lua instead.");
+    if (ui->pythonButton)
+    {
+      ui->pythonButton->setEnabled(false);
+      ui->pythonButton->setToolTip(tip);
+    }
+    if (ui->pythonBatchButton)
+    {
+      ui->pythonBatchButton->setEnabled(false);
+      ui->pythonBatchButton->setToolTip(tip);
+    }
+  }
+#else
+  if (ui->pythonButton)
+  {
+    ui->pythonButton->setEnabled(false);
+    ui->pythonButton->setToolTip(tr("Python support not compiled in."));
+  }
+  if (ui->pythonBatchButton)
+  {
+    ui->pythonBatchButton->setEnabled(false);
+    ui->pythonBatchButton->setToolTip(tr("Python support not compiled in."));
+  }
+#endif
+
   _source_group = new QButtonGroup(this);
   _source_group->setExclusive(true);
 
