@@ -19,7 +19,7 @@ jobs:
   macos-build:
     runs-on: ${{ matrix.config.os }}
     permissions:
-      contents: read
+      contents: write   # softprops/action-gh-release needs write to update releases on tag pushes
       packages: write   # push/pull the Conan cache OCI artifact on ghcr.io
     strategy:
       fail-fast: false
