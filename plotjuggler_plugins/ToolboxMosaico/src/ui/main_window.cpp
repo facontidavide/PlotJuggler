@@ -606,11 +606,6 @@ void MainWindow::onDataReady(const QString& sequence_name, const QString& topic_
       }
       emit mosaicoTopicFinished(sequence_name, topic_name);
     }
-    if (download_stats_dialog_)
-    {
-      download_stats_dialog_->updateProgress(topic_name, result.decoded_size_bytes,
-                                             /*total_bytes=*/0);
-    }
     finishFetchTopic(topic_name, true);
   });
 }
@@ -637,14 +632,9 @@ void MainWindow::onTopicBatchReady(const QString& sequence_name, const QString& 
   });
 }
 
-void MainWindow::onTopicStreamFinished(const QString& sequence_name, const QString& topic_name,
-                                       qint64 decoded_size_bytes)
+void MainWindow::onTopicStreamFinished(const QString& sequence_name, const QString& topic_name)
 {
   guardedSlot(status_label_, "onTopicStreamFinished", [&]() {
-    if (download_stats_dialog_)
-    {
-      download_stats_dialog_->updateProgress(topic_name, decoded_size_bytes, /*total_bytes=*/0);
-    }
     emit mosaicoTopicFinished(sequence_name, topic_name);
     finishFetchTopic(topic_name, true);
   });
@@ -754,10 +744,6 @@ void MainWindow::finishFetchBatch()
 
 void MainWindow::onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes)
 {
-  if (download_stats_dialog_)
-  {
-    download_stats_dialog_->updateProgress(topic_name, bytes, total_bytes);
-  }
   if (error_context_ != ErrorContext::Fetch || selected_topics_.isEmpty())
   {
     return;
@@ -816,6 +802,7 @@ void MainWindow::onFetchClicked()
   error_context_ = ErrorContext::Fetch;
   pending_fetches_ = selected_topics_.size();
   completed_fetch_topics_.clear();
+  decoded_fetch_bytes_.clear();
   pending_fetch_errors_.clear();
   cancelling_fetch_ = false;
   if (worker_)
@@ -1191,6 +1178,20 @@ void MainWindow::clearVisibleSequences()
 void MainWindow::updateTheme(bool dark)
 {
   query_bar_->updateTheme(dark);
+}
+
+void MainWindow::recordDecodedBytes(const QString& topic_name, qint64 decoded_bytes)
+{
+  if (decoded_bytes <= 0)
+  {
+    return;
+  }
+  qint64& cumulative = decoded_fetch_bytes_[topic_name];
+  cumulative += decoded_bytes;
+  if (download_stats_dialog_)
+  {
+    download_stats_dialog_->updateProgress(topic_name, cumulative, /*total_bytes=*/0);
+  }
 }
 
 // ---------------------------------------------------------------------------

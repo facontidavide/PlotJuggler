@@ -14,6 +14,7 @@
 #include <arrow/api.h>
 #include <arrow/array/array_nested.h>
 #include <arrow/type.h>
+#include <arrow/util/byte_size.h>
 
 #include "src/query/query.h"
 
@@ -25,6 +26,24 @@
 
 namespace
 {
+
+// Mirrors decodedRecordBatchBytes in mosaico_client.cpp: ReferencedBufferSize
+// is cheaper for nested types and accounts for buffer slicing; TotalBufferSize
+// is the safe fallback. Keeping the same primitive here means the plugin's
+// per-topic total agrees with the SDK's logged X.XX MB by construction.
+qint64 batchDecodedBytes(const std::shared_ptr<arrow::RecordBatch>& batch)
+{
+  if (!batch)
+  {
+    return 0;
+  }
+  auto referenced = arrow::util::ReferencedBufferSize(*batch);
+  if (referenced.ok())
+  {
+    return static_cast<qint64>(*referenced);
+  }
+  return static_cast<qint64>(arrow::util::TotalBufferSize(*batch));
+}
 
 // Plugin-boundary guard. Any exception that reaches a ToolboxPlugin
 // override or queued-connection slot must not propagate into PlotJuggler,
@@ -275,7 +294,14 @@ void ToolboxMosaico::onMosaicoTopicBatchReady(const QString& sequence_name,
 {
   guardedBoundary(
       "onMosaicoTopicBatchReady",
-      [&]() { appendRecordBatchToSeries(sequence_name, topic_name, batch); },
+      [&]() {
+        const qint64 decoded_bytes = batchDecodedBytes(batch);
+        appendRecordBatchToSeries(sequence_name, topic_name, batch);
+        if (main_window_)
+        {
+          main_window_->recordDecodedBytes(topic_name, decoded_bytes);
+        }
+      },
       [this]() { emit closed(); });
 }
 
@@ -360,7 +386,12 @@ void ToolboxMosaico::convertRecordBatchToSeries(const QString& sequence_name,
   }
   for (const auto& batch : result.batches)
   {
+    const qint64 decoded_bytes = batchDecodedBytes(batch);
     appendRecordBatchToSeries(sequence_name, topic_name, batch);
+    if (main_window_)
+    {
+      main_window_->recordDecodedBytes(topic_name, decoded_bytes);
+    }
   }
   topic_imports_.erase(topicImportKey(sequence_name, topic_name));
 }

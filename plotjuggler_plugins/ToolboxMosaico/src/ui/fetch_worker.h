@@ -73,8 +73,7 @@ signals:
                           const std::shared_ptr<arrow::Schema>& schema);
   void topicBatchReady(const QString& sequence_name, const QString& topic_name,
                        const std::shared_ptr<arrow::RecordBatch>& batch);
-  void topicStreamFinished(const QString& sequence_name, const QString& topic_name,
-                           qint64 decoded_size_bytes);
+  void topicStreamFinished(const QString& sequence_name, const QString& topic_name);
   void fetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes);
   void topicErrorOccurred(const QString& topic_name, const QString& message);
   void errorOccurred(const QString& message);

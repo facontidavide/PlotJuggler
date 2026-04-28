@@ -70,6 +70,11 @@ public:
   void clearVisibleSequences();
   void updateTheme(bool dark);
 
+  // Sole feed for the DownloadStatsDialog "Bytes" column — bypasses the
+  // throttled SDK progress signal so the displayed total is always the
+  // raw Arrow Flight bytes we received, not a queued snapshot.
+  void recordDecodedBytes(const QString& topic_name, qint64 decoded_bytes);
+
 signals:
   void mosaicoDataReady(const QString& sequence_name, const QString& topic_name,
                         const PullResult& result);
@@ -95,8 +100,7 @@ private slots:
                             const std::shared_ptr<arrow::Schema>& schema);
   void onTopicBatchReady(const QString& sequence_name, const QString& topic_name,
                          const std::shared_ptr<arrow::RecordBatch>& batch);
-  void onTopicStreamFinished(const QString& sequence_name, const QString& topic_name,
-                             qint64 decoded_size_bytes);
+  void onTopicStreamFinished(const QString& sequence_name, const QString& topic_name);
   void onFetchError(const QString& message);
   void onTopicFetchError(const QString& topic_name, const QString& message);
   void onFetchProgress(const QString& topic_name, qint64 bytes, qint64 total_bytes);
@@ -250,6 +254,7 @@ private:
   QStringList selected_topics_;
   int pending_fetches_ = 0;
   QSet<QString> completed_fetch_topics_;
+  QHash<QString, qint64> decoded_fetch_bytes_;
 
   // Per-fetch error accumulator. A batch can produce one error per topic,
   // and with dozens of topics the dialog-per-error flow was unusable —

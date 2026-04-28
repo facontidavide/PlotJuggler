@@ -38,7 +38,7 @@ public:
 
   const char* name() const override
   {
-    return "Mosaico";
+    return "Mosaico Cloud Server";
   }
 
   void init(PJ::PlotDataMapRef& src_data, PJ::TransformsMap& transform_map) override;

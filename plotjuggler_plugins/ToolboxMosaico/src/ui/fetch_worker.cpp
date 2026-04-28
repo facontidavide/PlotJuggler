@@ -290,8 +290,7 @@ void FetchWorker::fetchDataMulti(const QString& sequence_name, const QStringList
         emit topicErrorOccurred(topic_q, QString::fromStdString(result.status().ToString()));
         return;
       }
-      emit topicStreamFinished(sequence_name, topic_q,
-                               static_cast<qint64>(result->decoded_size_bytes));
+      emit topicStreamFinished(sequence_name, topic_q);
     };
 
     qDebug().noquote() << QString("[Mosaico fetch] pullTopics %1: dispatching %2 topics "
