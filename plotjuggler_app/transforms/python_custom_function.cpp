@@ -83,17 +83,62 @@ void PythonCustomFunction::ensurePythonInitialized()
     config.parse_argv = 0;
     config.isolated = 0;
 
+#ifdef _WIN32
+    // On Windows, the installer ships an embeddable Python alongside the EXE
+    // under ./python/. Point PyConfig.home at it so the interpreter doesn't
+    // fall back to a system / registry / Microsoft Store Python with a
+    // mismatched ABI or stdlib layout. Use the wide-string API so non-ASCII
+    // install paths work.
+    {
+      const std::wstring py_home =
+          (QCoreApplication::applicationDirPath() + "/python").toStdWString();
+      PyStatus s = PyConfig_SetString(&config, &config.home, py_home.c_str());
+      if (PyStatus_Exception(s))
+      {
+        g_py_unavailable_reason = s.err_msg ? s.err_msg : "PyConfig_SetString(home) failed";
+        g_py_unavailable.store(true, std::memory_order_release);
+        PyConfig_Clear(&config);
+        qWarning() << "Embedded Python disabled:"
+                   << QString::fromStdString(g_py_unavailable_reason);
+        return;
+      }
+    }
+#endif
+
     PyStatus status = Py_InitializeFromConfig(&config);
     PyConfig_Clear(&config);
 
     if (PyStatus_Exception(status))
     {
-      g_py_unavailable.store(true, std::memory_order_release);
+      // Write the reason BEFORE the release-store on the flag so any thread
+      // that observes the flag set is guaranteed (via acquire/release) to see
+      // the published string. Reversing this order would race.
       g_py_unavailable_reason =
           status.err_msg ? status.err_msg : "Python interpreter failed to initialize";
+      g_py_unavailable.store(true, std::memory_order_release);
       qWarning() << "Embedded Python disabled:" << QString::fromStdString(g_py_unavailable_reason);
       // Do NOT call Py_ExitStatusException — that aborts. Just leave Python down.
       return;
+    }
+
+    // Verify the bundled stdlib actually loads. PyConfig_InitPythonConfig
+    // succeeding only proves the interpreter object is up; if lib-dynload
+    // .so files (or the equivalent .pyd on Windows) link against host
+    // libraries that don't exist on the target machine, `import` itself
+    // will still fail. Probing `import math` here forces the failure now
+    // rather than at first user-snippet execution.
+    {
+      PyObject* m = PyImport_ImportModule("math");
+      if (!m)
+      {
+        PyErr_Clear();
+        g_py_unavailable_reason = "embedded Python stdlib is incomplete (cannot import 'math')";
+        g_py_unavailable.store(true, std::memory_order_release);
+        qWarning() << "Embedded Python disabled:"
+                   << QString::fromStdString(g_py_unavailable_reason);
+        return;
+      }
+      Py_DECREF(m);
     }
 
     PyEval_SaveThread();

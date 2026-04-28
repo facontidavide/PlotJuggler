@@ -28,6 +28,11 @@ jobs:
           - 'windows-latest'
     env:
       CXXFLAGS: /MP
+      # Python version used both at compile time (Python.h, python312.lib) AND
+      # bundled into the installer as the embeddable runtime. These two MUST
+      # match — otherwise the EXE will load a python3XX.dll whose ABI doesn't
+      # match the headers we built against.
+      PJ_PYTHON_EMBED_VERSION: '3.12.7'
 
     steps:
       - name: Sync repository
@@ -191,6 +196,56 @@ jobs:
           Copy-Item -Path build\bin\Release\*.* -Destination installer\io.plotjuggler.application\data -Recurse -Force
           cmd /c installer\windeploy_pj.bat
 
+      - name: Bundle embeddable Python
+        shell: pwsh
+        run: |
+          # Ship a self-contained Python next to plotjuggler.exe so the app
+          # works on any Windows host, regardless of whether (or which) Python
+          # the user has installed. This mirrors what the Linux AppImage does
+          # by bundling /usr/lib/python3.X. See:
+          #   https://docs.python.org/3/using/windows.html#the-embeddable-package
+          $pyVersion = "${{ env.PJ_PYTHON_EMBED_VERSION }}"
+          $pyXY = ($pyVersion -split '\.')[0..1] -join '.'        # "3.12"
+          $pyTag = $pyXY -replace '\.', ''                          # "312"
+          $url = "https://www.python.org/ftp/python/$pyVersion/python-$pyVersion-embed-amd64.zip"
+          $zip = Join-Path $env:RUNNER_TEMP "python-embed.zip"
+          $dataDir = "installer\io.plotjuggler.application\data"
+          $pyDir = Join-Path $dataDir "python"
+
+          Write-Host "Downloading $url"
+          Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
+          Expand-Archive -Path $zip -DestinationPath $pyDir -Force
+
+          # python.exe is the standalone CLI launcher; we only need the
+          # embedded interpreter so drop it (saves ~5 MB).
+          Remove-Item (Join-Path $pyDir "python.exe") -ErrorAction Ignore
+          Remove-Item (Join-Path $pyDir "pythonw.exe") -ErrorAction Ignore
+
+          # python._pth's presence is what enables "isolated mode": Python
+          # ignores PYTHONHOME / PYTHONPATH / registry / user site-packages
+          # and only walks the paths listed in this file. Default is fine
+          # (it lists pythonXY.zip + ".") — ensure `import site` stays off.
+          $pthFile = Join-Path $pyDir "python$pyTag._pth"
+          if (Test-Path $pthFile) {
+            (Get-Content $pthFile) -replace '^\s*import site', '#import site' |
+              Set-Content $pthFile
+          }
+
+          # Copy pythonXX.dll next to plotjuggler.exe so the loader finds it
+          # via the standard DLL search order (EXE directory first), without
+          # needing PATH manipulation or SetDllDirectory at runtime.
+          $pyDll = Join-Path $pyDir "python$pyTag.dll"
+          if (Test-Path $pyDll) {
+            Copy-Item $pyDll -Destination $dataDir -Force
+          } else {
+            Write-Error "Expected $pyDll inside the embeddable archive"
+            exit 1
+          }
+
+          # Sanity check: list what we shipped
+          Write-Host "Bundled Python contents:"
+          Get-ChildItem $pyDir | Select-Object -First 20 | Format-Table Name, Length
+
       - name: Create installer using QT Installation Framework
         shell: pwsh
         run: |
@@ -219,7 +274,7 @@ jobs:
 
       - name: Upload installer
         uses: actions/upload-artifact@v7
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
           name: PlotJuggler-${{ github.ref_name }}-Windows-x64.exe
           path: PlotJuggler-${{ github.ref_name }}-Windows-x64.exe

@@ -376,6 +376,19 @@ int main(int argc, char* argv[])
    * reject a message that brings a little of happiness into your day, spent analyzing
    * data. Please don't do it.
    */
+#ifdef PJ_HAS_PYTHON
+  // Probe the embedded Python interpreter BEFORE constructing MainWindow, so
+  // FunctionEditorWidget (built inside the MainWindow ctor) sees the correct
+  // PythonCustomFunction::isAvailable() state when it decides whether to
+  // enable / disable the Python radio buttons.
+  const bool python_ok = PythonCustomFunction::probeAvailable();
+  if (!python_ok)
+  {
+    qWarning() << "Embedded Python could not be initialized — Python custom "
+                  "functions will be disabled for this session.";
+  }
+#endif
+
   if (!parser.isSet(nosplash_option) &&
       !(parser.isSet(loadfile_option) || parser.isSet(layout_option)) &&
       !(settings.value("Preferences::no_splash", false).toBool()))
@@ -426,18 +439,6 @@ int main(int argc, char* argv[])
   {
     window = new MainWindow(parser);
   }
-
-#ifdef PJ_HAS_PYTHON
-  // Probe the embedded Python interpreter once, up-front, so a broken install
-  // (e.g. AppImage running on a host without the matching Python stdlib) is
-  // logged here instead of crashing the first time a Python snippet loads.
-  const bool python_ok = PythonCustomFunction::probeAvailable();
-  if (!python_ok)
-  {
-    qWarning() << "Embedded Python could not be initialized — Python custom "
-                  "functions will be disabled for this session.";
-  }
-#endif
 
   window->show();
 

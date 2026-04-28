@@ -400,7 +400,26 @@ void FunctionEditorWidget::setupFunctionAppsButton()
           }
         }
 
-        if (first_language.toLower() == "python")
+        bool wants_python = (first_language.toLower() == "python");
+#ifdef PJ_HAS_PYTHON
+        if (wants_python && !PythonCustomFunction::isAvailable())
+        {
+          QMessageBox::warning(this, tr("Python unavailable"),
+                               tr("This snippet was saved as Python, but Python is "
+                                  "disabled in this build. Falling back to Lua."));
+          wants_python = false;
+        }
+#else
+        if (wants_python)
+        {
+          QMessageBox::warning(this, tr("Python unavailable"),
+                               tr("This snippet was saved as Python, but this build "
+                                  "has no Python support. Falling back to Lua."));
+          wants_python = false;
+        }
+#endif
+
+        if (wants_python)
         {
           if (ui->pythonButton)
           {
@@ -704,7 +723,26 @@ void FunctionEditorWidget::createNewPlot()
 
 void FunctionEditorWidget::editExistingPlot(CustomPlotPtr data)
 {
-  if (data->language().toLower() == "python")
+  bool wants_python = (data->language().toLower() == "python");
+#ifdef PJ_HAS_PYTHON
+  if (wants_python && !PythonCustomFunction::isAvailable())
+  {
+    QMessageBox::warning(this, tr("Python unavailable"),
+                         tr("This custom plot was created in Python, but Python is "
+                            "disabled in this build. The editor will open in Lua mode."));
+    wants_python = false;
+  }
+#else
+  if (wants_python)
+  {
+    QMessageBox::warning(this, tr("Python unavailable"),
+                         tr("This custom plot was created in Python, but this build "
+                            "has no Python support. The editor will open in Lua mode."));
+    wants_python = false;
+  }
+#endif
+
+  if (wants_python)
   {
     if (ui->pythonButton)
     {
