@@ -19,6 +19,10 @@ default outputs, preserving the old flake's names. The executable is `plotjuggle
 The package includes the desktop entry, icon, and sibling `pj-plugin-check` helper.
 Tests, demos, and the optional GPL raster helper are excluded from the app build.
 
+CI covers the flake through the **Nix** workflow (`.github/workflows/nix.yml`),
+which runs `nix flake check` and the Python self-test. It runs on demand and on
+pull requests that change the Nix files, not on every pull request.
+
 ## Development
 
 ```bash
