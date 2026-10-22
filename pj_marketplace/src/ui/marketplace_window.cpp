@@ -423,11 +423,11 @@ void MarketplaceWindow::setupSignals() {
       });
 
   // RegistryManager
-  connect(registry_mgr_, &RegistryManager::fetchStarted, this, [this]() { setInfoStatus("Loading registry..."); });
+  connect(registry_mgr_, &RegistryManager::fetchStarted, this, [this]() { setInfoStatus(tr("Loading registry...")); });
 
   connect(registry_mgr_, &RegistryManager::fetchFinished, this, [this](bool success) {
     if (!success) {
-      setStatus("Failed to load registry", true);
+      setStatus(tr("Failed to load registry"), true);
       showInvalidRegistryDialog();
       return;
     }
@@ -437,7 +437,7 @@ void MarketplaceWindow::setupSignals() {
     registry_extensions_ = registry_mgr_->compatibleExtensions(PlatformUtils::currentPlatform());
     rebuildExtensionList();
     applyFilters();
-    setInfoStatus("Ready — " + QString::number(extensions_.size()) + " extensions loaded");
+    setInfoStatus(tr("Ready — %1 extensions loaded").arg(extensions_.size()));
   });
 
   connect(ext_mgr_, &ExtensionManager::installPendingRestart, this, [this](const QString& id) {
@@ -453,7 +453,7 @@ void MarketplaceWindow::setupSignals() {
     status_error_sticky_ = false;
     ++restart_pending_count_;
     refreshAfterInstalledChange();
-    setStatus(QString("Extension %1 staged — will be active after restart").arg(id));
+    setStatus(tr("Extension %1 staged — will be active after restart").arg(id));
     processInstallQueue();
     maybeShowRestartRequiredDialog();
     // Staging is how every successful update ends, so this — not installFinished
@@ -477,8 +477,8 @@ void MarketplaceWindow::setupSignals() {
     const QString version = ext_mgr_->installedVersion(id);
     setStatus(
         version.isEmpty()
-            ? QString("%1 is already installed — the archive is identical, nothing changed").arg(id)
-            : QString("%1 v%2 is already installed — the archive is identical, nothing changed").arg(id, version));
+            ? tr("%1 is already installed — the archive is identical, nothing changed").arg(id)
+            : tr("%1 v%2 is already installed — the archive is identical, nothing changed").arg(id, version));
     processInstallQueue();
     maybeShowRestartRequiredDialog();
     maybeShowBatchSummary();
@@ -489,7 +489,7 @@ void MarketplaceWindow::setupSignals() {
     status_error_sticky_ = false;
     ++restart_pending_count_;
     refreshAfterInstalledChange();
-    setStatus(QString("Extension %1 staged — will be uninstalled after restart").arg(id));
+    setStatus(tr("Extension %1 staged — will be uninstalled after restart").arg(id));
     maybeShowRestartRequiredDialog();
   });
 
@@ -498,7 +498,7 @@ void MarketplaceWindow::setupSignals() {
     status_error_sticky_ = false;
     ++restart_pending_count_;
     refreshAfterInstalledChange();
-    setStatus(QString("Extension %1 will revert to its bundled version after restart").arg(id));
+    setStatus(tr("Extension %1 will revert to its bundled version after restart").arg(id));
     maybeShowRestartRequiredDialog();
   });
 
@@ -506,7 +506,7 @@ void MarketplaceWindow::setupSignals() {
     // Keep the concrete reason so the invalid-registry dialog (raised from
     // fetchFinished(false), which carries no message) can show which entry failed.
     last_registry_error_ = error;
-    setStatus("Registry error: " + error, true);
+    setStatus(tr("Registry error: %1").arg(error), true);
   });
 
   // ExtensionManager
@@ -539,10 +539,10 @@ void MarketplaceWindow::setupSignals() {
         QString verb;
         switch (phase) {
           case DownloadManager::WorkPhase::Verifying:
-            verb = u"Verifying"_s;
+            verb = tr("Verifying");
             break;
           case DownloadManager::WorkPhase::Extracting:
-            verb = u"Extracting"_s;
+            verb = tr("Extracting");
             break;
         }
         showInstallProgress(verb);
@@ -587,7 +587,7 @@ void MarketplaceWindow::setupSignals() {
 
   connect(ext_mgr_, &ExtensionManager::installError, this, [this](const QString& /*id*/, const QString& error) {
     ui_->progress_bar_->setVisible(false);
-    setStatus("Installation failed: " + error, true);
+    setStatus(tr("Installation failed: %1").arg(error), true);
     // Queue advance lives in installFinished only — installError + installFinished both
     // fire from emitInstallFailure, so advancing here would double-pop the queue.
   });
@@ -606,13 +606,13 @@ void MarketplaceWindow::setupSignals() {
         }
       }
       refreshAfterInstalledChange();
-      setStatus("Uninstalled " + name);
+      setStatus(tr("Uninstalled %1").arg(name));
     }
     // On failure the status was already set by uninstallError — do not overwrite it.
   });
 
   connect(ext_mgr_, &ExtensionManager::uninstallError, this, [this](const QString& /*id*/, const QString& error) {
-    setStatus("Uninstall failed: " + error, true);
+    setStatus(tr("Uninstall failed: %1").arg(error), true);
   });
 
   connect(
@@ -623,7 +623,7 @@ void MarketplaceWindow::setupSignals() {
         // re-open doesn't show it again as if it were new.
         ext_mgr_->markDiagnosticsSurfaced();
         if (is_error) {
-          setStatus("Marketplace diagnostic: " + message, true);
+          setStatus(tr("Marketplace diagnostic: %1").arg(message), true);
         }
       });
 }
@@ -878,10 +878,10 @@ void MarketplaceWindow::updateDetailFooter() {
     meta << esc(ext->license);
   }
   if (!ext->min_plotjuggler_version.isEmpty()) {
-    meta << u"requires PJ %1+"_s.arg(esc(ext->min_plotjuggler_version));
+    meta << tr("requires PJ %1+").arg(esc(ext->min_plotjuggler_version));
   }
   if (!installed_version.isEmpty()) {
-    meta << u"installed: v%1"_s.arg(esc(installed_version));
+    meta << tr("installed: v%1").arg(esc(installed_version));
   }
   if (!meta.isEmpty()) {
     html += u"<p style='margin:0 0 6px 0;'>%1</p>"_s.arg(meta.join(u"  •  "_s));
@@ -900,7 +900,8 @@ void MarketplaceWindow::updateDetailFooter() {
     std::sort(versions.begin(), versions.end(), [](const QString& a, const QString& b) {
       return comparePluginVersions(a.toStdString(), b.toStdString()) > 0;
     });
-    html += u"<p style='margin:0 0 2px 0;'><b>Changelog</b></p><ul style='margin:0 0 0 -20px;'>"_s;
+    html += u"<p style='margin:0 0 2px 0;'><b>"_s + tr("Changelog").toHtmlEscaped() +
+            u"</b></p><ul style='margin:0 0 0 -20px;'>"_s;
     for (const QString& version : versions) {
       html += u"<li><b>%1</b> — %2</li>"_s.arg(esc(version), esc(ext->changelog.value(version)));
     }
@@ -1161,7 +1162,7 @@ void MarketplaceWindow::applyFilters() {
   }
 
   rebuildTable(/*preserve_scroll=*/false);
-  setInfoStatus(QString::number(filtered_.size()) + " of " + QString::number(extensions_.size()) + " extensions shown");
+  setInfoStatus(tr("%1 of %2 extensions shown").arg(filtered_.size()).arg(extensions_.size()));
 }
 
 void MarketplaceWindow::setStatus(const QString& msg, bool is_error) {
@@ -1186,12 +1187,12 @@ QString MarketplaceWindow::queueSuffix() const {
   const int queued = queuedCount();
   QString suffix;
   if (queued > 0) {
-    suffix += u"  ·  "_s + QString::number(queued) + u" queued"_s;
+    suffix += tr("  ·  %1 queued").arg(queued);
   }
   // Surface failures live too, so a mid-batch failure is visible while the rest
   // of the queue is still running, not only in the end-of-batch summary.
   if (batch_failed_count_ > 0) {
-    suffix += u"  ·  "_s + QString::number(batch_failed_count_) + u" failed"_s;
+    suffix += tr("  ·  %1 failed").arg(batch_failed_count_);
   }
   return suffix;
 }
@@ -1236,7 +1237,7 @@ void MarketplaceWindow::showLatestDiagnostic() {
   }
   const ExtensionDiagnostic& diagnostic = ext_mgr_->diagnostics().back();
   ext_mgr_->markDiagnosticsSurfaced();
-  setStatus("Marketplace diagnostic: " + diagnostic.message, diagnostic.is_error);
+  setStatus(tr("Marketplace diagnostic: %1").arg(diagnostic.message), diagnostic.is_error);
 }
 
 void MarketplaceWindow::updateDiagnosticsButton() {
@@ -1249,7 +1250,7 @@ void MarketplaceWindow::updateDiagnosticsButton() {
       diagnostics.cbegin(), diagnostics.cend(),
       [this](const ExtensionDiagnostic& diagnostic) { return diagnostic.timestamp >= opened_at_; }));
   ui_->diagnostics_btn_->setVisible(count > 0);
-  ui_->diagnostics_btn_->setText(count > 1 ? QString("Details (%1)").arg(count) : "Details");
+  ui_->diagnostics_btn_->setText(count > 1 ? tr("Details (%1)").arg(count) : tr("Details"));
 }
 
 // ─── Slots ────────────────────────────────────────────────────────────────────
@@ -1317,15 +1318,14 @@ QString MarketplaceWindow::installedStatusText(const QString& id, bool from_file
   // installUnchanged, which owns its own wording for the same reason.
   if (from_file) {
     const QString version = ext_mgr_->installedVersion(id);
-    return version.isEmpty() ? QString("Installed %1 from file").arg(id)
-                             : QString("Installed %1 v%2 from file").arg(id, version);
+    return version.isEmpty() ? tr("Installed %1 from file").arg(id) : tr("Installed %1 v%2 from file").arg(id, version);
   }
   for (const auto& ext : extensions_) {
     if (ext.id == id) {
-      return "Installed " + ext.name + " v" + ext.version;
+      return tr("Installed %1 v%2").arg(ext.name, ext.version);
     }
   }
-  return "Installed " + id;
+  return tr("Installed %1").arg(id);
 }
 
 void MarketplaceWindow::showEvent(QShowEvent* event) {
@@ -1408,7 +1408,7 @@ void MarketplaceWindow::onActionButtonClicked(const QString& ext_id) {
     if (ext_mgr_->hasUpdate(ext)) {
       ext_mgr_->update(ext);
     } else if (ext_mgr_->hasNewerInstalledVersion(ext)) {
-      setStatus("Installed version is newer than registry version", true);
+      setStatus(tr("Installed version is newer than registry version"), true);
     } else if (!ext_mgr_->isInstalled(ext.id)) {
       ext_mgr_->install(ext);
     }
@@ -1450,7 +1450,7 @@ void MarketplaceWindow::onUpdateAllClicked() {
     return;
   }
   ui_->update_all_btn_->setEnabled(false);
-  setStatus("Updating " + QString::number(update_queue_.size()) + " extensions...");
+  setStatus(tr("Updating %1 extensions...").arg(update_queue_.size()));
   rebuildTable();  // repaint so all queued cards show the "Installing" badge
   processInstallQueue();
 }
@@ -1467,12 +1467,12 @@ void MarketplaceWindow::onDiagnosticsClicked() {
 
   QStringList lines;
   for (const ExtensionDiagnostic& diagnostic : ext_mgr_->diagnostics()) {
-    const QString level = diagnostic.is_error ? "ERROR" : "INFO";
+    const QString level = diagnostic.is_error ? tr("ERROR") : tr("INFO");
     const QString id = diagnostic.id.isEmpty() ? "-" : diagnostic.id;
     lines.append(QString("[%1] %2 %3: %4")
                      .arg(diagnostic.timestamp.toLocalTime().toString(Qt::ISODate), level, id, diagnostic.message));
   }
-  text->setPlainText(lines.isEmpty() ? "No diagnostics." : lines.join('\n'));
+  text->setPlainText(lines.isEmpty() ? tr("No diagnostics.") : lines.join('\n'));
   layout->addWidget(text);
 
   auto* close_row = new QHBoxLayout;

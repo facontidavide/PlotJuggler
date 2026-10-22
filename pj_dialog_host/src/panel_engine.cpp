@@ -473,22 +473,25 @@ QWidget* PanelEngine::openPanel() {
     const PJ::WidgetDataView& picker_view = impl_->prev_view;
     if (picker_view.isFilePicker(name)) {
       const QString path = PJ::FileDialog::getOpenFileName(
-          impl_->root, QString::fromStdString(picker_view.filePickerTitle(name).value_or("Select File")), QString(),
-          QString::fromStdString(picker_view.filePickerFilter(name).value_or("")));
+          impl_->root,
+          QString::fromStdString(picker_view.filePickerTitle(name).value_or(QObject::tr("Select File").toStdString())),
+          QString(), QString::fromStdString(picker_view.filePickerFilter(name).value_or("")));
       if (!path.isEmpty()) {
         forward(name, PJ::WidgetEventBuilder::fileSelected(path.toStdString()));
       }
     } else if (picker_view.isSaveFilePicker(name)) {
       const QString path = PJ::FileDialog::getSaveFileName(
-          impl_->root, QString::fromStdString(picker_view.filePickerTitle(name).value_or("Save File")), QString(),
-          QString::fromStdString(picker_view.filePickerFilter(name).value_or("")),
+          impl_->root,
+          QString::fromStdString(picker_view.filePickerTitle(name).value_or(QObject::tr("Save File").toStdString())),
+          QString(), QString::fromStdString(picker_view.filePickerFilter(name).value_or("")),
           QString::fromStdString(picker_view.saveFilePickerDefaultSuffix(name).value_or("")));
       if (!path.isEmpty()) {
         forward(name, PJ::WidgetEventBuilder::fileSelected(path.toStdString()));
       }
     } else if (picker_view.isFolderPicker(name)) {
       const QString path = PJ::FileDialog::getExistingDirectory(
-          impl_->root, QString::fromStdString(picker_view.folderPickerTitle(name).value_or("Select Folder")));
+          impl_->root, QString::fromStdString(
+                           picker_view.folderPickerTitle(name).value_or(QObject::tr("Select Folder").toStdString())));
       if (!path.isEmpty()) {
         forward(name, PJ::WidgetEventBuilder::folderSelected(path.toStdString()));
       }

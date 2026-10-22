@@ -1,4 +1,6 @@
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Svg Test)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/PjAppLanguage.cmake)
+pj_add_app_language()
 
 # backward-cpp (Conan): symbolized crash backtraces. The package exports the
 # `Backward` config and the `Backward::Backward` target, which propagates the
@@ -166,6 +168,7 @@ target_include_directories(pj_app_shell PUBLIC
 )
 
 target_link_libraries(pj_app_shell PUBLIC
+    pj_app_language
     pj_runtime
     pj_widgets
     pj_plotting
@@ -284,6 +287,7 @@ endif()
 
 if(PJ_BUILD_TESTS)
     find_package(GTest REQUIRED)
+    pj_add_app_language_test()
 
     # Qt-only helpers compile their implementation once without the shell's
     # dependency closure. Discovery keeps a fresh QApplication per test case.
@@ -368,6 +372,7 @@ if(PJ_BUILD_TESTS)
     # resolve. MainWindow teardown leaks process-global state, so discovery
     # runs each case in its own process while sharing one linked executable.
     set(PJ_APP_GUI_TEST_SOURCES
+        tests/preferences_language_test.cpp
         tests/slider_states_test.cpp)
 
     # Bell dialog: severity / source / text filters, live rebuild on record,
