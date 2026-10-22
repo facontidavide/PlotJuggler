@@ -219,3 +219,11 @@ confirmation, floating through the window, a busy takeover folds into a
 transient tab. Replacing another busy takeover folds that panel before showing
 the incoming one. If docking cannot claim the chart slot, the live panel
 remains available as a tab.
+
+## Interface language
+
+`AppLanguage` owns the startup Qt translator and embedded catalog. English is
+the fresh-profile and invalid-value fallback. Preferences saves a next-launch
+selection; `--language` is session-only and does not alter numeric locale or
+serialized identifiers. See [`docs/localization/README.md`](../docs/localization/README.md)
+for catalog maintenance, scope, and focused tests.
