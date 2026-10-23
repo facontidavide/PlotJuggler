@@ -3,6 +3,7 @@
 
 #include <QApplication>
 #include <QComboBox>
+#include <QFontInfo>
 #include <QLabel>
 #include <QScrollArea>
 #include <QSettings>
@@ -103,6 +104,44 @@ TEST(PreferencesLanguageTest, SessionOverrideDoesNotChangeTheNextLaunchSelection
   ASSERT_NE(combo, nullptr);
   EXPECT_EQ(combo->currentData().toString(), u"zh_CN"_s);
   EXPECT_EQ(qApp->property("interfaceLanguage").toString(), u"en_US"_s);
+}
+
+TEST(PreferencesLanguageTest, LanguageSelectorHonorsBothSizeHintsAcrossFonts) {
+  struct RestoreApplicationFont {
+    QFont original = qApp->font();
+    ~RestoreApplicationFont() { QApplication::setFont(original); }
+  } restore_font;
+  for (const QFont& font : {restore_font.original, QFont(u"DejaVu Sans"_s, 9), QFont(u"DejaVu Sans"_s, 12),
+                            QFont(u"Liberation Sans"_s, 9)}) {
+    SCOPED_TRACE(font.toString().toStdString());
+    QApplication::setFont(font);
+    SCOPED_TRACE(QFontInfo(qApp->font()).family().toStdString());
+    for (const QString& requested : {u"en_US"_s, u"zh_CN"_s}) {
+      SCOPED_TRACE(requested.toStdString());
+      const PJ::AppLanguage running(*qApp, requested);
+      PJ::Theme theme;
+      PJ::PreferencesDialog dialog(theme);
+      auto* combo = dialog.findChild<QComboBox*>(u"languageCombo"_s);
+      ASSERT_NE(combo, nullptr);
+      dialog.resize(420, 300);
+      dialog.show();
+      QTest::qWait(20);
+
+      // Compare against a freshly populated control as well as Qt's cached
+      // minimum: a cached empty-model hint can be wider OR narrower than text.
+      QComboBox populated(combo->parentWidget());
+      populated.setObjectName(combo->objectName());
+      populated.setFont(combo->font());
+      populated.setSizeAdjustPolicy(combo->sizeAdjustPolicy());
+      for (int index = 0; index < combo->count(); ++index) {
+        populated.addItem(combo->itemText(index), combo->itemData(index));
+      }
+      populated.ensurePolished();
+      EXPECT_GE(combo->width(), combo->minimumSizeHint().width());
+      EXPECT_GE(combo->width(), populated.sizeHint().expandedTo(populated.minimumSizeHint()).width());
+      dialog.reject();
+    }
+  }
 }
 
 TEST(PreferencesLanguageTest, MinimumSizeKeepsTranslatedAppearanceControlsReachable) {
