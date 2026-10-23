@@ -61,6 +61,7 @@ enum class ValueKind {
   kGeometry,
   kTheme,
   kSplashMode,
+  kLanguage,
 };
 
 struct PreferenceRule {
@@ -74,6 +75,7 @@ struct PreferenceRule {
 // pj.settings.v1 plugin keys, and filesystem recents are intentionally absent.
 constexpr std::array kPreferenceRules{
     PreferenceRule{"StyleSheet::theme", ValueKind::kTheme},
+    PreferenceRule{"Preferences::language", ValueKind::kLanguage},
     PreferenceRule{"Preferences::precision", ValueKind::kInt, 1, 6},
     PreferenceRule{"Preferences::curve_color_global", ValueKind::kBool},
     PreferenceRule{"Preferences::check_updates_on_startup", ValueKind::kBool},
@@ -287,6 +289,7 @@ QHash<QString, QVariant> decodePreferenceValues(const QByteArray& bytes, bool& v
       case ValueKind::kShortIdentifier:
       case ValueKind::kTheme:
       case ValueKind::kSplashMode:
+      case ValueKind::kLanguage:
         if (encoded.isString()) {
           candidate = encoded.toString();
         }
@@ -494,6 +497,13 @@ std::optional<QVariant> BrowserPersistence::sanitizePreference(const QString& ke
       }
       return value.toString();
     }
+    case ValueKind::kLanguage: {
+      if (value.metaType().id() != QMetaType::QString ||
+          (value.toString() != "zh_CN"_L1 && value.toString() != "en_US"_L1)) {
+        return std::nullopt;
+      }
+      return value.toString();
+    }
     case ValueKind::kSplashMode: {
       if (value.metaType().id() != QMetaType::QString ||
           (value.toString() != "memes"_L1 && value.toString() != "serious"_L1)) {
@@ -568,7 +578,7 @@ std::optional<BrowserPersistence::LayoutRecipe> BrowserPersistence::recentLayout
 bool BrowserPersistence::rememberGenericLayout(const QString& browser_name, const QByteArray& xml, QString* error) {
   if (!isSafeGenericLayoutRecipe(xml)) {
     if (error != nullptr) {
-      *error = tr("The layout is not a bounded, source-free browser recipe.");
+      *error = QObject::tr("The layout is not a bounded, source-free browser recipe.");
     }
     return false;
   }
@@ -593,7 +603,8 @@ bool BrowserPersistence::rememberGenericLayout(const QString& browser_name, cons
   impl_->durable->sync();
   if (impl_->durable->status() != QSettings::NoError) {
     if (error != nullptr) {
-      *error = tr("Browser storage rejected the recent layout recipe; it remains available for this page only.");
+      *error =
+          QObject::tr("Browser storage rejected the recent layout recipe; it remains available for this page only.");
     }
     qCWarning(lcBrowserPersistence) << "Could not persist recent layout recipe; keeping the bounded page-lifetime copy";
   }
